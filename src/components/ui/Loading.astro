@@ -1,0 +1,35 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import { LoaderCircle } from 'lucide-astro';
+
+type Size = 'sm' | 'md' | 'lg';
+
+interface Props extends HTMLAttributes<'span'> {
+  size?: Size;
+  label?: string;
+  showLabel?: boolean;
+}
+
+const {
+  size = 'md',
+  label = 'Memuat...',
+  showLabel = false,
+  class: className,
+  ...rest
+} = Astro.props;
+
+const sizes: Record<Size, string> = {
+  sm: 'size-4',
+  md: 'size-5',
+  lg: 'size-8',
+};
+
+const classes = ['inline-flex items-center gap-2 text-muted', className ?? '']
+  .filter(Boolean)
+  .join(' ');
+---
+
+<span class={classes} role="status" aria-live="polite" {...rest}>
+  <LoaderCircle class={['animate-spin', sizes[size]].join(' ')} aria-hidden="true" />
+  <span class={showLabel ? 'text-sm' : 'sr-only'}>{label}</span>
+</span>

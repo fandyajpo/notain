@@ -1,0 +1,71 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import { CircleAlert } from 'lucide-astro';
+import { controlClass, fieldId } from '../../lib/ui/field';
+
+interface Props extends HTMLAttributes<'textarea'> {
+  label?: string;
+  hint?: string;
+  error?: string;
+  value?: string;
+}
+
+const {
+  label,
+  hint,
+  error,
+  id,
+  name,
+  value,
+  class: className,
+  required = false,
+  disabled = false,
+  rows = 4,
+  ...rest
+} = Astro.props;
+
+const inputId = fieldId(id, name, label);
+const errorId = `${inputId}-error`;
+const hintId = hint ? `${inputId}-hint` : undefined;
+const describedBy = [error ? errorId : '', hintId].filter(Boolean).join(' ') || undefined;
+---
+
+<div class="flex flex-col gap-1.5">
+  {label && (
+    <label for={inputId} class="text-sm font-medium text-foreground">
+      {label}
+      {required && <span class="text-danger"> *</span>}
+    </label>
+  )}
+
+  <textarea
+    id={inputId}
+    name={name}
+    rows={rows}
+    class={controlClass({
+      invalid: Boolean(error),
+      className: `min-h-24 resize-y py-2.5 leading-relaxed ${className ?? ''}`,
+    })}
+    required={required}
+    disabled={disabled}
+    aria-invalid={error ? 'true' : undefined}
+    aria-describedby={describedBy}
+    {...rest}
+  >{value}</textarea>
+
+  <p
+    id={errorId}
+    data-error-for={name}
+    role="alert"
+    class:list={['items-start gap-1.5 text-xs font-medium text-danger', error ? 'flex' : 'hidden']}
+  >
+    <CircleAlert size={14} class="mt-0.5 shrink-0" aria-hidden="true" />
+    <span>{error ?? ''}</span>
+  </p>
+
+  {!error && hint && (
+    <p id={hintId} class="text-xs text-muted">
+      {hint}
+    </p>
+  )}
+</div>

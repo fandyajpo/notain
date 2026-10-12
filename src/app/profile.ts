@@ -1,0 +1,83 @@
+import { profileSchema, type BusinessProfile } from '../core/profile/model';
+import { AppError, ERROR_CODES } from '../core/shared/errors';
+import { container } from '../infra/container';
+import { requireSession } from './session';
+
+export const LOGO_MAX_BYTES = 2 * 1024 * 1024;
+export const LOGO_ALLOWED_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/svg+xml',
+  'image/webp',
+  'image/x-icon',
+  'image/vnd.microsoft.icon',
+] as const;
+
+export async function getProfile(): Promise<BusinessProfile | null> {
+  const user = await requireSession();
+  const profile = await container.profiles.getByOwner(user.id);
+  if (!profile) return null;
+  return { ...profile, logoUrl: container.assets.viewUrl(profile.logoFileId) ?? undefined };
+}
+
+export async function saveProfile(input: BusinessProfile): Promise<BusinessProfile> {
+  const user = await requireSession();
+  const parsed = profileSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new AppError(ERROR_CODES.VALIDATION, 'Periksa kembali isian profil kamu.', {
+      fieldErrors: Object.fromEntries(
+        parsed.error.issues.map((issue) => [issue.path.map(String).join('.'), issue.message]),
+      ),
+    });
+  }
+  const saved = await container.profiles.save({ ownerId: user.id, profile: parsed.data });
+  return { ...saved, logoUrl: container.assets.viewUrl(saved.logoFileId) ?? undefined };
+}
+
+/** Uploads a new logo, replacing any previous one, and persists the id. */
+export async function uploadLogo(file: File, current: BusinessProfile): Promise<BusinessProfile> {
+  const user = await requireSession();
+  validateLogoFile(file);
+
+  const previousFileId = current.logoFileId;
+
+  // Order matters: upload → persist → delete the old file. Deleting first (as
+  // this did previously) means a failed `saveProfile` leaves the row pointing
+  // at a file that is already gone, losing the logo for good.
+  const asset = await container.assets.uploadLogo({ ownerId: user.id, file });
+
+  try {
+    const saved = await saveProfile({ ...current, logoFileId: asset.fileId });
+    if (previousFileId && previousFileId !== asset.fileId) {
+      // The row is already safe, so a failed delete only wastes storage —
+      // swallowing it beats surfacing an error for a logo that now works.
+      await container.assets.remove(previousFileId).catch(() => undefined);
+    }
+    return saved;
+  } catch (error) {
+    // The row still points at the previous logo, so keep that file. Cleaning
+    // up the fresh upload turns a failed save into harmless orphaned storage
+    // instead of a broken invoice header.
+    await container.assets.remove(asset.fileId).catch(() => undefined);
+    throw error;
+  }
+}
+
+export async function removeLogo(current: BusinessProfile): Promise<BusinessProfile> {
+  if (!current.logoFileId) return current;
+  const fileId = current.logoFileId;
+  // Persist first so a failed save leaves the record pointing at a file that
+  // still exists; only then is the file safe to delete.
+  const saved = await saveProfile({ ...current, logoFileId: undefined });
+  await container.assets.remove(fileId).catch(() => undefined);
+  return saved;
+}
+
+function validateLogoFile(file: File): void {
+  if (!LOGO_ALLOWED_TYPES.includes(file.type as (typeof LOGO_ALLOWED_TYPES)[number])) {
+    throw new AppError(ERROR_CODES.VALIDATION, 'Format logo harus PNG, JPG, SVG, WEBP, atau ICO.');
+  }
+  if (file.size > LOGO_MAX_BYTES) {
+    throw new AppError(ERROR_CODES.VALIDATION, 'Logo terlalu besar. Maksimal 2 MB.');
+  }
+}

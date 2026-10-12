@@ -1,0 +1,98 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import { ChevronDown, CircleAlert } from 'lucide-astro';
+import { controlClass, fieldId } from '../../lib/ui/field';
+
+type Option = { value: string; label: string; disabled?: boolean };
+
+interface Props extends HTMLAttributes<'select'> {
+  label?: string;
+  hint?: string;
+  error?: string;
+  options?: Array<Option | string>;
+  placeholder?: string;
+  value?: string;
+}
+
+const {
+  label,
+  hint,
+  error,
+  id,
+  name,
+  options = [],
+  placeholder,
+  value,
+  class: className,
+  required = false,
+  disabled = false,
+  ...rest
+} = Astro.props;
+
+const inputId = fieldId(id, name, label);
+const errorId = `${inputId}-error`;
+const hintId = hint ? `${inputId}-hint` : undefined;
+const describedBy = [error ? errorId : '', hintId].filter(Boolean).join(' ') || undefined;
+
+const items: Option[] = options.map((option) =>
+  typeof option === 'string' ? { value: option, label: option } : option,
+);
+---
+
+<div class="flex flex-col gap-1.5">
+  {label && (
+    <label for={inputId} class="text-sm font-medium text-foreground">
+      {label}
+      {required && <span class="text-danger"> *</span>}
+    </label>
+  )}
+
+  <div class="relative">
+    <select
+      id={inputId}
+      name={name}
+      class={controlClass({
+        invalid: Boolean(error),
+        className: `h-11 appearance-none pr-10 ${className ?? ''}`,
+      })}
+      required={required}
+      disabled={disabled}
+      aria-invalid={error ? 'true' : undefined}
+      aria-describedby={describedBy}
+      {...rest}
+    >
+      {placeholder && (
+        <option value="" disabled>
+          {placeholder}
+        </option>
+      )}
+      {items.map((option) => (
+        <option value={option.value} selected={option.value === value} disabled={option.disabled}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+
+    <ChevronDown
+      size={16}
+      class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-muted"
+      aria-hidden="true"
+    />
+  </div>
+
+  <p
+    id={errorId}
+    data-error-for={name}
+    role="alert"
+    class:list={['items-start gap-1.5 text-xs font-medium text-danger', error ? 'flex' : 'hidden']}
+  >
+    <CircleAlert size={14} class="mt-0.5 shrink-0" aria-hidden="true" />
+    <span>{error ?? ''}</span>
+  </p>
+
+  {!error && hint && (
+    <p id={hintId} class="text-xs text-muted">
+      {hint}
+    </p>
+  )}
+</div>

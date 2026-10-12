@@ -1,0 +1,9 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { PrintApp } from '../../components/react/invoice/print-app';
+import '../../styles/print.css';
+---
+
+<Layout title="Cetak Invoice — Notain">
+  <PrintApp client:only="react" />
+</Layout>

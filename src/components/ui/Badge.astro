@@ -1,0 +1,38 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+type Variant = 'neutral' | 'success' | 'warning' | 'danger';
+type Size = 'sm' | 'md';
+
+interface Props extends HTMLAttributes<'span'> {
+  variant?: Variant;
+  size?: Size;
+}
+
+const { variant = 'neutral', size = 'md', class: className, ...rest } = Astro.props;
+
+const variants: Record<Variant, string> = {
+  neutral: 'bg-background text-muted border-border',
+  success: 'bg-accent-soft text-accent border-accent/20',
+  warning: 'bg-warning-soft text-warning border-warning/20',
+  danger: 'bg-danger-soft text-danger border-danger/20',
+};
+
+const sizes: Record<Size, string> = {
+  sm: 'h-5 px-2 text-[11px]',
+  md: 'h-6 px-2.5 text-xs',
+};
+
+const classes = [
+  'inline-flex items-center gap-1 rounded-pill border font-medium whitespace-nowrap',
+  variants[variant],
+  sizes[size],
+  className ?? '',
+]
+  .filter(Boolean)
+  .join(' ');
+---
+
+<span class={classes} {...rest}>
+  <slot />
+</span>

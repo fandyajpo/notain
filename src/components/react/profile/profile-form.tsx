@@ -1,0 +1,215 @@
+import { type AnyFieldApi, useForm } from '@tanstack/react-form';
+import { useEffect, useState } from 'react';
+import {
+  profileFormSchema,
+  type BusinessProfile,
+  type ProfileFormValues,
+} from '../../../core/profile/model';
+import { GENERIC_ERROR_MESSAGE } from '../../../core/shared/errors';
+import { useSaveProfile, useUploadLogo, useRemoveLogo } from '../../../lib/query/hooks/use-profile';
+import { toast } from '../../../lib/ui/toast';
+import { Button } from '../ui/button';
+import { FieldShell, controlClass, useFieldIds } from '../ui/field';
+import { LogoUploader } from '../invoice/logo-uploader';
+
+type Props = {
+  profile: BusinessProfile;
+};
+
+/** Business profile editor: identity fields plus the invoice logo. */
+export function ProfileForm({ profile }: Props) {
+  const saveProfile = useSaveProfile();
+  const uploadLogo = useUploadLogo();
+  const removeLogo = useRemoveLogo();
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | undefined>(profile.logoUrl);
+
+  useEffect(() => {
+    setLogoUrl(profile.logoUrl);
+  }, [profile.logoUrl]);
+
+  const form = useForm({
+    defaultValues: {
+      name: profile.name,
+      phone: profile.phone,
+      address: profile.address ?? '',
+      email: profile.email ?? '',
+    } satisfies ProfileFormValues,
+    validators: { onSubmit: profileFormSchema },
+    onSubmit: async ({ value }) => {
+      setServerError(null);
+      try {
+        await saveProfile.mutateAsync({
+          name: value.name.trim(),
+          phone: value.phone.trim(),
+          address: value.address.trim() || undefined,
+          email: value.email.trim() || undefined,
+          logoFileId: profile.logoFileId,
+        });
+        toast('Profil usaha berhasil disimpan.', { variant: 'success' });
+      } catch (error) {
+        setServerError(
+          typeof error === 'object' && error !== null && 'message' in error
+            ? String((error as { message: string }).message)
+            : GENERIC_ERROR_MESSAGE,
+        );
+      }
+    },
+  });
+
+  const currentProfile = (): BusinessProfile => ({
+    name: form.state.values.name.trim() || profile.name,
+    phone: form.state.values.phone.trim() || profile.phone,
+    address: form.state.values.address.trim() || undefined,
+    email: form.state.values.email.trim() || undefined,
+    logoFileId: profile.logoFileId,
+    logoUrl,
+  });
+
+  return (
+    <form
+      className="flex flex-col gap-6"
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        void form.handleSubmit();
+      }}
+    >
+      {serverError && (
+        <p
+          role="alert"
+          className="rounded-control border border-danger/25 bg-danger-soft px-4 py-3 text-sm font-medium text-danger"
+        >
+          {serverError}
+        </p>
+      )}
+
+      <LogoUploader
+        logoUrl={logoUrl}
+        busy={uploadLogo.isPending || removeLogo.isPending}
+        onUpload={(file) => {
+          void uploadLogo
+            .mutateAsync({ file, current: currentProfile() })
+            .then((saved) => {
+              setLogoUrl(saved.logoUrl);
+              toast('Logo berhasil diunggah.', { variant: 'success' });
+            })
+            .catch((error: unknown) => {
+              toast(
+                typeof error === 'object' && error !== null && 'message' in error
+                  ? String((error as { message: string }).message)
+                  : 'Logo gagal diunggah.',
+                { variant: 'error' },
+              );
+            });
+        }}
+        onRemove={() => {
+          void removeLogo
+            .mutateAsync(currentProfile())
+            .then((saved) => {
+              setLogoUrl(saved.logoUrl);
+              toast('Logo dihapus.', { variant: 'success' });
+            })
+            .catch(() => toast('Logo gagal dihapus.', { variant: 'error' }));
+        }}
+      />
+
+      <form.Field name="name">
+        {(field) => (
+          <ProfileField
+            field={field}
+            label="Nama usaha"
+            placeholder="Warung Maju Jaya"
+            required
+            autoComplete="organization"
+          />
+        )}
+      </form.Field>
+
+      <form.Field name="phone">
+        {(field) => (
+          <ProfileField
+            field={field}
+            label="Nomor WhatsApp"
+            placeholder="081234567890"
+            inputMode="tel"
+            required
+            hint="Dipakai di invoice dan pesan WhatsApp."
+            autoComplete="tel"
+          />
+        )}
+      </form.Field>
+
+      <form.Field name="address">
+        {(field) => (
+          <ProfileField
+            field={field}
+            label="Alamat (opsional)"
+            placeholder="Jl. Melati No. 12, Bandung"
+            autoComplete="street-address"
+          />
+        )}
+      </form.Field>
+
+      <form.Field name="email">
+        {(field) => (
+          <ProfileField
+            field={field}
+            label="Email (opsional)"
+            type="email"
+            placeholder="halo@warungmaju.id"
+            autoComplete="email"
+          />
+        )}
+      </form.Field>
+
+      <div>
+        <Button type="submit" size="lg" loading={saveProfile.isPending}>
+          Simpan profil
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+type ProfileFieldProps = {
+  field: AnyFieldApi;
+  label: string;
+  type?: string;
+  placeholder?: string;
+  hint?: string;
+  required?: boolean;
+  inputMode?: 'tel' | 'text' | 'numeric';
+  autoComplete?: string;
+};
+
+function ProfileField({
+  field,
+  label,
+  type = 'text',
+  placeholder,
+  hint,
+  required = false,
+  inputMode = 'text',
+  autoComplete,
+}: ProfileFieldProps) {
+  const { id } = useFieldIds();
+  const error = field.state.meta.isTouched ? field.state.meta.errors[0] : undefined;
+
+  return (
+    <FieldShell label={label} htmlFor={id} error={error} hint={hint} required={required}>
+      <input
+        id={id}
+        type={type}
+        inputMode={inputMode}
+        value={field.state.value ?? ''}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        aria-invalid={error ? 'true' : undefined}
+        className={controlClass({ invalid: Boolean(error), className: 'h-11' })}
+        onChange={(event) => field.handleChange(event.target.value)}
+        onBlur={field.handleBlur}
+      />
+    </FieldShell>
+  );
+}

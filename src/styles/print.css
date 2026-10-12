@@ -1,0 +1,71 @@
+/**
+ * Print stylesheet for `/invoice/print`.
+ *
+ * The page deliberately holds nothing but the invoice and a toolbar, so
+ * printing is a matter of dropping the toolbar — no need to hide the rest of
+ * an application shell that is not there.
+ */
+
+@page {
+  size: A4;
+  margin: 14mm;
+}
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+  }
+
+  /* On-screen controls and the toast host never reach the paper. */
+  [data-print-toolbar],
+  #notain-toasts {
+    display: none !important;
+  }
+
+  [data-print-sheet] {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  [data-print-sheet] article {
+    box-shadow: none !important;
+  }
+
+  /**
+   * Structure is carried by borders, which always print, so the invoice stays
+   * a readable framed document even when "Background graphics" is switched off
+   * in the print dialog. Backgrounds (the theme fill, the accent rule, the
+   * wallpaper) are layered on top as enhancement — losing them must never
+   * leave a blank sheet. The dialog's own checkbox still wins over
+   * `print-color-adjust`, which is why the toolbar calls it out as optional.
+   */
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /**
+   * Paging behaviour. Everything except the item table keeps to one page, and
+   * each row of the table does too — but the table itself is allowed to flow
+   * onto further pages with its header repeated. Pinning the whole table to a
+   * single page is what used to push rows past the edge of the sheet.
+   */
+  [data-block]:not([data-block='items']) {
+    break-inside: avoid;
+  }
+
+  [data-block='items'] tr {
+    break-inside: avoid;
+  }
+
+  [data-block='items'] thead {
+    display: table-header-group;
+  }
+}

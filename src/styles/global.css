@@ -1,0 +1,411 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Colors */
+  --color-background: #f8f8f6;
+  --color-foreground: #171717;
+  --color-muted: #737373;
+  --color-card: #ffffff;
+  --color-border: #e5e5e5;
+  --color-accent: #16a34a;
+  --color-accent-foreground: #ffffff;
+  --color-accent-soft: #ecfdf3;
+  --color-danger: #dc2626;
+  --color-danger-foreground: #ffffff;
+  --color-danger-soft: #fef2f2;
+  --color-warning: #d97706;
+  --color-warning-soft: #fffbeb;
+
+  /* Typography */
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Noto Sans', sans-serif;
+
+  --text-display: 2.75rem;
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.03em;
+  --text-display--font-weight: 600;
+
+  --text-title: 1.5rem;
+  --text-title--line-height: 1.25;
+  --text-title--letter-spacing: -0.02em;
+  --text-title--font-weight: 600;
+
+  --text-lead: 1.125rem;
+  --text-lead--line-height: 1.6;
+  --text-lead--font-weight: 400;
+
+  /* Radius */
+  --radius-card: 0.75rem;
+  --radius-control: 0.5rem;
+  --radius-pill: 9999px;
+
+  /* Shadows */
+  --shadow-card: 0 1px 2px 0 rgb(23 23 23 / 0.04);
+  --shadow-popover: 0 12px 32px -12px rgb(23 23 23 / 0.18);
+  --shadow-modal: 0 24px 56px -16px rgb(23 23 23 / 0.24);
+}
+
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+/**
+ * Dot-grid page texture used by the landing page and the app shell. The caller
+ * pins it (`fixed`) so content slides over it; the mask fades it at the edges.
+ */
+@utility texture-dots {
+  background-image: radial-gradient(circle, rgb(23 23 23 / 0.11) 1px, transparent 1.5px);
+  background-size: 22px 22px;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+    /* Anchor jumps clear the 4rem sticky header instead of landing under it. */
+    scroll-padding-top: 5rem;
+    /* Custom scrollbar — thin and themed to the tokens, replacing the platform
+       default. Firefox reads the two standard properties; WebKit reads the
+       pseudo-elements further below. */
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--color-border);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-muted);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  ::placeholder {
+    color: var(--color-muted);
+    opacity: 1;
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: var(--color-accent-foreground);
+  }
+
+  [disabled],
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+
+  input[aria-invalid='true'],
+  textarea[aria-invalid='true'],
+  select[aria-invalid='true'] {
+    border-color: var(--color-danger);
+  }
+
+  dialog::backdrop {
+    background-color: rgb(23 23 23 / 0.45);
+  }
+
+  dialog[data-notain-modal] {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: calc(100% - 2rem);
+    overflow: hidden;
+  }
+
+  dialog[data-notain-modal]:not([open]) {
+    display: none;
+  }
+
+  input[type='radio'],
+  input[type='checkbox'] {
+    accent-color: var(--color-accent);
+  }
+}
+
+/* ---- Rich text editor (TipTap) and its read-only rendered output */
+
+.notain-rich-text .ProseMirror {
+  outline: none;
+  min-height: 7rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/**
+ * The preview renders whatever the author typed, so it must not reserve an
+ * editor-sized box: `min-height` here used to pin every rich-text block to
+ * 7rem, which is what opened the tall gap between the kop and the customer
+ * box even when the prose was only two lines long.
+ */
+[data-rich-output] {
+  outline: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+[data-rich-output] p:first-child {
+  margin-top: 0;
+}
+
+[data-rich-output] p:last-child {
+  margin-bottom: 0;
+}
+
+[data-rich-output] h1,
+[data-rich-output] h2,
+[data-rich-output] h3 {
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 1em;
+  margin-bottom: 0.35em;
+}
+
+[data-rich-output] h1 {
+  font-size: 1.25em;
+}
+
+[data-rich-output] h2 {
+  font-size: 1.125em;
+}
+
+[data-rich-output] h3 {
+  font-size: 1em;
+}
+
+[data-rich-output] ul,
+[data-rich-output] ol {
+  padding-left: 1.25em;
+  margin-top: 0.35em;
+  margin-bottom: 0.35em;
+}
+
+[data-rich-output] ul {
+  list-style: disc;
+}
+
+[data-rich-output] ol {
+  list-style: decimal;
+}
+
+[data-rich-output] blockquote {
+  border-left: 3px solid var(--color-border);
+  padding-left: 0.75em;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+[data-rich-output] code {
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 0.25rem;
+  padding: 0.1em 0.3em;
+  font-size: 0.9em;
+}
+
+[data-rich-output] a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+[data-rich-output] hr {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: 1em 0;
+}
+
+/* ---- Markdown notes (TanStack Markdown renders the invoice's Catatan block) */
+
+/* Pure typography, no backgrounds: the notes box already paints its own fill
+   and border, and the same markup has to survive `window.print()` where
+   background-color is not guaranteed. Mirrors `[data-rich-output]` so a note
+   reads the same as the rich zones above it. */
+.notain-markdown {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.notain-markdown > :first-child {
+  margin-top: 0;
+}
+
+.notain-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.notain-markdown p {
+  margin-top: 0.35em;
+  margin-bottom: 0.35em;
+}
+
+.notain-markdown p:first-child {
+  margin-top: 0;
+}
+
+.notain-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.notain-markdown ul,
+.notain-markdown ol {
+  padding-left: 1.25em;
+  margin-top: 0.35em;
+  margin-bottom: 0.35em;
+}
+
+.notain-markdown ul {
+  list-style: disc;
+}
+
+.notain-markdown ol {
+  list-style: decimal;
+}
+
+.notain-markdown h1,
+.notain-markdown h2,
+.notain-markdown h3 {
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 0.75em;
+  margin-bottom: 0.25em;
+}
+
+.notain-markdown h1 {
+  font-size: 1.125em;
+}
+
+.notain-markdown h2 {
+  font-size: 1.0625em;
+}
+
+.notain-markdown h3 {
+  font-size: 1em;
+}
+
+.notain-markdown a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.notain-markdown strong {
+  font-weight: 600;
+}
+
+.notain-markdown code {
+  border: 1px solid var(--color-border);
+  border-radius: 0.25rem;
+  padding: 0.1em 0.3em;
+  font-size: 0.9em;
+}
+
+.notain-markdown blockquote {
+  border-left: 3px solid var(--color-border);
+  padding-left: 0.75em;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.notain-markdown hr {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: 0.75em 0;
+}
+
+/* Tables the author drops into a note need their own rules — TanStack emits a
+   bare <table> with no layout classes. */
+.notain-markdown table {
+  width: 100%;
+  margin: 0.5em 0;
+  border-collapse: collapse;
+  font-size: 0.9375em;
+}
+
+.notain-markdown th,
+.notain-markdown td {
+  border: 1px solid var(--color-border);
+  padding: 0.25em 0.5em;
+  text-align: left;
+}
+
+.notain-markdown th {
+  font-weight: 600;
+}
+
+/* Motion honours this via MotionConfig; this covers the CSS-driven parts. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Landing audience marquee: the track holds two identical halves, so shifting
+   it by exactly 50% loops seamlessly. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}

@@ -1,0 +1,8 @@
+---
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+import { SettingsApp } from '../components/react/settings/settings-app';
+---
+
+<DashboardLayout title="Pengaturan — Notain" description="Profil usaha kamu di Notain.">
+  <SettingsApp client:only="react" />
+</DashboardLayout>

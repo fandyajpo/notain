@@ -1,0 +1,8 @@
+---
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+import { InvoicesApp } from '../components/react/invoices/invoices-app';
+---
+
+<DashboardLayout title="Faktur — Notain" description="Semua invoice kamu di Notain.">
+  <InvoicesApp client:only="react" />
+</DashboardLayout>

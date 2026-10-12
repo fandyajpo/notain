@@ -1,0 +1,24 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { AuthPage } from '../components/react/auth/auth-page';
+---
+
+<Layout title="Masuk — Notain" description="Masuk ke akun Notain kamu untuk mengelola invoice.">
+  <main class="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 py-12">
+    <a href="/" class="mb-8 flex items-center justify-center gap-2 font-semibold tracking-tight">
+      <span class="flex size-8 items-center justify-center rounded-lg bg-accent text-sm text-accent-foreground">
+        N
+      </span>
+      Notain
+    </a>
+
+    <div class="rounded-card border border-border bg-card p-6 shadow-card sm:p-8">
+      <h1 class="text-title">Masuk</h1>
+      <p class="mt-2 text-sm text-muted">Kelola invoice bisnis kamu di mana saja.</p>
+
+      <div class="mt-6">
+        <AuthPage mode="sign-in" client:only="react" />
+      </div>
+    </div>
+  </main>
+</Layout>

@@ -1,0 +1,7 @@
+dist/
+.astro/
+node_modules/
+package-lock.json
+coverage/
+# No prettier-plugin-svelte installed; .svelte files are kept hand-formatted.
+*.svelte

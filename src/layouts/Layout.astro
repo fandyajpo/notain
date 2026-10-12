@@ -1,0 +1,43 @@
+---
+import '../styles/global.css';
+import Toast from '../components/ui/Toast.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'Notain — Bikin nota. Kirim. Selesai.',
+  description = 'Notain membantu UMKM membuat nota dan invoice dalam hitungan detik.',
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#F8F8F6" />
+    <title>{title}</title>
+    <!-- The landing SSRs its animated sections hidden (opacity/transform) and
+         relies on hydration to reveal them. Without JS they would never appear. -->
+    <noscript>
+      <style is:inline>
+        [style*='opacity:0'] {
+          opacity: 1 !important;
+          transform: none !important;
+          filter: none !important;
+        }
+      </style>
+    </noscript>
+  </head>
+  <body class="min-h-screen bg-background text-foreground">
+    <slot />
+    <Toast />
+  </body>
+</html>

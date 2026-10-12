@@ -1,0 +1,109 @@
+import { isRateLimited, isUnauthenticated } from '../../appwrite/errors';
+import { ERROR_CODES, isAppError } from '../../core/shared/errors';
+
+/**
+ * Caching and retry policies, kept in one place so they stay reviewable.
+ *
+ * The app is fully static: every read below hits Appwrite directly from the
+ * browser, and Astro never sees the request. So the only lever we have against
+ * unnecessary traffic is *how long we trust a response* (staleTime) and *how
+ * often we re-ask* (retry). Those two numbers are set per datatype rather than
+ * globally, because they answer different questions: how wrong is a stale
+ * profile compared with a stale invoice total?
+ */
+
+/**
+ * Per-datatype cache policy.
+ *
+ * `staleTime` — how long a response stays fresh. Longer means fewer Appwrite
+ * reads, but the UI can show older data.
+ *
+ * `gcTime` — how long an unused entry is kept in memory. Longer keeps data warm
+ * across short navigations, at the cost of holding it in memory.
+ */
+export const QUERY_POLICIES = {
+  // The session is only invalidated by an explicit sign-in/sign-out, and
+  // `AuthGate` depends on it never going stale under us.
+  session: { staleTime: Number.POSITIVE_INFINITY, gcTime: Number.POSITIVE_INFINITY },
+  // Business identity changes rarely and is safe to reuse across pages.
+  profile: { staleTime: 5 * 60_000, gcTime: 30 * 60_000 },
+  // Invoice numbering drives the "next number" suggestion, so it may lag a few
+  // seconds; a duplicate suggestion is a UX annoyance, not data loss.
+  invoiceNumbers: { staleTime: 15_000, gcTime: 5 * 60_000 },
+  // The dashboard list is the app's home screen. Mutations invalidate it, so a
+  // short window is enough to absorb back-navigation without going stale.
+  invoices: { staleTime: 15_000, gcTime: 5 * 60_000 },
+  // A single invoice is edited and re-read often, but its contents feed a
+  // customer-facing document, so it is trusted slightly longer than the list.
+  invoice: { staleTime: 30_000, gcTime: 5 * 60_000 },
+  // Templates change only in the editor, which invalidates this key on save.
+  // Everything else reads them once per invoice and reuses the result.
+  templates: { staleTime: 5 * 60_000, gcTime: 30 * 60_000 },
+  // The customer directory is written to on every invoice save, so it is only
+  // trusted for a few seconds; a customer added moments ago has to appear in
+  // the next picker.
+  customers: { staleTime: 5_000, gcTime: 5 * 60_000 },
+} as const;
+
+export type QueryPolicyName = keyof typeof QUERY_POLICIES;
+
+export function queryPolicy(name: QueryPolicyName): (typeof QUERY_POLICIES)[QueryPolicyName] {
+  return QUERY_POLICIES[name];
+}
+
+/**
+ * Floor for any query that does not name a policy above. Every query in this
+ * app does name one; this exists so an untagged query degrades to something
+ * conservative instead of inheriting an arbitrary number.
+ */
+export const DEFAULT_QUERY_POLICY = {
+  staleTime: 15_000,
+  gcTime: 5 * 60_000,
+} as const;
+
+/** How many times a *transient* query failure is retried before giving up. */
+export const MAX_QUERY_RETRIES = 2;
+
+/**
+ * Deterministic failures are never worth retrying: the same request will fail
+ * the same way, and repeating it only adds load to Appwrite and delays the
+ * error the user actually needs to see.
+ *
+ * Rate limiting is deliberately in this list. Retrying a 429 cannot succeed
+ * sooner — it only extends the window during which we are throttled.
+ */
+const NON_RETRYABLE_CODES = new Set<string>([
+  ERROR_CODES.UNAUTHENTICATED,
+  ERROR_CODES.FORBIDDEN,
+  ERROR_CODES.NOT_FOUND,
+  ERROR_CODES.VALIDATION,
+  ERROR_CODES.CONFLICT,
+  ERROR_CODES.RATE_LIMITED,
+]);
+
+/**
+ * Decides whether a failed query is attempted again.
+ *
+ * Only `network` (the request never completed) and `unknown` (an unrecognised
+ * status, typically a 5xx) are treated as transient.
+ */
+export function shouldRetry(failureCount: number, error: unknown): boolean {
+  if (isUnauthenticated(error) || isRateLimited(error)) return false;
+  if (isAppError(error) && NON_RETRYABLE_CODES.has(error.code)) return false;
+  return failureCount < MAX_QUERY_RETRIES;
+}
+
+const RETRY_BASE_DELAY_MS = 1_000;
+const RETRY_MAX_DELAY_MS = 8_000;
+
+/**
+ * Exponential backoff with half-jitter. The ceiling is predictable for anyone
+ * reading the logs, while the random half stops a burst of failures from
+ * retrying in lockstep against Appwrite.
+ *
+ * `random` is injectable so tests stay deterministic.
+ */
+export function retryDelay(attemptIndex: number, random: () => number = Math.random): number {
+  const exponential = Math.min(RETRY_BASE_DELAY_MS * 2 ** attemptIndex, RETRY_MAX_DELAY_MS);
+  return exponential / 2 + random() * (exponential / 2);
+}

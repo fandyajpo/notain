@@ -1,0 +1,95 @@
+---
+import { FileText, LayoutGrid, Palette, Settings, Users } from 'lucide-react';
+import Layout from './Layout.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  wide?: boolean;
+}
+
+const { title, description, wide = false } = Astro.props;
+const path = Astro.url.pathname;
+const is_active = (href: string) => path === href || path.startsWith(`${href}/`);
+
+const NAV = [
+  { href: '/dashboard', label: 'Dashboard', Icon: LayoutGrid },
+  { href: '/invoices', label: 'Faktur', Icon: FileText },
+  { href: '/customers', label: 'Customer', Icon: Users },
+  { href: '/templates', label: 'Template', Icon: Palette },
+  { href: '/settings', label: 'Pengaturan', Icon: Settings },
+];
+---
+
+<Layout title={title} description={description}>
+  <div class="min-h-screen">
+    <div
+      aria-hidden="true"
+      class="pointer-events-none fixed inset-0 -z-10 texture-dots [mask-image:linear-gradient(to_bottom,transparent,black_8%,black_92%,transparent)]"
+    ></div>
+
+    {/* Mobile: compact brand bar plus a scrollable nav row — a sidebar has no
+        room to live on a phone, so the same links stay reachable up top. */}
+    <header class="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 lg:hidden">
+      <div class="flex h-14 items-center px-4">
+        <a href="/dashboard" class="flex items-center gap-2 font-semibold tracking-tight">
+          <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-sm text-accent-foreground">
+            N
+          </span>
+          <span>Notain</span>
+        </a>
+      </div>
+      <nav class="flex gap-1 overflow-x-auto px-2 pb-2" aria-label="Navigasi utama">
+        {NAV.map(({ href, label }) => (
+          <a
+            href={href}
+            class:list={[
+              'shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors',
+              is_active(href)
+                ? 'bg-background font-medium text-foreground'
+                : 'text-muted hover:bg-background hover:text-foreground',
+            ]}
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
+    </header>
+
+    {/* Desktop: a persistent sidebar beside the content. The aside stretches
+        to the full row so its border runs the whole height; the sticky inner
+        column is what actually stays in view while the page scrolls. */}
+    <div class="lg:grid lg:min-h-screen lg:grid-cols-[15rem_1fr]">
+      <aside class="hidden border-r border-border bg-card/40 lg:block">
+        <div class="sticky top-0 flex h-screen flex-col p-4">
+          <a href="/dashboard" class="flex items-center gap-2 px-2 font-semibold tracking-tight">
+            <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-sm text-accent-foreground">
+              N
+            </span>
+            <span>Notain</span>
+          </a>
+          <nav class="mt-8 flex flex-col gap-1" aria-label="Navigasi utama">
+            {NAV.map(({ href, label, Icon }) => (
+              <a
+                href={href}
+                class:list={[
+                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors',
+                  is_active(href)
+                    ? 'bg-background font-medium text-foreground'
+                    : 'text-muted hover:bg-background hover:text-foreground',
+                ]}
+              >
+                <Icon size={16} aria-hidden="true" />
+                {label}
+              </a>
+            ))}
+          </nav>
+        </div>
+      </aside>
+
+      <main class:list={['mx-auto w-full px-4 py-8 sm:px-6', wide ? 'max-w-6xl' : 'max-w-5xl']}>
+        <slot />
+      </main>
+    </div>
+  </div>
+</Layout>
