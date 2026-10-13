@@ -49,7 +49,8 @@ Arsitektur, keputusan desain (ADR), bundle, dan caching:
 (`functions/invoice/[[id]].ts`, `functions/templates/[[id]].ts`) menyajikan shell
 halaman edit di balik path itu tanpa mengubah URL di address bar, dan
 `astro dev` punya middleware kembarannya. Tautan lama — `/invoice/edit?id=…` dan
-`/templates/edit` — tetap hidup.
+`/templates/edit` — di-redirect 302 ke URL kanonik itu, jadi setiap invoice dan
+template punya satu URL saja.
 
 ## Struktur
 

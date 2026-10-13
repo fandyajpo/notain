@@ -23,6 +23,40 @@ export const INVOICE_RESERVED_SEGMENTS: ReadonlySet<string> = new Set(['new', 'p
 /** Same, for `/templates/`. */
 export const TEMPLATE_RESERVED_SEGMENTS: ReadonlySet<string> = new Set(['new', 'edit']);
 
+/**
+ * A query-string id that could name a real resource, i.e. one the app would
+ * treat as an id rather than a reserved segment. Used both to read the address
+ * bar and to fold the older `?id=` links onto the canonical route.
+ */
+function validIdParam(value: string | null, reserved: ReadonlySet<string>): string | undefined {
+  if (!value || reserved.has(value) || !ID_SEGMENT_PATTERN.test(value)) return undefined;
+  return value;
+}
+
+/**
+ * Where the older `/invoice/edit?id=…` link should land now that every invoice
+ * has a URL of its own. Without a usable id there is no target — the shell
+ * still answers and the app explains that the link is incomplete.
+ */
+export function invoiceEditCanonicalTarget(search: string): string | undefined {
+  const id = validIdParam(new URLSearchParams(search).get('id'), INVOICE_RESERVED_SEGMENTS);
+  return id ? `/invoice/${id}` : undefined;
+}
+
+/**
+ * Where the older `/templates/edit` link should land. That segment is no
+ * longer a page of its own, so every request for it moves: the id wins, then
+ * a built-in to copy (`?from=`), and otherwise the blank editor.
+ */
+export function templateEditCanonicalTarget(search: string): string {
+  const params = new URLSearchParams(search);
+  const id = validIdParam(params.get('id'), TEMPLATE_RESERVED_SEGMENTS);
+  if (id) return `/templates/${id}`;
+  const from = params.get('from');
+  if (from) return `/templates/new?${new URLSearchParams({ from })}`;
+  return '/templates/new';
+}
+
 export interface PageLocation {
   readonly pathname: string;
   readonly search: string;

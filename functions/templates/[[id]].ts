@@ -1,20 +1,23 @@
-import { ID_SEGMENT_PATTERN } from '../../src/lib/edit-route';
+import { ID_SEGMENT_PATTERN, templateEditCanonicalTarget } from '../../src/lib/edit-route';
 import { apiError } from '../_lib/http';
-import { serveShell } from '../_lib/shell';
+import { redirectTo, serveShell } from '../_lib/shell';
 import type { Env, PagesFunction } from '../_lib/types';
 
 /** `/templates/edit` is this shell's older name, not a file any more. */
 const LEGACY_EDIT_SEGMENT = 'edit';
 
 /**
- * `GET /templates/<id>` and the older `GET /templates/edit` — the template
- * editor, at URLs that look like dynamic routes.
+ * `GET /templates/<id>` — the template editor at a URL that looks like a
+ * dynamic route — and the older `GET /templates/edit`.
  *
  * Both are one shell: `dist/templates/new/index.html`, which
  * `templateEditorTargetFromLocation` then reads the address bar to configure —
  * a blank editor, a copy of a built-in (`?from=`), or an existing template.
- * Nothing here redirects, so links written before this route keep working
- * down to the query string.
+ *
+ * The id route never redirects, but `/templates/edit` is no longer a page of
+ * its own: it always moves onto the canonical URL — the id, the built-in to
+ * copy, or the blank editor (see `templateEditCanonicalTarget`) — so each
+ * template is reachable at exactly one URL.
  *
  * `/templates` (the list) and `/templates/new` are files of their own and are
  * handed back untouched.
@@ -26,11 +29,20 @@ export const onRequest: PagesFunction<Env> = ({ request, params, env }) => {
     });
   }
 
-  const segment = params.id;
+  // Wrangler compiles `[[id]]` to a `:id*` repeat parameter, so this arrives
+  // as `['edit']`, not `'edit'` — `ID_SEGMENT_PATTERN.test` never noticed
+  // (it coerces), but a strict comparison does. A single segment is the id;
+  // anything deeper is not an edit link and stays with the asset store.
+  const raw = params.id;
+  const segment = Array.isArray(raw) ? (raw.length === 1 ? raw[0] : undefined) : raw;
+
+  if (segment === LEGACY_EDIT_SEGMENT) {
+    return redirectTo(templateEditCanonicalTarget(new URL(request.url).search));
+  }
 
   if (!segment || segment === 'new') return env.ASSETS.fetch(request);
 
-  if (segment === LEGACY_EDIT_SEGMENT || ID_SEGMENT_PATTERN.test(segment)) {
+  if (ID_SEGMENT_PATTERN.test(segment)) {
     return serveShell(request, env, '/templates/new/');
   }
 

@@ -13,11 +13,12 @@ import tailwindcss from '@tailwindcss/vite';
  * This is their dev twin: the request is rewritten to the same shell the
  * function would have served, the address bar is left alone, and every other
  * path — including `/invoice/new`, `/invoice/print` and `/templates/new` — goes
- * to the dev server untouched.
+ * to the dev server untouched. The older `…/edit` links get the same real
+ * redirect the functions send in production.
  *
- * The two rules below are duplicated on purpose: `astro.config.mjs` is Node ESM
+ * The rules below are duplicated on purpose: `astro.config.mjs` is Node ESM
  * and cannot import the TypeScript shared by the functions and the app. Keep
- * the segment sets and the id pattern in step with
+ * the segment sets, the id pattern and the redirect targets in step with
  * `functions/invoice/[[id]].ts`, `functions/templates/[[id]].ts` and
  * `src/lib/edit-route.ts`; `e2e/edit-routes.spec.ts` covers both halves.
  */
@@ -29,6 +30,43 @@ const EDIT_ROUTE_SHELLS = {
   templates: { reserved: new Set(['new']), shell: '/templates/new' },
 };
 
+/**
+ * A `?id=` that could name a real resource — same rules as `src/lib/edit-route.ts`.
+ *
+ * @param {string} query
+ * @param {Set<string>} reserved
+ * @returns {string | undefined}
+ */
+function idParam(query, reserved) {
+  const id = new URLSearchParams(query).get('id');
+  return id && ID_SEGMENT.test(id) && !reserved.has(id) ? id : undefined;
+}
+
+/**
+ * `/invoice/edit?id=…` → `/invoice/<id>`; no id → nothing to fold in.
+ *
+ * @param {string} query
+ * @returns {string | undefined}
+ */
+function invoiceEditRedirect(query) {
+  const id = idParam(query, EDIT_ROUTE_SHELLS.invoice.reserved);
+  return id ? `/invoice/${id}` : undefined;
+}
+
+/**
+ * `/templates/edit` → the id, the built-in to copy, or the blank editor.
+ *
+ * @param {string} query
+ * @returns {string}
+ */
+function templateEditRedirect(query) {
+  const params = new URLSearchParams(query);
+  const id = idParam(query, EDIT_ROUTE_SHELLS.templates.reserved);
+  if (id) return `/templates/${id}`;
+  const from = params.get('from');
+  return from ? `/templates/new?from=${encodeURIComponent(from)}` : '/templates/new';
+}
+
 function editRouteFallback() {
   return {
     name: 'edit-route-fallback',
@@ -36,9 +74,10 @@ function editRouteFallback() {
     configureServer(server) {
       server.middlewares.use(
         /**
-         * Connect's `req`, but seen through the narrow shape a rewrite needs:
+         * Connect's `req`/`res`, seen through the narrow shape a rewrite needs:
          * this repo ships without `@types/node` on purpose (see the header of
-         * `functions/_lib/types.ts`), so `req.url` would otherwise not type-check.
+         * `functions/_lib/types.ts`), so the raw types would otherwise not
+         * type-check. `res` is cast again at the one place that writes to it.
          *
          * @param {{ url?: string }} req
          * @param {unknown} _res
@@ -47,14 +86,35 @@ function editRouteFallback() {
         (req, _res, next) => {
           const url = req.url;
           if (typeof url !== 'string') return next();
-          // Query strings are dropped, exactly as the function drops them when
-          // it fetches the shell; the browser keeps its own, and the app reads
-          // that.
-          const match = /^\/(invoice|templates)\/([^/]+)\/?$/.exec(url.split('?', 1)[0]);
+          const [path, query = ''] = url.split('?', 2);
+          const match = /^\/(invoice|templates)\/([^/]+)\/?$/.exec(path);
           if (!match) return next();
+
+          if (match[2] === 'edit') {
+            const target =
+              match[1] === 'invoice' ? invoiceEditRedirect(query) : templateEditRedirect(query);
+            if (target) {
+              // The narrow shape of a redirecting `res`, without depending on
+              // `@types/node`.
+              const res =
+                /** @type {{ statusCode: number, setHeader(name: string, value: string): void, end(): void }} */ (
+                  _res
+                );
+              res.statusCode = 302;
+              res.setHeader('location', target);
+              res.end();
+              return;
+            }
+            // `/invoice/edit` without an id keeps the old behaviour: the shell
+            // answers and the app explains that the link is incomplete.
+          }
+
           const route = EDIT_ROUTE_SHELLS[match[1]];
           const segment = match[2];
           if (route.reserved.has(segment) || !ID_SEGMENT.test(segment)) return next();
+          // The query is dropped from the rewrite, exactly as the function
+          // drops it when it fetches the shell; the browser keeps its own, and
+          // the app reads that.
           req.url = route.shell;
           next();
         },

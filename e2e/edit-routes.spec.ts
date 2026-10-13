@@ -4,9 +4,10 @@ import { signIn } from './support';
 /**
  * `/invoice/<id>` and `/templates/<id>` have no server route behind them: a
  * Pages Function (and, locally, the middleware in `astro.config.mjs`) hands the
- * browser the edit shell and leaves the address bar alone. These specs pin the
- * contract down on the dev server — the production half is checked again after
- * every deploy.
+ * browser the edit shell and leaves the address bar alone. The older `…/edit`
+ * links are the exception — they get a real redirect onto the canonical URL.
+ * These specs pin the contract down on the dev server; the production half is
+ * checked again after every deploy.
  */
 
 // A well-formed id that cannot exist, so the lookup is guaranteed to come back
@@ -36,10 +37,26 @@ test('serves the template editor at /templates/<id>', async ({ page }) => {
   await expect(page.getByText('Template ini tidak ditemukan')).toBeVisible({ timeout: 20_000 });
 });
 
-test('still opens a blank editor on the older /templates/edit link', async ({ page }) => {
+test('redirects the older /invoice/edit link onto the canonical route', async ({ page }) => {
+  await page.goto(`/invoice/edit?id=${INVOICE_ID}`);
+
+  await expect(page).toHaveURL(`/invoice/${INVOICE_ID}`);
+  await expect(page.getByText('Invoice ini mungkin sudah dihapus')).toBeVisible({
+    timeout: 20_000,
+  });
+});
+
+test('redirects the older /templates/edit link onto /templates/new', async ({ page }) => {
   await page.goto('/templates/edit');
 
-  await expect(page).toHaveURL('/templates/edit');
+  await expect(page).toHaveURL('/templates/new');
+  await expect(page.getByLabel('Nama template')).toBeVisible({ timeout: 20_000 });
+});
+
+test('carries the copy seed through the /templates/edit redirect', async ({ page }) => {
+  await page.goto('/templates/edit?from=modern');
+
+  await expect(page).toHaveURL('/templates/new?from=modern');
   await expect(page.getByLabel('Nama template')).toBeVisible({ timeout: 20_000 });
 });
 

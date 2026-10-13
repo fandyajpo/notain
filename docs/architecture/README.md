@@ -77,7 +77,7 @@ tercantum di ADR 0002.
   `/templates/<id>` (editor isi). Kedua URL editor adalah **shell yang sama**
   (`dist/templates/new/index.html`), disajikan di balik path itu oleh
   `functions/templates/[[id]].ts` — lihat "Rute edit tanpa SSR"; `/templates/edit`
-  tetap hidup sebagai nama lama. Semua aturan
+  di-redirect 302 ke URL kanonik. Semua aturan
   yang menentukan sebuah layout masih boleh disimpan hidup di
   `src/core/template/layout.ts` (fungsi murni, 18 test): blok wajib
   `letterhead`/`items`/`totals` tidak bisa dihapus atau disembunyikan, batas
@@ -156,13 +156,15 @@ tercantum di ADR 0002.
   menyajikan shell halaman edit (`dist/invoice/edit/index.html`,
   `dist/templates/new/index.html`) di balik path itu lewat `env.ASSETS.fetch`, **tanpa
   pernah redirect** — redirect menaruh query string kembali di URL, dan mengganti URL
-  adalah tujuan rute ini. `astro dev` tidak membaca `functions/`, jadi ada middleware
-  kembaran di `astro.config.mjs` yang menulis ulang `req.url` ke shell yang sama.
-  Kedua sisi memakai pola segmen dan daftar segmen yang diimpor dari
-  `src/lib/edit-route.ts`; hanya middleware yang menyalinnya secara manual (Node ESM
-  tidak bisa mengimpor `.ts`), dan `e2e/edit-routes.spec.ts` lah yang menjaga keduanya
-  tetap seirama. Tautan lama — `/invoice/edit?id=…`, `/templates/edit` — tetap hidup,
-  jadi tidak ada yang putus.
+  adalah tujuan rute ini. Yang di-redirect adalah tautan lama: `/invoice/edit?id=…`
+  dan `/templates/edit` menjawab 302 ke URL kanonik (targetnya dihitung
+  `invoiceEditCanonicalTarget`/`templateEditCanonicalTarget` di `src/lib/edit-route.ts`),
+  supaya setiap invoice dan template punya satu URL saja. `astro dev` tidak membaca
+  `functions/`, jadi ada middleware kembaran di `astro.config.mjs` yang menulis ulang
+  `req.url` ke shell yang sama dan meniru redirect 302 itu. Kedua sisi memakai pola
+  segmen dan daftar segmen yang diimpor dari `src/lib/edit-route.ts`; hanya middleware
+  yang menyalinnya secara manual (Node ESM tidak bisa mengimpor `.ts`), dan
+  `e2e/edit-routes.spec.ts` lah yang menjaga keduanya tetap seirama.
 
 ## Peta direktori framework
 
