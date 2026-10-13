@@ -19,7 +19,7 @@ Deploys go through GitHub Actions, not from your machine: push to `main` and `.g
 
 ### Knowing when a build finished
 
-The Cloudflare dashboard always shows "Automatic deployments paused" plus a `github:push` row sitting in `queued`/`idle` on every push — that is the auto-build we switched off, not a failed deploy. The build is done when the Actions run is green (<https://github.com/fandyajpo/notain/actions>, or from a shell without `gh`: `curl -s https://api.github.com/repos/fandyajpo/notain/actions/runs/1` and read `status` / `conclusion`), or when the newest row in Workers & Pages → notain → Deployments says Success. Confirm the bytes that actually shipped by curling production for a fingerprint of that build — the count of `rel="modulepreload"` links on `/`, or `cache-control: public, max-age=31536000, immutable` on any `/_astro/*` chunk.
+The Cloudflare dashboard always shows "Automatic deployments paused" plus a `github:push` row sitting in `queued`/`idle` on every push — that is the auto-build we switched off, not a failed deploy. The build is done when the Actions run is green (<https://github.com/fandyajpo/notain/actions>, or from a shell without `gh`: `curl -s https://api.github.com/repos/fandyajpo/notain/actions/runs?per_page=1` and read `status` / `conclusion` off the newest workflow run), or when the newest row in Workers & Pages → notain → Deployments says Success. Confirm the bytes that actually shipped by curling production for a fingerprint of that build — the count of `rel="modulepreload"` links on `/`, or `cache-control: public, max-age=31536000, immutable` on any `/_astro/*` chunk.
 
 ## Documentation
 
