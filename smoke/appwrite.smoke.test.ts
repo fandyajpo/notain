@@ -90,22 +90,33 @@ describe('notain x appwrite', () => {
     expect(profile).toMatchObject(SAMPLE_BUSINESS);
   });
 
-  it('stores a publicly viewable logo and removes it again', async () => {
+  it('stores a publicly viewable logo, replaces it, and removes it again', async () => {
     const profile = await getProfile();
     if (!profile) throw new Error('Expected a saved profile.');
 
-    const saved = await uploadLogo(pngFile(), profile);
-    expect(saved.logoFileId).toBeTruthy();
-    expect(saved.logoUrl).toBeTruthy();
+    const first = await uploadLogo(pngFile(), profile);
+    expect(first.logoFileId).toBeTruthy();
+    expect(first.logoUrl).toBeTruthy();
 
     // No cookie header here: this proves `read("any")` was applied to the file.
-    const view = await fetch(saved.logoUrl ?? '');
+    const view = await fetch(first.logoUrl ?? '');
     expect(view.status).toBe(200);
 
-    const removed = await removeLogo(saved);
+    // Replacing must not strand the previous object in the bucket: the row
+    // moves to the fresh key and the old one is deleted right after.
+    const second = await uploadLogo(pngFile(), first);
+    expect(second.logoFileId).toBeTruthy();
+    expect(second.logoFileId).not.toBe(first.logoFileId);
+
+    const replacedAway = await fetch(first.logoUrl ?? '');
+    expect(replacedAway.status).toBe(404);
+    const stillThere = await fetch(second.logoUrl ?? '');
+    expect(stillThere.status).toBe(200);
+
+    const removed = await removeLogo(second);
     expect(removed.logoFileId).toBeUndefined();
 
-    const afterDelete = await fetch(saved.logoUrl ?? '');
+    const afterDelete = await fetch(second.logoUrl ?? '');
     expect(afterDelete.status).toBe(404);
   });
 
