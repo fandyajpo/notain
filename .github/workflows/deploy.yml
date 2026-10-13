@@ -1,0 +1,73 @@
+# Build the Astro site, then push the static output *and* the Pages Functions
+# (`functions/`) to Cloudflare with Wrangler. A push to `main` is the only
+# trigger you need — no manual `wrangler pages deploy` anymore.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN     Custom token with "Cloudflare Pages: Edit" and
+#                            "Workers R2 Storage: Edit" on your account.
+#   CLOUDFLARE_ACCOUNT_ID    Your account ID, taken from the dashboard URL
+#                            (dash.cloudflare.com/<ACCOUNT_ID>/...). Not a
+#                            credential — kept in a secret only to keep the
+#                            number of places that know it down to one.
+#
+# Cloudflare auto-build must be OFF for this project, otherwise Cloudflare
+# builds on every push as well and the two deploys overwrite each other:
+#   Workers & Pages → notain → Builds → Branch control →
+#   "Enable automatic production branch deployments" = off.
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never let two deploys race each other: keep the newest run and queue the rest.
+concurrency:
+  group: deploy-cloudflare-pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      # Fail with a readable message instead of a cryptic Wrangler 403/404
+      # when a secret has not been added yet.
+      - name: Check Cloudflare credentials
+        run: |
+          missing=""
+          [ -z "$CLOUDFLARE_API_TOKEN" ] && missing="$missing CLOUDFLARE_API_TOKEN"
+          [ -z "$CLOUDFLARE_ACCOUNT_ID" ] && missing="$missing CLOUDFLARE_ACCOUNT_ID"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secret(s):$missing"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `.env` is intentionally absent in CI: the build falls back to the
+      # defaults in `src/appwrite/config.ts`, which already match production.
+      # `.env` only feeds Vite; the Function reads `wrangler.toml` instead.
+      - name: Build
+        run: npm run build
+
+      - name: Deploy
+        # `dist/` = static assets, `functions/` = Pages Functions. Both are
+        # read from the repo root; `wrangler.toml` supplies [vars] + R2 binding.
+        run: npm run deploy -- --branch main

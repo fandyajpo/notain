@@ -11,6 +11,7 @@
     "dev:status": "astro dev status",
     "dev:logs": "astro dev logs",
     "build": "astro build",
+    "deploy": "wrangler pages deploy dist",
     "preview": "astro preview",
     "astro": "astro",
     "lint": "eslint .",
@@ -77,6 +78,7 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.1",
     "vite-plugin-solid": "^2.11.14",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "wrangler": "^4.149.0"
   }
 }
