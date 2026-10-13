@@ -155,12 +155,12 @@ function PreviewStage() {
           <FileDown size={13} aria-hidden="true" />
         </span>
         PDF A4 siap diunduh
-        <motion.span
+        {/* <motion.span
           aria-hidden="true"
           className="absolute inset-0 rounded-control border border-accent/40"
           animate={{ opacity: [0, 1, 0], scale: [1, 1.12, 1.18] }}
           transition={{ duration: 2.6, repeat: Infinity, ease: 'easeOut', delay: 2 }}
-        />
+        /> */}
       </motion.div>
 
       <motion.div
