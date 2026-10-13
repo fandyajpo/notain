@@ -80,4 +80,19 @@ describe('TemplatePicker', () => {
       );
     }
   });
+
+  it("shows the viewer's own business in the previews, not the demo sample", async () => {
+    await render(
+      <TemplatePicker
+        templates={BUILTIN_TEMPLATES}
+        business={{ name: 'Bengkel Fa', phone: '08111111111' }}
+        onPick={() => {}}
+      />,
+    );
+
+    for (const card of container.querySelectorAll('button[data-template-id]')) {
+      expect(card.textContent).toContain('Bengkel Fa');
+      expect(card.textContent).not.toContain('Warung Maju Jaya');
+    }
+  });
 });

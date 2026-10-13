@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Check } from 'lucide-react';
-import { createSampleInvoice } from '../../../core/invoice/sample';
+import { createSampleInvoice, SAMPLE_BUSINESS } from '../../../core/invoice/sample';
+import type { BusinessProfile } from '../../../core/profile/model';
 import type { InvoiceTemplate } from '../../../core/template/model';
 import { InvoicePreview } from '../invoice/invoice-preview';
 
@@ -13,11 +14,11 @@ import { InvoicePreview } from '../invoice/invoice-preview';
 const RENDER_WIDTH = 760;
 const THUMBNAIL_HEIGHT = 210;
 
-const SAMPLE = createSampleInvoice();
-
 type ThumbnailProps = {
   template: InvoiceTemplate;
   logoUrl?: string | null;
+  /** The viewer's own business, so the preview reads like their invoice. */
+  business?: BusinessProfile | null;
 };
 
 /**
@@ -25,9 +26,15 @@ type ThumbnailProps = {
  * than being hard-coded, so the grid can reflow from three columns to one
  * without cropping each template differently.
  */
-export function TemplateThumbnail({ template, logoUrl }: ThumbnailProps) {
+export function TemplateThumbnail({ template, logoUrl, business }: ThumbnailProps) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.3);
+
+  // Keyed on the profile so a refetched query doesn't rebuild the sample.
+  const sample = useMemo(
+    () => createSampleInvoice(new Date(), business?.name ? business : SAMPLE_BUSINESS),
+    [business],
+  );
 
   useEffect(() => {
     const node = boxRef.current;
@@ -53,8 +60,8 @@ export function TemplateThumbnail({ template, logoUrl }: ThumbnailProps) {
         style={{ width: RENDER_WIDTH, transform: `scale(${scale})` }}
       >
         <InvoicePreview
-          business={SAMPLE.business}
-          invoice={SAMPLE.draft}
+          business={sample.business}
+          invoice={sample.draft}
           template={template}
           logoUrl={logoUrl}
         />
@@ -66,16 +73,25 @@ export function TemplateThumbnail({ template, logoUrl }: ThumbnailProps) {
 type CardProps = {
   template: InvoiceTemplate;
   logoUrl?: string | null;
+  /** The viewer's own business, so the preview reads like their invoice. */
+  business?: BusinessProfile | null;
   selected?: boolean;
   onPick?: (templateId: string) => void;
   /** Extra row under the name, for list pages that are not pickers. */
   actions?: ReactNode;
 };
 
-export function TemplateCard({ template, logoUrl, selected = false, onPick, actions }: CardProps) {
+export function TemplateCard({
+  template,
+  logoUrl,
+  business,
+  selected = false,
+  onPick,
+  actions,
+}: CardProps) {
   const body = (
     <>
-      <TemplateThumbnail template={template} logoUrl={logoUrl} />
+      <TemplateThumbnail template={template} logoUrl={logoUrl} business={business} />
       <span className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-foreground">
         {template.name}
         {selected && <Check size={14} className="text-accent" aria-hidden="true" />}
@@ -121,11 +137,13 @@ type PickerProps = {
   /** Rendered as the pre-selected card; also the shape used by the builder's switcher. */
   selectedId?: string;
   logoUrl?: string | null;
+  /** The viewer's own business, so the preview reads like their invoice. */
+  business?: BusinessProfile | null;
   onPick: (templateId: string) => void;
 };
 
 /** Step one of `/invoice/new`: choose the look before entering any data. */
-export function TemplatePicker({ templates, selectedId, logoUrl, onPick }: PickerProps) {
+export function TemplatePicker({ templates, selectedId, logoUrl, business, onPick }: PickerProps) {
   return (
     <div className="mx-auto w-full max-w-5xl">
       <div className="mb-6">
@@ -141,6 +159,7 @@ export function TemplatePicker({ templates, selectedId, logoUrl, onPick }: Picke
             key={template.id}
             template={template}
             logoUrl={logoUrl}
+            business={business}
             selected={template.id === selectedId}
             onPick={onPick}
           />

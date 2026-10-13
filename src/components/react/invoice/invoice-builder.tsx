@@ -601,6 +601,7 @@ export function InvoiceBuilder({
                 key={template.id}
                 template={template}
                 logoUrl={logoUrl}
+                business={profile}
                 selected={template.id === values.templateId}
                 onPick={switchTemplate}
               />

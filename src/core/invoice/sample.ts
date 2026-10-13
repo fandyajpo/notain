@@ -12,14 +12,21 @@ export const SAMPLE_BUSINESS: BusinessProfile = {
 /**
  * A realistic invoice used both as the landing-page demo and as the
  * one-click example a new user can load into the builder.
+ *
+ * Pass the signed-in user's `business` to make the sample read like their own
+ * document — the template previews do this so the list shows their real
+ * business name instead of the demo's.
  */
-export function createSampleInvoice(now: Date = new Date()): {
+export function createSampleInvoice(
+  now: Date = new Date(),
+  business: BusinessProfile = SAMPLE_BUSINESS,
+): {
   business: BusinessProfile;
   draft: InvoiceDraft;
 } {
   const date = todayIsoDate(now);
   return {
-    business: SAMPLE_BUSINESS,
+    business,
     draft: {
       invoiceNumber: 'INV-2026-001',
       date,
@@ -35,12 +42,10 @@ export function createSampleInvoice(now: Date = new Date()): {
       tax: { type: 'percent', value: 11 },
       sections: {
         ...EMPTY_SECTIONS,
-        header:
-          '<p>Terima kasih sudah memesan di Warung Maju Jaya. Berikut rincian pesanan kamu.</p>',
+        header: `<p>Terima kasih sudah memesan di ${business.name}. Berikut rincian pesanan kamu.</p>`,
         content:
           '<p>Pesanan diproses maksimal 1×24 jam. Hubungi kami bila ada perubahan jumlah.</p>',
-        footer:
-          '<p><strong>Pembayaran:</strong> BCA 1234567890 a.n. Warung Maju Jaya</p><p>Terima kasih 🙏</p>',
+        footer: `<p><strong>Pembayaran:</strong> BCA 1234567890 a.n. ${business.name}</p><p>Terima kasih 🙏</p>`,
       },
       notes: 'Terima kasih sudah berbelanja. Semoga sehat selalu!',
     },

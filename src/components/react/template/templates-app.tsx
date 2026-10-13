@@ -98,6 +98,7 @@ function TemplatesContent() {
               key={template.id}
               template={template}
               logoUrl={logoUrl}
+              business={profile}
               actions={
                 <a
                   href={`/templates/new?from=${template.id}`}
@@ -149,6 +150,7 @@ function TemplatesContent() {
                 key={template.id}
                 template={template}
                 logoUrl={logoUrl}
+                business={profile}
                 actions={
                   <>
                     <a

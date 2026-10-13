@@ -105,6 +105,7 @@ function InvoiceNewContent() {
       <TemplatePicker
         templates={listSelectableTemplates(savedTemplates ?? [])}
         logoUrl={profile?.logoUrl ?? null}
+        business={profile}
         onPick={setPickedTemplateId}
       />
     );

@@ -26,8 +26,6 @@ import { createDefaultLayout, DEFAULT_THEME } from '../../../core/template/model
 import type { AuthoredTemplate, InvoiceTemplate } from '../../../core/template/model';
 import { GENERIC_ERROR_MESSAGE, isAppError } from '../../../core/shared/errors';
 
-const SAMPLE = createSampleInvoice();
-
 const EMPTY_DEFAULTS = { header: '', content: '', footer: '' };
 
 /** A blank template, optionally seeded from a built-in so it starts usable. */
@@ -163,6 +161,7 @@ function TemplateForm({
   );
 
   const business = profile ?? SAMPLE_BUSINESS;
+  const sample = useMemo(() => createSampleInvoice(new Date(), business), [business]);
 
   return (
     <form
@@ -238,7 +237,7 @@ function TemplateForm({
         </div>
         <InvoicePreview
           business={business}
-          invoice={SAMPLE.draft}
+          invoice={sample.draft}
           template={preview}
           logoUrl={business.logoUrl ?? null}
         />
