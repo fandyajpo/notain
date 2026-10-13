@@ -23,5 +23,18 @@ export default defineConfig({
   ],
   vite: {
     plugins: [tailwindcss()],
+    server: {
+      proxy: {
+        // Pages Functions only exist on the deployed site; without this
+        // `astro dev` would 404 every logo call. Forwarding to the deployment
+        // keeps the default `PUBLIC_LOGO_API` path-based (so the built site
+        // never hardcodes a domain) and needs no CORS, because to the browser
+        // the request stays same-origin.
+        //
+        // This proxies at *production* `functions/`. To exercise local changes
+        // to that directory instead, run `npx wrangler pages dev dist`.
+        '/api': { target: 'https://notain.pages.dev', changeOrigin: true },
+      },
+    },
   },
 });

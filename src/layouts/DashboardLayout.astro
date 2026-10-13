@@ -1,5 +1,6 @@
 ---
 import { FileText, LayoutGrid, Palette, Settings, Users } from 'lucide-react';
+import { SignOutIsland } from '../components/react/auth/sign-out-island';
 import Layout from './Layout.astro';
 
 interface Props {
@@ -38,6 +39,9 @@ const NAV = [
           </span>
           <span>Notain</span>
         </a>
+        <div class="ml-auto">
+          <SignOutIsland client:only="react" />
+        </div>
       </div>
       <nav class="flex gap-1 overflow-x-auto px-2 pb-2" aria-label="Navigasi utama">
         {NAV.map(({ href, label }) => (
@@ -84,6 +88,11 @@ const NAV = [
               </a>
             ))}
           </nav>
+          {/* Sign-out sits at the foot of the column so it is reachable without
+              scrolling and never competes with the nav for attention. */}
+          <div class="mt-auto pt-4">
+            <SignOutIsland client:only="react" />
+          </div>
         </div>
       </aside>
 

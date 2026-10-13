@@ -13,6 +13,10 @@ export default defineConfig({
     include: ['smoke/**/*.test.ts'],
     environment: 'node',
     setupFiles: ['smoke/setup.ts'],
+    // The logo API defaults to a path (`/api/logo`), which only means anything
+    // to a browser on a real origin. Node has no origin, so the smoke test
+    // points at the deployed Pages Function — the same one production uses.
+    env: { PUBLIC_LOGO_API: 'https://notain.pages.dev/api/logo' },
     testTimeout: 30_000,
     hookTimeout: 30_000,
     passWithNoTests: false,

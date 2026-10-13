@@ -1,4 +1,4 @@
-import { AppwriteAssetRepository } from './appwrite-asset-repository';
+import { R2AssetRepository } from './r2-asset-repository';
 import { AppwriteAuthRepository } from './appwrite-auth-repository';
 import { AppwriteCustomerRepository } from './appwrite-customer-repository';
 import { AppwriteInvoiceRepository } from './appwrite-invoice-repository';
@@ -21,7 +21,7 @@ export const container = {
   profiles: new AppwriteProfileRepository(),
   templates: new AppwriteTemplateRepository(),
   customers: new AppwriteCustomerRepository(),
-  assets: new AppwriteAssetRepository(),
+  assets: new R2AssetRepository(),
 } satisfies {
   auth: AuthRepository;
   invoices: InvoiceRepository;

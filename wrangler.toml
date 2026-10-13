@@ -1,0 +1,23 @@
+# Cloudflare Pages project for Notain.
+#
+# `wrangler pages deploy dist` reads this file from the repo root: `dist/` is
+# the static Astro build, and every route file under `functions/` is compiled
+# separately into the Pages Function that serves `/api/*`.
+
+name = "notain"
+compatibility_date = "2026-10-01"
+pages_build_output_dir = "dist"
+
+# Read by `functions/api/logo.ts` to verify a caller's Appwrite session. Pages
+# Functions get their variables from here (or the dashboard), *not* from
+# `.env` — that file only feeds the Vite build.
+[vars]
+PUBLIC_APPWRITE_ENDPOINT = "https://sgp.cloud.appwrite.io/v1"
+PUBLIC_APPWRITE_PROJECT_ID = "6aca66fb003071c0ef43"
+
+# The logo bucket stays private. Nothing outside this app can read it; every
+# read and write goes through the Pages Function, which authorises the caller
+# against Appwrite first. Binding name is what `env.LOGOS` resolves to.
+[[r2_buckets]]
+binding = "LOGOS"
+bucket_name = "notain"

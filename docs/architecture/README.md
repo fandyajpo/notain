@@ -83,8 +83,29 @@ tercantum di ADR 0002.
   native** plus tombol panah (kerja di keyboard dan sentuh), bukan library baru, sesuai
   ADR 0002.
 
-- Smoke test live (`npm run smoke`) — satu-satunya jalur yang menyentuh Appwrite Cloud
-  sungguhan; unit test dan Playwright sengaja offline. Cakupannya: auth, profil, logo,
+- Logo di Cloudflare R2 — kontrak `AssetRepository`
+  (`src/ports/asset-repository.ts`) tidak berubah, yang berganti hanya
+  implementasinya. `R2AssetRepository` (`src/infra/r2-asset-repository.ts`)
+  menembak Pages Function `functions/api/logo.ts` — POST unggah, GET
+  `/api/logo/:key` baca, DELETE hapus — yang di atasnya ada binding bucket R2
+  privat `notain` dari `wrangler.toml`. Bucket tidak punya URL publik dan tidak
+  ada kredensial S3 yang sampai ke browser: pengunggahan mengirim JWT Appwrite
+  (`account.createJWT()`), lalu Function memvalidasinya lewat `GET /v1/account`
+  dengan header `X-Appwrite-JWT` — endpoint itu menjawab 200 **tanpa API key**,
+  jadi tidak ada rahasia server yang disimpan di mana pun. Kepemilikan objek
+  dicatat di `customMetadata.owner`, bukan disimpulkan dari nama berkas, karena
+  satu `userId` boleh jadi prefiks `userId` lain; balasan DELETE untuk objek milik
+  orang lain adalah 404, bukan 403, supaya keberadaan kunci tidak bocor. Respons
+  baca selalu membawa `X-Content-Type-Options: nosniff` dan CSP `sandbox` — SVG
+  yang diunggah boleh berisi skrip, dan ia disajikan dari origin kita sendiri.
+  `PUBLIC_LOGO_API` default-nya path `/api/logo` supaya build tidak mengunci satu
+  domain dan semua permintaan logo tetap same-origin (karenanya Function tidak
+  perlu CORS); `astro dev` meneruskan `/api` ke deployment karena Astro tidak
+  menjalankan Pages Function, dan smoke test menimpanya dengan URL absolut karena
+  Node tidak punya origin.
+- Smoke test live (`npm run smoke`) — satu-satunya jalur yang menyentuh backend
+  sungguhan (Appwrite Cloud **dan** Pages Function logo); unit test dan Playwright
+  sengaja offline. Cakupannya: auth, profil, logo,
   invoice, **templates** (CRUD, kolom JSON `layout`/`theme`, default rich text, serta
   isolasi antar-pengguna), dan **customers** (baris di-file saat invoice disimpan,
   nomor yang sama tidak jadi duplikat, isolasi antar-pengguna). Smoke ini yang

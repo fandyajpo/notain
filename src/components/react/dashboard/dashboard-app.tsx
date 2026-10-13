@@ -1,6 +1,5 @@
 import { ArrowRight, FileText, Plus, Users } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
-import { SignOutButton } from '../auth/sign-out-button';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
 import { SetupChecklist } from './setup-checklist';
@@ -44,7 +43,6 @@ function DashboardContent() {
           {session && <p className="mt-1 text-sm text-muted">{session.email}</p>}
         </div>
         <div className="flex items-center gap-2">
-          <SignOutButton />
           <a
             href="/invoice/new"
             className="inline-flex h-11 items-center gap-2 rounded-control bg-accent px-4 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-ring"

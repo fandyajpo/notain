@@ -1,6 +1,6 @@
 import { ImagePlus, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { LOGO_MAX_BYTES, LOGO_ALLOWED_TYPES } from '../../../app/profile';
+import { LOGO_MAX_BYTES, LOGO_ALLOWED_TYPES } from '../../../core/profile/logo';
 import { toast } from '../../../lib/ui/toast';
 import { Button } from '../ui/button';
 
@@ -14,7 +14,7 @@ type Props = {
 
 const MAX_MB = LOGO_MAX_BYTES / (1024 * 1024);
 
-/** Icon picker that uploads the chosen image to Appwrite Storage. */
+/** Icon picker that uploads the chosen image through the logo API. */
 export function LogoUploader({ logoUrl, busy = false, onUpload, onRemove }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);

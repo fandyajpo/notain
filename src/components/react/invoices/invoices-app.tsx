@@ -1,6 +1,5 @@
 import { Plus } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
-import { SignOutButton } from '../auth/sign-out-button';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
 import { InvoiceTable } from '../dashboard/invoice-table';
@@ -35,7 +34,6 @@ function InvoicesContent() {
             sheetName="Faktur"
             getRows={async () => toInvoiceRows(await listAllInvoices())}
           />
-          <SignOutButton />
           <a
             href="/invoice/new"
             className="inline-flex h-11 items-center gap-2 rounded-control bg-accent px-4 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-ring"

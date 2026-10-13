@@ -5,12 +5,15 @@ export type UploadedAsset = {
 };
 
 export type UploadAssetInput = {
-  ownerId: string;
   file: File;
 };
 
 /**
  * Port for binary assets such as the business logo.
+ *
+ * The owner is deliberately absent from the input: every implementation
+ * resolves it from the caller's own session, so an upload can never claim to
+ * belong to somebody else.
  *
  * Replacing is deliberately not part of this port: the caller uploads first,
  * persists the new id, and only then deletes the previous file, so a failed

@@ -1,17 +1,8 @@
+import { LOGO_ALLOWED_TYPES, LOGO_MAX_BYTES } from '../core/profile/logo';
 import { profileSchema, type BusinessProfile } from '../core/profile/model';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 import { container } from '../infra/container';
 import { requireSession } from './session';
-
-export const LOGO_MAX_BYTES = 2 * 1024 * 1024;
-export const LOGO_ALLOWED_TYPES = [
-  'image/png',
-  'image/jpeg',
-  'image/svg+xml',
-  'image/webp',
-  'image/x-icon',
-  'image/vnd.microsoft.icon',
-] as const;
 
 export async function getProfile(): Promise<BusinessProfile | null> {
   const user = await requireSession();
@@ -36,7 +27,9 @@ export async function saveProfile(input: BusinessProfile): Promise<BusinessProfi
 
 /** Uploads a new logo, replacing any previous one, and persists the id. */
 export async function uploadLogo(file: File, current: BusinessProfile): Promise<BusinessProfile> {
-  const user = await requireSession();
+  // Fail fast with "you are signed out" rather than minting a JWT the logo
+  // API would reject a moment later.
+  await requireSession();
   validateLogoFile(file);
 
   const previousFileId = current.logoFileId;
@@ -44,7 +37,7 @@ export async function uploadLogo(file: File, current: BusinessProfile): Promise<
   // Order matters: upload → persist → delete the old file. Deleting first (as
   // this did previously) means a failed `saveProfile` leaves the row pointing
   // at a file that is already gone, losing the logo for good.
-  const asset = await container.assets.uploadLogo({ ownerId: user.id, file });
+  const asset = await container.assets.uploadLogo({ file });
 
   try {
     const saved = await saveProfile({ ...current, logoFileId: asset.fileId });

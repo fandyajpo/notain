@@ -1,5 +1,4 @@
 import { AuthGate } from '../auth/auth-gate';
-import { SignOutButton } from '../auth/sign-out-button';
 import { AppProviders } from '../providers';
 import { Button } from '../ui/button';
 import { IslandBoundary } from '../ui/island-boundary';
@@ -31,7 +30,6 @@ function SettingsContent() {
             Isi sekali, semua invoice otomatis memakai data ini.
           </p>
         </div>
-        <SignOutButton />
       </header>
 
       <section className="rounded-card border border-border bg-card p-5 sm:p-6">

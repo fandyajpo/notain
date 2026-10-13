@@ -3,12 +3,17 @@
 Angka dan keputusan, bukan klaim. Dibaca bersama
 [`adr/0006-single-query-layer.md`](adr/0006-single-query-layer.md).
 
-## Konteks: aplikasi ini tidak punya server
+## Konteks: aplikasi ini hampir tidak punya server
 
 `astro.config.mjs` tidak menyetel `output` maupun `adapter`, jadi Astro memakai
 default **static**. Tidak ada `src/middleware.ts`, tidak ada endpoint di
 `src/pages/` selain `.astro`, dan tidak ada Redis atau cache server di
 `package.json`.
+
+Ada satu pengecualian: **Pages Function** `functions/api/logo.ts`, yang menjadi
+tunggangan bucket R2 privat. Ia hanya memindahkan berkas logo — tidak pernah
+melihat invoice, profile, maupun data tabel — jadi ia tidak bisa dipakai untuk
+menyimpan state atau membatasi request data.
 
 Semua request data berjalan **langsung dari browser ke Appwrite Cloud**
 (`src/appwrite/client.ts` melempar error bila diakses di luar browser). Astro tidak
@@ -24,9 +29,10 @@ Konsekuensinya:
 | Cache server untuk data publik                 | Tidak ada targetnya      | Tidak ada katalog/config publik; picker diturunkan dari |
 |                                                |                          | invoice milik user sendiri (ADR 0003)                   |
 
-Karena itu **tidak ada `src/middleware.ts`, tidak ada endpoint proxy, dan tidak ada
-Redis**. Menambahkannya hanya akan melindungi lapisan yang tidak pernah menerima
-request bermakna.
+Karena itu **tidak ada `src/middleware.ts`, tidak ada endpoint proxy ke Appwrite,
+dan tidak ada Redis**. Menambahkannya hanya akan melindungi lapisan yang tidak
+pernah menerima request bermakna. Satu-satunya endpoint (`/api/logo`) memang ada,
+tapi ia meneruskan berkas ke R2 dan tidak menyentuh data tabel.
 
 ## Kebijakan cache per data
 
@@ -110,23 +116,36 @@ depan Appwrite **tidak mengamankan Appwrite** — hanya melindungi proxy itu sen
 Kontrol berikut **tidak bisa** diberlakukan dari aplikasi statis ini:
 
 - Limit login/registrasi per IP dan per akun — sudah ditangani Appwrite sendiri.
-- Limit kuota database dan storage per proyek.
+- Limit kuota database per proyek.
 - Aturan permission per baris — sudah dipakai (`ownerRowPermissions`), dan tetap
   otoritatif terlepas dari cache.
-- Limit upload file pada bucket `invoice-assets`.
 
 Bila suatu saat butuh kuota yang lebih ketat per user, jalur yang benar adalah
 **Appwrite Functions** (tetap di dalam Appwrite, tanpa server sendiri), bukan proxy.
 
+### Yang diatur di Cloudflare, bukan di Appwrite
+
+Logo tidak lagi disimpan di Appwrite Storage; berkasnya pindah ke bucket R2
+privat `notain`. Di sana:
+
+- **Kuota storage dan egress** — halaman billing Cloudflare.
+- **Ukuran per berkas** — dijaga aplikasi dua kali: `validateLogoFile` di
+  `src/app/profile.ts` untuk umpan balik cepat, dan `functions/api/logo.ts`
+  untuk yang otoritatif (2 MB, plus pemeriksaan `content-length` sebelum body
+  dibaca).
+- **Akses** — bucket tidak punya URL publik. Hanya Pages Function yang memegang
+  binding R2, dan ia menolak tulis/hapus tanpa sesi Appwrite; kepemilikan
+  dibuktikan lewat `customMetadata.owner`, bukan ditebak dari nama berkas.
+
 ### Yang tidak dilakukan, dan alasannya
 
-| Tidak dilakukan                       | Alasan                                                                                        |
-| ------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `src/middleware.ts` + rate limiter    | Tidak ada runtime server di produksi; middleware hanya melihat aset statis                    |
-| Redis / store bersama                 | Tidak ada instance server yang bisa berbagi state; menambah dependensi tanpa pemakaian        |
-| Proxy ke Appwrite                     | Tidak mengamankan Appwrite (endpoint-nya publik), dan butuh host non-statis + API key         |
-| Rate limit di pembuatan PDF           | PDF dibuat **di browser** lewat `window.print()`; tidak ada operasi server yang bisa dibatasi |
-| Client-side throttle sebagai keamanan | Bisa dilewati pelaku; dipakai hanya sebagai kesopanan, bukan kontrol                          |
+| Tidak dilakukan                       | Alasan                                                                                                       |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `src/middleware.ts` + rate limiter    | Astro static tidak menjalankan middleware; Pages Function yang ada hanya untuk `/api/logo`, bukan jalur data |
+| Redis / store bersama                 | Tidak ada instance server yang bisa berbagi state; menambah dependensi tanpa pemakaian                       |
+| Proxy ke Appwrite                     | Tidak mengamankan Appwrite (endpoint-nya publik), dan butuh host non-statis + API key                        |
+| Rate limit di pembuatan PDF           | PDF dibuat **di browser** lewat `window.print()`; tidak ada operasi server yang bisa dibatasi                |
+| Client-side throttle sebagai keamanan | Bisa dilewati pelaku; dipakai hanya sebagai kesopanan, bukan kontrol                                         |
 
 ## HTTP caching
 

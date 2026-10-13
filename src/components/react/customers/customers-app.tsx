@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Plus, Trash2, Users } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
-import { SignOutButton } from '../auth/sign-out-button';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
 import { Button } from '../ui/button';
@@ -78,7 +77,6 @@ function CustomersContent() {
             getRows={() => toCustomerRows(customers ?? [])}
             disabled={!customers}
           />
-          <SignOutButton />
         </div>
       </header>
 

@@ -18,5 +18,4 @@ export const APPWRITE = {
   invoicesTableId: 'invoices',
   templatesTableId: 'templates',
   customersTableId: 'customers',
-  assetsBucketId: 'invoice-assets',
 } as const;

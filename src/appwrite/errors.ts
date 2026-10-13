@@ -49,8 +49,21 @@ function mapStatusCode(status: number): (typeof ERROR_CODES)[keyof typeof ERROR_
   // 429 is keyed by status, not by Appwrite's `type` string, so a new rate-limit
   // type never silently degrades into a retriable UNKNOWN.
   if (status === 429) return ERROR_CODES.RATE_LIMITED;
-  if (status === 400 || status === 422) return ERROR_CODES.VALIDATION;
+  if (status === 400 || status === 413 || status === 422) return ERROR_CODES.VALIDATION;
   return ERROR_CODES.UNKNOWN;
+}
+
+/**
+ * Maps a status from a first-party API route (the logo proxy) to an AppError.
+ *
+ * Separate from `toAppError` because there is no `AppwriteException` behind
+ * it: the body is ours, and for 4xx it carries the copy a user should see.
+ * 5xx deliberately falls back to generic copy — a server stack message is
+ * never something to put in front of a person.
+ */
+export function appErrorFromStatus(status: number, message?: string): AppError {
+  const code = mapStatusCode(status);
+  return new AppError(code, status < 500 && message ? message : fallbackFor(code));
 }
 
 /** Copy for codes whose Appwrite `type` string is not one we recognise. */
