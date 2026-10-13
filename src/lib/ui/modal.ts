@@ -15,11 +15,6 @@ export function openModal(id: string): void {
   }
 }
 
-export function closeModal(id: string): void {
-  const dialog = getDialog(id);
-  if (dialog?.open) dialog.close();
-}
-
 export function initModals(): void {
   if (bound || typeof document === 'undefined') return;
   bound = true;

@@ -23,8 +23,6 @@ export const CE_EVENTS = {
   pick: 'pick',
 } as const;
 
-export type CeEventName = (typeof CE_EVENTS)[keyof typeof CE_EVENTS];
-
 /** Whole numbers only; `z.int()` also rejects non-finite values. */
 const structuralCount = z.int().min(0);
 const structuralQuantity = z.int().min(1);
@@ -36,8 +34,6 @@ export const gridItemSchema = z.object({
   quantity: structuralQuantity,
   unitPrice: structuralCount,
 });
-
-export type GridItemPayload = z.infer<typeof gridItemSchema>;
 
 /** Emitted as `itemschange` with `{ items: InvoiceItem[] }`. */
 export const itemsChangeEventSchema = z.object({
@@ -65,8 +61,6 @@ export const pickEventSchema = z.discriminatedUnion('kind', [
 ]);
 
 export type PickPayload = z.infer<typeof pickEventSchema>;
-export type CustomerPick = Extract<PickPayload, { kind: 'customer' }>;
-export type ProductPick = Extract<PickPayload, { kind: 'product' }>;
 
 /**
  * Validates an incoming CustomEvent detail.

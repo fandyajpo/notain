@@ -24,8 +24,6 @@ export const signInSchema = z.object({
   password,
 });
 
-export type SignInValues = z.infer<typeof signInSchema>;
-
 /**
  * Step 1 of recovery: the user only has to know which email they registered
  * with. Submitting it never reveals whether the account exists — the app shows
@@ -34,8 +32,6 @@ export type SignInValues = z.infer<typeof signInSchema>;
 export const forgotPasswordSchema = z.object({
   email,
 });
-
-export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
 
 /**
  * Step 2 of recovery, reached from the emailed link. `userId` and `secret`
@@ -52,8 +48,6 @@ export const resetPasswordSchema = z
     path: ['confirmPassword'],
   });
 
-export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
-
 export const signUpSchema = z
   .object({
     name: z
@@ -69,5 +63,3 @@ export const signUpSchema = z
     message: 'Konfirmasi kata sandi tidak sama.',
     path: ['confirmPassword'],
   });
-
-export type SignUpValues = z.infer<typeof signUpSchema>;

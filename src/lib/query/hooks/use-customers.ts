@@ -5,7 +5,6 @@ import {
   importCustomers,
   listCustomers,
   rememberCustomer,
-  updateCustomer,
 } from '../../../app/customers';
 import { queryPolicy } from '../policies';
 import { queryKeys } from '../keys';
@@ -31,17 +30,6 @@ export function useCreateCustomer() {
     mutationFn: (draft: CustomerDraft) => createCustomer(draft),
     onSuccess: (customer) => {
       queryClient.setQueryData(queryKeys.customer(customer.id), customer);
-      void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
-    },
-  });
-}
-
-export function useUpdateCustomer() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, draft }: { id: string; draft: CustomerDraft }) => updateCustomer(id, draft),
-    onSuccess: (saved) => {
-      queryClient.setQueryData(queryKeys.customer(saved.id), saved);
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
     },
   });

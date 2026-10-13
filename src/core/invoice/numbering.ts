@@ -1,5 +1,3 @@
-import type { Invoice } from './model';
-
 /**
  * Invoice numbers look like `INV-2026-001`. They are user-facing and therefore
  * sequential within a calendar year, derived from the numbers that already
@@ -36,17 +34,6 @@ export function nextInvoiceNumber(
     .filter((sequence): sequence is number => sequence !== null)
     .reduce((max, sequence) => Math.max(max, sequence), 0);
   return formatInvoiceNumber(year, highest + 1);
-}
-
-/** Convenience overload used when the caller already holds full invoices. */
-export function nextInvoiceNumberFrom(
-  invoices: ReadonlyArray<Pick<Invoice, 'invoiceNumber'>>,
-  now: Date = new Date(),
-): string {
-  return nextInvoiceNumber(
-    invoices.map((invoice) => invoice.invoiceNumber),
-    now,
-  );
 }
 
 export function isInvoiceNumber(value: string): boolean {

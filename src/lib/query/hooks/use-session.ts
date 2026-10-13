@@ -10,8 +10,6 @@ import type {
   SignUpInput,
 } from '../../../ports/auth-repository';
 
-export const SESSION_REDIRECT_DELAY = 400;
-
 export function useSession() {
   return useQuery({
     queryKey: queryKeys.session,

@@ -1,7 +1,6 @@
 import { ImagePlus, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { LOGO_MAX_BYTES, LOGO_ALLOWED_TYPES } from '../../../core/profile/logo';
-import { toast } from '../../../lib/ui/toast';
 import { Button } from '../ui/button';
 
 type Props = {
@@ -92,8 +91,4 @@ export function LogoUploader({ logoUrl, busy = false, onUpload, onRemove }: Prop
       )}
     </div>
   );
-}
-
-export function reportLogoError(message: string): void {
-  toast(message, { variant: 'error' });
 }
