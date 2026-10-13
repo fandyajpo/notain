@@ -1,7 +1,5 @@
 import { expect, test } from '@playwright/test';
-
-const EMAIL = 'notain-smoke-a@example.com';
-const PASSWORD = 'NotainSmoke12345!';
+import { signIn } from './support';
 
 test('invoice form mounts its three lazy custom elements', async ({ page }) => {
   const errors: string[] = [];
@@ -14,11 +12,7 @@ test('invoice form mounts its three lazy custom elements', async ({ page }) => {
     if (response.status() >= 400) bad.push(`${response.status()} ${response.url()}`);
   });
 
-  await page.goto('/login');
-  await page.fill('input[type="email"]', EMAIL);
-  await page.fill('input[type="password"]', PASSWORD);
-  await page.click('button[type="submit"]');
-  await page.waitForURL('**/dashboard');
+  await signIn(page);
 
   // The auth gate probes GET /account on /login too, where a 401 is the point:
   // nothing is signed in yet. Everything below is recorded fresh so the

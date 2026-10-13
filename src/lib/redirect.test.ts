@@ -11,6 +11,9 @@ describe('isSafeRedirectPath', () => {
     expect(isSafeRedirectPath('/dashboard')).toBe(true);
     expect(isSafeRedirectPath('/')).toBe(true);
     expect(isSafeRedirectPath('/invoice/edit?id=5')).toBe(true);
+    // The newer edit routes carry the id in the path, no query at all.
+    expect(isSafeRedirectPath('/invoice/6acc91d70002fd3e80b4')).toBe(true);
+    expect(isSafeRedirectPath('/templates/tpl_123')).toBe(true);
     expect(isSafeRedirectPath('/settings')).toBe(true);
   });
 

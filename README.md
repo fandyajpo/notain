@@ -40,9 +40,16 @@ Arsitektur, keputusan desain (ADR), bundle, dan caching:
 ## Rute
 
 `/` landing · `/login` · `/register` · `/dashboard` · `/settings` ·
-`/templates` · `/templates/edit` · `/invoice/new` · `/invoice/edit` ·
-`/invoice/print` · `/probes` (uji batas antar framework) ·
+`/templates` · `/templates/new` · `/templates/<id>` ·
+`/invoice/new` · `/invoice/<id>` · `/invoice/print` ·
+`/probes` (uji batas antar framework) ·
 `/api/logo` (Pages Function, bukan halaman)
+
+`/invoice/<id>` dan `/templates/<id>` bukan route server: Pages Function
+(`functions/invoice/[[id]].ts`, `functions/templates/[[id]].ts`) menyajikan shell
+halaman edit di balik path itu tanpa mengubah URL di address bar, dan
+`astro dev` punya middleware kembarannya. Tautan lama — `/invoice/edit?id=…` dan
+`/templates/edit` — tetap hidup.
 
 ## Struktur
 

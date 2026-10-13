@@ -1,0 +1,11 @@
+---
+// One shell for both `/templates/new` and `/templates/<id>`: the Pages
+// Function serves this file under either path, and the app reads the address
+// bar to decide between a blank editor and an existing template.
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { TemplateEditApp } from '../../components/react/template/template-edit-app';
+---
+
+<DashboardLayout title="Template — Notain" description="Sesuaikan blok dan gaya invoice." wide>
+  <TemplateEditApp client:only="react" />
+</DashboardLayout>

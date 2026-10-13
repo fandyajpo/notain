@@ -12,6 +12,7 @@ import { DefaultsForm } from './defaults-form';
 import { ThemeForm } from './theme-form';
 import { InvoicePreview } from '../invoice/invoice-preview';
 import { toast } from '../../../lib/ui/toast';
+import { templateEditorTargetFromLocation } from '../../../lib/edit-route';
 import {
   useCreateTemplate,
   useTemplates,
@@ -50,7 +51,13 @@ function authoredOf(template: InvoiceTemplate): AuthoredTemplate {
   };
 }
 
-/** `/templates/edit` — author a template: blocks, colours, default prose. */
+/**
+ * `/templates/new` and `/templates/<id>` — author a template: blocks, colours,
+ * default prose. Both paths serve the same static shell, so which one the
+ * address bar holds is what decides between a blank editor and an existing
+ * template (see `templateEditorTargetFromLocation`); `/templates/edit`,
+ * the link that predates them, still works.
+ */
 export function TemplateEditApp() {
   return (
     <IslandBoundary>
@@ -64,9 +71,7 @@ export function TemplateEditApp() {
 }
 
 function TemplateEditContent() {
-  const params = new URLSearchParams(window.location.search);
-  const id = params.get('id');
-  const seedId = params.get('from');
+  const { id, seedId } = templateEditorTargetFromLocation(window.location);
   const { data, isLoading, isError, refetch } = useTemplates();
 
   if (isLoading) {

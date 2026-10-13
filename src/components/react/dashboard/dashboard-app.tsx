@@ -118,7 +118,7 @@ function SummarySection() {
               return (
                 <li key={invoice.id}>
                   <a
-                    href={`/invoice/edit?id=${invoice.id}`}
+                    href={`/invoice/${invoice.id}`}
                     className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-background focus-ring"
                   >
                     <div className="min-w-0">

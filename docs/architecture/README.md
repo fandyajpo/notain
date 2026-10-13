@@ -73,7 +73,11 @@ tercantum di ADR 0002.
   yang dilipat. Picker menggabungkan direktori dengan riwayat invoice
   (`mergeCustomerOptions`), dan baris "Tambah …" di `Picker.vue` mengisi nama yang
   belum terdaftar.
-- Editor template — `/templates` (daftar) dan `/templates/edit` (editor). Semua aturan
+- Editor template — `/templates` (daftar), `/templates/new` (editor baru) dan
+  `/templates/<id>` (editor isi). Kedua URL editor adalah **shell yang sama**
+  (`dist/templates/new/index.html`), disajikan di balik path itu oleh
+  `functions/templates/[[id]].ts` — lihat "Rute edit tanpa SSR"; `/templates/edit`
+  tetap hidup sebagai nama lama. Semua aturan
   yang menentukan sebuah layout masih boleh disimpan hidup di
   `src/core/template/layout.ts` (fungsi murni, 18 test): blok wajib
   `letterhead`/`items`/`totals` tidak bisa dihapus atau disembunyikan, batas
@@ -146,6 +150,19 @@ tercantum di ADR 0002.
 - Nomor invoice urut dalam setahun (`INV-YYYY-NNN`), diturunkan dari nomor yang sudah
   ada lewat `nextInvoiceNumber`, bukan counter tersimpan. Keunikan penuh lintas-perangkat
   butuh constraint unik di server; untuk satu pengguna biasa angka ini sudah cukup.
+- Rute edit tanpa SSR — `/invoice/<id>` dan `/templates/<id>` bukan route server, karena
+  situs ini static dan daftar id hanya hidup di Appwrite. Yang ada adalah Pages
+  Function (`functions/invoice/[[id]].ts`, `functions/templates/[[id]].ts`) yang
+  menyajikan shell halaman edit (`dist/invoice/edit/index.html`,
+  `dist/templates/new/index.html`) di balik path itu lewat `env.ASSETS.fetch`, **tanpa
+  pernah redirect** — redirect menaruh query string kembali di URL, dan mengganti URL
+  adalah tujuan rute ini. `astro dev` tidak membaca `functions/`, jadi ada middleware
+  kembaran di `astro.config.mjs` yang menulis ulang `req.url` ke shell yang sama.
+  Kedua sisi memakai pola segmen dan daftar segmen yang diimpor dari
+  `src/lib/edit-route.ts`; hanya middleware yang menyalinnya secara manual (Node ESM
+  tidak bisa mengimpor `.ts`), dan `e2e/edit-routes.spec.ts` lah yang menjaga keduanya
+  tetap seirama. Tautan lama — `/invoice/edit?id=…`, `/templates/edit` — tetap hidup,
+  jadi tidak ada yang putus.
 
 ## Peta direktori framework
 

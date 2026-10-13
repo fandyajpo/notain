@@ -4,11 +4,14 @@ import { IslandBoundary } from '../ui/island-boundary';
 import { InvoiceBuilder } from './invoice-builder';
 import { useInvoice } from '../../../lib/query/hooks/use-invoices';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
+import { invoiceIdFromLocation } from '../../../lib/edit-route';
 import { EMPTY_PROFILE } from '../../../core/profile/model';
 
 /**
- * `/invoice/edit?id=…` — edits an existing invoice. The site is fully static, so
- * the row id arrives as a query parameter rather than a dynamic path segment.
+ * `/invoice/<id>` — edits an existing invoice. The site is fully static, so the
+ * id is not a server route: a Pages Function (and a dev-server middleware)
+ * serves this page's shell under that path, and the id is read back out of the
+ * address bar. `/invoice/edit?id=…`, the link that predates it, still works.
  */
 export function InvoiceEditApp() {
   return (
@@ -24,8 +27,7 @@ export function InvoiceEditApp() {
 
 function readInvoiceId(): string | undefined {
   if (typeof window === 'undefined') return undefined;
-  const id = new URLSearchParams(window.location.search).get('id');
-  return id && /^[A-Za-z0-9_-]+$/.test(id) ? id : undefined;
+  return invoiceIdFromLocation(window.location);
 }
 
 function InvoiceEditContent({ invoiceId }: { invoiceId: string | undefined }) {

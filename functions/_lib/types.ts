@@ -8,9 +8,20 @@
  * declarations cover exactly the surface the logo API touches.
  */
 
+/**
+ * The asset store every Pages Function is handed: the built `dist/` files.
+ * It is how a function either answers with one of them or hands the request
+ * back untouched (see `functions/invoice/[[id]].ts`).
+ */
+export interface AssetsBinding {
+  fetch(request: Request): Promise<Response>;
+}
+
 export interface Env {
   /** R2 bucket binding declared in `wrangler.toml`. */
   LOGOS: R2Bucket;
+  /** Injected by Pages itself, never declared in `wrangler.toml`. */
+  ASSETS: AssetsBinding;
   PUBLIC_APPWRITE_ENDPOINT?: string;
   PUBLIC_APPWRITE_PROJECT_ID?: string;
 }

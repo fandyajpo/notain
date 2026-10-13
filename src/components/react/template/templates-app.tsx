@@ -53,7 +53,7 @@ function TemplatesContent() {
             dibuat.
           </p>
         </div>
-        <Button onClick={() => window.location.assign('/templates/edit')}>
+        <Button onClick={() => window.location.assign('/templates/new')}>
           <Plus size={16} aria-hidden="true" />
           Template baru
         </Button>
@@ -100,7 +100,7 @@ function TemplatesContent() {
               logoUrl={logoUrl}
               actions={
                 <a
-                  href={`/templates/edit?from=${template.id}`}
+                  href={`/templates/new?from=${template.id}`}
                   className="inline-flex items-center gap-1.5 rounded-control border border-border bg-background px-3 py-2 text-xs font-medium text-foreground shadow-card transition-colors hover:border-accent/60 focus-ring"
                 >
                   <Copy size={13} aria-hidden="true" />
@@ -136,7 +136,7 @@ function TemplatesContent() {
               Duplikat salah satu template bawaan, lalu sesuaikan urutan blok dan warnanya.
             </p>
             <div className="mt-4 flex justify-center">
-              <Button variant="secondary" onClick={() => window.location.assign('/templates/edit')}>
+              <Button variant="secondary" onClick={() => window.location.assign('/templates/new')}>
                 <Plus size={16} aria-hidden="true" />
                 Template baru
               </Button>
@@ -152,7 +152,7 @@ function TemplatesContent() {
                 actions={
                   <>
                     <a
-                      href={`/templates/edit?id=${template.id}`}
+                      href={`/templates/${template.id}`}
                       className="inline-flex items-center gap-1.5 rounded-control border border-border bg-background px-3 py-2 text-xs font-medium text-foreground shadow-card transition-colors hover:border-accent/60 focus-ring"
                     >
                       <Pencil size={13} aria-hidden="true" />

@@ -97,7 +97,7 @@ export function InvoiceTable() {
           cell: (info) => (
             <div className="flex items-center justify-end gap-1">
               <a
-                href={`/invoice/edit?id=${info.row.original.id}`}
+                href={`/invoice/${info.row.original.id}`}
                 aria-label={`Buka ${info.row.original.invoiceNumber}`}
                 className="rounded-control p-2 text-muted transition-colors hover:bg-background hover:text-foreground focus-ring"
               >
