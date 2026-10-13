@@ -21,6 +21,11 @@ import { todayIsoDate, addDaysIsoDate } from '../../../core/shared/dates';
 import { buildInvoiceWhatsAppMessage, buildWhatsAppUrl } from '../../../core/whatsapp';
 import type { BusinessProfile } from '../../../core/profile/model';
 import { toast } from '../../../lib/ui/toast';
+import {
+  builderUiStore,
+  setBuilderSection,
+  type BuilderSection,
+} from '../../../lib/store/builder-ui';
 import { clearDraft, readDraft, writeDraft } from '../../../lib/draft-storage';
 import { openPrintView } from '../../../lib/print';
 import { useCreateInvoice, useUpdateInvoice } from '../../../lib/query/hooks/use-invoices';
@@ -190,6 +195,8 @@ export function InvoiceBuilder({
   const isSubmitting = useSelector(form.store, (state) => state.isSubmitting);
   const canSubmit = useSelector(form.store, (state) => state.canSubmit);
   const submissionAttempts = useSelector(form.store, (state) => state.submissionAttempts);
+  // Which tab panel is on show, shared with BuilderTabs through the store.
+  const activeSection = useSelector(builderUiStore, (state) => state.activeSection);
 
   const totals = useMemo(
     () =>
@@ -210,6 +217,21 @@ export function InvoiceBuilder({
     if (!restoredRef.current || isEditing) return;
     autosave.maybeExecute(values);
   }, [values, autosave, isEditing]);
+
+  useEffect(() => {
+    // A failed submit can leave its error on a tab that is not showing. Jump
+    // to the first section that has one, so no error stays hidden. Discount
+    // and tax live in the always-visible Ringkasan panel and map to nothing,
+    // so they never steal the tab.
+    if (submissionAttempts === 0) return;
+    for (const path of Object.keys(flattenErrors(form.state.errors))) {
+      const section = sectionForError(path);
+      if (section) {
+        setBuilderSection(section);
+        return;
+      }
+    }
+  }, [submissionAttempts, form]);
 
   const submit = useCallback(() => {
     if (submitInFlight.current || isSubmitting) return;
@@ -357,8 +379,6 @@ export function InvoiceBuilder({
           </p>
         )}
 
-        <BuilderTabs />
-
         <form.Subscribe selector={(state) => state.values.discount}>
           {(discount) => (
             <form.Subscribe selector={(state) => state.values.tax}>
@@ -378,143 +398,159 @@ export function InvoiceBuilder({
           )}
         </form.Subscribe>
 
-        <Section title="Untuk siapa invoice ini?">
-          <Picker
-            mode="customer"
-            label="Ambil customer dari riwayat"
-            placeholder="Ketik nama customer…"
-            onPick={onPick}
-          />
+        <BuilderTabs />
 
-          <form.Field name="customerName">
-            {(field) => (
-              <TextField
-                field={field}
-                label="Nama customer"
-                placeholder="Contoh: Budi"
-                required
-                showError={shouldShow(submissionAttempts, field.state.meta.isBlurred)}
-              />
-            )}
-          </form.Field>
+        <div hidden={activeSection !== 'detail'} className="flex flex-col gap-6">
+          <Section title="Untuk siapa invoice ini?">
+            <Picker
+              mode="customer"
+              label="Ambil customer dari riwayat"
+              placeholder="Ketik nama customer…"
+              onPick={onPick}
+            />
 
-          <form.Field name="customerPhone">
-            {(field) => (
-              <TextField
-                field={field}
-                label="Nomor WhatsApp customer (opsional)"
-                placeholder="081234567890"
-                inputMode="tel"
-                hint="Dipakai untuk kirim invoice lewat WhatsApp."
-                showError={shouldShow(submissionAttempts, field.state.meta.isBlurred)}
-              />
-            )}
-          </form.Field>
-        </Section>
-
-        <Section title="Detail invoice">
-          <form.Field name="invoiceNumber">
-            {(field) => (
-              <TextField
-                field={field}
-                label="Nomor invoice"
-                placeholder="INV-2026-001"
-                required
-                readOnly={isEditing}
-                showError={shouldShow(submissionAttempts, field.state.meta.isBlurred)}
-              />
-            )}
-          </form.Field>
-
-          <div className="grid gap-5 sm:grid-cols-2">
-            <form.Field name="date">
+            <form.Field name="customerName">
               {(field) => (
-                <DateField
+                <TextField
                   field={field}
-                  label="Tanggal invoice"
+                  label="Nama customer"
+                  placeholder="Contoh: Budi"
                   required
                   showError={shouldShow(submissionAttempts, field.state.meta.isBlurred)}
                 />
               )}
             </form.Field>
-            <form.Field name="dueDate">
+
+            <form.Field name="customerPhone">
               {(field) => (
-                <DateField
+                <TextField
                   field={field}
-                  label="Jatuh tempo (opsional)"
+                  label="Nomor WhatsApp customer (opsional)"
+                  placeholder="081234567890"
+                  inputMode="tel"
+                  hint="Dipakai untuk kirim invoice lewat WhatsApp."
                   showError={shouldShow(submissionAttempts, field.state.meta.isBlurred)}
                 />
               )}
             </form.Field>
-          </div>
-        </Section>
+          </Section>
 
-        <Section title="Barang">
-          <Picker
-            mode="product"
-            label="Tambah barang dari riwayat"
-            placeholder="Ketik nama barang…"
-            onPick={onPick}
-          />
-          <ItemsGrid
-            items={values.items}
-            onChange={(items) => form.setFieldValue('items', items)}
-            errors={flattenErrors(submissionAttempts > 0 ? form.state.errors : [])}
-          />
-          <p className="text-xs text-muted">
-            Tekan <kbd className="rounded border border-border bg-background px-1">Mod</kbd> +{' '}
-            <kbd className="rounded border border-border bg-background px-1">Enter</kbd> untuk
-            menambah barang.
-          </p>
-        </Section>
-
-        <Section title="Kop &amp; informasi invoice">
-          <LazyRichEditor
-            label="Bagian atas (di bawah kop)"
-            value={values.sections.header}
-            placeholder="Terima kasih sudah memesan…"
-            onChange={(html) => form.setFieldValue('sections.header', html)}
-          />
-        </Section>
-
-        <Section title="Bagian isi (di tengah)">
-          <LazyRichEditor
-            label="Keterangan tambahan"
-            value={values.sections.content}
-            placeholder="Ketentuan pengerjaan, estimasi waktu, dll."
-            onChange={(html) => form.setFieldValue('sections.content', html)}
-          />
-        </Section>
-
-        <Section title="Bagian bawah (footer)">
-          <LazyRichEditor
-            label="Info pembayaran &amp; tanda tangan"
-            value={values.sections.footer}
-            placeholder="Pembayaran: BCA 1234567890 a.n. …"
-            onChange={(html) => form.setFieldValue('sections.footer', html)}
-          />
-        </Section>
-
-        <Section title="Catatan untuk customer">
-          <form.Field name="notes">
-            {(field) => (
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="invoice-notes" className="text-sm font-medium text-foreground">
-                  Catatan (opsional, mendukung Markdown)
-                </label>
-                <textarea
-                  id="invoice-notes"
-                  rows={3}
-                  value={field.state.value ?? ''}
-                  placeholder={'Terima kasih sudah berbelanja 🙏\n\n**Pembayaran:** BCA 1234567890'}
-                  className={controlClass({ className: 'min-h-24 py-2.5' })}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  onBlur={field.handleBlur}
+          <Section title="Detail invoice">
+            <form.Field name="invoiceNumber">
+              {(field) => (
+                <TextField
+                  field={field}
+                  label="Nomor invoice"
+                  placeholder="INV-2026-001"
+                  required
+                  readOnly={isEditing}
+                  showError={shouldShow(submissionAttempts, field.state.meta.isBlurred)}
                 />
-              </div>
-            )}
-          </form.Field>
-        </Section>
+              )}
+            </form.Field>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <form.Field name="date">
+                {(field) => (
+                  <DateField
+                    field={field}
+                    label="Tanggal invoice"
+                    required
+                    showError={shouldShow(submissionAttempts, field.state.meta.isBlurred)}
+                  />
+                )}
+              </form.Field>
+              <form.Field name="dueDate">
+                {(field) => (
+                  <DateField
+                    field={field}
+                    label="Jatuh tempo (opsional)"
+                    showError={shouldShow(submissionAttempts, field.state.meta.isBlurred)}
+                  />
+                )}
+              </form.Field>
+            </div>
+          </Section>
+        </div>
+
+        <div hidden={activeSection !== 'barang'} className="flex flex-col gap-6">
+          <Section title="Barang">
+            <Picker
+              mode="product"
+              label="Tambah barang dari riwayat"
+              placeholder="Ketik nama barang…"
+              onPick={onPick}
+            />
+            <ItemsGrid
+              items={values.items}
+              onChange={(items) => form.setFieldValue('items', items)}
+              errors={flattenErrors(submissionAttempts > 0 ? form.state.errors : [])}
+            />
+            <p className="text-xs text-muted">
+              Tekan <kbd className="rounded border border-border bg-background px-1">Mod</kbd> +{' '}
+              <kbd className="rounded border border-border bg-background px-1">Enter</kbd> untuk
+              menambah barang.
+            </p>
+          </Section>
+        </div>
+
+        <div hidden={activeSection !== 'header'} className="flex flex-col gap-6">
+          <Section title="Kop &amp; informasi invoice">
+            <LazyRichEditor
+              label="Bagian atas (di bawah kop)"
+              value={values.sections.header}
+              placeholder="Terima kasih sudah memesan…"
+              onChange={(html) => form.setFieldValue('sections.header', html)}
+            />
+          </Section>
+        </div>
+
+        <div hidden={activeSection !== 'isi'} className="flex flex-col gap-6">
+          <Section title="Bagian isi (di tengah)">
+            <LazyRichEditor
+              label="Keterangan tambahan"
+              value={values.sections.content}
+              placeholder="Ketentuan pengerjaan, estimasi waktu, dll."
+              onChange={(html) => form.setFieldValue('sections.content', html)}
+            />
+          </Section>
+        </div>
+
+        <div hidden={activeSection !== 'footer'} className="flex flex-col gap-6">
+          <Section title="Bagian bawah (footer)">
+            <LazyRichEditor
+              label="Info pembayaran &amp; tanda tangan"
+              value={values.sections.footer}
+              placeholder="Pembayaran: BCA 1234567890 a.n. …"
+              onChange={(html) => form.setFieldValue('sections.footer', html)}
+            />
+          </Section>
+        </div>
+
+        <div hidden={activeSection !== 'catatan'} className="flex flex-col gap-6">
+          <Section title="Catatan untuk customer">
+            <form.Field name="notes">
+              {(field) => (
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="invoice-notes" className="text-sm font-medium text-foreground">
+                    Catatan (opsional, mendukung Markdown)
+                  </label>
+                  <textarea
+                    id="invoice-notes"
+                    rows={3}
+                    value={field.state.value ?? ''}
+                    placeholder={
+                      'Terima kasih sudah berbelanja 🙏\n\n**Pembayaran:** BCA 1234567890'
+                    }
+                    className={controlClass({ className: 'min-h-24 py-2.5' })}
+                    onChange={(event) => field.handleChange(event.target.value)}
+                    onBlur={field.handleBlur}
+                  />
+                </div>
+              )}
+            </form.Field>
+          </Section>
+        </div>
 
         <div className="hidden lg:block">
           <Button type="submit" full size="lg" loading={isSubmitting} disabled={!canSubmit}>
@@ -716,6 +752,31 @@ function flattenErrors(errors: unknown): Record<string, string> {
     }
   }
   return result;
+}
+
+/** Which tab panel a validation-error path lives behind, if any. */
+const SECTION_BY_ERROR_PATH: ReadonlyArray<readonly [prefix: string, section: BuilderSection]> = [
+  ['customerName', 'detail'],
+  ['customerPhone', 'detail'],
+  ['invoiceNumber', 'detail'],
+  ['date', 'detail'],
+  ['dueDate', 'detail'],
+  ['items', 'barang'],
+  ['sections.header', 'header'],
+  ['sections.content', 'isi'],
+  ['sections.footer', 'footer'],
+  ['notes', 'catatan'],
+];
+
+/**
+ * Maps a dotted error path (`items[0].name`, `sections.header`, …) onto the
+ * tab that shows it. Discount and tax live in the always-visible Ringkasan
+ * panel and map to nothing, so they never force a tab switch.
+ */
+function sectionForError(path: string): BuilderSection | undefined {
+  return SECTION_BY_ERROR_PATH.find(
+    ([prefix]) => path === prefix || path.startsWith(`${prefix}.`) || path.startsWith(`${prefix}[`),
+  )?.[1];
 }
 
 export type { AdjustmentType };

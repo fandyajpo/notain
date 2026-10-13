@@ -1,5 +1,9 @@
 import { useSelector } from '@tanstack/react-store';
-import { builderUiStore, type BuilderSection } from '../../../lib/store/builder-ui';
+import {
+  builderUiStore,
+  setBuilderSection,
+  type BuilderSection,
+} from '../../../lib/store/builder-ui';
 
 const SECTIONS: Array<{ id: BuilderSection; label: string }> = [
   { id: 'detail', label: 'Detail' },
@@ -10,12 +14,8 @@ const SECTIONS: Array<{ id: BuilderSection; label: string }> = [
   { id: 'catatan', label: 'Catatan' },
 ];
 
-type Props = {
-  onSelect?: (section: BuilderSection) => void;
-};
-
 /** Section switcher backed by the shared builder store. */
-export function BuilderTabs({ onSelect }: Props) {
+export function BuilderTabs() {
   const active = useSelector(builderUiStore, (state) => state.activeSection);
 
   return (
@@ -32,10 +32,7 @@ export function BuilderTabs({ onSelect }: Props) {
             type="button"
             role="tab"
             aria-selected={selected}
-            onClick={() => {
-              builderUiStore.setState((state) => ({ ...state, activeSection: section.id }));
-              onSelect?.(section.id);
-            }}
+            onClick={() => setBuilderSection(section.id)}
             className={[
               'shrink-0 rounded-[calc(var(--radius-control)-2px)] px-3 py-1.5 text-sm font-medium transition-colors focus-ring',
               selected ? 'bg-accent text-accent-foreground' : 'text-muted hover:text-foreground',

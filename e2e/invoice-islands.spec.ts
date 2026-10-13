@@ -22,9 +22,12 @@ test('invoice form mounts its three lazy custom elements', async ({ page }) => {
 
   await page.goto('/invoice/new');
   await page.getByRole('button', { name: 'Klasik Bawaan' }).click();
-  await expect(page.locator('notain-items-grid')).toBeVisible({ timeout: 20_000 });
-  await expect(page.locator('notain-picker').first()).toBeVisible();
+  // The customer picker sits on the Detail tab, which shows by default; the
+  // items grid lives behind the Barang tab.
+  await expect(page.locator('notain-picker').first()).toBeVisible({ timeout: 20_000 });
   await expect(page.locator('notain-calc-inspector')).toBeVisible();
+  await page.getByRole('tab', { name: 'Barang' }).click();
+  await expect(page.locator('notain-items-grid')).toBeVisible({ timeout: 20_000 });
   await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
 
   expect(bad, 'tak ada request gagal setelah login').toEqual([]);
