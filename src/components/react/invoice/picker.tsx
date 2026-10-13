@@ -2,10 +2,12 @@ import { useMemo } from 'react';
 import { useInvoices } from '../../../lib/query/hooks/use-invoices';
 import { useCustomers } from '../../../lib/query/hooks/use-customers';
 import { derivePickerOptions, mergeCustomerOptions } from '../../shared/picker-options';
-import '../../vue/register';
 import { CE_EVENTS, pickEventSchema, type PickPayload } from '../../shared/contracts';
-import { useCeProp, useCeRef } from '../../shared/use-ce-element';
+import { useCeDefined, useCeProp, useCeRef } from '../../shared/use-ce-element';
 import { useCeEvent } from '../../shared/use-ce-event';
+
+/** Module scope keeps the effect from re-subscribing on every render. */
+const loadVueRegister = () => import('../../vue/register');
 
 type Props = {
   /** `customer` fills name + phone; `product` appends a row to the items grid. */
@@ -53,6 +55,17 @@ export function Picker({ mode, label, placeholder, onPick }: Props) {
   useCeProp(element, 'placeholder', placeholder);
 
   useCeEvent(element, CE_EVENTS.pick, pickEventSchema, onPick);
+
+  const registered = useCeDefined('notain-picker', loadVueRegister);
+  if (!registered) {
+    return (
+      <div
+        aria-busy="true"
+        aria-label={label}
+        className="h-10 rounded-control border border-border bg-card/40"
+      />
+    );
+  }
 
   return <notain-picker ref={ref} />;
 }

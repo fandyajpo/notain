@@ -39,7 +39,14 @@ export function LogoUploader({ logoUrl, busy = false, onUpload, onRemove }: Prop
       <div className="flex items-center gap-4">
         <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-control border border-border bg-background">
           {logoUrl ? (
-            <img src={logoUrl} alt="Logo usaha" className="size-full object-contain" />
+            <img
+              src={logoUrl}
+              alt="Logo usaha"
+              width={64}
+              height={64}
+              decoding="async"
+              className="size-full object-contain"
+            />
           ) : (
             <ImagePlus size={20} className="text-muted" aria-hidden="true" />
           )}

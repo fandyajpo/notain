@@ -51,6 +51,15 @@ type SplitWordsProps = {
   delay?: number;
   /** Seconds between consecutive words. */
   stagger?: number;
+  /**
+   * Renders the words already revealed instead of masked off-screen.
+   *
+   * Headlines inside the first viewport use this: their hidden state ships as
+   * inline `transform: translateY(115%)` in the server HTML, so the page's
+   * largest paint would not happen until the island hydrates. Below-the-fold
+   * headlines keep the animation.
+   */
+  immediate?: boolean;
 };
 
 /**
@@ -64,13 +73,19 @@ type SplitWordsProps = {
  * The accessible text is rendered once for screen readers while every animated
  * word is hidden from them, so the headline is never read as fragments.
  */
-export function SplitWords({ text, className, delay = 0, stagger = 0.06 }: SplitWordsProps) {
+export function SplitWords({
+  text,
+  className,
+  delay = 0,
+  stagger = 0.06,
+  immediate = false,
+}: SplitWordsProps) {
   const words = text.split(' ');
 
   return (
     <motion.span
       className={className}
-      initial="hidden"
+      initial={immediate ? 'shown' : 'hidden'}
       whileInView="shown"
       viewport={{ once: true, amount: 0.3 }}
       variants={{

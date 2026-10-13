@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 
 /**
  * Cross-framework custom element plumbing for React.
@@ -39,4 +39,45 @@ export function useCeProp(element: HTMLElement | null, name: string, value: unkn
   useLayoutEffect(() => {
     setCeProperty(element, name, value);
   }, [element, name, value]);
+}
+
+/**
+ * Reports whether the custom element `tag` is registered, importing its
+ * registration module on first use.
+ *
+ * Registration is *not* a static import on purpose: `svelte/register`,
+ * `vue/register` and `solid/register` each drag in a complete framework
+ * runtime (~177 kB raw together), and a static import puts them on the
+ * critical path of every page that renders one of their tags. Loading them
+ * from an effect keeps them off the invoice routes' first paint.
+ *
+ * React still must not render the tag before `customElements.define` has run —
+ * `useCeProp` writes properties that only exist once the element upgrades —
+ * so callers render a placeholder until this returns `true`. `register` has to
+ * be a module-scope function so the effect does not re-run every render.
+ */
+export function useCeDefined(tag: string, register: () => Promise<unknown>): boolean {
+  const [defined, setDefined] = useState(
+    () => typeof window !== 'undefined' && customElements.get(tag) !== undefined,
+  );
+
+  useEffect(() => {
+    if (customElements.get(tag) !== undefined) return;
+
+    let active = true;
+    void register().then(
+      () => {
+        if (active) setDefined(true);
+      },
+      (error: unknown) => {
+        console.error(`[notain] gagal memuat registrasi <${tag}>`, error);
+      },
+    );
+
+    return () => {
+      active = false;
+    };
+  }, [tag, register]);
+
+  return defined;
 }

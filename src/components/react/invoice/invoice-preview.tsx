@@ -101,9 +101,17 @@ export function InvoicePreview({ business, invoice, template, logoUrl, className
           <header className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3">
               {logoUrl ? (
+                /* The box is always 48px (`size-12`): the attributes give the
+                   browser an intrinsic size so nothing shifts while the file
+                   streams in, and previews stacked below the fold (the
+                   template grid) no longer fetch a full-size upload. */
                 <img
                   src={logoUrl}
                   alt=""
+                  width={48}
+                  height={48}
+                  loading="lazy"
+                  decoding="async"
                   className="size-12 shrink-0 rounded-control border object-contain"
                   style={{ borderColor: theme.border }}
                 />

@@ -79,8 +79,10 @@ export function LandingApp() {
           className="fixed inset-x-0 top-0 z-50 h-0.5 origin-left bg-accent will-change-transform"
         />
 
+        {/* `initial={false}`: the sticky header is part of the first paint, so
+            it must not wait for hydration to slide in. */}
         <motion.header
-          initial={{ y: -28, opacity: 0 }}
+          initial={false}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, ease: EASE }}
           style={{

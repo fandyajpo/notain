@@ -10,7 +10,7 @@
     "dev:stop": "astro dev stop",
     "dev:status": "astro dev status",
     "dev:logs": "astro dev logs",
-    "build": "astro build",
+    "build": "astro build && node scripts/modulepreload.mjs",
     "deploy": "wrangler pages deploy dist",
     "preview": "astro preview",
     "astro": "astro",

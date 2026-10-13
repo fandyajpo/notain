@@ -1,0 +1,8 @@
+# Cloudflare Pages header overrides.
+#
+# Hashed build assets cannot change without a new file name, so the etag dance
+# Cloudflare serves by default (`max-age=0, must-revalidate`) is pure round
+# trips on every revisit. HTML keeps the default: it must stay revalidated so a
+# deploy goes live immediately.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable

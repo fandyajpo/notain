@@ -9,6 +9,10 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
+  // Navigasi antarhalaman: HTML-nya di-warm di idle/hover supaya pindah route
+  // tidak menunggu rtt pertama. Hanya berlaku untuk link yang memasang
+  // `data-astro-prefetch`.
+  prefetch: true,
   integrations: [
     // Every JSX file in the app lives under src/components/react/**, so React
     // claims that subtree and nothing else. Solid claims its own directory

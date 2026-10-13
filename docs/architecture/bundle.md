@@ -116,7 +116,8 @@ tabel. Angka terakhir yang tercatat adalah **203 KB** JavaScript untuk `GET /inv
 — sebelum penghapusan `pdf-lib`, dan **belum diukur ulang** sejak `pdf-render.*.js`
 hilang. Chunk yang tidak ikut di payload awal saat itu: `pdf-render.*.js` (defer) dan
 `rich-editor.*.js` (menyusul setelah React memasang `Suspense`); kini tinggal yang
-kedua.
+kedua. Angka terkini (2026-10-13) ada di
+["Optimasi performa" di bawah](#optimasi-performa--2026-10-13).
 
 Sebelum optimasi, angka perkiraan halaman ini ≈ 420–450 KB (309 KB hanya dari
 `invoice-builder`).
@@ -165,6 +166,136 @@ kembali bersih (0 vulnerability). Detail dan rasionya di
 [ADR 0002](adr/0002-ecosystem-scope.md) ("Diadopsi — dependency non-framework").
 Jalur CSV sengaja tidak menyentuh SheetJS sama sekali (parser tangan + validasi Zod),
 jadi berkas `.csv` yang berbahaya tidak pernah masuk ke parser library.
+
+## Optimasi performa — 2026-10-13
+
+Enam perbaikan setelah audit bundle, semuanya bertujuan pada **kapan** dan
+**seberapa cepat** kode dimuat — bukan menambah jumlah kode. Angka diukur dari
+`npm run build` (Node 22.23.1, Astro 7.3.7, Vite 8.3.3 / Rolldown) dan
+diverifikasi di `wrangler pages dev dist` + Playwright.
+
+### 1. Landing: fold-pertama tak lagi `opacity:0`
+
+Sebelumnya hampir seluruh landing di-SSR dalam keadaan tersembunyi
+(`opacity:0`) dan baru muncul setelah hydration — isi pertama terlihat kosong.
+Kini elemen fold-pertama (nav, eyebrow, judul, CTA, tab, kartu faktur, chip
+bonus, baris kepercayaan, cue gulir) memakai `initial={false}`, dan `SplitWords`
+mendapat prop `immediate`. Elemen di bawah lipatan tetap `Reveal` (animasinya
+dipertahankan), dan loop ambient tidak disentuh.
+
+|                                         | Sebelum | Sesudah |
+| --------------------------------------- | ------- | ------- |
+| atribut `opacity:0` di `/` (baris HTML) | 53      | **38**  |
+| di antaranya elemen fold-pertama        | 15      | **0**   |
+
+Sisa 38 adalah seksi di bawah lipatan + selector di blok `<noscript>` (fallback
+nya tetap dipakai). Ini perbaikan **paint**, bukan byte: total JS halaman hampir
+tidak berubah (lihat "Payload awal" di bawah).
+
+### 2. `modulepreload` per halaman (baru)
+
+Astro memuat island dari inline script
+`Promise.all([import(component), import(renderer)])`, lalu tiap chunk baru
+mengambil import statisnya sendiri — berantai. Sebelumnya tidak ada satu pun
+`<link rel="modulepreload">` di 15 halaman hasil build.
+
+`scripts/modulepreload.mjs` (dijalankan `npm run build`, setelah `astro build`)
+menelusuri graph statis tiap island dari atribut `component-url` / `renderer-url`
+dan menyuntikkan linknya ke `<head>`.
+
+|                                    | Sebelum                    | Sesudah                                    |
+| ---------------------------------- | -------------------------- | ------------------------------------------ |
+| `<link rel="modulepreload">` total | 0                          | **276** di 15/15 halaman                   |
+| per halaman                        | 0                          | 12–31                                      |
+| graph kritis `/invoice/new`        | 0 link, ~31 chunk berantai | 31 link paralel (627 KB raw / 192 KB gzip) |
+
+Import dinamis (`import("./x.js")`) sengaja tidak ikut — jalur lazy tetap lazy.
+Hasilnya terverifikasi: tidak ada chunk `xlsx.*` / `rich-editor.*` yang ikut
+di-preload.
+
+### 3. Runtime Svelte/Vue/Solid keluar dari graph statis halaman invoice
+
+`items-grid.tsx`, `picker.tsx` dan `calc-inspector.tsx` tadinya meng-`import`
+`../svelte|vue|solid/register` secara statis. Hook `useCeDefined` kini
+mengimpornya lewat `useEffect` dan merender skeleton sampai `customElements`
+siap, jadi tiga runtime itu baru dimuat setelah hydration.
+
+| Chunk                       | Bytes       | gzip       |
+| --------------------------- | ----------- | ---------- |
+| `runtime-dom.esm-bundler.*` | 79 829      | 30 331     |
+| `client.*` (Vue CE)         | 53 129      | 19 938     |
+| `web.*` (solid-js/web)      | 13 880      | 5 433      |
+| `register.*` ×3             | 22 451      | 7 958      |
+| `client.svelte.*`           | 889         | 501        |
+| **Total**                   | **170 278** | **60 161** |
+
+Semuanya keluar dari 31-link graph kritis `/invoice/new`; graph itu kini
+murni React + kode aplikasi. `/probes` sengaja tetap eager
+(`probe-host.tsx` meng-`import` statis `custom-elements`), jadi halaman uji tidak
+punya periode placeholder.
+
+### 4. Aset hash pakai cache immutable
+
+Cloudflare Pages memakai `max-age=0, must-revalidate` sebagai default, padahal
+nama file `/_astro/*.js` berisi hash dan tidak mungkin berubah.
+
+| Route       | Sebelum                              | Sesudah                                |
+| ----------- | ------------------------------------ | -------------------------------------- |
+| `/_astro/*` | `public, max-age=0, must-revalidate` | `public, max-age=31536000, immutable`  |
+| `/` (HTML)  | `public, max-age=0, must-revalidate` | tidak diubah — harus selalu revalidate |
+
+Aturannya di `public/_headers`; diverifikasi lewat `wrangler pages dev dist`
+(bukan hanya teori, karena `_headers` adalah fitur Pages).
+
+### 5. Prefetch nav sidebar + logo tanpa layout shift
+
+`astro.config.mjs` kini memakai `prefetch: true` dan 5 link nav di
+`DashboardLayout.astro` memasang `data-astro-prefetch`. Kedua `<img>` logo
+mendapat `width`/`height` (intrinsic 48px/64px) + `decoding="async"`, dan yang
+di preview invoice juga `loading="lazy"` — grid template yang menumpuk logo di
+bawah lipatan tak lagi mengunduh semuanya. `LOGO_MAX_BYTES` (2 MB) sengaja tidak
+diubah: itu keputusan produk.
+
+### 6. Satu `QueryClient` untuk shell sign-out
+
+`SignOutIsland` dirender dua kali (header mobile + sidebar desktop) dan tiap
+instance kini membuat `AppProviders` sendiri. Keduanya berbagi satu client
+modul-level (`getShellClient()`), sehingga tidak ada cache duplikat yang
+membuang memori. Dua island tetap ada — menyatukannya butuh refactor layout
+yang berisiko untuk manfaat yang tidak ada.
+
+### Yang sengaja TIDAK dilakukan
+
+- **Lazy `@tanstack/markdown`** — `print-app.tsx` memanggil `window.print()` 300 ms
+  setelah `ready`; memisahkan risiko mencetak tanpa isi catatan hanya untuk
+  ≈10 KB gzip. Waterfall-nya sudah ditangani oleh `modulepreload`.
+- **`output.manualChunks`** — menimpa konfigurasi Rollup milik Astro; manfaatnya
+  kecil dibanding risikonya.
+- **Menyederhanakan `SignOutIsland` jadi satu node DOM** — mustahil tanpa
+  merombak layout shell.
+
+### Ukuran total
+
+|                      | Kini                     |
+| -------------------- | ------------------------ |
+| Total `dist/`        | 2400 KB                  |
+| Chunks `_astro/*.js` | 64                       |
+| Halaman              | 15                       |
+| Chunks > 500 KB      | 0 (hanya `xlsx.*`, lazy) |
+
+### Payload awal, diukur ulang (Chromium, `transferSize`)
+
+| Halaman (kondisi dingin)                 | JS      | CSS      | HTML   | Permintaan |
+| ---------------------------------------- | ------- | -------- | ------ | ---------- |
+| `/` produksi (sebelum optimasi)          | 149 360 | 10 286   | 11 567 | 17         |
+| `/` lokal `wrangler pages dev` (sesudah) | 147 626 | 10 139   | 11 861 | 18         |
+| `/login` lokal (sesudah)                 | 92 143  | (cached) | 3 328  | 15         |
+
+Byte hampir identik — memang begitu adanya, perbaikan landing adalah soal
+paint dan perbaikan invoice adalah soal **urutan** permintaan. Jangan bandingkan
+`domContentLoaded` di sini: angka produksi termasuk RTT internet, angka lokal
+tidak. Untuk `/invoice/new` angka 192 KB di atas adalah jumlah graph kritis yang
+di-preload, bukan hasil tangkapan browser.
 
 ## Cara mengukur ulang
 

@@ -54,7 +54,7 @@ function Aurora() {
 function Eyebrow({ delay }: { delay: number }) {
   return (
     <motion.span
-      initial={{ opacity: 0, y: 12, scale: 0.92 }}
+      initial={false}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.5, delay, ease: EASE }}
       className="inline-flex items-center gap-2 rounded-pill border border-accent/25 bg-accent-soft px-3 py-1 text-xs font-medium text-accent"
@@ -93,7 +93,7 @@ function PreviewStage() {
       <motion.div
         role="tablist"
         aria-label="Pilih tampilan invoice"
-        initial={{ opacity: 0, y: 12 }}
+        initial={false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.85, ease: EASE }}
         className="mb-4 flex w-fit items-center gap-1 rounded-pill border border-border bg-card p-1 shadow-card"
@@ -125,7 +125,7 @@ function PreviewStage() {
       </motion.div>
 
       <motion.div
-        initial={{ opacity: 0, y: 40, rotate: -1.5 }}
+        initial={false}
         animate={{ opacity: 1, y: 0, rotate: 0 }}
         transition={{ duration: 0.9, delay: 0.35, ease: EASE }}
       >
@@ -146,7 +146,7 @@ function PreviewStage() {
       </motion.div>
 
       <motion.div
-        initial={{ opacity: 0, y: 14, scale: 0.9 }}
+        initial={false}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.55, delay: 1.15, ease: EASE }}
         className="absolute -left-4 top-16 hidden items-center gap-2 rounded-control border border-border bg-card px-3 py-2 text-xs font-medium shadow-popover lg:flex"
@@ -164,7 +164,7 @@ function PreviewStage() {
       </motion.div>
 
       <motion.div
-        initial={{ opacity: 0, y: 14, scale: 0.9 }}
+        initial={false}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.55, delay: 1.35, ease: EASE }}
         className="absolute -right-4 bottom-24 hidden items-center gap-2 rounded-control rounded-br-sm border border-accent/20 bg-accent-soft px-3 py-2 text-xs font-medium text-foreground shadow-popover lg:flex"
@@ -190,16 +190,27 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
       <div className="relative pb-16 pt-12 sm:pb-24 sm:pt-16">
         <Aurora />
 
+        {/* Everything in the first viewport uses `initial={false}` /
+            `immediate`, so the server HTML already shows it at full size.
+            The staged entrance that used to run here delayed the page's
+            largest paint until the island hydrated — the sections below the
+            fold keep theirs (they animate through `Reveal`). Ambient loops
+            (aurora, pulse, float) are untouched: they never start hidden. */}
         <div className="text-center">
           <Eyebrow delay={0.05} />
 
           <h1 className="mx-auto mt-6 max-w-3xl text-[clamp(2.75rem,7vw,4.25rem)] font-semibold leading-[1.03] tracking-[-0.035em]">
-            <SplitWords text="Bikin invoice." className="block" delay={0.16} />
-            <SplitWords text="Kirim. Selesai." className="block text-accent" delay={0.34} />
+            <SplitWords text="Bikin invoice." className="block" delay={0.16} immediate />
+            <SplitWords
+              text="Kirim. Selesai."
+              className="block text-accent"
+              delay={0.34}
+              immediate
+            />
           </h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 16 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6, ease: EASE }}
             className="mx-auto mt-6 max-w-xl text-lead text-muted"
@@ -209,7 +220,7 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.72, ease: EASE }}
             className="mt-8 flex flex-wrap items-center justify-center gap-3"
@@ -240,7 +251,7 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
           </motion.div>
 
           <motion.ul
-            initial={{ opacity: 0, y: 14 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.86, ease: EASE }}
             className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
@@ -256,7 +267,7 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
 
         <motion.div
           id="contoh"
-          initial={{ opacity: 0 }}
+          initial={false}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.2 }}
           className="mt-14 scroll-mt-24 sm:mt-16"
@@ -265,7 +276,7 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={false}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 1.5 }}
           className="mt-12 flex justify-center"
