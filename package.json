@@ -12,6 +12,7 @@
     "dev:logs": "astro dev logs",
     "build": "astro build && node scripts/modulepreload.mjs",
     "deploy": "wrangler pages deploy dist",
+    "reset:dev": "node --env-file=.env scripts/reset-dev.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "lint": "eslint .",
