@@ -24,6 +24,12 @@ export interface Env {
   ASSETS: AssetsBinding;
   PUBLIC_APPWRITE_ENDPOINT?: string;
   PUBLIC_APPWRITE_PROJECT_ID?: string;
+  /**
+   * Cloudflare Turnstile secret for `functions/api/turnstile.ts`. Set it as an
+   * *encrypted* Pages variable (dashboard or `wrangler pages secret put`) —
+   * never in `wrangler.toml`, which is committed.
+   */
+  TURNSTILE_SECRET_KEY?: string;
 }
 
 export type PagesFunction<E> = (context: {

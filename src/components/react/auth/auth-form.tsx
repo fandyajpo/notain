@@ -1,6 +1,6 @@
 import { type AnyFieldApi, useForm } from '@tanstack/react-form';
 import { Link } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   forgotPasswordSchema,
   resetPasswordSchema,
@@ -10,6 +10,11 @@ import {
 import { GENERIC_ERROR_MESSAGE } from '../../../core/shared/errors';
 import { DEFAULT_REDIRECT, isSelfRedirect, resolveRedirectTarget } from '../../../lib/redirect';
 import {
+  TURNSTILE_SITE_KEY,
+  turnstileEnabled,
+  verifyTurnstile,
+} from '../../../lib/turnstile';
+import {
   useCompleteRecovery,
   useCreateRecovery,
   useSession,
@@ -18,6 +23,7 @@ import {
 } from '../../../lib/query/hooks/use-session';
 import { Button } from '../ui/button';
 import { FieldShell, controlClass, useFieldIds } from '../ui/field';
+import { Turnstile } from './turnstile';
 
 type Mode = 'sign-in' | 'sign-up' | 'forgot-password' | 'reset-password';
 
@@ -82,8 +88,48 @@ function goTo(target: string): void {
  * exact schema it validates with — TanStack Form keys the Standard Schema
  * validator's type off the schema's input shape.
  */
+
+/**
+ * The Cloudflare Turnstile gate shared by the sign-in and sign-up forms.
+ *
+ * With no sitekey configured the gate is inert — no widget renders and every
+ * submit proceeds, which is what keeps local work and the existing forms
+ * unchanged until the feature is switched on. Once enabled, a submit must carry
+ * a token that our Pages Function accepts; a rejected one stops the submit and
+ * remints the widget, since a Turnstile token is single-use.
+ */
+function useCaptchaGate() {
+  const [token, setToken] = useState<string | null>(null);
+  const [nonce, setNonce] = useState(0);
+  const enabled = turnstileEnabled();
+
+  const widget = enabled ? (
+    <Turnstile key={nonce} siteKey={TURNSTILE_SITE_KEY} onToken={setToken} />
+  ) : null;
+
+  /** Spends the current token. Resolves `false` when the submit must stop. */
+  const consume = useCallback(
+    async (setServerError: (message: string | null) => void): Promise<boolean> => {
+      if (!enabled) return true;
+      const verdict = await verifyTurnstile(token);
+      // Spend it now and mint a fresh one, whether or not this submit succeeds.
+      setToken(null);
+      setNonce((n) => n + 1);
+      if (verdict === 'fail') {
+        setServerError('Verifikasi keamanan gagal. Selesaikan kotak Turnstile, lalu coba lagi.');
+        return false;
+      }
+      return true;
+    },
+    [enabled, token],
+  );
+
+  return { widget, consume };
+}
+
 function SignInForm({ redirectTo }: { redirectTo: string }) {
   const signIn = useSignIn();
+  const captcha = useCaptchaGate();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const form = useForm({
@@ -91,6 +137,7 @@ function SignInForm({ redirectTo }: { redirectTo: string }) {
     validators: { onSubmit: signInSchema },
     onSubmit: async ({ value }) => {
       setServerError(null);
+      if (!(await captcha.consume(setServerError))) return;
       try {
         await signIn.mutateAsync({ email: value.email.trim(), password: value.password });
         goTo(redirectTo);
@@ -144,6 +191,8 @@ function SignInForm({ redirectTo }: { redirectTo: string }) {
               Lupa password?
             </a>
           </p>
+
+          {captcha.widget}
         </>
       }
     />
@@ -152,6 +201,7 @@ function SignInForm({ redirectTo }: { redirectTo: string }) {
 
 function SignUpForm({ redirectTo }: { redirectTo: string }) {
   const signUp = useSignUp();
+  const captcha = useCaptchaGate();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const form = useForm({
@@ -159,6 +209,7 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
     validators: { onSubmit: signUpSchema },
     onSubmit: async ({ value }) => {
       setServerError(null);
+      if (!(await captcha.consume(setServerError))) return;
       try {
         await signUp.mutateAsync({
           name: value.name.trim(),
@@ -231,6 +282,8 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
               />
             )}
           </form.Field>
+
+          {captcha.widget}
         </>
       }
     />
