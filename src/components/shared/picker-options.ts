@@ -1,4 +1,4 @@
-import type { Invoice } from '../../core/invoice/model';
+import type { InvoiceHistoryEntry } from '../../core/invoice/model';
 import type { Customer } from '../../core/customer/model';
 import { customerKey } from '../../core/customer/model';
 
@@ -43,6 +43,11 @@ const EMPTY: PickerOptions = { customers: [], products: [] };
 /**
  * Folds invoice history into deduplicated, recency-sorted picker options.
  *
+ * Accepts the narrow `InvoiceHistoryEntry` slice (customer, items and the
+ * timestamps the sort reads) rather than a full `Invoice`, matching what the
+ * picker's projected query actually fetches — the rich-text sections it never
+ * looks at are never transferred.
+ *
  * - Customers are keyed by trimmed name + phone (same name, different number
  *   stays two entries).
  * - Products are keyed by trimmed name + unit price (a price change is a new
@@ -51,7 +56,7 @@ const EMPTY: PickerOptions = { customers: [], products: [] };
  * - Each list is capped at `limit`, newest first.
  */
 export function derivePickerOptions(
-  invoices: ReadonlyArray<Invoice> | null | undefined,
+  invoices: ReadonlyArray<InvoiceHistoryEntry> | null | undefined,
   limit: number = PICKER_OPTION_LIMIT,
 ): PickerOptions {
   if (!invoices || invoices.length === 0 || limit <= 0) return EMPTY;
@@ -117,7 +122,7 @@ export function derivePickerOptions(
 }
 
 /** Recency stamp: updated, then created, then the invoice date. */
-function stampOf(invoice: Invoice): number {
+function stampOf(invoice: InvoiceHistoryEntry): number {
   const value = invoice.updatedAt || invoice.createdAt || invoice.date;
   return parseStamp(value);
 }

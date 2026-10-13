@@ -1,4 +1,4 @@
-import type { Invoice, InvoiceDraft } from '../core/invoice/model';
+import type { Invoice, InvoiceDraft, InvoiceHistoryEntry } from '../core/invoice/model';
 
 export type ListInvoicesOptions = {
   /**
@@ -21,19 +21,41 @@ export type InvoicePage = {
    * result set is exhausted.
    */
   nextCursor: string | null;
+  /**
+   * Total rows the server matched for this query, ignoring `limit`/cursor.
+   *
+   * Appwrite reports this on every list response, so a caller that only needs a
+   * count (the dashboard's "Total faktur" stat) can read it off a single small
+   * page instead of walking the whole set. It reflects a *server-side* filter:
+   * the short-input local narrowing applied in `listByOwner` is not counted,
+   * which is fine because no count consumer uses a search string.
+   */
+  total: number;
 };
 
 /** Persistence port for invoices. Implementations must be owner-scoped. */
 export interface InvoiceRepository {
   listByOwner(ownerId: string, options?: ListInvoicesOptions): Promise<InvoicePage>;
   /**
-   * Every invoice number owned by the user, oldest to newest.
+   * Every invoice number owned by the user that belongs to `year`, oldest to
+   * newest.
    *
-   * Paging through the whole set matters: the next-number suggestion has to see
-   * invoices beyond the first page, otherwise it hands out a number that is
-   * already taken.
+   * Scoped to one year because that is all the next-number suggestion needs:
+   * sequences restart each calendar year, so numbers from earlier years can
+   * never collide with the one being offered. Paging through the *year's* set
+   * still matters — the suggestion has to see invoices beyond the first page,
+   * otherwise it hands out a number that is already taken.
    */
-  listAllNumbersByOwner(ownerId: string): Promise<string[]>;
+  listNumbersByYear(ownerId: string, year: number): Promise<string[]>;
+  /**
+   * The most recent invoices narrowed to the columns the picker derives its
+   * suggestions from.
+   *
+   * A projected read: the rich-text sections (the bulkiest columns) and the
+   * adjustments are left behind server-side, so the picker's history fetch is a
+   * fraction of the full-row payload the table needs.
+   */
+  listHistoryByOwner(ownerId: string, limit?: number): Promise<InvoiceHistoryEntry[]>;
   getById(id: string): Promise<Invoice | null>;
   create(input: { id: string; ownerId: string; draft: InvoiceDraft }): Promise<Invoice>;
   update(input: { id: string; draft: InvoiceDraft }): Promise<Invoice>;

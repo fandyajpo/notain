@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useInvoices } from '../../../lib/query/hooks/use-invoices';
+import { usePickerHistory } from '../../../lib/query/hooks/use-invoices';
 import { useCustomers } from '../../../lib/query/hooks/use-customers';
 import { derivePickerOptions, mergeCustomerOptions } from '../../shared/picker-options';
 import { CE_EVENTS, pickEventSchema, type PickPayload } from '../../shared/contracts';
@@ -27,13 +27,11 @@ type Props = {
  * Products have no directory of their own and stay derived from history.
  */
 export function Picker({ mode, label, placeholder, onPick }: Props) {
-  // Suggestions are capped at the 20 most recent anyway, so the loaded pages
-  // are plenty — the picker never needs to page through the whole history.
-  const history = useInvoices('');
-  const invoices = useMemo(
-    () => history.data?.pages.flatMap((page) => page.items) ?? [],
-    [history.data],
-  );
+  // A projected read: only the columns the suggestions are derived from (the
+  // customer, the item lines and the timestamps), never the rich-text sections
+  // a full invoice row would drag along.
+  const history = usePickerHistory();
+  const invoices = useMemo(() => history.data ?? [], [history.data]);
   const derived = useMemo(() => derivePickerOptions(invoices), [invoices]);
   const saved = useCustomers();
   const options = useMemo(

@@ -4,7 +4,14 @@ import { APPWRITE } from '../appwrite/config';
 import { getTables } from '../appwrite/client';
 import { toAppError } from '../appwrite/errors';
 import { ownerRowPermissions } from '../appwrite/permissions';
-import { draftToRowData, invoiceRowToDomain, type InvoiceRow } from '../appwrite/mappers';
+import { invoiceNumberPrefix } from '../core/invoice/numbering';
+import {
+  draftToRowData,
+  invoiceHistoryRowToEntry,
+  invoiceRowToDomain,
+  type InvoiceRow,
+} from '../appwrite/mappers';
+import type { InvoiceHistoryEntry } from '../core/invoice/model';
 import type {
   InvoicePage,
   InvoiceRepository,
@@ -14,15 +21,26 @@ import type {
 const DEFAULT_LIMIT = 100;
 
 /**
+ * How many recent invoices the picker's history projection reads.
+ *
+ * The picker only ever offers `PICKER_OPTION_LIMIT` (20) suggestions per list,
+ * and each invoice contributes several items, so one page is far more coverage
+ * than the caps can use — but it is kept at a page rather than trimmed further
+ * so an account whose early invoices share few products still fills the list.
+ */
+const HISTORY_LIMIT = 100;
+
+/**
  * Appwrite's full-text search ignores input shorter than this. Below it the
  * query is filtered locally instead of sent to the server.
  */
 const SEARCH_MIN_CHARS = 3;
 
 /**
- * Upper bound on pages walked when collecting every invoice number. It only
+ * Upper bound on pages walked when collecting a year's invoice numbers. It only
  * exists so a bug can never turn into an unbounded request loop; at
- * `DEFAULT_LIMIT` per page it covers ten thousand invoices.
+ * `DEFAULT_LIMIT` per page it covers ten thousand invoices *in one year*, which
+ * no account approaches.
  */
 const MAX_NUMBER_PAGES = 100;
 
@@ -59,19 +77,28 @@ export class AppwriteInvoiceRepository implements InvoiceRepository {
       return {
         items,
         nextCursor: rows.length === limit && last ? last.$id : null,
+        total: response.total,
       };
     } catch (error) {
       throw toAppError(error);
     }
   }
 
-  async listAllNumbersByOwner(ownerId: string): Promise<string[]> {
+  async listNumbersByYear(ownerId: string, year: number): Promise<string[]> {
     const numbers: string[] = [];
     let cursorAfter: string | undefined;
+    // `INV-YYYY-` is exactly the prefix every number for this year carries, so
+    // filtering on it in the database cuts the walk down to one year's rows.
+    // `startsWith` is a prefix query and, unlike `search`, needs no full-text
+    // index — it is a plain string comparison Appwrite Cloud accepts as-is.
+    // Filtering on the number *field* (not on creation order) is what keeps
+    // this correct even for a hand-edited number whose date predates the year.
+    const prefix = invoiceNumberPrefix(year);
 
     for (let page = 0; page < MAX_NUMBER_PAGES; page += 1) {
       const queries = [
         Query.equal('ownerId', ownerId),
+        Query.startsWith('invoiceNumber', prefix),
         Query.orderDesc('date'),
         Query.orderDesc('$createdAt'),
         // Numbers only: the full row payload (items, rich-text sections) is
@@ -101,6 +128,31 @@ export class AppwriteInvoiceRepository implements InvoiceRepository {
     }
 
     return numbers;
+  }
+
+  async listHistoryByOwner(ownerId: string, limit = HISTORY_LIMIT): Promise<InvoiceHistoryEntry[]> {
+    const queries = [
+      Query.equal('ownerId', ownerId),
+      // Project down to the columns the picker reads. The three rich-text
+      // sections are the bulkiest columns in the table and the picker never
+      // looks at them; leaving them behind server-side is what makes this
+      // fetch a fraction of the full-row payload.
+      Query.select(['customerName', 'customerPhone', 'items', 'date']),
+      Query.orderDesc('date'),
+      Query.orderDesc('$createdAt'),
+      Query.limit(limit),
+    ];
+
+    try {
+      const response = await getTables().listRows<InvoiceRow>({
+        databaseId: APPWRITE.databaseId,
+        tableId: APPWRITE.invoicesTableId,
+        queries,
+      });
+      return response.rows.map(invoiceHistoryRowToEntry);
+    } catch (error) {
+      throw toAppError(error);
+    }
   }
 
   async getById(id: string): Promise<Invoice | null> {

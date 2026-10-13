@@ -77,6 +77,20 @@ export type Invoice = InvoiceDraft & {
   updatedAt: string;
 };
 
+/**
+ * The slice of an invoice the picker derives its customer/product suggestions
+ * from — the full invoice minus the rich-text sections, adjustments and notes it
+ * never reads.
+ *
+ * Fetched through a projected query (`Query.select`) so opening the picker does
+ * not ship every invoice's HTML. `Invoice` satisfies it structurally, so a full
+ * invoice can still be handed to `derivePickerOptions` directly.
+ */
+export type InvoiceHistoryEntry = Pick<
+  Invoice,
+  'customerName' | 'customerPhone' | 'items' | 'date' | 'createdAt' | 'updatedAt'
+>;
+
 export const EMPTY_ADJUSTMENT: InvoiceAdjustment = { type: 'amount', value: 0 };
 
 export const EMPTY_SECTIONS: InvoiceSections = { header: '', content: '', footer: '' };

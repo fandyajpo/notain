@@ -8,10 +8,16 @@ import { formatRupiah } from '../../../core/shared/money';
 import { formatTanggalRelatif } from '../../../core/shared/dates';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
 import { useSession } from '../../../lib/query/hooks/use-session';
-import { useCustomers } from '../../../lib/query/hooks/use-customers';
-import { useInvoiceNumbers, useInvoices } from '../../../lib/query/hooks/use-invoices';
+import { useCustomerCount } from '../../../lib/query/hooks/use-customers';
+import { useInvoices } from '../../../lib/query/hooks/use-invoices';
+import type { Invoice } from '../../../core/invoice/model';
 
-/** How many recent invoices the dashboard previews before linking onward. */
+/**
+ * How many recent invoices the dashboard previews before linking onward.
+ *
+ * Doubles as the page size for the one invoice query the dashboard makes, so
+ * it ships six rows instead of the table's full hundred.
+ */
 const RECENT_PREVIEW = 6;
 
 /** Landing content for `/dashboard`: greeting, setup checklist, live summary. */
@@ -29,10 +35,21 @@ export function DashboardApp() {
 
 function DashboardContent() {
   const { data: session } = useSession();
-  const { data: profile } = useProfile();
+  const { data: profile, isError: profileFailed } = useProfile();
+  // One small page feeds the recent list, the "any invoice yet?" checklist and
+  // the total-invoice stat (read off the response's `total`), so the whole
+  // screen costs a single six-row request rather than a full-page fetch plus a
+  // walk of every invoice number.
+  const invoices = useInvoices('', { limit: RECENT_PREVIEW });
+  const customerCount = useCustomerCount();
 
   const greeting = getGreeting();
   const businessName = profile?.name?.trim() || 'Usaha kamu';
+
+  const firstPage = invoices.data?.pages[0];
+  const totalInvoices = firstPage?.total;
+  const recent = firstPage?.items.slice(0, RECENT_PREVIEW) ?? [];
+  const hasInvoices = (firstPage?.items.length ?? 0) > 0;
 
   return (
     <div className="flex flex-col gap-8">
@@ -56,22 +73,33 @@ function DashboardContent() {
       {/* The checklist covers "profile incomplete" and points at what to do
           next; it hides itself once every step is done or when the profile
           fetch fails (unknown is not the same as incomplete). */}
-      <SetupChecklist />
+      <SetupChecklist
+        profile={profile ?? undefined}
+        hasInvoices={hasInvoices}
+        hidden={profileFailed || invoices.isLoading}
+      />
 
-      <SummarySection />
+      <SummarySection
+        totalInvoices={totalInvoices}
+        totalCustomers={customerCount.data}
+        recent={recent}
+        invoicesLoading={invoices.isLoading}
+      />
     </div>
   );
 }
 
-function SummarySection() {
-  const invoiceNumbers = useInvoiceNumbers();
-  const customers = useCustomers();
-  const invoices = useInvoices();
-
-  const totalInvoices = invoiceNumbers.data?.length;
-  const totalCustomers = customers.data?.length;
-  const recent = invoices.data?.pages[0]?.items.slice(0, RECENT_PREVIEW) ?? [];
-
+function SummarySection({
+  totalInvoices,
+  totalCustomers,
+  recent,
+  invoicesLoading,
+}: {
+  totalInvoices: number | undefined;
+  totalCustomers: number | undefined;
+  recent: Invoice[];
+  invoicesLoading: boolean;
+}) {
   return (
     <div className="flex flex-col gap-6">
       <section className="grid gap-4 sm:grid-cols-2">
@@ -99,7 +127,7 @@ function SummarySection() {
           </a>
         </div>
 
-        {invoices.isLoading ? (
+        {invoicesLoading ? (
           <p className="text-sm text-muted">Memuat faktur…</p>
         ) : recent.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-card border border-dashed border-border py-12 text-center">

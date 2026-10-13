@@ -1,5 +1,5 @@
 import { ID } from 'appwrite';
-import type { Invoice, InvoiceDraft } from '../core/invoice/model';
+import type { Invoice, InvoiceDraft, InvoiceHistoryEntry } from '../core/invoice/model';
 import { invoiceDraftSchema } from '../core/invoice/schema';
 import { AppError, ERROR_CODES, flattenIssues } from '../core/shared/errors';
 import { container } from '../infra/container';
@@ -24,14 +24,28 @@ export async function listInvoicesPage(options?: ListInvoicesOptions): Promise<I
 }
 
 /**
- * Every invoice number, walking past the first page.
+ * Invoice numbers for the current year, walking past the first page.
  *
- * Suggesting the next number from a single page would offer a number that
- * already exists once the account has more than one page of invoices.
+ * Scoped to the current year because that is all the next-number suggestion
+ * needs: sequences restart each calendar year, so earlier years can never
+ * collide with the number being offered. Suggesting from a single page would
+ * still offer a number that already exists once the year has more than one
+ * page of invoices, hence the walk.
  */
 export async function listAllInvoiceNumbers(): Promise<string[]> {
   const user = await requireSession();
-  return container.invoices.listAllNumbersByOwner(user.id);
+  return container.invoices.listNumbersByYear(user.id, new Date().getFullYear());
+}
+
+/**
+ * Recent invoices narrowed to the columns the picker derives suggestions from.
+ *
+ * A projected read: the rich-text sections the picker never looks at are left
+ * behind server-side, so opening the picker does not ship every invoice's HTML.
+ */
+export async function listPickerHistory(limit?: number): Promise<InvoiceHistoryEntry[]> {
+  const user = await requireSession();
+  return container.invoices.listHistoryByOwner(user.id, limit);
 }
 
 /**

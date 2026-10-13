@@ -4,8 +4,9 @@ import type { Customer } from '../core/customer/model';
 import { AppError } from '../core/shared/errors';
 
 const { getSession } = vi.hoisted(() => ({ getSession: vi.fn() }));
-const { listByOwner, findByName, create, update, remove } = vi.hoisted(() => ({
+const { listByOwner, countByOwner, findByName, create, update, remove } = vi.hoisted(() => ({
   listByOwner: vi.fn(),
+  countByOwner: vi.fn(),
   findByName: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
@@ -15,12 +16,19 @@ const { listByOwner, findByName, create, update, remove } = vi.hoisted(() => ({
 vi.mock('../infra/container', () => ({
   container: {
     auth: { getSession },
-    customers: { listByOwner, findByName, create, update, remove },
+    customers: { listByOwner, countByOwner, findByName, create, update, remove },
   },
 }));
 
-const { createCustomer, deleteCustomer, listCustomers, rememberCustomer, updateCustomer } =
-  await import('./customers');
+const {
+  countCustomers,
+  createCustomer,
+  deleteCustomer,
+  importCustomers,
+  listCustomers,
+  rememberCustomer,
+  updateCustomer,
+} = await import('./customers');
 const { forgetSession } = await import('./session');
 
 const ALICE: SessionUser = { id: 'user-a', email: 'a@example.com', name: 'Alice' };
@@ -39,6 +47,7 @@ beforeEach(() => {
   forgetSession();
   getSession.mockReset();
   listByOwner.mockReset();
+  countByOwner.mockReset();
   findByName.mockReset();
   create.mockReset();
   update.mockReset();
@@ -178,5 +187,90 @@ describe('rememberCustomer', () => {
     getSession.mockResolvedValue(null);
 
     await expect(rememberCustomer({ name: 'Budi', phone: '' })).rejects.toBeInstanceOf(AppError);
+  });
+});
+
+describe('countCustomers', () => {
+  it('returns the owner’s row count without transferring the directory', async () => {
+    countByOwner.mockResolvedValue(7);
+
+    await expect(countCustomers()).resolves.toBe(7);
+    expect(countByOwner).toHaveBeenCalledWith('user-a');
+    expect(listByOwner).not.toHaveBeenCalled();
+  });
+
+  it('requires a session', async () => {
+    getSession.mockResolvedValue(null);
+
+    await expect(countCustomers()).rejects.toBeInstanceOf(AppError);
+  });
+});
+
+describe('importCustomers', () => {
+  it('loads the directory once and files each new customer', async () => {
+    listByOwner.mockResolvedValue([]);
+    create.mockResolvedValue(budi());
+
+    const result = await importCustomers([
+      { name: 'Budi', phone: '081111111111' },
+      { name: 'Siti', phone: '082222222222' },
+    ]);
+
+    expect(result.imported).toBe(2);
+    // One directory read, no per-row server-side name search.
+    expect(listByOwner).toHaveBeenCalledTimes(1);
+    expect(findByName).not.toHaveBeenCalled();
+    expect(create).toHaveBeenCalledTimes(2);
+  });
+
+  it('updates a row that already exists instead of duplicating it', async () => {
+    listByOwner.mockResolvedValue([budi({ name: 'Budi', phone: '081111111111' })]);
+    update.mockResolvedValue(budi());
+
+    const result = await importCustomers([{ name: 'Budi', phone: '081111111111' }]);
+
+    expect(result.imported).toBe(1);
+    expect(create).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update.mock.calls[0]?.[0].id).toBe('cus-1');
+  });
+
+  it('matches on folded phone, so `+62 811…` updates the `0811…` row', async () => {
+    listByOwner.mockResolvedValue([budi({ name: 'Budi', phone: '081111111111' })]);
+    update.mockResolvedValue(budi());
+
+    await importCustomers([{ name: 'Budi', phone: '+62 811-1111-1111' }]);
+
+    expect(create).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalledTimes(1);
+  });
+
+  it('collapses duplicate rows in the file to a single write', async () => {
+    listByOwner.mockResolvedValue([]);
+    create.mockResolvedValue(budi());
+
+    const result = await importCustomers([
+      { name: 'Budi', phone: '081111111111' },
+      { name: 'Budi', phone: '081111111111' },
+    ]);
+
+    expect(result.imported).toBe(1);
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips blank names without touching storage', async () => {
+    listByOwner.mockResolvedValue([]);
+
+    const result = await importCustomers([{ name: '   ', phone: '081111111111' }]);
+
+    expect(result.imported).toBe(0);
+    expect(create).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('requires a session', async () => {
+    getSession.mockResolvedValue(null);
+
+    await expect(importCustomers([{ name: 'Budi', phone: '' }])).rejects.toBeInstanceOf(AppError);
   });
 });

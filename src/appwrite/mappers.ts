@@ -5,6 +5,7 @@ import type {
   Invoice,
   InvoiceAdjustment,
   InvoiceDraft,
+  InvoiceHistoryEntry,
   InvoiceItem,
   InvoiceSections,
 } from '../core/invoice/model';
@@ -281,5 +282,24 @@ export function customerToRowData(
     name: customer.name.trim(),
     phone: customer.phone.trim() || null,
     lastUsedAt,
+  };
+}
+
+/**
+ * Maps a *projected* invoice row (see `listHistoryByOwner`) back to the narrow
+ * slice the picker reads.
+ *
+ * The row was fetched with `Query.select`, so the rich-text sections and
+ * adjustments are absent by design — only the customer columns, the item lines
+ * and the timestamps the recency sort uses are carried across.
+ */
+export function invoiceHistoryRowToEntry(row: InvoiceRow): InvoiceHistoryEntry {
+  return {
+    customerName: typeof row.customerName === 'string' ? row.customerName : '',
+    customerPhone: optionalString(row.customerPhone),
+    items: parseInvoiceItems(row.items),
+    date: typeof row.date === 'string' ? row.date : '',
+    createdAt: row.$createdAt,
+    updatedAt: row.$updatedAt,
   };
 }

@@ -47,6 +47,21 @@ export class AppwriteCustomerRepository implements CustomerRepository {
     return customers.sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
   }
 
+  async countByOwner(ownerId: string): Promise<number> {
+    try {
+      // One row is enough: Appwrite reports how many rows the query matched in
+      // `total`, independent of `limit`, so we never pull the directory itself.
+      const response = await getTables().listRows<CustomerRow>({
+        databaseId: APPWRITE.databaseId,
+        tableId: APPWRITE.customersTableId,
+        queries: [Query.equal('ownerId', ownerId), Query.limit(1)],
+      });
+      return response.total;
+    } catch (error) {
+      throw toAppError(error);
+    }
+  }
+
   async findByName(ownerId: string, name: string): Promise<Customer[]> {
     try {
       const response = await getTables().listRows<CustomerRow>({

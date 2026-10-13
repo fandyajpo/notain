@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  countCustomers,
   createCustomer,
   deleteCustomer,
   importCustomers,
@@ -24,6 +25,21 @@ export function useCustomers() {
   });
 }
 
+/**
+ * Just "how many customers", for the dashboard stat.
+ *
+ * A separate hook from `useCustomers` on purpose: the dashboard needs only the
+ * count, and pulling the whole directory to render one number is the most
+ * wasteful read the app used to make.
+ */
+export function useCustomerCount() {
+  return useQuery({
+    queryKey: queryKeys.customerCount,
+    queryFn: () => countCustomers(),
+    ...queryPolicy('customerCount'),
+  });
+}
+
 export function useCreateCustomer() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -31,6 +47,7 @@ export function useCreateCustomer() {
     onSuccess: (customer) => {
       queryClient.setQueryData(queryKeys.customer(customer.id), customer);
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
     },
   });
 }
@@ -46,6 +63,7 @@ export function useRememberCustomer() {
       rememberCustomer(draft, lastUsedAt),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
     },
   });
 }
@@ -69,6 +87,7 @@ export function useDeleteCustomer() {
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
     },
   });
 }
@@ -80,6 +99,7 @@ export function useImportCustomers() {
     mutationFn: (drafts: CustomerDraft[]) => importCustomers(drafts),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
     },
   });
 }

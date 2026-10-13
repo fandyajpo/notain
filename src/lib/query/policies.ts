@@ -43,6 +43,9 @@ export const QUERY_POLICIES = {
   // trusted for a few seconds; a customer added moments ago has to appear in
   // the next picker.
   customers: { staleTime: 5_000, gcTime: 5 * 60_000 },
+  // A bare "how many customers" figure for the dashboard. It changes only when
+  // the directory changes, so it is trusted as long as the invoice list.
+  customerCount: { staleTime: 15_000, gcTime: 5 * 60_000 },
 } as const;
 
 export type QueryPolicyName = keyof typeof QUERY_POLICIES;

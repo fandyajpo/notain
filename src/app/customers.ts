@@ -18,6 +18,50 @@ function parseCustomer(draft: CustomerDraft): CustomerDraft {
 }
 
 /**
+ * How many customer writes are kept in flight during an import.
+ *
+ * The batch runs writes concurrently so a large file does not take one
+ * round-trip per row, but a browser firing hundreds of parallel requests at
+ * Appwrite will get throttled. Five is a deliberate middle ground: enough to
+ * hide per-row latency, low enough to stay under the rate limiter.
+ */
+const IMPORT_CONCURRENCY = 5;
+
+/**
+ * Runs `task` over `items` with at most `limit` in flight at once.
+ *
+ * A tiny inline pool rather than a dependency: the whole app is one small
+ * static bundle, and this is all an import needs.
+ */
+async function mapWithConcurrency<T>(
+  items: readonly T[],
+  limit: number,
+  task: (item: T) => Promise<void>,
+): Promise<void> {
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    for (;;) {
+      const index = cursor;
+      cursor += 1;
+      if (index >= items.length) return;
+      await task(items[index] as T);
+    }
+  });
+  await Promise.all(workers);
+}
+
+/**
+ * How many customers the signed-in user has, without transferring them.
+ *
+ * The dashboard stat only needs the number; walking (and mapping) the whole
+ * directory for it is the single most wasteful read the app used to do.
+ */
+export async function countCustomers(): Promise<number> {
+  const user = await requireSession();
+  return container.customers.countByOwner(user.id);
+}
+
+/**
  * The saved-customer directory for the signed-in user, newest first.
  *
  * Built-in behaviour: an empty list is a normal answer, not an error — a new
@@ -95,19 +139,56 @@ export async function rememberCustomer(
 /**
  * Files a batch of imported drafts into the directory.
  *
- * Each row goes through `rememberCustomer`, so a name that already exists is
- * updated rather than duplicated — importing a list that overlaps the current
- * directory must not create a second entry for the same person. The rows are
- * assumed to be pre-validated (see `parseCustomerImportRows`), so a throw here
- * is a genuine storage failure, not a bad row.
+ * A name that already exists is updated rather than duplicated — importing a
+ * list that overlaps the current directory must not create a second entry for
+ * the same person. The rows are assumed to be pre-validated (see
+ * `parseCustomerImportRows`), so a throw here is a genuine storage failure, not
+ * a bad row.
+ *
+ * Rather than a per-row name lookup (one round-trip each) followed by a
+ * sequential write, the directory is loaded once and indexed by identity, then
+ * the writes run a few at a time. A file that used to cost ~2×N sequential
+ * requests now costs one read plus a handful of parallel writes. Duplicates
+ * *within* the file collapse to a single row, so `imported` reports how many
+ * customers were actually filed.
  *
  * Returns how many rows were filed.
  */
 export async function importCustomers(drafts: CustomerDraft[]): Promise<{ imported: number }> {
-  let imported = 0;
+  const user = await requireSession();
+
+  // Normalise and drop blanks; the last draft for an identity wins, matching
+  // the old per-row behaviour where a later row overwrote the earlier one.
+  const byKey = new Map<string, CustomerDraft>();
   for (const draft of drafts) {
-    const row = await rememberCustomer(draft);
-    if (row) imported += 1;
+    const name = draft.name.trim();
+    if (!name) continue;
+    const customer = parseCustomer({ name, phone: draft.phone.trim() });
+    byKey.set(customerKey(customer), customer);
   }
+  if (byKey.size === 0) return { imported: 0 };
+
+  // One directory read instead of a per-row server-side name search.
+  const existing = await container.customers.listByOwner(user.id);
+  const existingByKey = new Map(existing.map((row) => [customerKey(row), row]));
+
+  const lastUsedAt = new Date().toISOString();
+  let imported = 0;
+
+  await mapWithConcurrency([...byKey.entries()], IMPORT_CONCURRENCY, async ([key, customer]) => {
+    const hit = existingByKey.get(key);
+    if (hit) {
+      await container.customers.update({ id: hit.id, customer, lastUsedAt });
+    } else {
+      await container.customers.create({
+        id: ID.unique(),
+        ownerId: user.id,
+        customer,
+        lastUsedAt,
+      });
+    }
+    imported += 1;
+  });
+
   return { imported };
 }

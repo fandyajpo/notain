@@ -83,6 +83,7 @@ describe('QUERY_POLICIES', () => {
   it('declares a policy for every query in the app', () => {
     expect(Object.keys(QUERY_POLICIES).sort()).toEqual(
       [
+        'customerCount',
         'customers',
         'invoice',
         'invoiceNumbers',

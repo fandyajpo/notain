@@ -11,6 +11,7 @@ import {
   getInvoice,
   listAllInvoiceNumbers,
   listInvoicesPage,
+  listPickerHistory,
   updateInvoice,
 } from '../../../app/invoices';
 import { queryPolicy } from '../policies';
@@ -28,11 +29,16 @@ type InvoiceListData = InfiniteData<InvoicePage>;
  * would otherwise ship every row (rich-text sections included) to the browser
  * just to render the first screen. Rows are still narrowed server-side by
  * `search`, so pagination and search do not fight each other.
+ *
+ * `options.limit` shrinks the page for a caller that only previews a handful of
+ * rows (the dashboard shows six). It is keyed separately so a small preview
+ * never shares — or evicts — the full page the `/invoices` table relies on.
  */
-export function useInvoices(search = '') {
+export function useInvoices(search = '', options?: { limit?: number }) {
+  const limit = options?.limit;
   return useInfiniteQuery({
-    queryKey: queryKeys.invoices(search),
-    queryFn: ({ pageParam }) => listInvoicesPage({ search, cursorAfter: pageParam }),
+    queryKey: queryKeys.invoices(search, limit),
+    queryFn: ({ pageParam }) => listInvoicesPage({ search, cursorAfter: pageParam, limit }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     ...queryPolicy('invoices'),
@@ -59,6 +65,23 @@ export function useInvoiceNumbers() {
     queryKey: queryKeys.invoiceNumbers,
     queryFn: () => listAllInvoiceNumbers(),
     ...queryPolicy('invoiceNumbers'),
+  });
+}
+
+/**
+ * Recent invoice history for the picker, projected to just the columns its
+ * suggestions are derived from.
+ *
+ * Deliberately separate from `useInvoices`: the table needs full rows, the
+ * picker needs a sliver. Sharing one query would either bloat the picker with
+ * rich-text HTML or strip the columns the table renders. It rides the `invoices`
+ * policy because it is invoice data and is invalidated alongside it.
+ */
+export function usePickerHistory() {
+  return useQuery({
+    queryKey: queryKeys.pickerHistory,
+    queryFn: () => listPickerHistory(),
+    ...queryPolicy('invoices'),
   });
 }
 
@@ -124,6 +147,7 @@ export function useDeleteInvoice() {
 function invalidateCollections(queryClient: ReturnType<typeof useQueryClient>): void {
   void queryClient.invalidateQueries({ queryKey: ['invoices'] });
   void queryClient.invalidateQueries({ queryKey: queryKeys.invoiceNumbers });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.pickerHistory });
 }
 
 export type { Invoice, InvoicePage };

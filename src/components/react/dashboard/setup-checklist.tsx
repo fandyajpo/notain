@@ -1,6 +1,5 @@
 import { Check, Circle } from 'lucide-react';
-import { useInvoices } from '../../../lib/query/hooks/use-invoices';
-import { useProfile } from '../../../lib/query/hooks/use-profile';
+import type { BusinessProfile } from '../../../core/profile/model';
 
 type Step = {
   id: string;
@@ -11,6 +10,14 @@ type Step = {
   cta: string;
 };
 
+type Props = {
+  profile: BusinessProfile | undefined;
+  /** Whether the account has at least one invoice yet. */
+  hasInvoices: boolean;
+  /** Hide while the inputs are still unknown — "loading" must not read as "incomplete". */
+  hidden: boolean;
+};
+
 /**
  * The onboarding quest: the handful of things that stand between a fresh
  * account and an invoice that is ready to send.
@@ -19,12 +26,12 @@ type Step = {
  * every step is complete — a checklist that stays around after it is finished
  * is just noise. On a failed profile fetch it stays hidden too: "incomplete"
  * and "we could not tell" must not look the same.
+ *
+ * The data arrives as props so the dashboard's single invoice query feeds both
+ * this checklist and the summary above it, instead of the two firing separate
+ * fetches of the same rows.
  */
-export function SetupChecklist() {
-  const { data: profile, isError: profileFailed } = useProfile();
-  const { data: invoicePages, isLoading: invoicesLoading } = useInvoices('');
-  const hasInvoices = (invoicePages?.pages.flatMap((page) => page.items).length ?? 0) > 0;
-
+export function SetupChecklist({ profile, hasInvoices, hidden }: Props) {
   const steps: Step[] = [
     {
       id: 'profil',
@@ -52,7 +59,7 @@ export function SetupChecklist() {
     },
   ];
 
-  if (invoicesLoading || profileFailed) return null;
+  if (hidden) return null;
   if (steps.every((step) => step.done)) return null;
 
   const doneCount = steps.filter((step) => step.done).length;

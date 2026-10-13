@@ -9,6 +9,14 @@ import type { Customer, CustomerDraft } from '../core/customer/model';
  */
 export interface CustomerRepository {
   listByOwner(ownerId: string): Promise<Customer[]>;
+  /**
+   * Total rows the owner has, without transferring them.
+   *
+   * Backed by the list response's `total` with a one-row limit, so a "how many
+   * customers do I have" stat costs a single tiny request instead of walking
+   * (and mapping) the whole directory.
+   */
+  countByOwner(ownerId: string): Promise<number>;
   /** All of the owner's rows whose name matches exactly, before phone folding. */
   findByName(ownerId: string, name: string): Promise<Customer[]>;
   create(input: {
