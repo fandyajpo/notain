@@ -1,11 +1,30 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { LandingApp } from '../components/react/landing/landing-app';
+import { LandingTop } from '../components/react/landing/landing-top';
+import { LandingRest } from '../components/react/landing/landing-rest';
+import { LandingFooter } from '../components/react/landing/landing-footer';
 ---
 
 <Layout
   title="Notain — Bikin nota. Kirim. Selesai."
   description="Buat invoice profesional untuk bisnis kamu, download PDF-nya, lalu kirim ke customer langsung lewat WhatsApp."
 >
-  <LandingApp client:load />
+  <!-- Three islands, not one: the top hydrates now because the header and
+       progress bar react to scroll immediately, while the sections and the
+       footer mount only as they approach the viewport (`client:visible`),
+       keeping their chunks off the first load. The shared wrapper and the
+       dot texture are plain HTML so all three paint before any JS runs. -->
+  <div class="min-h-screen overflow-x-clip">
+    <!-- Page-wide dot texture; fixed so content slides over it. -->
+    <div
+      aria-hidden="true"
+      class="pointer-events-none fixed inset-0 -z-10 texture-dots [mask-image:linear-gradient(to_bottom,transparent,black_8%,black_92%,transparent)]"
+    ></div>
+
+    <LandingTop client:load>
+      <LandingRest client:visible />
+    </LandingTop>
+
+    <LandingFooter client:visible />
+  </div>
 </Layout>

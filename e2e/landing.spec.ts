@@ -9,7 +9,9 @@ test('landing page renders and hydrates without errors', async ({ page }) => {
     if (m.type() === 'error') errors.push(`console: ${m.text()}`);
   });
   page.on('response', (r) => {
-    if (r.url().includes('landing-app.tsx')) moduleStatuses.push(String(r.status()));
+    // Matches both the dev source (landing-top.tsx) and the hashed build
+    // chunk (landing-top.<hash>.js), so the check works against either.
+    if (r.url().includes('landing-top')) moduleStatuses.push(String(r.status()));
   });
 
   await page.goto('/', { waitUntil: 'networkidle' });
