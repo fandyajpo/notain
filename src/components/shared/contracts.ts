@@ -1,3 +1,4 @@
+import '../../core/zod-csp';
 import { z } from 'zod';
 
 /**

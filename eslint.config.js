@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint';
 import astro from 'eslint-plugin-astro';
 
 export default defineConfig([
-  globalIgnores(['dist/', '.astro/', 'node_modules/', 'coverage/']),
+  globalIgnores(['dist/', '.astro/', 'node_modules/', 'coverage/', '.wrangler/']),
   js.configs.recommended,
   tseslint.configs.recommended,
   astro.configs.recommended,

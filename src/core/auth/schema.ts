@@ -1,3 +1,4 @@
+import '../zod-csp';
 import { z } from 'zod';
 
 export const AUTH_LIMITS = {

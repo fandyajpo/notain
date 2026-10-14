@@ -11,15 +11,30 @@
 # left off — preloading is effectively irreversible, so it should be an
 # informed choice, not a default.
 #
-# No Content-Security-Policy yet: the app talks to Appwrite and loads Cloudflare
-# Turnstile, and one wrong directive breaks sign-in. It should land on its own,
-# ideally as Content-Security-Policy-Report-Only first.
+# CSP is enforcing. It was proven Report-Only first — browser-tested against
+# the built site with zero violations, which is how the inline Astro island
+# runtime hashes (scripts/csp-hashes.mjs) and the Vue/Zod eval fixes landed.
+# Reports still post to /api/csp-report (see functions/api/csp-report.ts), so
+# a violation that only shows up in production stays visible in the Pages
+# Function logs — flip the header name back to Content-Security-Policy-Report-Only
+# to return to watching without blocking.
+#
+# Why each exception exists:
+#   script-src  + challenges.cloudflare.com  — the Turnstile widget script
+#   script-src  + 'sha256-…'                — Astro's inline island runtime (stamped at build)
+#   frame-src   + challenges.cloudflare.com  — the Turnstile iframe it mounts
+#   connect-src + sgp.cloud.appwrite.io      — the Appwrite API the client calls
+#   connect-src + challenges.cloudflare.com  — widget chatter from the top frame
+#   style-src   'unsafe-inline'              — inline <style> and style= attributes
+#   img/font-src data: blob:                 — inline SVGs and object URLs
+#   object-src 'none', frame-ancestors 'none' — hard stops, no legitimate use
 /*
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self' https://challenges.cloudflare.com __CSP_SCRIPT_HASHES__; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://sgp.cloud.appwrite.io wss://sgp.cloud.appwrite.io https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; worker-src 'self' blob:; report-uri /api/csp-report
 
 # Hashed build assets cannot change without a new file name, so the etag dance
 # Cloudflare serves by default (`max-age=0, must-revalidate`) is pure round

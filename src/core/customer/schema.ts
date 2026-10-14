@@ -1,3 +1,4 @@
+import '../zod-csp';
 import { z } from 'zod';
 import { CUSTOMER_LIMITS } from './model';
 

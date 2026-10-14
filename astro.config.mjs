@@ -143,6 +143,15 @@ export default defineConfig({
   ],
   vite: {
     plugins: [tailwindcss(), editRouteFallback()],
+    resolve: {
+      // Vue's default esm-bundler build ships the runtime template compiler,
+      // which reaches for `new Function` — a CSP `unsafe-eval` violation.
+      // Every component here is an SFC, so the render functions are already
+      // compiled at build time and the compiler is dead weight anyway. The
+      // anchored regex rewrites only bare `vue` imports — a plain string
+      // alias would also mangle `vue/server-renderer`.
+      alias: [{ find: /^vue$/, replacement: 'vue/dist/vue.runtime.esm-bundler.js' }],
+    },
     server: {
       proxy: {
         // Pages Functions only exist on the deployed site; without this
