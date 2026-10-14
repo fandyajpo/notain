@@ -94,7 +94,7 @@ export type TemplateTheme = {
   border: string;
   accent: string;
   accentForeground: string;
-  /** Tint behind emphasised rows (the modern variant's soft green). */
+  /** Tint behind emphasised rows (the modern variant's soft blue). */
   accentSoft: string;
   /** Corner radius of the invoice card, in pixels. */
   radius: number;
@@ -142,9 +142,9 @@ export const DEFAULT_THEME: TemplateTheme = {
   text: '#171717',
   muted: '#737373',
   border: '#e5e5e5',
-  accent: '#16a34a',
+  accent: '#2563eb',
   accentForeground: '#ffffff',
-  accentSoft: '#ecfdf3',
+  accentSoft: '#eff6ff',
   radius: 12,
   accentBar: false,
   wallpaper: { kind: 'none' },

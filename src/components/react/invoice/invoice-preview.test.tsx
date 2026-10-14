@@ -208,7 +208,7 @@ describe('InvoicePreview block layout', () => {
     expect(
       container.querySelector('[data-preview-part="title"]')?.getAttribute('style'),
       // jsdom normalises hex to rgb() when it serialises the style back out.
-    ).toContain('color: rgb(22, 163, 74)');
+    ).toContain('color: rgb(37, 99, 235)');
   });
 });
 

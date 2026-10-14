@@ -84,13 +84,15 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
           whileTap={{ y: 0, scale: 0.96 }}
           className="flex items-center gap-2 font-semibold tracking-tight focus-ring rounded-control"
         >
-          <motion.span
-            className="flex size-7 items-center justify-center rounded-lg bg-accent text-sm text-accent-foreground"
+          <motion.img
+            src="/notain-remove-bg.png"
+            alt=""
+            width={28}
+            height={28}
+            className="size-7 rounded-lg"
             whileHover={{ rotate: -10, scale: 1.1 }}
             transition={{ type: 'spring', stiffness: 380, damping: 16 }}
-          >
-            N
-          </motion.span>
+          />
           Notain
         </motion.a>
 
@@ -115,7 +117,7 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
             whileHover={{ y: -1, scale: 1.03 }}
             whileTap={{ y: 0, scale: 0.97 }}
             transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-            className="ml-1 inline-flex h-9 items-center rounded-control bg-accent px-3 text-sm font-medium text-accent-foreground shadow-[0_8px_20px_-12px_rgb(22_163_74_/_0.9)] focus-ring"
+            className="ml-1 inline-flex h-9 items-center rounded-control bg-accent px-3 text-sm font-medium text-accent-foreground shadow-[0_8px_20px_-12px_rgb(37_99_235_/_0.9)] focus-ring"
           >
             Buat Invoice Gratis
           </motion.a>

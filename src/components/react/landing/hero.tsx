@@ -196,6 +196,18 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
             largest paint until the island hydrated — the sections below the
             fold keep theirs (they animate through `Reveal`). Ambient loops
             (aurora, pulse, float) are untouched: they never start hidden. */}
+        <div className="flex justify-center">
+          <motion.img
+            src="/notain-remove-bg.png"
+            alt=""
+            width={140}
+            height={140}
+            className="size-28 rounded-full drop-shadow-[0_8px_24px_rgb(37_99_235_/_0.25)] sm:size-36"
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </div>
+
         <div className="text-center">
           <Eyebrow delay={0.05} />
 
@@ -227,7 +239,7 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
           >
             <MagneticButton
               href={ctaHref}
-              className="group inline-flex h-12 items-center gap-2 rounded-control bg-accent px-5 text-base font-medium text-accent-foreground shadow-[0_10px_28px_-12px_rgb(22_163_74_/_0.7)] transition-colors hover:bg-accent/90 focus-ring"
+              className="group inline-flex h-12 items-center gap-2 rounded-control bg-accent px-5 text-base font-medium text-accent-foreground shadow-[0_10px_28px_-12px_rgb(37_99_235_/_0.7)] transition-colors hover:bg-accent/90 focus-ring"
             >
               {ctaLabel}
               <ArrowRight
