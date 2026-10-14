@@ -43,11 +43,27 @@ const PLANS: readonly Plan[] = [
     badge: 'Segera hadir',
     benefits: [
       'Semua fitur di Free',
-      'Template premium — desain nota lebih variatif',
+      'Template premium dengan desain nota lebih variatif',
       'Warna & branding sendiri di setiap nota',
-      'Invoice link — customer buka nota tanpa download',
+      'Invoice link: customer buka nota tanpa download',
       'Laporan bisnis: ringkasan penjualan & pendapatan',
       'Penyimpanan cloud lebih besar',
+      'Dukungan prioritas',
+    ],
+  },
+  {
+    name: 'Business',
+    price: 'Rp 99.000',
+    period: '/bulan',
+    tagline: 'Untuk tim dan developer yang butuh akses API.',
+    cta: { href: '/register', label: 'Dapatkan Akses Awal' },
+    badge: 'Segera hadir',
+    benefits: [
+      'Semua fitur di Pro',
+      'API key untuk akses programatik',
+      'Multi API key untuk tim & integrasi',
+      'Webhook event invoice (created, paid, dll)',
+      'Rate limit lebih tinggi',
       'Dukungan prioritas',
     ],
   },
@@ -63,7 +79,7 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
       transition={{ duration: 0.6, delay, ease: EASE }}
       className={`relative flex flex-col rounded-card border bg-card p-6 sm:p-8 ${
         primary
-          ? 'border-accent shadow-[0_16px_40px_-20px_rgb(22_163_74_/_0.45)]'
+          ? 'border-accent shadow-[0_16px_40px_-20px_rgb(37_99_235_/_0.45)]'
           : 'border-border shadow-card'
       }`}
     >
@@ -91,7 +107,7 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
         {primary ? (
           <MagneticButton
             href={plan.cta.href}
-            className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-control bg-accent px-5 text-base font-medium text-accent-foreground shadow-[0_10px_28px_-12px_rgb(22_163_74_/_0.7)] transition-colors hover:bg-accent/90 focus-ring"
+            className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-control bg-accent px-5 text-base font-medium text-accent-foreground shadow-[0_10px_28px_-12px_rgb(37_99_235_/_0.7)] transition-colors hover:bg-accent/90 focus-ring"
           >
             {plan.cta.label}
             <ArrowRight
@@ -133,7 +149,7 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
   );
 }
 
-/** Pricing section: two plan cards — Free forever, Pro for growing businesses. */
+/** Pricing section: three plan cards — Free forever, Pro for growing businesses, Business for API access. */
 export function PricingPlans() {
   return (
     <MotionConfig reducedMotion="user">
@@ -154,7 +170,8 @@ export function PricingPlans() {
           </motion.span>
 
           <h1 className="mx-auto mt-6 max-w-2xl text-[clamp(2.25rem,5.5vw,3.25rem)] font-semibold leading-[1.06] tracking-[-0.03em]">
-            Mulai gratis. <span className="text-accent">Naik ke Pro</span> kalau butuh.
+            Mulai gratis. <span className="text-accent">Naik ke Pro</span> atau Business kalau
+            butuh.
           </h1>
 
           <motion.p
@@ -163,12 +180,13 @@ export function PricingPlans() {
             transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
             className="mx-auto mt-5 max-w-xl text-lead text-muted"
           >
-            Fitur inti gratis selamanya — tanpa kartu kredit dan tanpa masa trial. Pro membuka
-            template premium, invoice link, dan laporan bisnis.
+            Fitur inti gratis selamanya, tanpa kartu kredit dan tanpa masa trial. Pro membuka
+            template premium dan laporan bisnis; Business menambah akses API untuk tim dan
+            developer.
           </motion.p>
         </div>
 
-        <div className="mt-12 grid gap-6 sm:grid-cols-2">
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {PLANS.map((plan, index) => (
             <PlanCard key={plan.name} plan={plan} delay={0.25 + index * 0.12} />
           ))}
@@ -180,8 +198,8 @@ export function PricingPlans() {
           transition={{ duration: 0.6, delay: 0.55, ease: EASE }}
           className="mx-auto mt-8 max-w-xl text-center text-sm leading-relaxed text-muted"
         >
-          Pembayaran untuk plan Pro sedang disiapkan. Daftar sekarang — fitur Free tetap bisa
-          dipakai penuh, dan kamu jadi yang pertama mencoba Pro.
+          Pembayaran untuk plan Pro dan Business sedang disiapkan. Daftar sekarang; fitur Free
+          tetap bisa dipakai penuh, dan kamu jadi yang pertama mencoba.
         </motion.p>
       </section>
     </MotionConfig>
