@@ -1,6 +1,6 @@
 import { ID } from 'appwrite';
 import type { Customer, CustomerDraft } from '../core/customer/model';
-import { customerKey } from '../core/customer/model';
+import { isSameCustomer, mergeCustomer } from '../core/customer/model';
 import { customerDraftSchema } from '../core/customer/schema';
 import { AppError, ERROR_CODES, flattenIssues } from '../core/shared/errors';
 import { container } from '../infra/container';
@@ -103,10 +103,12 @@ export async function deleteCustomer(id: string): Promise<void> {
  * Records the customer an invoice was issued to, reusing the row that already
  * stands for the same person.
  *
- * Called on every invoice save. A customer is identified by name + phone
- * (phone folded, so `0812…` and `+62812…` are one entry), which is why this
- * looks the name up rather than blindly inserting — otherwise every invoice
- * would add a duplicate row.
+ * Called on every invoice save. Identity is email OR phone (folded), so
+ * `0812…` and `+62812…` are one entry, and a contact that shares an email
+ * with an existing row is the same person even under a different name.
+ *
+ * When a match is found the two are merged: empty fields on the existing row
+ * are filled from the incoming draft, and fields it already has are kept.
  *
  * Returns `null` when there is nothing worth recording, so a draft with no
  * customer name yet never creates an unlabelled row.
@@ -119,13 +121,21 @@ export async function rememberCustomer(
   if (!name) return null;
 
   const user = await requireSession();
-  const customer = parseCustomer({ name, phone: draft.phone.trim() });
+  const customer = parseCustomer({
+    name,
+    email: draft.email.trim(),
+    phone: draft.phone.trim(),
+  });
 
-  const matches = await container.customers.findByName(user.id, customer.name);
-  const existing = matches.find((row) => customerKey(row) === customerKey(customer));
+  // One directory read instead of per-field server-side lookups. A signed-in
+  // account has at most a few hundred customers, so the transfer is cheap and
+  // the identity check stays in one place.
+  const all = await container.customers.listByOwner(user.id);
+  const existing = all.find((row) => isSameCustomer(row, customer));
 
   if (existing) {
-    return container.customers.update({ id: existing.id, customer, lastUsedAt });
+    const merged = mergeCustomer(existing, customer);
+    return container.customers.update({ id: existing.id, customer: merged, lastUsedAt });
   }
 
   return container.customers.create({
@@ -139,46 +149,53 @@ export async function rememberCustomer(
 /**
  * Files a batch of imported drafts into the directory.
  *
- * A name that already exists is updated rather than duplicated — importing a
- * list that overlaps the current directory must not create a second entry for
- * the same person. The rows are assumed to be pre-validated (see
- * `parseCustomerImportRows`), so a throw here is a genuine storage failure, not
- * a bad row.
+ * Identity is email OR phone: a draft that shares either with an existing
+ * row is the same person, and the two are merged (empty fields on the
+ * existing row are filled from the draft). Duplicates *within* the file
+ * collapse the same way, so `imported` reports how many customers were
+ * actually filed.
  *
- * Rather than a per-row name lookup (one round-trip each) followed by a
- * sequential write, the directory is loaded once and indexed by identity, then
- * the writes run a few at a time. A file that used to cost ~2×N sequential
- * requests now costs one read plus a handful of parallel writes. Duplicates
- * *within* the file collapse to a single row, so `imported` reports how many
- * customers were actually filed.
+ * The rows are assumed to be pre-validated (see `parseCustomerImportRows`),
+ * so a throw here is a genuine storage failure, not a bad row.
  *
  * Returns how many rows were filed.
  */
 export async function importCustomers(drafts: CustomerDraft[]): Promise<{ imported: number }> {
   const user = await requireSession();
 
-  // Normalise and drop blanks; the last draft for an identity wins, matching
-  // the old per-row behaviour where a later row overwrote the earlier one.
-  const byKey = new Map<string, CustomerDraft>();
+  // Normalise, drop blanks, and collapse duplicates within the file. A later
+  // draft for the same identity merges into the earlier one, filling only
+  // fields the earlier draft left empty.
+  const deduped: CustomerDraft[] = [];
   for (const draft of drafts) {
     const name = draft.name.trim();
     if (!name) continue;
-    const customer = parseCustomer({ name, phone: draft.phone.trim() });
-    byKey.set(customerKey(customer), customer);
+    const customer = parseCustomer({
+      name,
+      email: draft.email.trim(),
+      phone: draft.phone.trim(),
+    });
+    const hit = deduped.find((row) => isSameCustomer(row, customer));
+    if (hit) {
+      Object.assign(hit, mergeCustomer(hit, customer));
+    } else {
+      deduped.push(customer);
+    }
   }
-  if (byKey.size === 0) return { imported: 0 };
+  if (deduped.length === 0) return { imported: 0 };
 
-  // One directory read instead of a per-row server-side name search.
+  // One directory read; each draft is matched against every stored row by
+  // email or phone rather than a per-row server-side search.
   const existing = await container.customers.listByOwner(user.id);
-  const existingByKey = new Map(existing.map((row) => [customerKey(row), row]));
 
   const lastUsedAt = new Date().toISOString();
   let imported = 0;
 
-  await mapWithConcurrency([...byKey.entries()], IMPORT_CONCURRENCY, async ([key, customer]) => {
-    const hit = existingByKey.get(key);
+  await mapWithConcurrency(deduped, IMPORT_CONCURRENCY, async (customer) => {
+    const hit = existing.find((row) => isSameCustomer(row, customer));
     if (hit) {
-      await container.customers.update({ id: hit.id, customer, lastUsedAt });
+      const merged = mergeCustomer(hit, customer);
+      await container.customers.update({ id: hit.id, customer: merged, lastUsedAt });
     } else {
       await container.customers.create({
         id: ID.unique(),

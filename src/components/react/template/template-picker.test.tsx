@@ -85,7 +85,13 @@ describe('TemplatePicker', () => {
     await render(
       <TemplatePicker
         templates={BUILTIN_TEMPLATES}
-        business={{ name: 'Bengkel Fa', phone: '08111111111' }}
+        business={{
+          name: 'Bengkel Fa',
+          businessName: 'Bengkel Fa',
+          phone: '08111111111',
+          plan: 'free',
+          planExpiresAt: null,
+        }}
         onPick={() => {}}
       />,
     );

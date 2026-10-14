@@ -34,6 +34,7 @@ import { useTemplates } from '../../../lib/query/hooks/use-templates';
 import { useSession } from '../../../lib/query/hooks/use-session';
 import type { PickPayload } from '../../shared/contracts';
 import { Button } from '../ui/button';
+import { Card } from '../ui/card';
 import { FieldShell, controlClass, errorMessage, useFieldIds } from '../ui/field';
 import { BuilderTabs } from './builder-tabs';
 import { ItemsGrid } from './items-grid';
@@ -175,7 +176,7 @@ export function InvoiceBuilder({
         // Fire-and-forget: the directory is a convenience for the next picker,
         // so it must not delay or block the redirect.
         rememberCustomer.mutate({
-          draft: { name: value.customerName, phone: value.customerPhone ?? '' },
+          draft: { name: value.customerName, email: '', phone: value.customerPhone ?? '' },
         });
         toast('Invoice berhasil disimpan.', { variant: 'success' });
         window.location.assign('/dashboard');
@@ -542,7 +543,7 @@ export function InvoiceBuilder({
                     placeholder={
                       'Terima kasih sudah berbelanja 🙏\n\n**Pembayaran:** BCA 1234567890'
                     }
-                    className={controlClass({ className: 'min-h-24 py-2.5' })}
+                    className={controlClass({ multiline: true })}
                     onChange={(event) => field.handleChange(event.target.value)}
                     onBlur={field.handleBlur}
                   />
@@ -650,13 +651,13 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-5 rounded-card border border-border bg-card p-5 sm:p-6">
+    <Card className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-base font-semibold">{title}</h2>
         {action}
       </div>
       {children}
-    </section>
+    </Card>
   );
 }
 
@@ -728,7 +729,7 @@ function DateField({ field, label, required = false, showError }: DateFieldProps
         type="date"
         value={field.state.value ?? ''}
         aria-invalid={error ? 'true' : undefined}
-        className={controlClass({ invalid: Boolean(error), className: 'h-11' })}
+        className={controlClass({ invalid: Boolean(error) })}
         onChange={(event) => field.handleChange(event.target.value)}
         onBlur={field.handleBlur}
       />

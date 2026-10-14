@@ -21,7 +21,15 @@ export async function saveProfile(input: BusinessProfile): Promise<BusinessProfi
       ),
     });
   }
-  const saved = await container.profiles.save({ ownerId: user.id, profile: parsed.data });
+  const saved = await container.profiles.save({
+    ownerId: user.id,
+    profile: {
+      ...parsed.data,
+      businessName: parsed.data.businessName ?? '',
+      phone: parsed.data.phone ?? '',
+      planExpiresAt: parsed.data.planExpiresAt ?? null,
+    },
+  });
   return { ...saved, logoUrl: container.assets.viewUrl(saved.logoFileId) ?? undefined };
 }
 

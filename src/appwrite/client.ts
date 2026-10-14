@@ -1,4 +1,4 @@
-import { Account, Client, TablesDB } from 'appwrite';
+import { Account, Client, TablesDB, Teams } from 'appwrite';
 import { APPWRITE } from './config';
 
 /**
@@ -19,6 +19,7 @@ function ensureClient(): Client {
 
 let account: Account | null = null;
 let tables: TablesDB | null = null;
+let teams: Teams | null = null;
 
 export function getAccount(): Account {
   account ??= new Account(ensureClient());
@@ -28,4 +29,9 @@ export function getAccount(): Account {
 export function getTables(): TablesDB {
   tables ??= new TablesDB(ensureClient());
   return tables;
+}
+
+export function getTeams(): Teams {
+  teams ??= new Teams(ensureClient());
+  return teams;
 }

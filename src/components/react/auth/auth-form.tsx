@@ -7,6 +7,7 @@ import {
   signInSchema,
   signUpSchema,
 } from '../../../core/auth/schema';
+import { passwordStrength, strengthPercent } from '../../../core/auth/password';
 import { GENERIC_ERROR_MESSAGE } from '../../../core/shared/errors';
 import { DEFAULT_REDIRECT, isSelfRedirect, resolveRedirectTarget } from '../../../lib/redirect';
 import {
@@ -203,16 +204,18 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
   const signUp = useSignUp();
   const captcha = useCaptchaGate();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [passwordValue, setPasswordValue] = useState('');
+
+  const strength = passwordStrength(passwordValue);
 
   const form = useForm({
-    defaultValues: { name: '', email: '', password: '', confirmPassword: '' },
+    defaultValues: { email: '', password: '', confirmPassword: '' },
     validators: { onSubmit: signUpSchema },
     onSubmit: async ({ value }) => {
       setServerError(null);
       if (!(await captcha.consume(setServerError))) return;
       try {
         await signUp.mutateAsync({
-          name: value.name.trim(),
           email: value.email.trim(),
           password: value.password,
         });
@@ -235,17 +238,6 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
       onSubmit={() => void form.handleSubmit()}
       fields={
         <>
-          <form.Field name="name">
-            {(field) => (
-              <AuthTextField
-                field={field}
-                label="Nama"
-                placeholder="Fandy Ahmad"
-                autoComplete="name"
-              />
-            )}
-          </form.Field>
-
           <form.Field name="email">
             {(field) => (
               <AuthTextField
@@ -260,14 +252,38 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
 
           <form.Field name="password">
             {(field) => (
-              <AuthTextField
-                field={field}
-                label="Kata sandi"
-                type="password"
-                placeholder="Minimal 8 karakter"
-                autoComplete="new-password"
-                hint="Minimal 8 karakter."
-              />
+              <div className="flex flex-col gap-1.5">
+                <AuthTextField
+                  field={field}
+                  label="Kata sandi"
+                  type="password"
+                  placeholder="Minimal 8 karakter"
+                  autoComplete="new-password"
+                  onChange={(value) => setPasswordValue(value)}
+                />
+                {passwordValue && (
+                  <div className="flex flex-col gap-1">
+                    <div
+                      role="progressbar"
+                      aria-valuenow={strength.score}
+                      aria-valuemin={0}
+                      aria-valuemax={2}
+                      aria-label="Kekuatan kata sandi"
+                      className="h-1.5 overflow-hidden rounded-full bg-border"
+                    >
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ease-out ${strength.colorClass.split(' ')[0]}`}
+                        style={{ width: `${strengthPercent(strength)}%` }}
+                      />
+                    </div>
+                    <p
+                      className={`text-xs font-medium transition-colors duration-300 ${strength.colorClass.split(' ')[1]}`}
+                    >
+                      {strength.label}
+                    </p>
+                  </div>
+                )}
+              </div>
             )}
           </form.Field>
 
@@ -553,6 +569,8 @@ type TextFieldProps = {
   placeholder?: string;
   autoComplete?: string;
   hint?: string;
+  /** Called on every keystroke with the raw input value (before form state). */
+  onChange?: (value: string) => void;
 };
 
 function AuthTextField({
@@ -562,6 +580,7 @@ function AuthTextField({
   placeholder,
   autoComplete,
   hint,
+  onChange,
 }: TextFieldProps) {
   const { id, errorId } = useFieldIds();
   const error = field.state.meta.isTouched ? field.state.meta.errors[0] : undefined;
@@ -579,8 +598,11 @@ function AuthTextField({
         spellCheck={false}
         aria-invalid={error ? 'true' : undefined}
         aria-describedby={error ? errorId : undefined}
-        className={controlClass({ invalid: Boolean(error), className: 'h-11' })}
-        onChange={(event) => field.handleChange(event.target.value)}
+        className={controlClass({ invalid: Boolean(error) })}
+        onChange={(event) => {
+          field.handleChange(event.target.value);
+          onChange?.(event.target.value);
+        }}
         onBlur={field.handleBlur}
       />
     </FieldShell>

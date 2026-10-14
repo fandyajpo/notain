@@ -4,9 +4,12 @@ import type { BusinessProfile } from '../profile/model';
 
 export const SAMPLE_BUSINESS: BusinessProfile = {
   name: 'Warung Maju Jaya',
+  businessName: 'Warung Maju Jaya',
   phone: '081234567890',
   address: 'Jl. Melati No. 12, Bandung',
   email: 'halo@warungmaju.id',
+  plan: 'free',
+  planExpiresAt: null,
 };
 
 /**

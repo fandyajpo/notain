@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { AlertCircle, Download, Upload } from 'lucide-react';
 import { Button } from '../ui/button';
+import { Card } from '../ui/card';
 import { downloadCsv, readFileRows } from '../../../lib/excel';
 import {
   CUSTOMER_TEMPLATE_ROWS,
@@ -66,14 +67,14 @@ export function CustomerImportPanel() {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-card border border-border bg-card p-4 shadow-card">
+    <Card padding="sm" className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="font-medium">Impor dari Excel</p>
           <p className="text-sm text-muted">
             Upload file <code className="rounded bg-background px-1">.csv</code> atau{' '}
             <code className="rounded bg-background px-1">.xlsx</code> berisi kolom{' '}
-            <strong>Nama</strong> &amp; <strong>WhatsApp</strong>.
+            <strong>Nama</strong>, <strong>Email</strong> &amp; <strong>WhatsApp</strong>.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -145,6 +146,6 @@ export function CustomerImportPanel() {
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

@@ -31,6 +31,7 @@ export function ProfileForm({ profile }: Props) {
   const form = useForm({
     defaultValues: {
       name: profile.name,
+      businessName: profile.businessName ?? '',
       phone: profile.phone,
       address: profile.address ?? '',
       email: profile.email ?? '',
@@ -41,10 +42,13 @@ export function ProfileForm({ profile }: Props) {
       try {
         await saveProfile.mutateAsync({
           name: value.name.trim(),
+          businessName: value.businessName.trim(),
           phone: value.phone.trim(),
           address: value.address.trim() || undefined,
           email: value.email.trim() || undefined,
           logoFileId: profile.logoFileId,
+          plan: profile.plan,
+          planExpiresAt: profile.planExpiresAt,
         });
         toast('Profil usaha berhasil disimpan.', { variant: 'success' });
       } catch (error) {
@@ -59,11 +63,14 @@ export function ProfileForm({ profile }: Props) {
 
   const currentProfile = (): BusinessProfile => ({
     name: form.state.values.name.trim() || profile.name,
+    businessName: form.state.values.businessName.trim() || profile.businessName || '',
     phone: form.state.values.phone.trim() || profile.phone,
     address: form.state.values.address.trim() || undefined,
     email: form.state.values.email.trim() || undefined,
     logoFileId: profile.logoFileId,
     logoUrl,
+    plan: profile.plan,
+    planExpiresAt: profile.planExpiresAt,
   });
 
   return (
@@ -118,6 +125,18 @@ export function ProfileForm({ profile }: Props) {
         {(field) => (
           <ProfileField
             field={field}
+            label="Nama kamu"
+            placeholder="Fandy Ahmad"
+            required
+            autoComplete="name"
+          />
+        )}
+      </form.Field>
+
+      <form.Field name="businessName">
+        {(field) => (
+          <ProfileField
+            field={field}
             label="Nama usaha"
             placeholder="Warung Maju Jaya"
             required
@@ -130,10 +149,9 @@ export function ProfileForm({ profile }: Props) {
         {(field) => (
           <ProfileField
             field={field}
-            label="Nomor WhatsApp"
+            label="Nomor WhatsApp (opsional)"
             placeholder="081234567890"
             inputMode="tel"
-            required
             hint="Dipakai di invoice dan pesan WhatsApp."
             autoComplete="tel"
           />
@@ -206,7 +224,7 @@ function ProfileField({
         placeholder={placeholder}
         autoComplete={autoComplete}
         aria-invalid={error ? 'true' : undefined}
-        className={controlClass({ invalid: Boolean(error), className: 'h-11' })}
+        className={controlClass({ invalid: Boolean(error) })}
         onChange={(event) => field.handleChange(event.target.value)}
         onBlur={field.handleBlur}
       />

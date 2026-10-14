@@ -2,28 +2,33 @@ import { describe, expect, it } from 'vitest';
 import { customerDraftSchema, customerShapeSchema } from './schema';
 
 describe('customerDraftSchema', () => {
-  it('trims both fields on the way through', () => {
-    expect(customerDraftSchema.parse({ name: '  Budi  ', phone: ' 0812 ' })).toEqual({
+  it('trims all fields on the way through', () => {
+    expect(
+      customerDraftSchema.parse({ name: '  Budi  ', email: ' a@mail.com ', phone: ' 0812 ' }),
+    ).toEqual({
       name: 'Budi',
+      email: 'a@mail.com',
       phone: '0812',
     });
   });
 
   it('accepts a customer with no phone', () => {
-    expect(customerDraftSchema.parse({ name: 'Budi', phone: '' })).toEqual({
+    expect(customerDraftSchema.parse({ name: 'Budi', email: '', phone: '' })).toEqual({
       name: 'Budi',
+      email: '',
       phone: '',
     });
   });
 
   it('rejects a blank name', () => {
-    const result = customerDraftSchema.safeParse({ name: '   ', phone: '' });
+    const result = customerDraftSchema.safeParse({ name: '   ', email: '', phone: '' });
     expect(result.success).toBe(false);
   });
 
   it('rejects a name longer than the column', () => {
     const result = customerDraftSchema.safeParse({
       name: 'x'.repeat(CUSTOMER_NAME_MAX + 1),
+      email: '',
       phone: '',
     });
     expect(result.success).toBe(false);
@@ -33,8 +38,13 @@ describe('customerDraftSchema', () => {
 describe('customerShapeSchema', () => {
   it('passes a well-formed row through', () => {
     expect(
-      customerShapeSchema.parse({ name: 'Budi', phone: '0812', lastUsedAt: '2026-10-12' }),
-    ).toEqual({ name: 'Budi', phone: '0812', lastUsedAt: '2026-10-12' });
+      customerShapeSchema.parse({
+        name: 'Budi',
+        email: 'budi@mail.com',
+        phone: '0812',
+        lastUsedAt: '2026-10-12',
+      }),
+    ).toEqual({ name: 'Budi', email: 'budi@mail.com', phone: '0812', lastUsedAt: '2026-10-12' });
   });
 
   it('falls back to empty strings rather than failing the row', () => {
@@ -42,10 +52,16 @@ describe('customerShapeSchema', () => {
     // phone must still keep its name, which is the only field the picker needs.
     const parsed = customerShapeSchema.safeParse({
       name: 'Budi',
+      email: null,
       phone: null,
       lastUsedAt: null,
     });
-    expect(parsed.success && parsed.data).toEqual({ name: 'Budi', phone: '', lastUsedAt: '' });
+    expect(parsed.success && parsed.data).toEqual({
+      name: 'Budi',
+      email: '',
+      phone: '',
+      lastUsedAt: '',
+    });
   });
 });
 

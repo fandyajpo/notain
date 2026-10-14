@@ -1,6 +1,6 @@
 import type { InvoiceHistoryEntry } from '../../core/invoice/model';
 import type { Customer } from '../../core/customer/model';
-import { customerKey } from '../../core/customer/model';
+import { isSameCustomer } from '../../core/customer/model';
 
 /**
  * Derives picker suggestions from invoice history instead of a dedicated
@@ -13,6 +13,8 @@ export type CustomerOption = {
   /** Display label, always the trimmed name. */
   label: string;
   name: string;
+  /** Empty string when the customer never gave an email. */
+  email: string;
   /** Empty string when the customer never had a WhatsApp number. */
   phone: string;
   /** ISO timestamp of the most recent invoice that used this customer. */
@@ -83,6 +85,7 @@ export function derivePickerOptions(
           kind: 'customer',
           label: name,
           name,
+          email: '',
           phone,
           lastUsedAt: usedAt,
           invoiceCount: 1,
@@ -116,8 +119,8 @@ export function derivePickerOptions(
   }
 
   return {
-    customers: topByRecency(customers, limit),
-    products: topByRecency(products, limit),
+    customers: topByRecency([...customers.values()], limit),
+    products: topByRecency([...products.values()], limit),
   };
 }
 
@@ -137,10 +140,10 @@ function isoOf(stamp: number): string {
 }
 
 function topByRecency<T extends { lastUsedAt: string; label: string; invoiceCount: number }>(
-  map: Map<string, T>,
+  items: readonly T[],
   limit: number,
 ): T[] {
-  return [...map.values()]
+  return [...items]
     .sort((a, b) => {
       const byRecency = parseStamp(b.lastUsedAt) - parseStamp(a.lastUsedAt);
       if (byRecency !== 0) return byRecency;
@@ -166,26 +169,32 @@ export function mergeCustomerOptions(
   stored: readonly Customer[],
   derived: readonly CustomerOption[],
 ): CustomerOption[] {
-  const seen = new Set(stored.map((customer) => customerKey(customer)));
-
   const filed = stored
     .filter((customer) => customer.name.trim() !== '')
     .map<CustomerOption>((customer) => ({
       kind: 'customer',
       label: customer.name,
       name: customer.name,
+      email: customer.email,
       phone: customer.phone,
       lastUsedAt: customer.lastUsedAt,
       invoiceCount: 0,
     }));
 
-  const missing = derived.filter((option) => !seen.has(customerKey(option)));
-
-  // Disjoint by construction — `missing` already excludes every stored key —
-  // so a Map here is only for `topByRecency`, not for de-duplication.
-  const byKey = new Map<string, CustomerOption>(
-    [...filed, ...missing].map((option) => [customerKey(option), option]),
+  // A derived option that shares an email or phone with a stored customer is
+  // the same person and is skipped — the stored row already represents them.
+  const missing = derived.filter(
+    (option) => !filed.some((f) => isSameCustomer(f, option)),
   );
 
-  return topByRecency(byKey, PICKER_OPTION_LIMIT);
+  // Deduplicate the combined list by email-or-phone identity. The first
+  // occurrence wins; `filed` comes first so a stored row beats a derived one.
+  const combined: CustomerOption[] = [];
+  for (const option of [...filed, ...missing]) {
+    if (!combined.some((row) => isSameCustomer(row, option))) {
+      combined.push(option);
+    }
+  }
+
+  return topByRecency(combined, PICKER_OPTION_LIMIT);
 }

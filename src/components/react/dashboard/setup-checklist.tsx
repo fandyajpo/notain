@@ -1,4 +1,6 @@
 import { Check, Circle } from 'lucide-react';
+import { Button } from '../ui/button';
+import { cardClass } from '../ui/card';
 import type { BusinessProfile } from '../../../core/profile/model';
 
 type Step = {
@@ -67,7 +69,7 @@ export function SetupChecklist({ profile, hasInvoices, hidden }: Props) {
   return (
     <section
       aria-labelledby="setup-checklist-title"
-      className="rounded-card border border-border bg-card p-5 shadow-card"
+      className={cardClass('md')}
     >
       <div className="flex items-center justify-between gap-3">
         <h2 id="setup-checklist-title" className="text-base font-semibold">
@@ -113,12 +115,9 @@ export function SetupChecklist({ profile, hasInvoices, hidden }: Props) {
             </div>
 
             {!step.done && (
-              <a
-                href={step.href}
-                className="shrink-0 rounded-control border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-background focus-ring"
-              >
+              <Button href={step.href} variant="secondary" size="sm" className="shrink-0">
                 {step.cta}
-              </a>
+              </Button>
             )}
           </li>
         ))}

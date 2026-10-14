@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
+import { Button } from '../ui/button';
+import { Card } from '../ui/card';
 import { InvoiceBuilder } from './invoice-builder';
 import { TemplatePicker } from '../template/template-picker';
 import { useInvoice, useInvoiceNumbers } from '../../../lib/query/hooks/use-invoices';
@@ -65,37 +67,32 @@ function InvoiceNewContent() {
 
   if (profileLoading || numbersLoading || templatesLoading) {
     return (
-      <div className="rounded-card border border-border bg-card p-10 text-center text-sm text-muted">
+      <Card padding="none" className="px-6 py-10 text-center text-sm text-muted">
         Menyiapkan invoice…
-      </div>
+      </Card>
     );
   }
 
   if (duplicating && sourceLoading) {
     return (
-      <div className="rounded-card border border-border bg-card p-10 text-center text-sm text-muted">
+      <Card padding="none" className="px-6 py-10 text-center text-sm text-muted">
         Menyalin invoice…
-      </div>
+      </Card>
     );
   }
 
   if (duplicating && (sourceError || !source)) {
     return (
-      <div className="rounded-card border border-border bg-card px-6 py-14 text-center">
+      <Card padding="none" className="px-6 py-14 text-center">
         <p className="text-base font-semibold">Invoice tidak ditemukan</p>
         <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
           Invoice yang mau disalin ini mungkin sudah dihapus, atau kamu membuka tautan dari akun
           lain.
         </p>
         <div className="mt-6 flex justify-center">
-          <a
-            href="/invoice/new"
-            className="inline-flex h-11 items-center rounded-control bg-accent px-4 text-sm font-medium text-accent-foreground hover:bg-accent/90 focus-ring"
-          >
-            Buat invoice baru
-          </a>
+          <Button href="/invoice/new">Buat invoice baru</Button>
         </div>
-      </div>
+      </Card>
     );
   }
 

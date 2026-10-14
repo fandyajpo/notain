@@ -44,7 +44,8 @@ const describedBy = [error ? errorId : '', hintId].filter(Boolean).join(' ') || 
     rows={rows}
     class={controlClass({
       invalid: Boolean(error),
-      className: `min-h-24 resize-y py-2.5 leading-relaxed ${className ?? ''}`,
+      multiline: true,
+      className: className ?? '',
     })}
     required={required}
     disabled={disabled}

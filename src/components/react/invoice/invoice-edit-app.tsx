@@ -1,6 +1,8 @@
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
+import { Button } from '../ui/button';
+import { Card } from '../ui/card';
 import { InvoiceBuilder } from './invoice-builder';
 import { useInvoice } from '../../../lib/query/hooks/use-invoices';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
@@ -40,9 +42,9 @@ function InvoiceEditContent({ invoiceId }: { invoiceId: string | undefined }) {
 
   if (isLoading) {
     return (
-      <div className="rounded-card border border-border bg-card p-10 text-center text-sm text-muted">
+      <Card padding="none" className="px-6 py-10 text-center text-sm text-muted">
         Memuat invoice…
-      </div>
+      </Card>
     );
   }
 
@@ -64,17 +66,12 @@ function InvoiceEditContent({ invoiceId }: { invoiceId: string | undefined }) {
 
 function NotFound({ message }: { message: string }) {
   return (
-    <div className="rounded-card border border-border bg-card px-6 py-14 text-center">
+    <Card padding="none" className="px-6 py-14 text-center">
       <p className="text-base font-semibold">Invoice tidak ditemukan</p>
       <p className="mx-auto mt-2 max-w-sm text-sm text-muted">{message}</p>
       <div className="mt-6 flex justify-center">
-        <a
-          href="/dashboard"
-          className="inline-flex h-11 items-center rounded-control bg-accent px-4 text-sm font-medium text-accent-foreground hover:bg-accent/90 focus-ring"
-        >
-          Kembali ke dashboard
-        </a>
+        <Button href="/dashboard">Kembali ke dashboard</Button>
       </div>
-    </div>
+    </Card>
   );
 }

@@ -1,0 +1,8 @@
+---
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+import { AdminApp } from '../components/react/admin/admin-app';
+---
+
+<DashboardLayout title="Admin | Notain" description="Kelola user dan subscription." wide>
+  <AdminApp client:only="react" />
+</DashboardLayout>

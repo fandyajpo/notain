@@ -18,4 +18,8 @@ export const queryKeys = {
   customers: ['customers'] as const,
   customerCount: ['customer-count'] as const,
   customer: (id: string) => ['customers', id] as const,
+  /** Admin panel user list. Only fetched by members of the `admins` team. */
+  adminUsers: ['admin-users'] as const,
+  /** Whether the current user belongs to the `admins` team (gates the nav link). */
+  adminMembership: ['admin-membership'] as const,
 };

@@ -51,11 +51,6 @@ export const resetPasswordSchema = z
 
 export const signUpSchema = z
   .object({
-    name: z
-      .string()
-      .trim()
-      .min(2, 'Masukkan nama kamu.')
-      .max(AUTH_LIMITS.name, 'Nama terlalu panjang.'),
     email,
     password,
     confirmPassword: z.string(),

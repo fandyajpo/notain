@@ -1,6 +1,8 @@
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { Button } from '../ui/button';
+import { Card } from '../ui/card';
+import { PageHeader } from '../ui/page-header';
 import { IslandBoundary } from '../ui/island-boundary';
 import { ProfileForm } from '../profile/profile-form';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
@@ -23,16 +25,12 @@ function SettingsContent() {
 
   return (
     <div className="flex flex-col gap-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-title">Profil usaha</h1>
-          <p className="mt-1 text-sm text-muted">
-            Isi sekali, semua invoice otomatis memakai data ini.
-          </p>
-        </div>
-      </header>
+      <PageHeader
+        title="Profil usaha"
+        description="Isi sekali, semua invoice otomatis memakai data ini."
+      />
 
-      <section className="rounded-card border border-border bg-card p-5 sm:p-6">
+      <Card>
         {isLoading ? (
           <p className="text-sm text-muted">Memuat profil…</p>
         ) : isError ? (
@@ -42,7 +40,7 @@ function SettingsContent() {
         ) : (
           <ProfileForm profile={profile ?? EMPTY_PROFILE} />
         )}
-      </section>
+      </Card>
     </div>
   );
 }

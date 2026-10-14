@@ -169,6 +169,7 @@ function customer(overrides: Partial<Customer> = {}): Customer {
   return {
     id: `cus-${Math.random().toString(36).slice(2)}`,
     name: 'Budi Santoso',
+    email: '',
     phone: '081234567890',
     lastUsedAt: '2026-02-01T00:00:00.000Z',
     ...overrides,
@@ -186,6 +187,7 @@ describe('mergeCustomerOptions', () => {
         kind: 'customer',
         label: 'Budi Santoso',
         name: 'Budi Santoso',
+        email: '',
         phone: '081234567890',
         lastUsedAt: '2026-02-01T00:00:00.000Z',
         invoiceCount: 0,
@@ -230,7 +232,11 @@ describe('mergeCustomerOptions', () => {
 
   it('sorts the most recently used customer first', () => {
     const derived = derivePickerOptions([
-      invoice({ customerName: 'Siti', createdAt: '2026-06-01T00:00:00.000Z' }),
+      invoice({
+        customerName: 'Siti',
+        customerPhone: '08999',
+        createdAt: '2026-06-01T00:00:00.000Z',
+      }),
     ]).customers;
 
     expect(
@@ -244,6 +250,7 @@ describe('mergeCustomerOptions', () => {
       customer({
         id: `cus-${index}`,
         name: `Stored ${index}`,
+        phone: `0811111111${String(index).padStart(2, '0')}`,
         lastUsedAt: new Date(Date.UTC(2026, 0, index + 1)).toISOString(),
       }),
     );

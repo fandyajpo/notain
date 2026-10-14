@@ -36,6 +36,7 @@ const ALICE: SessionUser = { id: 'user-a', email: 'a@example.com', name: 'Alice'
 const budi = (over: Partial<Customer> = {}): Customer => ({
   id: 'cus-1',
   name: 'Budi Santoso',
+  email: 'budi@mail.com',
   phone: '081234567890',
   lastUsedAt: '2026-10-01T00:00:00.000Z',
   ...over,
@@ -82,18 +83,19 @@ describe('createCustomer', () => {
   it('trims both fields and stamps the creation time', async () => {
     create.mockResolvedValue(budi());
 
-    await createCustomer({ name: '  Budi Santoso ', phone: ' 081234567890 ' });
+    await createCustomer({ name: '  Budi Santoso ', email: '', phone: ' 081234567890 ' });
 
     expect(create.mock.calls[0]?.[0].ownerId).toBe('user-a');
     expect(create.mock.calls[0]?.[0].customer).toEqual({
       name: 'Budi Santoso',
+      email: '',
       phone: '081234567890',
     });
     expect(typeof create.mock.calls[0]?.[0].lastUsedAt).toBe('string');
   });
 
   it('rejects a blank name before it ever reaches storage', async () => {
-    await expect(createCustomer({ name: '   ', phone: '' })).rejects.toBeInstanceOf(AppError);
+    await expect(createCustomer({ name: '   ', email: '', phone: '' })).rejects.toBeInstanceOf(AppError);
 
     expect(create).not.toHaveBeenCalled();
   });
@@ -113,11 +115,11 @@ describe('updateCustomer', () => {
   it('writes the new name and phone against the given id', async () => {
     update.mockResolvedValue(budi({ name: 'Budi' }));
 
-    await updateCustomer('cus-1', { name: ' Budi ', phone: '' });
+    await updateCustomer('cus-1', { name: ' Budi ', email: '', phone: '' });
 
     expect(update).toHaveBeenCalledWith({
       id: 'cus-1',
-      customer: { name: 'Budi', phone: '' },
+      customer: { name: 'Budi', email: '', phone: '' },
       lastUsedAt: expect.any(String),
     });
   });
@@ -125,60 +127,95 @@ describe('updateCustomer', () => {
 
 describe('rememberCustomer', () => {
   it('files a new customer under the signed-in owner', async () => {
-    findByName.mockResolvedValue([]);
+    listByOwner.mockResolvedValue([]);
     create.mockResolvedValue(budi());
 
-    await rememberCustomer({ name: 'Budi Santoso', phone: '081234567890' });
+    await rememberCustomer({ name: 'Budi Santoso', email: '', phone: '081234567890' });
 
-    expect(findByName).toHaveBeenCalledWith('user-a', 'Budi Santoso');
+    expect(listByOwner).toHaveBeenCalledWith('user-a');
     expect(create).toHaveBeenCalledWith({
       id: expect.any(String),
       ownerId: 'user-a',
-      customer: { name: 'Budi Santoso', phone: '081234567890' },
+      customer: { name: 'Budi Santoso', email: '', phone: '081234567890' },
       lastUsedAt: expect.any(String),
     });
     expect(update).not.toHaveBeenCalled();
   });
 
-  it('updates the existing row rather than adding a second one for the same person', async () => {
-    // The incoming phone is written back as typed — folding it is only for the
-    // identity key, so the printed invoice keeps the number the user gave.
-    findByName.mockResolvedValue([budi()]);
+  it('updates the existing row when the phone matches (folded)', async () => {
+    // Identity is email OR phone: the same person under a trunk prefix must
+    // reuse the row. Merge keeps the stored phone, not the incoming one.
+    listByOwner.mockResolvedValue([budi()]);
     update.mockResolvedValue(budi());
 
-    await rememberCustomer({ name: 'Budi Santoso', phone: '+62 812-3456-7890' });
+    await rememberCustomer({
+      name: 'Budi Santoso',
+      email: 'budi@mail.com',
+      phone: '+62 812-3456-7890',
+    });
 
     expect(create).not.toHaveBeenCalled();
     expect(update).toHaveBeenCalledWith({
       id: 'cus-1',
-      customer: { name: 'Budi Santoso', phone: '+62 812-3456-7890' },
+      customer: { name: 'Budi Santoso', email: 'budi@mail.com', phone: '081234567890' },
       lastUsedAt: expect.any(String),
     });
   });
 
-  it('adds a second row when the same name belongs to a different number', async () => {
-    findByName.mockResolvedValue([budi()]);
-    create.mockResolvedValue(budi({ id: 'cus-2', phone: '081111111111' }));
+  it('updates the existing row when the email matches even under a different name', async () => {
+    // Merge keeps the stored name — the existing row's label wins.
+    listByOwner.mockResolvedValue([budi()]);
+    update.mockResolvedValue(budi());
 
-    await rememberCustomer({ name: 'Budi Santoso', phone: '081111111111' });
+    await rememberCustomer({ name: 'B. Santoso', email: 'budi@mail.com', phone: '' });
+
+    expect(create).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalledWith({
+      id: 'cus-1',
+      customer: { name: 'Budi Santoso', email: 'budi@mail.com', phone: '081234567890' },
+      lastUsedAt: expect.any(String),
+    });
+  });
+
+  it('fills an empty email on the existing row when the phone matches', async () => {
+    // The existing row has a phone but no email; the incoming draft supplies
+    // the email under the same phone. Merge keeps the stored phone and fills
+    // the gap.
+    listByOwner.mockResolvedValue([budi({ email: '' })]);
+    update.mockResolvedValue(budi({ email: 'budi@mail.com' }));
+
+    await rememberCustomer({ name: 'Budi', email: 'budi@mail.com', phone: '081234567890' });
+
+    expect(update).toHaveBeenCalledWith({
+      id: 'cus-1',
+      customer: { name: 'Budi Santoso', email: 'budi@mail.com', phone: '081234567890' },
+      lastUsedAt: expect.any(String),
+    });
+  });
+
+  it('adds a second row when the email and phone both differ', async () => {
+    listByOwner.mockResolvedValue([budi()]);
+    create.mockResolvedValue(budi({ id: 'cus-2', email: '', phone: '081111111111' }));
+
+    await rememberCustomer({ name: 'Budi Santoso', email: '', phone: '081111111111' });
 
     expect(update).not.toHaveBeenCalled();
     expect(create).toHaveBeenCalledTimes(1);
   });
 
   it('does nothing when the invoice has no customer name yet', async () => {
-    await expect(rememberCustomer({ name: '   ', phone: '0812' })).resolves.toBeNull();
+    await expect(rememberCustomer({ name: '   ', email: '', phone: '0812' })).resolves.toBeNull();
 
-    expect(findByName).not.toHaveBeenCalled();
+    expect(listByOwner).not.toHaveBeenCalled();
     expect(create).not.toHaveBeenCalled();
     expect(update).not.toHaveBeenCalled();
   });
 
   it('stamps the invoice’s own timestamp so an older invoice cannot look newer', async () => {
-    findByName.mockResolvedValue([]);
+    listByOwner.mockResolvedValue([]);
     create.mockResolvedValue(budi());
 
-    await rememberCustomer({ name: 'Budi', phone: '' }, '2026-01-05T00:00:00.000Z');
+    await rememberCustomer({ name: 'Budi', email: '', phone: '' }, '2026-01-05T00:00:00.000Z');
 
     expect(create.mock.calls[0]?.[0].lastUsedAt).toBe('2026-01-05T00:00:00.000Z');
   });
@@ -186,7 +223,7 @@ describe('rememberCustomer', () => {
   it('requires a session', async () => {
     getSession.mockResolvedValue(null);
 
-    await expect(rememberCustomer({ name: 'Budi', phone: '' })).rejects.toBeInstanceOf(AppError);
+    await expect(rememberCustomer({ name: 'Budi', email: '', phone: '' })).rejects.toBeInstanceOf(AppError);
   });
 });
 
@@ -212,8 +249,8 @@ describe('importCustomers', () => {
     create.mockResolvedValue(budi());
 
     const result = await importCustomers([
-      { name: 'Budi', phone: '081111111111' },
-      { name: 'Siti', phone: '082222222222' },
+      { name: 'Budi', email: '', phone: '081111111111' },
+      { name: 'Siti', email: '', phone: '082222222222' },
     ]);
 
     expect(result.imported).toBe(2);
@@ -224,10 +261,10 @@ describe('importCustomers', () => {
   });
 
   it('updates a row that already exists instead of duplicating it', async () => {
-    listByOwner.mockResolvedValue([budi({ name: 'Budi', phone: '081111111111' })]);
+    listByOwner.mockResolvedValue([budi({ name: 'Budi', email: '', phone: '081111111111' })]);
     update.mockResolvedValue(budi());
 
-    const result = await importCustomers([{ name: 'Budi', phone: '081111111111' }]);
+    const result = await importCustomers([{ name: 'Budi', email: '', phone: '081111111111' }]);
 
     expect(result.imported).toBe(1);
     expect(create).not.toHaveBeenCalled();
@@ -236,10 +273,10 @@ describe('importCustomers', () => {
   });
 
   it('matches on folded phone, so `+62 811…` updates the `0811…` row', async () => {
-    listByOwner.mockResolvedValue([budi({ name: 'Budi', phone: '081111111111' })]);
+    listByOwner.mockResolvedValue([budi({ name: 'Budi', email: '', phone: '081111111111' })]);
     update.mockResolvedValue(budi());
 
-    await importCustomers([{ name: 'Budi', phone: '+62 811-1111-1111' }]);
+    await importCustomers([{ name: 'Budi', email: '', phone: '+62 811-1111-1111' }]);
 
     expect(create).not.toHaveBeenCalled();
     expect(update).toHaveBeenCalledTimes(1);
@@ -250,8 +287,8 @@ describe('importCustomers', () => {
     create.mockResolvedValue(budi());
 
     const result = await importCustomers([
-      { name: 'Budi', phone: '081111111111' },
-      { name: 'Budi', phone: '081111111111' },
+      { name: 'Budi', email: '', phone: '081111111111' },
+      { name: 'Budi', email: '', phone: '081111111111' },
     ]);
 
     expect(result.imported).toBe(1);
@@ -261,7 +298,7 @@ describe('importCustomers', () => {
   it('skips blank names without touching storage', async () => {
     listByOwner.mockResolvedValue([]);
 
-    const result = await importCustomers([{ name: '   ', phone: '081111111111' }]);
+    const result = await importCustomers([{ name: '   ', email: '', phone: '081111111111' }]);
 
     expect(result.imported).toBe(0);
     expect(create).not.toHaveBeenCalled();
@@ -271,6 +308,6 @@ describe('importCustomers', () => {
   it('requires a session', async () => {
     getSession.mockResolvedValue(null);
 
-    await expect(importCustomers([{ name: 'Budi', phone: '' }])).rejects.toBeInstanceOf(AppError);
+    await expect(importCustomers([{ name: 'Budi', email: '', phone: '' }])).rejects.toBeInstanceOf(AppError);
   });
 });

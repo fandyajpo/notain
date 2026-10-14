@@ -9,7 +9,7 @@ import type {
   InvoiceItem,
   InvoiceSections,
 } from '../core/invoice/model';
-import type { BusinessProfile } from '../core/profile/model';
+import type { BusinessProfile, Plan } from '../core/profile/model';
 import type { AuthoredTemplate, InvoiceTemplate } from '../core/template/model';
 import { DEFAULT_THEME } from '../core/template/model';
 import { invoiceTemplateShapeSchema } from '../core/template/schema';
@@ -41,10 +41,13 @@ export type InvoiceRow = Models.Row &
 export type ProfileRow = Models.Row &
   Record<string, unknown> & {
     name: string;
+    businessName: string | null;
     phone: string;
     address: string | null;
     email: string | null;
     logoFileId: string | null;
+    plan: string;
+    planExpiresAt: string | null;
   };
 
 /** Row shape returned by the `templates` table. */
@@ -65,6 +68,7 @@ export type CustomerRow = Models.Row &
   Record<string, unknown> & {
     ownerId: string;
     name: string;
+    email: string | null;
     phone: string | null;
     lastUsedAt: string | null;
   };
@@ -157,20 +161,26 @@ export function draftToRowData(draft: InvoiceDraft): Record<string, unknown> {
 export function profileRowToDomain(row: ProfileRow): BusinessProfile {
   return {
     name: row.name,
+    businessName: optionalString(row.businessName) ?? '',
     phone: row.phone,
     address: optionalString(row.address),
     email: optionalString(row.email),
     logoFileId: optionalString(row.logoFileId),
+    plan: (row.plan as Plan) ?? 'free',
+    planExpiresAt: optionalString(row.planExpiresAt) ?? null,
   };
 }
 
 export function profileToRowData(profile: BusinessProfile): Record<string, unknown> {
   return {
     name: profile.name,
+    businessName: profile.businessName || null,
     phone: profile.phone,
     address: profile.address ?? null,
     email: profile.email ?? null,
     logoFileId: profile.logoFileId ?? null,
+    plan: profile.plan,
+    planExpiresAt: profile.planExpiresAt ?? null,
   };
 }
 
@@ -259,15 +269,19 @@ export function templateToRowData(template: AuthoredTemplate): Record<string, un
 export function customerRowToDomain(row: CustomerRow): Customer {
   const parsed = customerShapeSchema.safeParse({
     name: row.name,
+    email: row.email,
     phone: row.phone,
     lastUsedAt: row.lastUsedAt,
   });
 
-  const shape = parsed.success ? parsed.data : { name: '', phone: '', lastUsedAt: '' };
+  const shape = parsed.success
+    ? parsed.data
+    : { name: '', email: '', phone: '', lastUsedAt: '' };
 
   return {
     id: row.$id,
     name: shape.name,
+    email: shape.email,
     phone: shape.phone,
     lastUsedAt: shape.lastUsedAt,
   };
@@ -275,11 +289,12 @@ export function customerRowToDomain(row: CustomerRow): Customer {
 
 /** Serializes a customer into the flat column payload expected by the table. */
 export function customerToRowData(
-  customer: { name: string; phone: string },
+  customer: { name: string; email: string; phone: string },
   lastUsedAt: string,
 ): Record<string, unknown> {
   return {
     name: customer.name.trim(),
+    email: customer.email.trim() || null,
     phone: customer.phone.trim() || null,
     lastUsedAt,
   };

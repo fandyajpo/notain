@@ -10,9 +10,7 @@ export type CredentialsWithEmail = {
   password: string;
 };
 
-export type SignUpInput = CredentialsWithEmail & {
-  name: string;
-};
+export type SignUpInput = CredentialsWithEmail;
 
 /** Credentials for finishing a password reset off the emailed link. */
 export type RecoveryCompletion = {

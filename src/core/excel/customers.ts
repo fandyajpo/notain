@@ -3,21 +3,22 @@ import { customerDraftSchema } from '../customer/schema';
 import type { SheetRow } from './csv';
 
 /** Header row written by export and expected by import. */
-export const CUSTOMER_COLUMNS = ['Nama', 'WhatsApp'] as const;
+export const CUSTOMER_COLUMNS = ['Nama', 'Email', 'WhatsApp'] as const;
 
 /** Rows a downloaded template ships with — a header plus one worked example. */
 export const CUSTOMER_TEMPLATE_ROWS: SheetRow[] = [
-  ['Nama', 'WhatsApp'],
-  ['Budi Santoso', '081234567890'],
+  ['Nama', 'Email', 'WhatsApp'],
+  ['Budi Santoso', 'budi@email.com', '081234567890'],
 ];
 
 /** Header aliases accepted on import, lowercased and trimmed. */
 const NAME_ALIASES = ['nama', 'name'];
+const EMAIL_ALIASES = ['email', 'e-mail', 'surel'];
 const PHONE_ALIASES = ['whatsapp', 'wa', 'no hp', 'no. hp', 'telepon', 'telp', 'phone', 'nomor'];
 
 /** One spreadsheet row per customer — what export writes. */
 export function toCustomerRow(customer: Customer): SheetRow {
-  return [customer.name, customer.phone];
+  return [customer.name, customer.email, customer.phone];
 }
 
 /** Full sheet: header first, then one row per customer, oldest use last. */
@@ -54,6 +55,7 @@ export function parseCustomerImportRows(rows: SheetRow[]): CustomerImportResult 
 
   const header = rows[0].map((cell) => String(cell).trim().toLowerCase());
   const nameIdx = findColumn(header, NAME_ALIASES);
+  const emailIdx = findColumn(header, EMAIL_ALIASES);
   const phoneIdx = findColumn(header, PHONE_ALIASES);
 
   if (nameIdx === -1) {
@@ -67,6 +69,7 @@ export function parseCustomerImportRows(rows: SheetRow[]): CustomerImportResult 
 
     const parsed = customerDraftSchema.safeParse({
       name: String(row[nameIdx] ?? '').trim(),
+      email: emailIdx === -1 ? '' : String(row[emailIdx] ?? '').trim(),
       phone: phoneIdx === -1 ? '' : String(row[phoneIdx] ?? '').trim(),
     });
 
@@ -76,7 +79,11 @@ export function parseCustomerImportRows(rows: SheetRow[]): CustomerImportResult 
       continue;
     }
 
-    customers.push({ name: parsed.data.name, phone: parsed.data.phone });
+    customers.push({
+      name: parsed.data.name,
+      email: parsed.data.email,
+      phone: parsed.data.phone,
+    });
   }
 
   return { customers, issues };

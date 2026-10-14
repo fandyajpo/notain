@@ -1,6 +1,7 @@
 /** Column bounds on the Appwrite `customers` table. */
 export const CUSTOMER_LIMITS = {
   name: 128,
+  email: 255,
   phone: 32,
 } as const;
 
@@ -15,6 +16,7 @@ export const CUSTOMER_LIMITS = {
 export type Customer = {
   id: string;
   name: string;
+  email: string;
   phone: string;
   /** ISO timestamp of the most recent invoice that used this customer. */
   lastUsedAt: string;
@@ -23,6 +25,7 @@ export type Customer = {
 /** What the picker and the invoice form hold before it becomes a row. */
 export type CustomerDraft = {
   name: string;
+  email: string;
   phone: string;
 };
 
@@ -40,7 +43,57 @@ export function normalizePhone(phone: string): string {
   return digits;
 }
 
-/** Identity used to decide whether two drafts are the same customer. */
-export function customerKey(draft: Pick<CustomerDraft, 'name' | 'phone'>): string {
-  return `${draft.name.trim().toLowerCase()} ${normalizePhone(draft.phone)}`;
+/**
+ * Identity: two contacts are the same person when they share the same email
+ * OR the same phone (folded). Name is deliberately not part of identity —
+ * "Budi" with the same number is the same person even if one row spells it
+ * "B. Santoso".
+ *
+ * Returns `null` when the draft has neither email nor phone — there is
+ * nothing to match on, so it can only ever be a new person.
+ */
+export function customerIdentity(draft: Pick<CustomerDraft, 'email' | 'phone'>): string | null {
+  const email = draft.email.trim().toLowerCase();
+  if (email) return `email:${email}`;
+  const phone = normalizePhone(draft.phone);
+  if (phone) return `phone:${phone}`;
+  return null;
+}
+
+/**
+ * Whether two contacts are the same person.
+ *
+ * Matches when either the email or the phone is identical (phone folded).
+ * A contact with neither field can never match anything.
+ */
+export function isSameCustomer(
+  a: Pick<CustomerDraft, 'email' | 'phone'>,
+  b: Pick<CustomerDraft, 'email' | 'phone'>,
+): boolean {
+  const emailA = a.email.trim().toLowerCase();
+  const emailB = b.email.trim().toLowerCase();
+  if (emailA && emailB && emailA === emailB) return true;
+
+  const phoneA = normalizePhone(a.phone);
+  const phoneB = normalizePhone(b.phone);
+  if (phoneA && phoneB && phoneA === phoneB) return true;
+
+  return false;
+}
+
+/**
+ * Merges an incoming draft into an existing contact, filling only the fields
+ * that are empty on the existing side. A field the existing contact already
+ * has is never overwritten — the printed invoice must keep the number the
+ * user originally gave, and a manual edit is how you correct a stored value.
+ */
+export function mergeCustomer(
+  existing: Pick<CustomerDraft, 'name' | 'email' | 'phone'>,
+  incoming: Pick<CustomerDraft, 'name' | 'email' | 'phone'>,
+): CustomerDraft {
+  return {
+    name: existing.name.trim() || incoming.name.trim(),
+    email: existing.email.trim() || incoming.email.trim(),
+    phone: existing.phone.trim() || incoming.phone.trim(),
+  };
 }

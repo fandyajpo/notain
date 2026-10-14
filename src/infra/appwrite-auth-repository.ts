@@ -51,7 +51,9 @@ export class AppwriteAuthRepository implements AuthRepository {
         userId: ID.unique(),
         email: input.email,
         password: input.password,
-        name: input.name,
+        // Appwrite rejects an empty name, so the email's local part is a
+        // harmless placeholder until onboarding collects the real one.
+        name: input.email.split('@')[0] || '-',
       });
     } catch (error) {
       if (!isEmailTaken(error)) throw toAppError(error);

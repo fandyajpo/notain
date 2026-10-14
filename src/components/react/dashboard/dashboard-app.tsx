@@ -2,6 +2,8 @@ import { ArrowRight, FileText, Plus, Users } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
+import { Button } from '../ui/button';
+import { Card, EmptyCard, cardClass } from '../ui/card';
 import { SetupChecklist } from './setup-checklist';
 import { calculateTotals } from '../../../core/invoice/calculator';
 import { formatRupiah } from '../../../core/shared/money';
@@ -60,13 +62,10 @@ function DashboardContent() {
           {session && <p className="mt-1 text-sm text-muted">{session.email}</p>}
         </div>
         <div className="flex items-center gap-2">
-          <a
-            href="/invoice/new"
-            className="inline-flex h-11 items-center gap-2 rounded-control bg-accent px-4 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-ring"
-          >
+          <Button href="/invoice/new">
             <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
             Buat Invoice
-          </a>
+          </Button>
         </div>
       </header>
 
@@ -130,13 +129,13 @@ function SummarySection({
         {invoicesLoading ? (
           <p className="text-sm text-muted">Memuat faktur…</p>
         ) : recent.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 rounded-card border border-dashed border-border py-12 text-center">
-            <FileText size={24} className="text-muted" aria-hidden="true" />
-            <p className="font-medium">Belum ada faktur</p>
-            <p className="text-sm text-muted">Buat invoice pertama kamu untuk mulai melacak.</p>
-          </div>
+          <EmptyCard>
+            <FileText size={24} className="mx-auto text-muted" aria-hidden="true" />
+            <p className="mt-2 font-medium">Belum ada faktur</p>
+            <p className="mt-1 text-sm text-muted">Buat invoice pertama kamu untuk mulai melacak.</p>
+          </EmptyCard>
         ) : (
-          <ul className="flex flex-col divide-y divide-border rounded-card border border-border bg-card shadow-card">
+          <ul className={cardClass('none', 'flex flex-col divide-y divide-border')}>
             {recent.map((invoice) => {
               const { grandTotal } = calculateTotals({
                 items: invoice.items,
@@ -171,7 +170,7 @@ function SummarySection({
 
 function StatCard({ label, value, Icon }: { label: string; value: string; Icon: typeof FileText }) {
   return (
-    <div className="flex items-center gap-3 rounded-card border border-border bg-card p-4 shadow-card">
+    <Card padding="sm" className="flex items-center gap-3">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent">
         <Icon size={18} aria-hidden="true" />
       </span>
@@ -179,7 +178,7 @@ function StatCard({ label, value, Icon }: { label: string; value: string; Icon: 
         <p className="text-sm text-muted">{label}</p>
         <p className="text-2xl font-semibold tabular-nums">{value}</p>
       </div>
-    </div>
+    </Card>
   );
 }
 

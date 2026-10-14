@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { ErrorBoundary } from './error-boundary';
+import { Button } from './button';
 
 type Props = { children: ReactNode };
 
@@ -27,13 +28,9 @@ export function IslandBoundary({ children }: Props) {
           <p className="mt-2 max-w-sm text-sm text-muted">
             Muat ulang halaman untuk mencoba lagi. Data kamu tidak hilang.
           </p>
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="mt-5 rounded-control bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-ring"
-          >
+          <Button className="mt-5" onClick={() => window.location.reload()}>
             Muat ulang
-          </button>
+          </Button>
           {import.meta.env.DEV && (
             <p className="mt-4 max-w-xl break-all text-xs text-danger" title={error.message}>
               {error.message}

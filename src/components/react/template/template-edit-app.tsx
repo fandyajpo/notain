@@ -5,6 +5,7 @@ import { ArrowLeft, Save } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { Button } from '../ui/button';
+import { Card } from '../ui/card';
 import { IslandBoundary } from '../ui/island-boundary';
 import { controlClass, useFieldIds } from '../ui/field';
 import { BlockList } from './block-list';
@@ -93,10 +94,10 @@ function TemplateEditContent() {
   const existing = id ? data?.find((template) => template.id === id) : undefined;
   if (id && !existing) {
     return (
-      <div className="flex flex-col items-start gap-4 rounded-card border border-border bg-card p-6">
+      <Card className="flex flex-col items-start gap-4">
         <p className="text-sm text-muted">Template ini tidak ditemukan atau sudah dihapus.</p>
         <BackButton />
-      </div>
+      </Card>
     );
   }
 
@@ -185,7 +186,7 @@ function TemplateForm({
                 value={values.name}
                 maxLength={128}
                 onChange={(event) => form.setFieldValue('name', event.target.value)}
-                className={controlClass({ className: 'h-11' })}
+                className={controlClass()}
               />
             </div>
             <div className="flex gap-2">
@@ -279,9 +280,9 @@ function BackButton() {
 
 function Message({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-card border border-border bg-card p-10 text-center text-sm text-muted">
+    <Card padding="none" className="px-6 py-10 text-center text-sm text-muted">
       {children}
-    </div>
+    </Card>
   );
 }
 
@@ -295,12 +296,12 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-4 rounded-card border border-border bg-card p-5 sm:p-6">
+    <Card className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <h2 className="text-base font-semibold">{title}</h2>
         {description && <p className="text-sm text-muted">{description}</p>}
       </div>
       {children}
-    </section>
+    </Card>
   );
 }

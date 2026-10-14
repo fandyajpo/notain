@@ -38,7 +38,7 @@ const describedBy = [error ? errorId : '', hintId].filter(Boolean).join(' ') || 
   <input
     id={inputId}
     name={name}
-    class={controlClass({ invalid: Boolean(error), className: `h-11 ${className ?? ''}` })}
+    class={controlClass({ invalid: Boolean(error), className: className ?? '' })}
     required={required}
     disabled={disabled}
     aria-invalid={error ? 'true' : undefined}

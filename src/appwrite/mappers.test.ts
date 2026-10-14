@@ -148,6 +148,7 @@ const customerRow = (over: Partial<CustomerRow> = {}): CustomerRow =>
     $id: 'cus-1',
     ownerId: 'user-1',
     name: 'Budi Santoso',
+    email: 'budi@mail.com',
     phone: '081234567890',
     lastUsedAt: '2026-10-12T00:00:00.000Z',
     ...over,
@@ -158,6 +159,7 @@ describe('customerRowToDomain', () => {
     expect(customerRowToDomain(customerRow())).toEqual({
       id: 'cus-1',
       name: 'Budi Santoso',
+      email: 'budi@mail.com',
       phone: '081234567890',
       lastUsedAt: '2026-10-12T00:00:00.000Z',
     });
@@ -167,9 +169,10 @@ describe('customerRowToDomain', () => {
     // Appwrite hands `null` for an optional text column that was never written.
     // The name is the only field the picker needs, so a null phone must not
     // cost the whole row.
-    expect(customerRowToDomain(customerRow({ phone: null, lastUsedAt: null }))).toEqual({
+    expect(customerRowToDomain(customerRow({ email: null, phone: null, lastUsedAt: null }))).toEqual({
       id: 'cus-1',
       name: 'Budi Santoso',
+      email: '',
       phone: '',
       lastUsedAt: '',
     });
@@ -183,17 +186,26 @@ describe('customerRowToDomain', () => {
 });
 
 describe('customerToRowData', () => {
-  it('trims both fields and stores a blank phone as null', () => {
+  it('trims all fields and stores blanks as null', () => {
     expect(
-      customerToRowData({ name: '  Budi  ', phone: '   ' }, '2026-10-12T00:00:00.000Z'),
+      customerToRowData(
+        { name: '  Budi  ', email: '  ', phone: '   ' },
+        '2026-10-12T00:00:00.000Z',
+      ),
     ).toEqual({
       name: 'Budi',
+      email: null,
       phone: null,
       lastUsedAt: '2026-10-12T00:00:00.000Z',
     });
   });
 
-  it('keeps a phone that was actually given', () => {
-    expect(customerToRowData({ name: 'Budi', phone: ' 0812 ' }, '2026-10-12').phone).toBe('0812');
+  it('keeps values that were actually given', () => {
+    const row = customerToRowData(
+      { name: 'Budi', email: ' budi@mail.com ', phone: ' 0812 ' },
+      '2026-10-12',
+    );
+    expect(row.email).toBe('budi@mail.com');
+    expect(row.phone).toBe('0812');
   });
 });

@@ -3,6 +3,8 @@ import { Copy, Pencil, Plus, Trash2 } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { Button } from '../ui/button';
+import { Card, EmptyCard } from '../ui/card';
+import { PageHeader } from '../ui/page-header';
 import { IslandBoundary } from '../ui/island-boundary';
 import { TemplateCard } from './template-picker';
 import { toast } from '../../../lib/ui/toast';
@@ -45,19 +47,16 @@ function TemplatesContent() {
 
   return (
     <div className="flex flex-col gap-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-title">Template invoice</h1>
-          <p className="mt-1 text-sm text-muted">
-            Atur urutan blok, warna, dan teks default sekali, dipakai tiap kali invoice baru
-            dibuat.
-          </p>
-        </div>
-        <Button onClick={() => window.location.assign('/templates/new')}>
-          <Plus size={16} aria-hidden="true" />
-          Template baru
-        </Button>
-      </header>
+      <PageHeader
+        title="Template invoice"
+        description="Atur urutan blok, warna, dan teks default sekali, dipakai tiap kali invoice baru dibuat."
+        actions={
+          <Button onClick={() => window.location.assign('/templates/new')}>
+            <Plus size={16} aria-hidden="true" />
+            Template baru
+          </Button>
+        }
+      />
 
       {pendingDelete && (
         <div
@@ -100,13 +99,14 @@ function TemplatesContent() {
               logoUrl={logoUrl}
               business={profile}
               actions={
-                <a
+                <Button
                   href={`/templates/new?from=${template.id}`}
-                  className="inline-flex items-center gap-1.5 rounded-control border border-border bg-background px-3 py-2 text-xs font-medium text-foreground shadow-card transition-colors hover:border-accent/60 focus-ring"
+                  variant="secondary"
+                  size="sm"
                 >
                   <Copy size={13} aria-hidden="true" />
                   Duplikat
-                </a>
+                </Button>
               }
             />
           ))}
@@ -117,9 +117,9 @@ function TemplatesContent() {
         <h2 className="text-base font-semibold">Template saya</h2>
 
         {isLoading ? (
-          <div className="rounded-card border border-border bg-card p-10 text-center text-sm text-muted">
+          <Card padding="none" className="px-6 py-10 text-center text-sm text-muted">
             Memuat template…
-          </div>
+          </Card>
         ) : isError ? (
           <div
             role="alert"
@@ -131,7 +131,7 @@ function TemplatesContent() {
             </Button>
           </div>
         ) : !data?.length ? (
-          <div className="rounded-card border border-dashed border-border bg-card px-6 py-12 text-center">
+          <EmptyCard className="px-6">
             <p className="text-sm font-medium text-foreground">Belum ada template sendiri</p>
             <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
               Duplikat salah satu template bawaan, lalu sesuaikan urutan blok dan warnanya.
@@ -142,7 +142,7 @@ function TemplatesContent() {
                 Template baru
               </Button>
             </div>
-          </div>
+          </EmptyCard>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {data.map((template) => (
@@ -153,21 +153,19 @@ function TemplatesContent() {
                 business={profile}
                 actions={
                   <>
-                    <a
-                      href={`/templates/${template.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-control border border-border bg-background px-3 py-2 text-xs font-medium text-foreground shadow-card transition-colors hover:border-accent/60 focus-ring"
-                    >
+                    <Button href={`/templates/${template.id}`} variant="secondary" size="sm">
                       <Pencil size={13} aria-hidden="true" />
                       Ubah
-                    </a>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => setPendingDelete(template)}
-                      className="inline-flex items-center gap-1.5 rounded-control border border-border bg-background px-3 py-2 text-xs font-medium text-muted shadow-card transition-colors hover:border-danger/40 hover:text-danger focus-ring"
+                      className="text-muted hover:border-danger/40 hover:text-danger"
                     >
                       <Trash2 size={13} aria-hidden="true" />
                       Hapus
-                    </button>
+                    </Button>
                   </>
                 }
               />

@@ -46,6 +46,12 @@ export const QUERY_POLICIES = {
   // A bare "how many customers" figure for the dashboard. It changes only when
   // the directory changes, so it is trusted as long as the invoice list.
   customerCount: { staleTime: 15_000, gcTime: 5 * 60_000 },
+  // Admin data is only written by another admin session, so it is safe to
+  // trust for a while; the "Muat ulang" button forces a refetch when needed.
+  adminUsers: { staleTime: 60_000, gcTime: 5 * 60_000 },
+  // Team membership is fixed for the session's lifetime; a very long staleTime
+  // avoids re-hitting Appwrite on every navigation.
+  adminMembership: { staleTime: 10 * 60_000, gcTime: 30 * 60_000 },
 } as const;
 
 export type QueryPolicyName = keyof typeof QUERY_POLICIES;

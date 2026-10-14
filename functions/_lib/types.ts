@@ -30,6 +30,14 @@ export interface Env {
    * never in `wrangler.toml`, which is committed.
    */
   TURNSTILE_SECRET_KEY?: string;
+  /**
+   * Appwrite API key for admin operations (list users, check team membership,
+   * read/update profile rows). Scope: `users.read`, `teams.read`,
+   * `documents.read`, `documents.write`. (Appwrite ≥2.4 splits table access:
+   * `collections.*` covers schema, `documents.*` covers rows.) Set as an
+   * encrypted Pages variable.
+   */
+  APPWRITE_API_KEY?: string;
 }
 
 export type PagesFunction<E> = (context: {

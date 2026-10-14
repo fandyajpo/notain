@@ -83,6 +83,8 @@ describe('QUERY_POLICIES', () => {
   it('declares a policy for every query in the app', () => {
     expect(Object.keys(QUERY_POLICIES).sort()).toEqual(
       [
+        'adminMembership',
+        'adminUsers',
         'customerCount',
         'customers',
         'invoice',

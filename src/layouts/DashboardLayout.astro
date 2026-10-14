@@ -1,6 +1,7 @@
 ---
 import { FileText, LayoutGrid, Palette, Settings, Users } from 'lucide-react';
 import { SignOutIsland } from '../components/react/auth/sign-out-island';
+import { AdminNavLink } from '../components/react/auth/admin-nav-link';
 import Layout from './Layout.astro';
 
 interface Props {
@@ -62,6 +63,7 @@ const NAV = [
             {label}
           </a>
         ))}
+        <AdminNavLink client:only="react" />
       </nav>
     </header>
 
@@ -97,6 +99,7 @@ const NAV = [
                 {label}
               </a>
             ))}
+            <AdminNavLink client:only="react" />
           </nav>
           {/* Sign-out sits at the foot of the column so it is reachable without
               scrolling and never competes with the nav for attention. */}

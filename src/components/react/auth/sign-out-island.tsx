@@ -1,6 +1,6 @@
-import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
-import { createQueryClient } from '../../../lib/query/client';
+import { getShellClient } from '../../../lib/query/shell-client';
 import { SignOutButton } from './sign-out-button';
 
 /**
@@ -14,17 +14,8 @@ import { SignOutButton } from './sign-out-button';
  * it does not know about.
  *
  * The shell renders it twice (mobile header + desktop sidebar foot), so the
- * client is created once per document instead of once per instance: two
- * identical caches only ever cost memory and a second React root's worth of
- * work.
+ * client is shared via `getShellClient` rather than created per instance.
  */
-let shellClient: QueryClient | undefined;
-
-function getShellClient(): QueryClient {
-  shellClient ??= createQueryClient();
-  return shellClient;
-}
-
 export function SignOutIsland() {
   const [client] = useState(getShellClient);
 

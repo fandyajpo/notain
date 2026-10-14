@@ -7,8 +7,8 @@ import { CUSTOMER_LIMITS } from './model';
  *
  * Only the name carries a rule: a customer with no name cannot be labelled in
  * the picker, and the invoice form already requires one before it will submit.
- * The phone is deliberately optional — plenty of walk-up customers never give
- * a number.
+ * The email and phone are deliberately optional — plenty of walk-up customers
+ * never give a number, and some only give an email.
  */
 export const customerDraftSchema = z.object({
   name: z
@@ -16,6 +16,7 @@ export const customerDraftSchema = z.object({
     .trim()
     .min(1, 'Masukkan nama customer.')
     .max(CUSTOMER_LIMITS.name, 'Nama customer terlalu panjang.'),
+  email: z.string().trim().max(CUSTOMER_LIMITS.email, 'Email terlalu panjang.'),
   phone: z.string().trim().max(CUSTOMER_LIMITS.phone, 'Nomor terlalu panjang.'),
 });
 
@@ -29,6 +30,7 @@ export type CustomerDraftInput = z.infer<typeof customerDraftSchema>;
  */
 export const customerShapeSchema = z.object({
   name: z.string().trim().max(CUSTOMER_LIMITS.name).catch(''),
+  email: z.string().trim().max(CUSTOMER_LIMITS.email).catch(''),
   phone: z.string().trim().max(CUSTOMER_LIMITS.phone).catch(''),
   lastUsedAt: z.string().max(32).catch(''),
 });

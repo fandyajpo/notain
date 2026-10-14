@@ -18,6 +18,8 @@ import { formatTanggalRelatif } from '../../../core/shared/dates';
 import { useDeleteInvoice, useInvoices } from '../../../lib/query/hooks/use-invoices';
 import { toast } from '../../../lib/ui/toast';
 import { Button } from '../ui/button';
+import { Card } from '../ui/card';
+import { TABLE, TABLE_SHELL, TBODY_ROW, THEAD_ROW, thClass } from '../ui/table';
 import { controlClass, useFieldIds } from '../ui/field';
 
 const features = tableFeatures({
@@ -161,12 +163,7 @@ export function InvoiceTable() {
             }}
           />
         </div>
-        <a
-          href="/invoice/new"
-          className="inline-flex h-10 items-center justify-center rounded-control bg-accent px-4 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-ring"
-        >
-          + Buat Invoice
-        </a>
+        <Button href="/invoice/new">+ Buat Invoice</Button>
       </div>
 
       {/* A failed background refresh still has rows to show, so the banner is
@@ -198,11 +195,11 @@ export function InvoiceTable() {
           </div>
         </div>
       ) : isLoading ? (
-        <div className="rounded-card border border-border bg-card p-10 text-center text-sm text-muted">
+        <Card padding="none" className="px-6 py-10 text-center text-sm text-muted">
           Memuat invoice…
-        </div>
+        </Card>
       ) : invoices.length === 0 ? (
-        <div className="rounded-card border border-border bg-card px-6 py-14 text-center">
+        <Card padding="none" className="px-6 py-14 text-center">
           <p className="text-base font-semibold">
             {search ? 'Tidak ada invoice yang cocok' : 'Belum ada invoice'}
           </p>
@@ -216,26 +213,27 @@ export function InvoiceTable() {
               <Button onClick={() => window.location.assign('/invoice/new')}>Buat Invoice</Button>
             </div>
           )}
-        </div>
+        </Card>
       ) : (
-        <div className="overflow-x-auto rounded-card border border-border bg-card shadow-card">
-          <table className="w-full min-w-[640px] border-collapse text-sm">
+        <div className={TABLE_SHELL}>
+          <table className={TABLE} style={{ minWidth: '640px' }}>
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="border-b border-border">
+                <tr key={headerGroup.id} className={THEAD_ROW}>
                   {headerGroup.headers.map((header) => {
                     const sortable = header.column.getCanSort();
                     return (
                       <th
                         key={header.id}
                         scope="col"
-                        className={[
-                          'px-4 py-3 text-left text-xs font-medium text-muted',
-                          header.id === 'total' || header.id === 'date' ? 'text-right' : '',
-                          header.id === 'actions' ? 'w-24 text-right' : '',
-                        ]
-                          .filter(Boolean)
-                          .join(' ')}
+                        className={thClass(
+                          [
+                            header.id === 'total' || header.id === 'date' ? 'text-right' : '',
+                            header.id === 'actions' ? 'w-24 text-right' : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' '),
+                        )}
                         style={{ width: header.getSize() }}
                       >
                         {sortable ? (
@@ -258,10 +256,7 @@ export function InvoiceTable() {
             </thead>
             <tbody>
               {table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="border-b border-border/60 last:border-0 hover:bg-background/60"
-                >
+                <tr key={row.id} className={TBODY_ROW}>
                   {row.getAllCells().map((cell) => (
                     <td key={cell.id} className="px-4 py-3">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
