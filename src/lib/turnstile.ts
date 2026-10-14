@@ -3,10 +3,17 @@
  *
  * The sitekey is public (it ships to the browser) and is the only half that
  * reaches the Vite build; the matching secret stays server-side in the Pages
- * Function (`functions/api/turnstile.ts`) and never appears here.
+ * Function (`functions/api/turnstile.ts`) and never appears here. It is read
+ * from `PUBLIC_TURNSTILE_SITE_KEY` rather than carried in source: CI injects
+ * it from the `PUBLIC_TURNSTILE_SITE_KEY` repository secret (see
+ * `.github/workflows/deploy.yml`, which fails the build if it is missing).
  *
  * The feature is off until a sitekey is configured: with none set, no widget
  * renders and the auth forms behave exactly as they did before it existed.
+ * That is the right default for `astro dev`, where the local origin is not
+ * allowlisted for the production widget anyway — set
+ * `PUBLIC_TURNSTILE_SITE_KEY` in `.env` to a localhost-capable widget to test
+ * the gate locally.
  */
 
 function readEnv(key: string): string {
@@ -14,23 +21,8 @@ function readEnv(key: string): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-/**
- * The production widget's public sitekey.
- *
- * It ships to the browser by design, so carrying it in the source is safe — and
- * it is the only way the key reaches users, since the CI build reads no `.env`.
- *
- * Applied only to a production build. `astro dev` stays unprotected by default
- * so a local login never stalls on a widget the local origin is not allowlisted
- * for; set `PUBLIC_TURNSTILE_SITE_KEY` to a localhost-capable widget to test the
- * gate locally.
- */
-const PROD_TURNSTILE_SITE_KEY = '0x4AAAAAAFWFjVLimTes8CZC';
-
 /** Public Turnstile sitekey; empty when the gate is not configured here. */
-export const TURNSTILE_SITE_KEY =
-  readEnv('PUBLIC_TURNSTILE_SITE_KEY') ||
-  (import.meta.env.PROD ? PROD_TURNSTILE_SITE_KEY : '');
+export const TURNSTILE_SITE_KEY = readEnv('PUBLIC_TURNSTILE_SITE_KEY');
 
 export function turnstileEnabled(): boolean {
   return TURNSTILE_SITE_KEY !== '';

@@ -9,6 +9,12 @@
 #                            (dash.cloudflare.com/<ACCOUNT_ID>/...). Not a
 #                            credential — kept in a secret only to keep the
 #                            number of places that know it down to one.
+#   PUBLIC_TURNSTILE_SITE_KEY  Cloudflare Turnstile sitekey, baked into the
+#                            build as PUBLIC_TURNSTILE_SITE_KEY. Public by
+#                            design (it ships to the browser), but kept out of
+#                            the repo so the source carries no keys at all.
+#                            The build fails without it rather than shipping
+#                            a site whose bot gate silently went missing.
 #
 # Cloudflare auto-build must be OFF for this project, otherwise Cloudflare
 # builds on every push as well and the two deploys overwrite each other:
@@ -36,6 +42,7 @@ jobs:
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.PUBLIC_TURNSTILE_SITE_KEY }}
     steps:
       # Fail with a readable message instead of a cryptic Wrangler 403/404
       # when a secret has not been added yet.
@@ -44,6 +51,7 @@ jobs:
           missing=""
           [ -z "$CLOUDFLARE_API_TOKEN" ] && missing="$missing CLOUDFLARE_API_TOKEN"
           [ -z "$CLOUDFLARE_ACCOUNT_ID" ] && missing="$missing CLOUDFLARE_ACCOUNT_ID"
+          [ -z "$PUBLIC_TURNSTILE_SITE_KEY" ] && missing="$missing PUBLIC_TURNSTILE_SITE_KEY"
           if [ -n "$missing" ]; then
             echo "::error::Missing repository secret(s):$missing"
             exit 1
