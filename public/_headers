@@ -1,5 +1,26 @@
 # Cloudflare Pages header overrides.
 #
+# Cloudflare merges every rule that matches a request, so `/*` carries the
+# security headers for the whole site and `/_astro/*` adds long caching on top
+# for hashed build assets — both apply to those requests without conflict.
+
+# Security headers, site-wide.
+#
+# HSTS stops the first request from ever going out over plain HTTP for a year;
+# `includeSubDomains` extends that to any subdomain. `preload` is deliberately
+# left off — preloading is effectively irreversible, so it should be an
+# informed choice, not a default.
+#
+# No Content-Security-Policy yet: the app talks to Appwrite and loads Cloudflare
+# Turnstile, and one wrong directive breaks sign-in. It should land on its own,
+# ideally as Content-Security-Policy-Report-Only first.
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+
 # Hashed build assets cannot change without a new file name, so the etag dance
 # Cloudflare serves by default (`max-age=0, must-revalidate`) is pure round
 # trips on every revisit. HTML keeps the default: it must stay revalidated so a
