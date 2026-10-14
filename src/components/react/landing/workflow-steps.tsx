@@ -5,7 +5,7 @@ const STEPS = [
   {
     title: 'Daftar & isi profil usaha',
     description:
-      'Nama, nomor WhatsApp, alamat, dan logo. Cukup sekali di awal — setiap invoice berikutnya otomatis pakai data ini.',
+      'Nama, nomor WhatsApp, alamat, dan logo. Cukup sekali di awal. Setiap invoice berikutnya otomatis pakai data ini.',
     detail: 'Sekali isi, selamanya kepakai.',
   },
   {
@@ -17,7 +17,7 @@ const STEPS = [
   {
     title: 'Download & kirim',
     description:
-      'PDF profesional langsung turun ke perangkat kamu. Notain lalu menyiapkan pesan WhatsApp-nya — tinggal lampir, kirim.',
+      'PDF profesional langsung turun ke perangkat kamu. Notain lalu menyiapkan pesan WhatsApp-nya. Tinggal lampir, kirim.',
     detail: 'Sampai ke customer dalam hitungan detik.',
   },
 ];

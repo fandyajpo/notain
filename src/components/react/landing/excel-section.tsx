@@ -16,7 +16,7 @@ const STEPS = [
   {
     icon: Upload,
     title: 'Upload kembali',
-    description: 'Customer langsung masuk — tanpa ketik ulang satu-satu.',
+    description: 'Customer langsung masuk, tanpa ketik ulang satu-satu.',
   },
 ];
 

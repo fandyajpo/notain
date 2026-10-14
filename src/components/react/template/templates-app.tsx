@@ -49,7 +49,7 @@ function TemplatesContent() {
         <div>
           <h1 className="text-title">Template invoice</h1>
           <p className="mt-1 text-sm text-muted">
-            Atur urutan blok, warna, dan teks default sekali — dipakai tiap kali invoice baru
+            Atur urutan blok, warna, dan teks default sekali, dipakai tiap kali invoice baru
             dibuat.
           </p>
         </div>

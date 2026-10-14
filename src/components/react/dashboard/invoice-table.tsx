@@ -64,7 +64,7 @@ export function InvoiceTable() {
         columnHelper.accessor('customerName', {
           id: 'customerName',
           header: 'Customer',
-          cell: (info) => info.getValue() || '—',
+          cell: (info) => info.getValue() || '-',
         }),
         columnHelper.accessor(
           (invoice) =>

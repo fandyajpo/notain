@@ -107,7 +107,7 @@ export function CustomerImportPanel() {
       {result && (
         <div className="flex flex-col gap-3 rounded-control border border-border p-3">
           <p className="text-sm">
-            <span className="font-medium">{fileName}</span> — {result.customers.length} baris siap
+            <span className="font-medium">{fileName}</span>, {result.customers.length} baris siap
             diimpor
             {result.issues.length > 0 ? `, ${result.issues.length} baris bermasalah.` : '.'}
           </p>

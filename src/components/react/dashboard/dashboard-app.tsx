@@ -105,12 +105,12 @@ function SummarySection({
       <section className="grid gap-4 sm:grid-cols-2">
         <StatCard
           label="Total faktur"
-          value={totalInvoices === undefined ? '—' : String(totalInvoices)}
+          value={totalInvoices === undefined ? '-' : String(totalInvoices)}
           Icon={FileText}
         />
         <StatCard
           label="Total customer"
-          value={totalCustomers === undefined ? '—' : String(totalCustomers)}
+          value={totalCustomers === undefined ? '-' : String(totalCustomers)}
           Icon={Users}
         />
       </section>

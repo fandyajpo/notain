@@ -150,7 +150,7 @@ export function ProbeHost() {
             <div className="mb-6 flex flex-col gap-5">
               <notain-picker ref={customerPickerRef} data-customer-picker />
               <p className="text-sm text-muted">
-                Terpilih: <span className="font-medium">{customer.name || '—'}</span>{' '}
+                Terpilih: <span className="font-medium">{customer.name || '-'}</span>{' '}
                 <span className="text-xs">{customer.phone}</span>
               </p>
             </div>

@@ -161,7 +161,7 @@ export function BlockList({ layout, onChange }: Props) {
                   key={align}
                   type="button"
                   title={label}
-                  aria-label={`${label} — ${BLOCK_LABELS[block.type]}`}
+                  aria-label={`${label}: ${BLOCK_LABELS[block.type]}`}
                   aria-pressed={block.align === align}
                   onClick={() => onChange(setBlockAlign(layout, block.id, align))}
                   className={[
@@ -186,7 +186,7 @@ export function BlockList({ layout, onChange }: Props) {
                   key={width}
                   type="button"
                   title={`Lebar ${label.toLowerCase()}`}
-                  aria-label={`Lebar ${label} — ${BLOCK_LABELS[block.type]}`}
+                  aria-label={`Lebar ${label}: ${BLOCK_LABELS[block.type]}`}
                   aria-pressed={block.width === width}
                   onClick={() => onChange(setBlockWidth(layout, block.id, width))}
                   className={[

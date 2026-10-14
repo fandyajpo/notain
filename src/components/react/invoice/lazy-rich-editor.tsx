@@ -97,7 +97,7 @@ function EditorLoadError({
         style={{ minHeight: minHeight + 36 }}
       >
         <p className="text-sm text-danger">
-          Editor teks gagal dimuat. Invoice kamu tidak hilang — bagian lain tetap bisa diisi.
+          Editor teks gagal dimuat. Invoice kamu tidak hilang; bagian lain tetap bisa diisi.
         </p>
         <div className="flex gap-2">
           <Button size="sm" onClick={onRetry}>

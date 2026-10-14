@@ -7,7 +7,7 @@ const FAQS = [
   {
     question: 'Berapa biayanya?',
     answer:
-      'Gratis untuk seluruh fitur inti: buat invoice, PDF, dan kirim lewat WhatsApp. Tanpa kartu kredit dan tanpa masa trial. Ada juga plan Pro (Rp 29.000/bulan) untuk template premium, invoice link, dan laporan bisnis — detailnya di halaman Harga.',
+      'Gratis untuk seluruh fitur inti: buat invoice, PDF, dan kirim lewat WhatsApp. Tanpa kartu kredit dan tanpa masa trial. Ada juga plan Pro (Rp 29.000/bulan) untuk template premium dan laporan bisnis, serta plan Business (Rp 99.000/bulan) untuk akses API. Detailnya ada di halaman Harga.',
   },
   {
     question: 'Data invoice saya aman?',

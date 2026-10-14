@@ -358,12 +358,12 @@ export function InvoiceBuilder({
           {autosaved && (
             <p role="status" className="inline-flex w-fit items-center gap-1.5 text-xs text-muted">
               <Check size={13} className="text-accent" aria-hidden="true" />
-              Tersimpan otomatis sebagai draft di perangkat ini — kerjaanmu aman sampai kamu simpan
+              Tersimpan otomatis sebagai draft di perangkat ini; kerjaanmu aman sampai kamu simpan
               beneran.
             </p>
           )}
           <p className="mt-1 text-sm text-muted">
-            Dari: <span className="font-medium text-foreground">{profile.name || '—'}</span> ·{' '}
+            Dari: <span className="font-medium text-foreground">{profile.name || '-'}</span> ·{' '}
             <a href="/settings" className="underline underline-offset-2 hover:text-foreground">
               Ubah profil
             </a>

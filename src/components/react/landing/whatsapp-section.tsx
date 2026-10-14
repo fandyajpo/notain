@@ -163,7 +163,7 @@ export function WhatsAppSection() {
 
           <Reveal y={16} delay={0.3}>
             <p className="mt-8 text-xs text-muted">
-              Tanpa API WhatsApp dan tanpa biaya tambahan — memakai chat biasa yang sudah kamu
+              Tanpa API WhatsApp dan tanpa biaya tambahan, memakai chat biasa yang sudah kamu
               punya.
             </p>
           </Reveal>

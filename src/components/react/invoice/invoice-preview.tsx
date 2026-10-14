@@ -224,7 +224,7 @@ export function InvoicePreview({ business, invoice, template, logoUrl, className
               )}
               {invoice.items.map((item) => (
                 <tr key={item.id} style={{ borderBottom: `1px solid ${theme.border}` }}>
-                  <td className="py-2 pr-3">{item.name || <span style={muted}>—</span>}</td>
+                  <td className="py-2 pr-3">{item.name || <span style={muted}>-</span>}</td>
                   <td className="py-2 text-right tabular-nums">{item.quantity}</td>
                   <td className="py-2 text-right tabular-nums">{formatRupiah(item.unitPrice)}</td>
                   <td className="py-2 text-right font-medium tabular-nums">

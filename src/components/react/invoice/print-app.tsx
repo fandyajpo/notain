@@ -74,7 +74,7 @@ function PrintContent() {
             <p className="mt-0.5 text-xs text-muted">
               Struktur invoice (garis, kartu, tabel) selalu ikut tercetak. Centang{' '}
               <span className="font-medium">Background graphics</span> kalau mau warna dan wallpaper
-              ikut juga — opsional.
+              ikut juga (opsional).
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
