@@ -11,9 +11,13 @@ export function SiteFooter({ anchorPrefix = '' }: Props) {
         <div className="flex flex-col gap-10 sm:flex-row sm:justify-between">
           <div className="max-w-xs">
             <a href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-              <span className="flex size-7 items-center justify-center rounded-lg bg-accent text-sm text-accent-foreground">
-                N
-              </span>
+              <img
+                src="/notain-remove-bg.png"
+                alt=""
+                width={28}
+                height={28}
+                className="size-7 rounded-lg"
+              />
               Notain
             </a>
             <p className="mt-3 text-sm text-muted">
