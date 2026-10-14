@@ -45,13 +45,21 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (remoteip) form.set('remoteip', remoteip);
 
   let success: boolean;
+  let errorCodes: string[] = [];
   try {
     const response = await fetch(SITEVERIFY_URL, { method: 'POST', body: form });
-    const result = (await response.json()) as { success?: unknown };
+    const result = (await response.json()) as { success?: unknown; 'error-codes'?: unknown };
     success = result.success === true;
+    // Cloudflare explains a rejection via `error-codes` (e.g.
+    // `invalid-input-secret` when the secret does not match the sitekey,
+    // `timeout-or-duplicate` for an expired/spent token). The body is echoed
+    // so the cause can be read straight from the browser's Network tab.
+    if (Array.isArray(result['error-codes'])) {
+      errorCodes = result['error-codes'].filter((code): code is string => typeof code === 'string');
+    }
   } catch {
     return apiError(502, 'validation', 'Verifikasi keamanan gagal dihubungi.');
   }
 
-  return json(200, { success });
+  return json(200, { success, errorCodes });
 };
