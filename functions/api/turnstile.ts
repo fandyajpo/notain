@@ -39,9 +39,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     return apiError(400, 'validation', 'Token verifikasi belum tersedia.');
   }
 
-  // Cloudflare uses the caller IP for token quality and abuse signals.
+  // Cloudflare uses the caller IP for token quality and abuse signals. The
+  // token must go in the `response` field — siteverify ignores `token` and
+  // answers `missing-input-response` for it.
   const remoteip = request.headers.get('cf-connecting-ip');
-  const form = new URLSearchParams({ secret, token });
+  const form = new URLSearchParams({ secret, response: token });
   if (remoteip) form.set('remoteip', remoteip);
 
   let success: boolean;
