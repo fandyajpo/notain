@@ -254,6 +254,16 @@ const is_active = (href: string) => path === href || path.startsWith(`${href}/`)
   // this pass wires the toggle and normalises anything else.
   applySidebar(localStorage.getItem(SIDEBAR_KEY) !== 'closed');
 
+  // The ClientRouter's swap replaces every `<html>` attribute with the
+  // incoming document's (keep-list is only `data-astro-transition*`), so
+  // `data-sidebar` is dropped on every soft navigation and the rail snaps
+  // open. The head's inline restore does not re-run (scripts are deduped by
+  // content) and this module executes once per session — so re-apply the
+  // preference after each swap, before the new page paints.
+  document.addEventListener('astro:after-swap', () => {
+    applySidebar(localStorage.getItem(SIDEBAR_KEY) !== 'closed');
+  });
+
   sidebarToggle?.addEventListener('click', () => {
     const next = document.documentElement.dataset.sidebar === 'closed';
     applySidebar(next);
