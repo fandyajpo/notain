@@ -396,6 +396,93 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+
+  /* View-transition pseudo-elements are not matched by `*` above. */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+/* ---- Shared modal enter animation (see components/react/ui/modal.tsx).
+   The easing matches the landing reveal so every surface feels the same. */
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@utility animate-backdrop-in {
+  animation: backdrop-in 160ms ease-out;
+}
+
+@utility animate-modal-in {
+  animation: modal-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---- Dropdown/popover enter (select menus, popovers). Faster and subtler
+   than the modal so small controls stay snappy. */
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@utility animate-popover-in {
+  animation: popover-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---- Page transitions (Astro <ClientRouter />). Content crossfades with a
+   short fade; the persisted sidebar/header are excluded from the root
+   snapshot by Astro and stay put. */
+@keyframes view-fade-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes view-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+::view-transition-old(root) {
+  animation: view-fade-out 120ms ease-out forwards;
+}
+
+::view-transition-new(root) {
+  animation: view-fade-in 200ms ease-out;
 }
 
 /* Landing audience marquee: the track holds two identical halves, so shifting
@@ -407,5 +494,104 @@
 
   to {
     transform: translateX(-50%);
+  }
+}
+
+/* ---- Driver.js onboarding (lib/tour). Restyles the library's popover from its
+   default look to the Notain card surface so tours feel native to the app. */
+.driver-popover {
+  max-width: min(20rem, calc(100vw - 2rem));
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-card);
+  box-shadow: var(--shadow-popover);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+}
+
+.driver-popover .driver-popover-title {
+  margin: 0;
+  padding: 0.875rem 1rem 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.driver-popover .driver-popover-description {
+  margin-top: 0.25rem;
+  padding: 0 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--color-muted);
+}
+
+.driver-popover .driver-popover-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 0.875rem;
+}
+
+.driver-popover .driver-popover-progress-text {
+  margin-right: auto;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.driver-popover .driver-popover-btn {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.375rem;
+  background: var(--color-card);
+  color: var(--color-foreground);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: inherit;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.driver-popover .driver-popover-btn:hover {
+  background: var(--color-background);
+}
+
+.driver-popover .driver-popover-btn.driver-popover-next-btn,
+.driver-popover .driver-popover-btn.driver-popover-done-btn {
+  border-color: transparent;
+  background: var(--color-accent);
+  color: var(--color-accent-foreground);
+}
+
+.driver-popover .driver-popover-btn.driver-popover-next-btn:hover,
+.driver-popover .driver-popover-btn.driver-popover-done-btn:hover {
+  background: color-mix(in srgb, var(--color-accent) 90%, black);
+}
+
+.driver-popover .driver-popover-btn.driver-popover-close-btn {
+  border-color: transparent;
+  background: transparent;
+  color: var(--color-muted);
+}
+
+.driver-popover .driver-popover-btn.driver-popover-close-btn:hover {
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+.driver-popover .driver-popover-arrow::before {
+  border-color: var(--color-border);
+}
+
+.driver-overlay {
+  background: rgb(23 23 23 / 0.5);
+}
+
+/* The tour is informational, so it still shows under reduced-motion — we only
+   strip the slide/scale animation. */
+@media (prefers-reduced-motion: reduce) {
+  .driver-popover,
+  .driver-active-element {
+    transition: none !important;
+    animation: none !important;
   }
 }

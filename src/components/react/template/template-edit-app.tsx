@@ -7,7 +7,8 @@ import { AppProviders } from '../providers';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { IslandBoundary } from '../ui/island-boundary';
-import { controlClass, useFieldIds } from '../ui/field';
+import { useFieldIds } from '../ui/field';
+import { Input } from '../ui/input';
 import { BlockList } from './block-list';
 import { DefaultsForm } from './defaults-form';
 import { ThemeForm } from './theme-form';
@@ -181,12 +182,11 @@ function TemplateForm({
               <label htmlFor={nameId} className="text-sm font-medium text-foreground">
                 Nama template
               </label>
-              <input
+              <Input
                 id={nameId}
                 value={values.name}
                 maxLength={128}
                 onChange={(event) => form.setFieldValue('name', event.target.value)}
-                className={controlClass()}
               />
             </div>
             <div className="flex gap-2">

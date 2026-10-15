@@ -13,10 +13,11 @@ import {
   listInvoicesPage,
   listPickerHistory,
   updateInvoice,
+  updateInvoiceStatus,
 } from '../../../app/invoices';
 import { queryPolicy } from '../policies';
 import { queryKeys } from '../keys';
-import type { Invoice, InvoiceDraft } from '../../../core/invoice/model';
+import type { Invoice, InvoiceDraft, InvoiceStatus } from '../../../core/invoice/model';
 import type { InvoicePage } from '../../../ports/invoice-repository';
 
 /** Cache shape behind every `queryKeys.invoices(...)` entry. */
@@ -34,11 +35,15 @@ type InvoiceListData = InfiniteData<InvoicePage>;
  * rows (the dashboard shows six). It is keyed separately so a small preview
  * never shares — or evicts — the full page the `/invoices` table relies on.
  */
-export function useInvoices(search = '', options?: { limit?: number }) {
+export function useInvoices(
+  search = '',
+  options?: { limit?: number; status?: InvoiceStatus },
+) {
   const limit = options?.limit;
+  const status = options?.status;
   return useInfiniteQuery({
-    queryKey: queryKeys.invoices(search, limit),
-    queryFn: ({ pageParam }) => listInvoicesPage({ search, cursorAfter: pageParam, limit }),
+    queryKey: queryKeys.invoices(search, limit, status),
+    queryFn: ({ pageParam }) => listInvoicesPage({ search, status, cursorAfter: pageParam, limit }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     ...queryPolicy('invoices'),
@@ -103,6 +108,56 @@ export function useUpdateInvoice() {
     onSuccess: (invoice) => {
       queryClient.setQueryData(queryKeys.invoice(invoice.id), invoice);
       invalidateCollections(queryClient);
+    },
+  });
+}
+
+/**
+ * Flips only the status field. Kept separate from `useUpdateInvoice` so the
+ * table's status cell does not have to round-trip the whole draft (rich-text
+ * sections included) to change one enum value.
+ */
+export function useUpdateInvoiceStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: InvoiceStatus }) =>
+      updateInvoiceStatus(id, status),
+    onMutate: async ({ id, status }) => {
+      await queryClient.cancelQueries({ queryKey: ['invoices'] });
+      const previousLists = queryClient.getQueriesData<InvoiceListData>({
+        queryKey: ['invoices'],
+      });
+
+      // Flip the status in every cached page so the controlled select reflects
+      // the pick immediately instead of snapping back while `isPending`.
+      queryClient.setQueriesData<InvoiceListData>({ queryKey: ['invoices'] }, (current) =>
+        current
+          ? {
+              ...current,
+              pages: current.pages.map((page) => ({
+                ...page,
+                items: page.items.map((invoice) =>
+                  invoice.id === id ? { ...invoice, status } : invoice,
+                ),
+              })),
+            }
+          : current,
+      );
+
+      return { previousLists };
+    },
+    onError: (_error, _variables, context) => {
+      context?.previousLists.forEach(([key, data]) => {
+        if (data) queryClient.setQueryData(key, data);
+      });
+    },
+    onSuccess: (invoice) => {
+      queryClient.setQueryData(queryKeys.invoice(invoice.id), invoice);
+    },
+    // Refetch rather than trust the optimistic write: the server is the source
+    // of truth for the stored enum.
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['invoices'] });
     },
   });
 }

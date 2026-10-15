@@ -1,5 +1,11 @@
 import { ID } from 'appwrite';
-import type { Invoice, InvoiceDraft, InvoiceHistoryEntry } from '../core/invoice/model';
+import type {
+  Invoice,
+  InvoiceDraft,
+  InvoiceHistoryEntry,
+  InvoiceStatus,
+} from '../core/invoice/model';
+import { INVOICE_STATUSES } from '../core/invoice/model';
 import { invoiceDraftSchema } from '../core/invoice/schema';
 import { AppError, ERROR_CODES, flattenIssues } from '../core/shared/errors';
 import { container } from '../infra/container';
@@ -91,6 +97,20 @@ export async function createInvoice(draft: InvoiceDraft): Promise<Invoice> {
 export async function updateInvoice(id: string, draft: InvoiceDraft): Promise<Invoice> {
   await requireSession();
   return container.invoices.update({ id, draft: parseDraft(draft) });
+}
+
+/**
+ * Flips an invoice's lifecycle status (sent / paid / void).
+ *
+ * A one-field write from the status cell in the table. The status is validated
+ * against the enum so a corrupted caller cannot store an arbitrary string.
+ */
+export async function updateInvoiceStatus(id: string, status: InvoiceStatus): Promise<Invoice> {
+  await requireSession();
+  if (!(INVOICE_STATUSES as readonly string[]).includes(status)) {
+    throw new AppError(ERROR_CODES.VALIDATION, 'Status invoice tidak valid.');
+  }
+  return container.invoices.updateStatus({ id, status });
 }
 
 export async function deleteInvoice(id: string): Promise<void> {

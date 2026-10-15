@@ -63,8 +63,15 @@ export function customerIdentity(draft: Pick<CustomerDraft, 'email' | 'phone'>):
 /**
  * Whether two contacts are the same person.
  *
- * Matches when either the email or the phone is identical (phone folded).
- * A contact with neither field can never match anything.
+ * A duplicate only when BOTH the email and the phone match. A field matches
+ * when the two normalised values are equal — two blanks count as equal, so a
+ * contact with the same email and no phone on either side is still one person.
+ * But at least one field must carry a value, or two name-only rows would
+ * collide.
+ *
+ * The practical rule: `budi@mail.com` with phone A and `budi@mail.com` with
+ * phone B are two different people and may both exist. Only an exact (email,
+ * phone) pair is a duplicate.
  */
 export function isSameCustomer(
   a: Pick<CustomerDraft, 'email' | 'phone'>,
@@ -72,13 +79,15 @@ export function isSameCustomer(
 ): boolean {
   const emailA = a.email.trim().toLowerCase();
   const emailB = b.email.trim().toLowerCase();
-  if (emailA && emailB && emailA === emailB) return true;
-
   const phoneA = normalizePhone(a.phone);
   const phoneB = normalizePhone(b.phone);
-  if (phoneA && phoneB && phoneA === phoneB) return true;
 
-  return false;
+  // Nothing to identify a person by on either side — never a match.
+  if (!emailA && !phoneA && !emailB && !phoneB) return false;
+
+  const emailMatches = emailA === emailB;
+  const phoneMatches = phoneA === phoneB;
+  return emailMatches && phoneMatches;
 }
 
 /**

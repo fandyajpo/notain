@@ -1,7 +1,7 @@
 import '../zod-csp';
 import { z } from 'zod';
 import { isIsoDate } from '../shared/dates';
-import { ADJUSTMENT_TYPES, INVOICE_LIMITS } from './model';
+import { ADJUSTMENT_TYPES, INVOICE_LIMITS, INVOICE_STATUSES } from './model';
 import { calculateItemSubtotal } from './calculator';
 
 /** Indonesian mobile numbers, local or international format. */
@@ -100,6 +100,10 @@ export const invoiceDraftSchema = z
       .max(64, 'Template tidak valid.')
       .optional()
       .transform((value) => value || undefined),
+    // Defaulted rather than required so a draft from before the field existed
+    // (or one that never set it) still parses — every saved invoice is at
+    // least `sent`.
+    status: z.enum(INVOICE_STATUSES).catch('sent'),
     customerName: z
       .string()
       .trim()
@@ -170,6 +174,7 @@ export const invoiceDraftShapeSchema = z.object({
   // error in the form rather than discarding the whole draft.
   dueDate: z.string().max(32).optional().catch(undefined),
   templateId: z.string().max(64).optional().catch(undefined),
+  status: z.enum(INVOICE_STATUSES).catch('sent'),
   customerName: z.string().max(INVOICE_LIMITS.customerName),
   customerPhone: z.string().max(INVOICE_LIMITS.customerPhone).optional().catch(undefined),
   discount: invoiceAdjustmentSchema,

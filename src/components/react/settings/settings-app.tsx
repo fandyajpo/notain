@@ -6,6 +6,9 @@ import { PageHeader } from '../ui/page-header';
 import { IslandBoundary } from '../ui/island-boundary';
 import { ProfileForm } from '../profile/profile-form';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
+import { useSession } from '../../../lib/query/hooks/use-session';
+import { usePageTour } from '../../../lib/tour/use-tour';
+import { restartTour } from '../../../lib/tour/tour-manager';
 import { EMPTY_PROFILE } from '../../../core/profile/model';
 
 export function SettingsApp() {
@@ -21,7 +24,9 @@ export function SettingsApp() {
 }
 
 function SettingsContent() {
+  usePageTour('settings');
   const { data: profile, isLoading, isError, refetch } = useProfile();
+  const { data: session } = useSession();
 
   return (
     <div className="flex flex-col gap-8">
@@ -30,7 +35,7 @@ function SettingsContent() {
         description="Isi sekali, semua invoice otomatis memakai data ini."
       />
 
-      <Card>
+      <Card data-tour="settings-profile">
         {isLoading ? (
           <p className="text-sm text-muted">Memuat profil…</p>
         ) : isError ? (
@@ -40,6 +45,24 @@ function SettingsContent() {
         ) : (
           <ProfileForm profile={profile ?? EMPTY_PROFILE} />
         )}
+      </Card>
+
+      <Card data-tour="settings-tour">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-medium">Butuh bantuan memulai?</p>
+            <p className="text-sm text-muted">
+              Putar ulang tur perkenalan kapan saja untuk mengingat fitur-fitur utama Notain.
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => void restartTour('welcome', { userId: session?.id })}
+          >
+            Putar ulang tur
+          </Button>
+        </div>
       </Card>
     </div>
   );

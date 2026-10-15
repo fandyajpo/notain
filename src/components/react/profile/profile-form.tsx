@@ -9,7 +9,8 @@ import { GENERIC_ERROR_MESSAGE } from '../../../core/shared/errors';
 import { useSaveProfile, useUploadLogo, useRemoveLogo } from '../../../lib/query/hooks/use-profile';
 import { toast } from '../../../lib/ui/toast';
 import { Button } from '../ui/button';
-import { FieldShell, controlClass, useFieldIds } from '../ui/field';
+import { FieldShell, useFieldIds } from '../ui/field';
+import { Input } from '../ui/input';
 import { LogoUploader } from '../invoice/logo-uploader';
 
 type Props = {
@@ -216,15 +217,15 @@ function ProfileField({
 
   return (
     <FieldShell label={label} htmlFor={id} error={error} hint={hint} required={required}>
-      <input
+      <Input
         id={id}
         type={type}
         inputMode={inputMode}
         value={field.state.value ?? ''}
         placeholder={placeholder}
         autoComplete={autoComplete}
+        invalid={Boolean(error)}
         aria-invalid={error ? 'true' : undefined}
-        className={controlClass({ invalid: Boolean(error) })}
         onChange={(event) => field.handleChange(event.target.value)}
         onBlur={field.handleBlur}
       />

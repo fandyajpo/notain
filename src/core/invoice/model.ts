@@ -6,6 +6,24 @@ export const ADJUSTMENT_TYPES = ['amount', 'percent'] as const;
 export type AdjustmentType = (typeof ADJUSTMENT_TYPES)[number];
 
 /**
+ * Lifecycle status of an invoice, set manually by the owner.
+ *
+ * There is no automatic transition: an invoice is issued as `sent`, and the
+ * user flips it to `paid` once the money lands or to `void` when it is
+ * cancelled. `draft` is deliberately absent — the builder's autosave is the
+ * draft state, and a saved invoice is always something the user meant to issue.
+ */
+export const INVOICE_STATUSES = ['sent', 'paid', 'void'] as const;
+export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
+
+/** Indonesian labels for each status, shown in the table and the export. */
+export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
+  sent: 'Terkirim',
+  paid: 'Lunas',
+  void: 'Batal',
+};
+
+/**
  * Hard limits shared by validation and persistence. The Appwrite columns are
  * sized from these numbers, so keep them in sync when either changes.
  */
@@ -61,6 +79,7 @@ export type InvoiceDraft = {
    * falls back to a built-in; see `core/template/resolve`.
    */
   templateId?: string;
+  status: InvoiceStatus;
   customerName: string;
   customerPhone?: string;
   items: InvoiceItem[];
@@ -99,6 +118,7 @@ export function createEmptyDraft(invoiceNumber: string, date: string): InvoiceDr
   return {
     invoiceNumber,
     date,
+    status: 'sent',
     customerName: '',
     items: [],
     discount: { ...EMPTY_ADJUSTMENT },
@@ -157,6 +177,9 @@ export function duplicateDraft(
     date,
     dueDate,
     templateId: source.templateId,
+    // A duplicate is a fresh invoice, so it restarts as `sent` regardless of
+    // the source's status.
+    status: 'sent',
     customerName: source.customerName,
     customerPhone: source.customerPhone,
     items: source.items.map((item) => ({ ...item, id: createItemId() })),

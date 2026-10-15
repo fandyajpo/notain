@@ -1,4 +1,4 @@
-import type { Invoice, InvoiceDraft, InvoiceHistoryEntry } from '../core/invoice/model';
+import type { Invoice, InvoiceDraft, InvoiceHistoryEntry, InvoiceStatus } from '../core/invoice/model';
 
 export type ListInvoicesOptions = {
   /**
@@ -9,6 +9,11 @@ export type ListInvoicesOptions = {
    * filtered client-side over the current page instead.
    */
   search?: string;
+  /**
+   * Lifecycle filter. Matched server-side so it reaches rows beyond the first
+   * page — a client-side filter would only narrow the pages already loaded.
+   */
+  status?: InvoiceStatus;
   limit?: number;
   /** Opaque cursor from a previous page's `nextCursor`. */
   cursorAfter?: string;
@@ -59,5 +64,14 @@ export interface InvoiceRepository {
   getById(id: string): Promise<Invoice | null>;
   create(input: { id: string; ownerId: string; draft: InvoiceDraft }): Promise<Invoice>;
   update(input: { id: string; draft: InvoiceDraft }): Promise<Invoice>;
+  /**
+   * Flips only the lifecycle status, leaving every other column untouched.
+   *
+   * A targeted write rather than a full `update`: the table's status cell
+   * changes one field, and round-tripping the whole draft (rich-text sections
+   * included) to flip a single enum would be both wasteful and a way to
+   * accidentally clobber a concurrent edit.
+   */
+  updateStatus(input: { id: string; status: InvoiceStatus }): Promise<Invoice>;
   remove(id: string): Promise<void>;
 }

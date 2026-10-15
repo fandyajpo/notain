@@ -12,6 +12,7 @@ import { useProfile } from '../../../lib/query/hooks/use-profile';
 import { useSession } from '../../../lib/query/hooks/use-session';
 import { useCustomerCount } from '../../../lib/query/hooks/use-customers';
 import { useInvoices } from '../../../lib/query/hooks/use-invoices';
+import { usePageTour } from '../../../lib/tour/use-tour';
 import type { Invoice } from '../../../core/invoice/model';
 
 /**
@@ -36,6 +37,7 @@ export function DashboardApp() {
 }
 
 function DashboardContent() {
+  usePageTour('welcome');
   const { data: session } = useSession();
   const { data: profile, isError: profileFailed } = useProfile();
   // One small page feeds the recent list, the "any invoice yet?" checklist and
@@ -55,14 +57,17 @@ function DashboardContent() {
 
   return (
     <div className="flex flex-col gap-8">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <header
+        data-tour="dash-hero"
+        className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+      >
         <div>
           <p className="text-sm text-muted">{greeting}</p>
           <h1 className="mt-1 text-title">{businessName}</h1>
           {session && <p className="mt-1 text-sm text-muted">{session.email}</p>}
         </div>
         <div className="flex items-center gap-2">
-          <Button href="/invoice/new">
+          <Button href="/invoice/new" data-tour="dash-create">
             <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
             Buat Invoice
           </Button>
@@ -101,7 +106,7 @@ function SummarySection({
 }) {
   return (
     <div className="flex flex-col gap-6">
-      <section className="grid gap-4 sm:grid-cols-2">
+      <section data-tour="dash-summary" className="grid gap-4 sm:grid-cols-2">
         <StatCard
           label="Total faktur"
           value={totalInvoices === undefined ? '-' : String(totalInvoices)}
@@ -114,7 +119,7 @@ function SummarySection({
         />
       </section>
 
-      <section className="flex flex-col gap-4">
+      <section data-tour="dash-recent" className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold">Faktur terbaru</h2>
           <a

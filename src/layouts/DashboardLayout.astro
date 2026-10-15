@@ -32,7 +32,10 @@ const NAV = [
 
     {/* Mobile: compact brand bar plus a scrollable nav row — a sidebar has no
         room to live on a phone, so the same links stay reachable up top. */}
-    <header class="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 lg:hidden">
+    <header
+      transition:persist="mobile-header"
+      class="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 lg:hidden"
+    >
       <div class="flex h-14 items-center px-4">
         <a href="/dashboard" class="flex items-center gap-2 font-semibold tracking-tight">
           <img
@@ -53,11 +56,10 @@ const NAV = [
           <a
             href={href}
             data-astro-prefetch
+            data-nav-link
             class:list={[
-              'shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors',
-              is_active(href)
-                ? 'bg-background font-medium text-foreground'
-                : 'text-muted hover:bg-background hover:text-foreground',
+              'shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors hover:bg-background hover:text-foreground',
+              is_active(href) ? 'bg-background font-medium text-foreground' : 'text-muted',
             ]}
           >
             {label}
@@ -71,7 +73,7 @@ const NAV = [
         to the full row so its border runs the whole height; the sticky inner
         column is what actually stays in view while the page scrolls. */}
     <div class="lg:grid lg:min-h-screen lg:grid-cols-[15rem_1fr]">
-      <aside class="hidden border-r border-border bg-card/40 lg:block">
+      <aside transition:persist="sidebar" class="hidden border-r border-border bg-card lg:block">
         <div class="sticky top-0 flex h-screen flex-col p-4">
           <a href="/dashboard" class="flex items-center gap-2 px-2 font-semibold tracking-tight">
             <img
@@ -88,11 +90,10 @@ const NAV = [
               <a
                 href={href}
                 data-astro-prefetch
+                data-nav-link
                 class:list={[
-                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors',
-                  is_active(href)
-                    ? 'bg-background font-medium text-foreground'
-                    : 'text-muted hover:bg-background hover:text-foreground',
+                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-background hover:text-foreground',
+                  is_active(href) ? 'bg-background font-medium text-foreground' : 'text-muted',
                 ]}
               >
                 <Icon size={16} aria-hidden="true" />
@@ -115,3 +116,25 @@ const NAV = [
     </div>
   </div>
 </Layout>
+
+<script>
+  // The sidebar and mobile header are `transition:persist`, so their SSR'd
+  // active state freezes on whatever page was loaded first. Re-point it at the
+  // live URL after every ClientRouter swap (and once on first paint).
+  function syncNav() {
+    const path = window.location.pathname;
+    const links = document.querySelectorAll<HTMLAnchorElement>('a[data-nav-link]');
+    for (const link of links) {
+      const href = link.getAttribute('href') ?? '';
+      const active = path === href || path.startsWith(`${href}/`);
+      link.classList.toggle('bg-background', active);
+      link.classList.toggle('font-medium', active);
+      link.classList.toggle('text-foreground', active);
+      link.classList.toggle('text-muted', !active);
+      if (active) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
+    }
+  }
+
+  document.addEventListener('astro:page-load', syncNav);
+</script>

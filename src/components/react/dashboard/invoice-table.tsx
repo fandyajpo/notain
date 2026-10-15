@@ -9,18 +9,32 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import { useDebouncedCallback } from '@tanstack/react-pacer';
-import { ArrowUpDown, ChevronRight, Copy, Search, Trash2 } from 'lucide-react';
+import { ArrowUpDown, ChevronRight, Copy, EllipsisVertical, Search, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { calculateTotals } from '../../../core/invoice/calculator';
-import type { Invoice } from '../../../core/invoice/model';
+import {
+  INVOICE_STATUSES,
+  INVOICE_STATUS_LABELS,
+  type Invoice,
+  type InvoiceStatus,
+} from '../../../core/invoice/model';
 import { formatRupiah } from '../../../core/shared/money';
 import { formatTanggalRelatif } from '../../../core/shared/dates';
-import { useDeleteInvoice, useInvoices } from '../../../lib/query/hooks/use-invoices';
+import {
+  useDeleteInvoice,
+  useInvoices,
+  useUpdateInvoiceStatus,
+} from '../../../lib/query/hooks/use-invoices';
 import { toast } from '../../../lib/ui/toast';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
+import { Input } from '../ui/input';
+import { Menu } from '../ui/menu';
+import { Modal } from '../ui/modal';
+import { Select } from '../ui/select';
+import { StatusSelect } from '../ui/status-select';
 import { TABLE, TABLE_SHELL, TBODY_ROW, THEAD_ROW, thClass } from '../ui/table';
-import { controlClass, useFieldIds } from '../ui/field';
+import { useFieldIds } from '../ui/field';
 
 const features = tableFeatures({
   columnSizingFeature,
@@ -30,9 +44,35 @@ const features = tableFeatures({
 const columnHelper = createColumnHelper<typeof features, Invoice>();
 const SEARCH_WAIT = 300;
 
+/**
+ * The status cell: flips an invoice's lifecycle state straight from the table.
+ *
+ * Persistence is a targeted status-only write, not a full-draft round-trip —
+ * rich-text sections are never shipped just to change one enum.
+ */
+function StatusCell({ invoice }: { invoice: Invoice }) {
+  const updateStatus = useUpdateInvoiceStatus();
+
+  return (
+    <StatusSelect
+      value={invoice.status}
+      label={invoice.invoiceNumber}
+      disabled={updateStatus.isPending}
+      onChange={(status) => {
+        if (status === invoice.status) return;
+        updateStatus.mutateAsync({ id: invoice.id, status }).catch(() => {
+          toast('Status gagal disimpan. Coba lagi.', { variant: 'error' });
+        });
+      }}
+    />
+  );
+}
+
 export function InvoiceTable() {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
+  // `undefined` means "all statuses" — no server-side filter is sent.
+  const [statusFilter, setStatusFilter] = useState<InvoiceStatus | undefined>(undefined);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pendingDelete, setPendingDelete] = useState<Invoice | null>(null);
 
@@ -45,8 +85,20 @@ export function InvoiceTable() {
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useInvoices(search);
+  } = useInvoices(search, { status: statusFilter });
   const deleteInvoice = useDeleteInvoice();
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    try {
+      await deleteInvoice.mutateAsync(pendingDelete.id);
+      toast('Invoice berhasil dihapus.', { variant: 'success' });
+    } catch {
+      toast('Invoice gagal dihapus. Coba lagi.', { variant: 'error' });
+    } finally {
+      setPendingDelete(null);
+    }
+  }
 
   const invoices = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
 
@@ -92,36 +144,41 @@ export function InvoiceTable() {
             <span className="text-muted">{formatTanggalRelatif(info.getValue())}</span>
           ),
         }),
+        columnHelper.accessor('status', {
+          id: 'status',
+          header: 'Status',
+          size: 120,
+          cell: (info) => <StatusCell invoice={info.row.original} />,
+        }),
         columnHelper.display({
           id: 'actions',
           header: '',
-          size: 128,
+          size: 56,
           cell: (info) => (
-            <div className="flex items-center justify-end gap-1">
-              <a
-                href={`/invoice/${info.row.original.id}`}
-                aria-label={`Buka ${info.row.original.invoiceNumber}`}
-                className="rounded-control p-2 text-muted transition-colors hover:bg-background hover:text-foreground focus-ring"
-              >
-                <ChevronRight size={16} aria-hidden="true" />
-              </a>
-              <a
-                href={`/invoice/new?from=${info.row.original.id}`}
-                aria-label={`Duplikat ${info.row.original.invoiceNumber}`}
-                title="Duplikat invoice ini"
-                className="rounded-control p-2 text-muted transition-colors hover:bg-background hover:text-foreground focus-ring"
-              >
-                <Copy size={15} aria-hidden="true" />
-              </a>
-              <button
-                type="button"
-                aria-label={`Hapus ${info.row.original.invoiceNumber}`}
-                onClick={() => setPendingDelete(info.row.original)}
-                className="rounded-control p-2 text-muted transition-colors hover:bg-danger-soft hover:text-danger focus-ring"
-              >
-                <Trash2 size={15} aria-hidden="true" />
-              </button>
-            </div>
+            <Menu
+              label={`Aksi ${info.row.original.invoiceNumber}`}
+              align="end"
+              items={[
+                {
+                  label: 'Buka & edit',
+                  icon: <ChevronRight size={15} aria-hidden="true" />,
+                  href: `/invoice/${info.row.original.id}`,
+                },
+                {
+                  label: 'Duplikat',
+                  icon: <Copy size={15} aria-hidden="true" />,
+                  href: `/invoice/new?from=${info.row.original.id}`,
+                },
+                {
+                  label: 'Hapus',
+                  icon: <Trash2 size={15} aria-hidden="true" />,
+                  variant: 'danger',
+                  onClick: () => setPendingDelete(info.row.original),
+                },
+              ]}
+            >
+              <EllipsisVertical size={16} aria-hidden="true" />
+            </Menu>
           ),
         }),
       ]),
@@ -137,31 +194,55 @@ export function InvoiceTable() {
     defaultColumn: { size: 140 },
   });
 
-  const { id: searchId } = useFieldIds();
+  const searchField = useFieldIds();
+  const statusField = useFieldIds();
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-xs">
-          <Search
-            size={15}
-            className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted"
-            aria-hidden="true"
-          />
-          <label htmlFor={searchId} className="sr-only">
-            Cari invoice
-          </label>
-          <input
-            id={searchId}
-            type="search"
-            value={searchInput}
-            placeholder="Cari nomor, customer, atau barang…"
-            className={controlClass({ className: 'h-10 pr-3 pl-9' })}
-            onChange={(event) => {
-              setSearchInput(event.target.value);
-              debouncedSearch(event.target.value);
-            }}
-          />
+        <div className="flex w-full flex-col gap-2 sm:max-w-md sm:flex-row sm:items-center">
+          <div data-tour="invoices-search" className="relative w-full sm:max-w-xs">
+            <Search
+              size={15}
+              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted"
+              aria-hidden="true"
+            />
+            <label htmlFor={searchField.id} className="sr-only">
+              Cari invoice
+            </label>
+            <Input
+              id={searchField.id}
+              type="search"
+              value={searchInput}
+              placeholder="Cari nomor, customer, atau barang…"
+              className="h-10 pr-3 pl-9"
+              onChange={(event) => {
+                setSearchInput(event.target.value);
+                debouncedSearch(event.target.value);
+              }}
+            />
+          </div>
+          <div data-tour="invoices-filter" className="w-full sm:w-auto">
+            <label htmlFor={statusField.id} className="sr-only">
+              Filter status
+            </label>
+            <Select
+              id={statusField.id}
+              size="sm"
+              clearable
+              value={statusFilter ?? ''}
+              aria-label="Filter status"
+              placeholder="Semua status"
+              options={INVOICE_STATUSES.map((status) => ({
+                value: status,
+                label: INVOICE_STATUS_LABELS[status],
+              }))}
+              onChange={(next) =>
+                setStatusFilter(next === '' ? undefined : (next as InvoiceStatus))
+              }
+              className="w-full sm:w-auto"
+            />
+          </div>
         </div>
         <Button href="/invoice/new">+ Buat Invoice</Button>
       </div>
@@ -201,21 +282,21 @@ export function InvoiceTable() {
       ) : invoices.length === 0 ? (
         <Card padding="none" className="px-6 py-14 text-center">
           <p className="text-base font-semibold">
-            {search ? 'Tidak ada invoice yang cocok' : 'Belum ada invoice'}
+            {search || statusFilter ? 'Tidak ada invoice yang cocok' : 'Belum ada invoice'}
           </p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
-            {search
-              ? 'Coba kata kunci lain, atau hapus kolom pencarian.'
+            {search || statusFilter
+              ? 'Coba kata kunci lain, atau ubah/hapus filter pencarian dan status.'
               : 'Buat invoice pertama kamu dan kirim ke customer dalam hitungan menit.'}
           </p>
-          {!search && (
+          {!(search || statusFilter) && (
             <div className="mt-6 flex justify-center">
               <Button onClick={() => window.location.assign('/invoice/new')}>Buat Invoice</Button>
             </div>
           )}
         </Card>
       ) : (
-        <div className={TABLE_SHELL}>
+        <div data-tour="invoices-table" className={TABLE_SHELL}>
           <table className={TABLE} style={{ minWidth: '640px' }}>
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -229,7 +310,7 @@ export function InvoiceTable() {
                         className={thClass(
                           [
                             header.id === 'total' || header.id === 'date' ? 'text-right' : '',
-                            header.id === 'actions' ? 'w-24 text-right' : '',
+                            header.id === 'actions' ? 'w-14 text-right' : '',
                           ]
                             .filter(Boolean)
                             .join(' '),
@@ -282,50 +363,22 @@ export function InvoiceTable() {
         </div>
       )}
 
-      {pendingDelete && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/45 p-4"
-          role="presentation"
-          onClick={() => setPendingDelete(null)}
-        >
-          <div
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="delete-dialog-title"
-            className="w-full max-w-sm rounded-card border border-border bg-card p-6 shadow-modal"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h2 id="delete-dialog-title" className="text-base font-semibold">
-              Hapus invoice ini?
-            </h2>
-            <p className="mt-2 text-sm text-muted">
-              {pendingDelete.invoiceNumber} untuk {pendingDelete.customerName} akan dihapus
-              permanen.
-            </p>
-            <div className="mt-6 flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setPendingDelete(null)}>
-                Batal
-              </Button>
-              <Button
-                variant="danger"
-                loading={deleteInvoice.isPending}
-                onClick={async () => {
-                  try {
-                    await deleteInvoice.mutateAsync(pendingDelete.id);
-                    toast('Invoice berhasil dihapus.', { variant: 'success' });
-                  } catch {
-                    toast('Invoice gagal dihapus. Coba lagi.', { variant: 'error' });
-                  } finally {
-                    setPendingDelete(null);
-                  }
-                }}
-              >
-                Hapus
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        open={pendingDelete !== null}
+        onClose={() => setPendingDelete(null)}
+        role="alertdialog"
+        size="sm"
+        ariaLabelledBy="delete-dialog-title"
+        title={<span id="delete-dialog-title">Hapus invoice ini?</span>}
+        actions={[
+          { label: 'Batal', variant: 'secondary', onClick: () => setPendingDelete(null) },
+          { label: 'Hapus', variant: 'danger', loading: deleteInvoice.isPending, onClick: confirmDelete },
+        ]}
+      >
+        <p className="text-sm text-muted">
+          {pendingDelete?.invoiceNumber} untuk {pendingDelete?.customerName} akan dihapus permanen.
+        </p>
+      </Modal>
     </div>
   );
 }

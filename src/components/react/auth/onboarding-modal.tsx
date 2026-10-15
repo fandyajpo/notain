@@ -4,7 +4,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useProfile, useSaveProfile } from '../../../lib/query/hooks/use-profile';
 import { queryKeys } from '../../../lib/query/keys';
 import { Button } from '../ui/button';
-import { controlClass, useFieldIds } from '../ui/field';
+import { useFieldIds } from '../ui/field';
+import { Input } from '../ui/input';
+import { Modal } from '../ui/modal';
+import { scheduleTour } from '../../../lib/tour/tour-store';
 
 /**
  * Two-step onboarding: personal name, then business name.
@@ -61,6 +64,9 @@ export function OnboardingModal() {
         name: trimmedName,
         businessName: trimmedBusiness,
       });
+      // Profile persisted — queue the welcome tour so it starts once the
+      // dashboard mounts (it only mounts now that the profile is complete).
+      scheduleTour('welcome');
       // Invalidate so AuthGate sees the fresh profile and mounts the dashboard.
       void queryClient.invalidateQueries({ queryKey: queryKeys.profile });
     } catch {
@@ -74,15 +80,13 @@ export function OnboardingModal() {
   const canAdvance = currentName.trim().length > 0;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="onboarding-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
-    >
-      <div className="mx-4 w-full max-w-md overflow-hidden rounded-card border border-border bg-card shadow-modal">
-        {/* Progress dots */}
-        <div className="flex items-center justify-center gap-2 border-b border-border px-6 py-4">
+    <Modal
+      open
+      onClose={() => undefined}
+      dismissible={false}
+      ariaLabelledBy="onboarding-title"
+      header={
+        <div className="flex items-center justify-center gap-2" aria-hidden="true">
           <span
             className={`h-2 rounded-full transition-all duration-300 ${
               step === 0 ? 'w-8 bg-accent' : 'w-2 bg-border'
@@ -94,81 +98,14 @@ export function OnboardingModal() {
             }`}
           />
         </div>
-
-        {/* Sliding content */}
-        <div className="relative overflow-hidden">
-          <div
-            className="flex transition-transform duration-400 ease-out"
-            style={{ transform: `translateX(-${step * 100}%)` }}
-          >
-            {/* Step 0: name */}
-            <div className="w-full shrink-0 px-6 py-8">
-              <h2 id="onboarding-title" className="text-xl font-semibold text-foreground">
-                Siapa nama kamu?
-              </h2>
-              <p className="mt-1 text-sm text-muted">
-                Nama ini akan muncul di invoice dan pengaturan akun kamu.
-              </p>
-              <div className="mt-6 flex flex-col gap-1.5">
-                <label htmlFor={nameIds.id} className="text-sm font-medium text-foreground">
-                  Nama lengkap <span className="text-danger">*</span>
-                </label>
-                <input
-                  id={nameIds.id}
-                  value={currentName}
-                  onChange={(event) => {
-                    setName(event.target.value);
-                    setError(null);
-                  }}
-                  placeholder="Fandy Ahmad"
-                  autoComplete="name"
-                  autoFocus
-                  className={controlClass()}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' && canAdvance) setStep(1);
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Step 1: business name */}
-            <div className="w-full shrink-0 px-6 py-8">
-              <h2 className="text-xl font-semibold text-foreground">Apa nama usahamu?</h2>
-              <p className="mt-1 text-sm text-muted">
-                Nama usaha akan tampil di header invoice yang kamu kirim.
-              </p>
-              <div className="mt-6 flex flex-col gap-1.5">
-                <label htmlFor={businessIds.id} className="text-sm font-medium text-foreground">
-                  Nama usaha <span className="text-danger">*</span>
-                </label>
-                <input
-                  id={businessIds.id}
-                  value={currentBusiness}
-                  onChange={(event) => {
-                    setBusinessName(event.target.value);
-                    setError(null);
-                  }}
-                  placeholder="Bengkel Jaya"
-                  autoComplete="organization"
-                  className={controlClass()}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') void handleComplete();
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between border-t border-border px-6 py-4">
+      }
+      headerClassName="flex items-center justify-center py-4"
+      bodyClassName="relative overflow-hidden"
+      footerClassName="flex items-center justify-between border-t border-border bg-background px-5 py-4 sm:px-6"
+      footer={
+        <>
           {step === 1 ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setStep(0)}
-              disabled={submitting}
-            >
+            <Button variant="ghost" size="sm" onClick={() => setStep(0)} disabled={submitting}>
               <ArrowLeft size={16} aria-hidden="true" />
               Kembali
             </Button>
@@ -183,11 +120,7 @@ export function OnboardingModal() {
           )}
 
           {isLast ? (
-            <Button
-              size="sm"
-              loading={submitting}
-              onClick={() => void handleComplete()}
-            >
+            <Button size="sm" loading={submitting} onClick={() => void handleComplete()}>
               <Check size={16} aria-hidden="true" />
               Selesai
             </Button>
@@ -197,8 +130,69 @@ export function OnboardingModal() {
               <ArrowRight size={16} aria-hidden="true" />
             </Button>
           )}
+        </>
+      }
+    >
+      {/* Sliding content */}
+      <div
+        className="flex transition-transform duration-400 ease-out"
+        style={{ transform: `translateX(-${step * 100}%)` }}
+      >
+        {/* Step 0: name */}
+        <div className="w-full shrink-0 px-5 py-6 sm:px-6 sm:py-8">
+          <h2 id="onboarding-title" className="text-xl font-semibold text-foreground">
+            Siapa nama kamu?
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            Nama ini akan muncul di invoice dan pengaturan akun kamu.
+          </p>
+          <div className="mt-6 flex flex-col gap-1.5">
+            <label htmlFor={nameIds.id} className="text-sm font-medium text-foreground">
+              Nama lengkap <span className="text-danger">*</span>
+            </label>
+            <Input
+              id={nameIds.id}
+              value={currentName}
+              onChange={(event) => {
+                setName(event.target.value);
+                setError(null);
+              }}
+              placeholder="Fandy Ahmad"
+              autoComplete="name"
+              autoFocus
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && canAdvance) setStep(1);
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Step 1: business name */}
+        <div className="w-full shrink-0 px-5 py-6 sm:px-6 sm:py-8">
+          <h2 className="text-xl font-semibold text-foreground">Apa nama usahamu?</h2>
+          <p className="mt-1 text-sm text-muted">
+            Nama usaha akan tampil di header invoice yang kamu kirim.
+          </p>
+          <div className="mt-6 flex flex-col gap-1.5">
+            <label htmlFor={businessIds.id} className="text-sm font-medium text-foreground">
+              Nama usaha <span className="text-danger">*</span>
+            </label>
+            <Input
+              id={businessIds.id}
+              value={currentBusiness}
+              onChange={(event) => {
+                setBusinessName(event.target.value);
+                setError(null);
+              }}
+              placeholder="Bengkel Jaya"
+              autoComplete="organization"
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') void handleComplete();
+              }}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

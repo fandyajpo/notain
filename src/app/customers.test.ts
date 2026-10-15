@@ -26,6 +26,7 @@ const {
   deleteCustomer,
   importCustomers,
   listCustomers,
+  mergeCustomers,
   rememberCustomer,
   updateCustomer,
 } = await import('./customers');
@@ -81,6 +82,7 @@ describe('listCustomers', () => {
 
 describe('createCustomer', () => {
   it('trims both fields and stamps the creation time', async () => {
+    listByOwner.mockResolvedValue([]);
     create.mockResolvedValue(budi());
 
     await createCustomer({ name: '  Budi Santoso ', email: '', phone: ' 081234567890 ' });
@@ -98,6 +100,27 @@ describe('createCustomer', () => {
     await expect(createCustomer({ name: '   ', email: '', phone: '' })).rejects.toBeInstanceOf(AppError);
 
     expect(create).not.toHaveBeenCalled();
+  });
+
+  it('rejects an exact duplicate: same email AND same phone', async () => {
+    listByOwner.mockResolvedValue([budi()]);
+
+    await expect(
+      createCustomer({ name: 'Budi', email: 'budi@mail.com', phone: '081234567890' }),
+    ).rejects.toBeInstanceOf(AppError);
+
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('allows the same email with a different phone — a different person', async () => {
+    listByOwner.mockResolvedValue([budi()]);
+    create.mockResolvedValue(budi({ id: 'cus-2', phone: '089999999999' }));
+
+    await expect(
+      createCustomer({ name: 'Budi', email: 'budi@mail.com', phone: '089999999999' }),
+    ).resolves.toBeTruthy();
+
+    expect(create).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -125,6 +148,47 @@ describe('updateCustomer', () => {
   });
 });
 
+describe('mergeCustomers', () => {
+  it('updates the target then deletes every source', async () => {
+    update.mockResolvedValue(budi({ name: 'Gabungan' }));
+    remove.mockResolvedValue(undefined);
+
+    await mergeCustomers({
+      targetId: 'cus-1',
+      sourceIds: ['cus-2', 'cus-3'],
+      draft: { name: 'Gabungan', email: '', phone: '' },
+    });
+
+    expect(update.mock.calls[0]?.[0].id).toBe('cus-1');
+    expect(remove).toHaveBeenCalledWith('cus-2');
+    expect(remove).toHaveBeenCalledWith('cus-3');
+  });
+
+  it('does not delete sources when the target update fails', async () => {
+    update.mockRejectedValue(new Error('boom'));
+
+    await expect(
+      mergeCustomers({
+        targetId: 'cus-1',
+        sourceIds: ['cus-2'],
+        draft: { name: 'X', email: '', phone: '' },
+      }),
+    ).rejects.toThrow('boom');
+
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it('requires a session', async () => {
+    getSession.mockResolvedValue(null);
+
+    await expect(
+      mergeCustomers({ targetId: 'cus-1', sourceIds: [], draft: { name: 'X', email: '', phone: '' } }),
+    ).rejects.toBeInstanceOf(AppError);
+
+    expect(update).not.toHaveBeenCalled();
+  });
+});
+
 describe('rememberCustomer', () => {
   it('files a new customer under the signed-in owner', async () => {
     listByOwner.mockResolvedValue([]);
@@ -143,7 +207,7 @@ describe('rememberCustomer', () => {
   });
 
   it('updates the existing row when the phone matches (folded)', async () => {
-    // Identity is email OR phone: the same person under a trunk prefix must
+    // Identity is email AND phone: the same person under a trunk prefix must
     // reuse the row. Merge keeps the stored phone, not the incoming one.
     listByOwner.mockResolvedValue([budi()]);
     update.mockResolvedValue(budi());
@@ -167,7 +231,7 @@ describe('rememberCustomer', () => {
     listByOwner.mockResolvedValue([budi()]);
     update.mockResolvedValue(budi());
 
-    await rememberCustomer({ name: 'B. Santoso', email: 'budi@mail.com', phone: '' });
+    await rememberCustomer({ name: 'B. Santoso', email: 'budi@mail.com', phone: '081234567890' });
 
     expect(create).not.toHaveBeenCalled();
     expect(update).toHaveBeenCalledWith({
@@ -184,11 +248,11 @@ describe('rememberCustomer', () => {
     listByOwner.mockResolvedValue([budi({ email: '' })]);
     update.mockResolvedValue(budi({ email: 'budi@mail.com' }));
 
-    await rememberCustomer({ name: 'Budi', email: 'budi@mail.com', phone: '081234567890' });
+    await rememberCustomer({ name: 'Budi', email: '', phone: '081234567890' });
 
     expect(update).toHaveBeenCalledWith({
       id: 'cus-1',
-      customer: { name: 'Budi Santoso', email: 'budi@mail.com', phone: '081234567890' },
+      customer: { name: 'Budi Santoso', email: '', phone: '081234567890' },
       lastUsedAt: expect.any(String),
     });
   });
@@ -198,6 +262,17 @@ describe('rememberCustomer', () => {
     create.mockResolvedValue(budi({ id: 'cus-2', email: '', phone: '081111111111' }));
 
     await rememberCustomer({ name: 'Budi Santoso', email: '', phone: '081111111111' });
+
+    expect(update).not.toHaveBeenCalled();
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
+  it('adds a second row when only the email matches but the phone differs', async () => {
+    // The identity rule is email AND phone: same email alone is a different person.
+    listByOwner.mockResolvedValue([budi()]);
+    create.mockResolvedValue(budi({ id: 'cus-2', phone: '089999999999' }));
+
+    await rememberCustomer({ name: 'Budi Santoso', email: 'budi@mail.com', phone: '089999999999' });
 
     expect(update).not.toHaveBeenCalled();
     expect(create).toHaveBeenCalledTimes(1);

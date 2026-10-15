@@ -1,6 +1,6 @@
 import type { TemplateTheme, TemplateWallpaper } from '../../../core/template/model';
 import { DEFAULT_THEME } from '../../../core/template/model';
-import { controlClass } from '../ui/field';
+import { Input } from '../ui/input';
 
 type Props = {
   theme: TemplateTheme;
@@ -128,14 +128,14 @@ function ColorField({
         onChange={(event) => onChange(event.target.value)}
         className="h-10 w-10 shrink-0 cursor-pointer rounded-control border border-border bg-card p-1 focus-ring"
       />
-      <input
+      <Input
         type="text"
         value={value}
         maxLength={7}
         spellCheck={false}
         aria-label={`Kode warna ${label}`}
         onChange={(event) => onChange(event.target.value)}
-        className={controlClass({ className: 'h-10 font-mono uppercase' })}
+        className="h-10 font-mono uppercase"
       />
     </div>
   );

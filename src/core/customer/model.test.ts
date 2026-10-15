@@ -55,34 +55,54 @@ describe('customerIdentity', () => {
 });
 
 describe('isSameCustomer', () => {
-  it('matches on the same email regardless of case', () => {
+  it('matches when both email and phone are identical', () => {
+    expect(
+      isSameCustomer(
+        { email: 'a@mail.com', phone: '0812' },
+        { email: 'a@mail.com', phone: '0812' },
+      ),
+    ).toBe(true);
+  });
+
+  it('matches on the same email when both have no phone', () => {
     expect(
       isSameCustomer({ email: 'Budi@Mail.com', phone: '' }, { email: 'budi@mail.com', phone: '' }),
     ).toBe(true);
   });
 
-  it('matches on the same phone regardless of trunk prefix', () => {
+  it('matches on the same phone when both have no email', () => {
     expect(
       isSameCustomer({ email: '', phone: '081234567890' }, { email: '', phone: '+62 812-3456-7890' }),
     ).toBe(true);
   });
 
-  it('matches when email matches even if phones differ', () => {
+  it('separates the same email with a different phone', () => {
+    // The core rule: same email but different phone number is a different
+    // person and may coexist.
     expect(
       isSameCustomer(
-        { email: 'a@mail.com', phone: '08111' },
-        { email: 'a@mail.com', phone: '08222' },
+        { email: 'budi@gmail.com', phone: '08111' },
+        { email: 'budi@gmail.com', phone: '08222' },
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
-  it('matches when phone matches even if emails differ', () => {
+  it('separates the same phone with a different email', () => {
     expect(
       isSameCustomer(
         { email: 'a@mail.com', phone: '0812' },
         { email: 'b@mail.com', phone: '0812' },
       ),
-    ).toBe(true);
+    ).toBe(false);
+  });
+
+  it('separates the same email when only one side has a phone', () => {
+    expect(
+      isSameCustomer(
+        { email: 'a@mail.com', phone: '0812' },
+        { email: 'a@mail.com', phone: '' },
+      ),
+    ).toBe(false);
   });
 
   it('separates two people who share a name but not email or phone', () => {

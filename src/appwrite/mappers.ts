@@ -8,7 +8,9 @@ import type {
   InvoiceHistoryEntry,
   InvoiceItem,
   InvoiceSections,
+  InvoiceStatus,
 } from '../core/invoice/model';
+import { INVOICE_STATUSES } from '../core/invoice/model';
 import type { BusinessProfile, Plan } from '../core/profile/model';
 import type { AuthoredTemplate, InvoiceTemplate } from '../core/template/model';
 import { DEFAULT_THEME } from '../core/template/model';
@@ -24,6 +26,7 @@ export type InvoiceRow = Models.Row &
     date: string;
     dueDate: string | null;
     templateId?: string | null;
+    status: string;
     customerName: string;
     customerPhone: string | null;
     items: string;
@@ -109,6 +112,13 @@ function toAdjustment(type: unknown, value: unknown): InvoiceAdjustment {
   };
 }
 
+/** A stored status that is missing or corrupt degrades to `sent`, never crashes. */
+function parseInvoiceStatus(raw: unknown): InvoiceStatus {
+  return typeof raw === 'string' && (INVOICE_STATUSES as readonly string[]).includes(raw)
+    ? (raw as InvoiceStatus)
+    : 'sent';
+}
+
 export function toSections(row: InvoiceRow): InvoiceSections {
   return {
     header: typeof row.headerHtml === 'string' ? row.headerHtml : '',
@@ -125,6 +135,7 @@ export function invoiceRowToDomain(row: InvoiceRow): Invoice {
     date: row.date,
     dueDate: optionalString(row.dueDate),
     templateId: optionalString(row.templateId),
+    status: parseInvoiceStatus(row.status),
     customerName: row.customerName,
     customerPhone: optionalString(row.customerPhone),
     items: parseInvoiceItems(row.items),
@@ -144,6 +155,7 @@ export function draftToRowData(draft: InvoiceDraft): Record<string, unknown> {
     date: draft.date,
     dueDate: draft.dueDate ?? null,
     templateId: draft.templateId ?? null,
+    status: draft.status,
     customerName: draft.customerName,
     customerPhone: draft.customerPhone ?? null,
     items: JSON.stringify(draft.items),

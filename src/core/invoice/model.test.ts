@@ -7,6 +7,7 @@ const source: InvoiceDraft = {
   date: '2026-10-01',
   dueDate: '2026-10-15',
   templateId: 'tpl-abc',
+  status: 'paid',
   customerName: 'Budi Santoso',
   customerPhone: '081234567890',
   items: [
@@ -43,6 +44,13 @@ describe('duplicateDraft', () => {
 
     expect(copy.invoiceNumber).toBe('INV-2026-002');
     expect(copy.date).toBe('2026-11-01');
+  });
+
+  it('resets the status to sent, since a duplicate is a new invoice', () => {
+    // The source is `paid`; the copy must not inherit that lifecycle state.
+    const copy = duplicateDraft(source, 'INV-2026-002', '2026-11-01');
+
+    expect(copy.status).toBe('sent');
   });
 
   it('keeps the due-date offset, not the old calendar day', () => {

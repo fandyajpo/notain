@@ -34,6 +34,7 @@ export function createSampleInvoice(
       invoiceNumber: 'INV-2026-001',
       date,
       dueDate: addDaysIsoDate(date, 7),
+      status: 'sent',
       customerName: 'Budi Santoso',
       customerPhone: '081298765432',
       items: [

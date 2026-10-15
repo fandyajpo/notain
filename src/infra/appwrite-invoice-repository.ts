@@ -1,5 +1,5 @@
 import { ID, Query } from 'appwrite';
-import type { Invoice, InvoiceDraft } from '../core/invoice/model';
+import type { Invoice, InvoiceDraft, InvoiceStatus } from '../core/invoice/model';
 import { APPWRITE } from '../appwrite/config';
 import { getTables } from '../appwrite/client';
 import { toAppError } from '../appwrite/errors';
@@ -52,6 +52,7 @@ export class AppwriteInvoiceRepository implements InvoiceRepository {
 
     const queries = [
       Query.equal('ownerId', ownerId),
+      ...(options.status ? [Query.equal('status', options.status)] : []),
       ...(serverSearch ? [serverSearchQuery(search)] : []),
       Query.orderDesc('date'),
       Query.orderDesc('$createdAt'),
@@ -191,6 +192,22 @@ export class AppwriteInvoiceRepository implements InvoiceRepository {
         tableId: APPWRITE.invoicesTableId,
         rowId: input.id,
         data: draftToRowData(input.draft),
+      });
+      return invoiceRowToDomain(row);
+    } catch (error) {
+      throw toAppError(error);
+    }
+  }
+
+  async updateStatus(input: { id: string; status: InvoiceStatus }): Promise<Invoice> {
+    try {
+      // A partial update: Appwrite's updateRow only writes the keys present in
+      // `data`, so every other column is left exactly as stored.
+      const row = await getTables().updateRow<InvoiceRow>({
+        databaseId: APPWRITE.databaseId,
+        tableId: APPWRITE.invoicesTableId,
+        rowId: input.id,
+        data: { status: input.status },
       });
       return invoiceRowToDomain(row);
     } catch (error) {

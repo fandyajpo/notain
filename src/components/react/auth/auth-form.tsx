@@ -23,7 +23,8 @@ import {
   useSignUp,
 } from '../../../lib/query/hooks/use-session';
 import { Button } from '../ui/button';
-import { FieldShell, controlClass, useFieldIds } from '../ui/field';
+import { FieldShell, useFieldIds } from '../ui/field';
+import { Input } from '../ui/input';
 import { Turnstile } from './turnstile';
 
 type Mode = 'sign-in' | 'sign-up' | 'forgot-password' | 'reset-password';
@@ -587,7 +588,7 @@ function AuthTextField({
 
   return (
     <FieldShell label={label} htmlFor={id} error={error} hint={hint} required>
-      <input
+      <Input
         id={id}
         name={id}
         type={type}
@@ -596,9 +597,9 @@ function AuthTextField({
         autoComplete={autoComplete}
         autoCapitalize="off"
         spellCheck={false}
+        invalid={Boolean(error)}
         aria-invalid={error ? 'true' : undefined}
         aria-describedby={error ? errorId : undefined}
-        className={controlClass({ invalid: Boolean(error) })}
         onChange={(event) => {
           field.handleChange(event.target.value);
           onChange?.(event.target.value);

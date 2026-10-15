@@ -14,6 +14,7 @@ import {
   INVOICE_LIMITS,
   type AdjustmentType,
   type InvoiceDraft,
+  type InvoiceStatus,
 } from '../../../core/invoice/model';
 import { invoiceDraftSchema } from '../../../core/invoice/schema';
 import { formatRupiah } from '../../../core/shared/money';
@@ -28,14 +29,24 @@ import {
 } from '../../../lib/store/builder-ui';
 import { clearDraft, readDraft, writeDraft } from '../../../lib/draft-storage';
 import { openPrintView } from '../../../lib/print';
-import { useCreateInvoice, useUpdateInvoice } from '../../../lib/query/hooks/use-invoices';
+import {
+  useCreateInvoice,
+  useUpdateInvoice,
+  useUpdateInvoiceStatus,
+} from '../../../lib/query/hooks/use-invoices';
 import { useRememberCustomer } from '../../../lib/query/hooks/use-customers';
+import { usePageTour } from '../../../lib/tour/use-tour';
+import { useUnsavedChangesGuard } from '../../../lib/use-unsaved-changes-guard';
 import { useTemplates } from '../../../lib/query/hooks/use-templates';
 import { useSession } from '../../../lib/query/hooks/use-session';
 import type { PickPayload } from '../../shared/contracts';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
-import { FieldShell, controlClass, errorMessage, useFieldIds } from '../ui/field';
+import { FieldShell, errorMessage, useFieldIds } from '../ui/field';
+import { Input } from '../ui/input';
+import { Modal } from '../ui/modal';
+import { StatusSelect } from '../ui/status-select';
+import { Textarea } from '../ui/textarea';
 import { BuilderTabs } from './builder-tabs';
 import { ItemsGrid } from './items-grid';
 import { InvoicePreview } from './invoice-preview';
@@ -110,6 +121,9 @@ export function InvoiceBuilder({
   const isEditing = Boolean(invoiceId);
   const createInvoice = useCreateInvoice();
   const updateInvoice = useUpdateInvoice();
+  // Status-only write, so flipping the lifecycle state from the edit page does
+  // not have to round-trip the whole draft (rich-text sections included).
+  const updateStatus = useUpdateInvoiceStatus();
   // Files the customer away alongside the invoice. Never awaited for the
   // redirect — a directory write is a convenience, not part of the save.
   const rememberCustomer = useRememberCustomer();
@@ -120,6 +134,7 @@ export function InvoiceBuilder({
   // scopes the autosaved draft to this account (see `draft-storage.ts`).
   const { data: session } = useSession();
   const ownerId = session?.id ?? '';
+  usePageTour('invoice-create');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
   const restoredRef = useRef(false);
@@ -131,6 +146,10 @@ export function InvoiceBuilder({
   // so. New invoices only — an existing invoice is the server's truth, not a
   // local draft, so there is nothing to reassure about there.
   const [autosaved, setAutosaved] = useState(false);
+  // Latest `disarm` from the unsaved-changes guard. `onSubmit` is declared
+  // before the form (and thus before the guard), so it reaches the live
+  // function through this ref rather than a stale closure.
+  const disarmGuard = useRef<() => void>(() => {});
 
   const defaultDraft = useMemo(() => {
     const base = buildDefaultDraft(
@@ -179,6 +198,9 @@ export function InvoiceBuilder({
           draft: { name: value.customerName, email: '', phone: value.customerPhone ?? '' },
         });
         toast('Invoice berhasil disimpan.', { variant: 'success' });
+        // Disarm the unsaved-changes guard so this intentional redirect is not
+        // met with a "leave?" prompt.
+        disarmGuard.current();
         window.location.assign('/dashboard');
       } catch (error) {
         const message =
@@ -198,6 +220,13 @@ export function InvoiceBuilder({
   const submissionAttempts = useSelector(form.store, (state) => state.submissionAttempts);
   // Which tab panel is on show, shared with BuilderTabs through the store.
   const activeSection = useSelector(builderUiStore, (state) => state.activeSection);
+  const isDirty = useSelector(form.store, (state) => state.isDirty);
+  // Warn before leaving an edited invoice with unsaved changes. New invoices
+  // autosave a local draft, so only the edit page needs the guard.
+  const guard = useUnsavedChangesGuard(isDirty && isEditing);
+  useEffect(() => {
+    disarmGuard.current = guard.disarm;
+  }, [guard.disarm]);
 
   const totals = useMemo(
     () =>
@@ -241,6 +270,25 @@ export function InvoiceBuilder({
       submitInFlight.current = false;
     });
   }, [form, isSubmitting]);
+
+  /**
+   * Flips the lifecycle status straight away (a status-only server write) and
+   * mirrors it into the form, so a later "Simpan perubahan" cannot write back
+   * the stale status loaded at mount. On failure the form rolls back, matching
+   * how the table's status cell behaves.
+   */
+  const changeStatus = useCallback(
+    (status: InvoiceStatus) => {
+      if (!invoiceId || status === values.status) return;
+      const previous = values.status;
+      form.setFieldValue('status', status);
+      updateStatus.mutateAsync({ id: invoiceId, status }).catch(() => {
+        form.setFieldValue('status', previous);
+        toast('Status gagal disimpan. Coba lagi.', { variant: 'error' });
+      });
+    },
+    [form, invoiceId, updateStatus, values.status],
+  );
 
   const addItem = useCallback(() => {
     const current = form.state.values.items;
@@ -345,15 +393,25 @@ export function InvoiceBuilder({
             <h1 className="text-2xl font-semibold tracking-tight">
               {isEditing ? 'Ubah Invoice' : 'Buat Invoice'}
             </h1>
-            <button
-              type="button"
-              onClick={() => window.open('/#pintasan', '_blank')}
-              className="hidden items-center gap-1.5 rounded-control border border-border bg-card px-2.5 py-1.5 text-xs text-muted shadow-card transition-colors hover:text-foreground focus-ring lg:inline-flex"
-              title="Pintasan keyboard"
-            >
-              <Keyboard size={14} aria-hidden="true" />
-              Mod+S simpan
-            </button>
+            <div className="flex items-center gap-2">
+              {isEditing && (
+                <StatusSelect
+                  value={values.status}
+                  label={values.invoiceNumber}
+                  disabled={updateStatus.isPending}
+                  onChange={changeStatus}
+                />
+              )}
+              <button
+                type="button"
+                onClick={() => window.open('/#pintasan', '_blank')}
+                className="hidden items-center gap-1.5 rounded-control border border-border bg-card px-2.5 py-1.5 text-xs text-muted shadow-card transition-colors hover:text-foreground focus-ring lg:inline-flex"
+                title="Pintasan keyboard"
+              >
+                <Keyboard size={14} aria-hidden="true" />
+                Mod+S simpan
+              </button>
+            </div>
           </div>
           <p className="text-sm text-muted">Isi customer dan barangnya, total dihitung otomatis.</p>
           {autosaved && (
@@ -384,7 +442,7 @@ export function InvoiceBuilder({
           {(discount) => (
             <form.Subscribe selector={(state) => state.values.tax}>
               {(tax) => (
-                <Section title="Ringkasan">
+                <Section title="Ringkasan" dataTour="inv-totals">
                   <TotalsPanel
                     items={values.items}
                     discount={discount}
@@ -399,7 +457,9 @@ export function InvoiceBuilder({
           )}
         </form.Subscribe>
 
-        <BuilderTabs />
+        <div data-tour="inv-tabs">
+          <BuilderTabs />
+        </div>
 
         <div hidden={activeSection !== 'detail'} className="flex flex-col gap-6">
           <Section title="Untuk siapa invoice ini?">
@@ -536,14 +596,13 @@ export function InvoiceBuilder({
                   <label htmlFor="invoice-notes" className="text-sm font-medium text-foreground">
                     Catatan (opsional, mendukung Markdown)
                   </label>
-                  <textarea
+                  <Textarea
                     id="invoice-notes"
                     rows={3}
                     value={field.state.value ?? ''}
                     placeholder={
                       'Terima kasih sudah berbelanja 🙏\n\n**Pembayaran:** BCA 1234567890'
                     }
-                    className={controlClass({ multiline: true })}
                     onChange={(event) => field.handleChange(event.target.value)}
                     onBlur={field.handleBlur}
                   />
@@ -561,7 +620,10 @@ export function InvoiceBuilder({
         </div>
       </form>
 
-      <aside className="flex flex-col gap-3 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
+      <aside
+        data-tour="inv-preview"
+        className="flex flex-col gap-3 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto"
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs font-medium uppercase tracking-wide text-muted">Preview invoice</p>
           <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
@@ -635,6 +697,23 @@ export function InvoiceBuilder({
           </div>
         </div>
       </div>
+
+      <Modal
+        open={guard.isPrompting}
+        onClose={guard.cancelLeave}
+        role="alertdialog"
+        size="sm"
+        ariaLabelledBy="leave-dialog-title"
+        title={<span id="leave-dialog-title">Tinggalkan invoice ini?</span>}
+        actions={[
+          { label: 'Batal', variant: 'secondary', onClick: guard.cancelLeave },
+          { label: 'Tetap tinggalkan', variant: 'danger', onClick: guard.confirmLeave },
+        ]}
+      >
+        <p className="text-sm text-muted">
+          Perubahanmu belum disimpan dan akan hilang kalau kamu pergi dari halaman ini.
+        </p>
+      </Modal>
     </div>
   );
 }
@@ -644,14 +723,16 @@ export function InvoiceBuilder({
 function Section({
   title,
   action,
+  dataTour,
   children,
 }: {
   title: string;
   action?: React.ReactNode;
+  dataTour?: string;
   children: React.ReactNode;
 }) {
   return (
-    <Card className="flex flex-col gap-5">
+    <Card className="flex flex-col gap-5" data-tour={dataTour}>
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-base font-semibold">{title}</h2>
         {action}
@@ -691,7 +772,7 @@ function TextField({
 
   return (
     <FieldShell label={label} htmlFor={id} error={error} hint={hint} required={required}>
-      <input
+      <Input
         id={id}
         type="text"
         inputMode={inputMode}
@@ -699,11 +780,9 @@ function TextField({
         placeholder={placeholder}
         readOnly={readOnly}
         autoComplete="off"
+        invalid={Boolean(error)}
         aria-invalid={error ? 'true' : undefined}
-        className={controlClass({
-          invalid: Boolean(error),
-          className: `h-11 ${readOnly ? 'read-only:cursor-default read-only:bg-background' : ''}`,
-        })}
+        className={`h-11 ${readOnly ? 'read-only:cursor-default read-only:bg-background' : ''}`}
         onChange={(event) => field.handleChange(event.target.value)}
         onBlur={field.handleBlur}
       />
@@ -724,12 +803,12 @@ function DateField({ field, label, required = false, showError }: DateFieldProps
 
   return (
     <FieldShell label={label} htmlFor={id} error={error} required={required}>
-      <input
+      <Input
         id={id}
         type="date"
         value={field.state.value ?? ''}
+        invalid={Boolean(error)}
         aria-invalid={error ? 'true' : undefined}
-        className={controlClass({ invalid: Boolean(error) })}
         onChange={(event) => field.handleChange(event.target.value)}
         onBlur={field.handleBlur}
       />

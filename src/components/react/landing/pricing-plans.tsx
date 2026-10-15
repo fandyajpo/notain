@@ -2,6 +2,7 @@ import { motion, MotionConfig } from 'motion/react';
 import { ArrowRight, Check, Sparkles } from 'lucide-react';
 import { EASE } from './reveal';
 import { MagneticButton } from './interactive';
+import { Aurora } from './aurora';
 
 type Plan = {
   name: string;
@@ -77,10 +78,10 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
       initial={false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay, ease: EASE }}
-      className={`relative flex flex-col rounded-card border bg-card p-6 sm:p-8 ${
+      className={`relative flex flex-col rounded-card border p-6 sm:p-8 ${
         primary
-          ? 'border-accent shadow-[0_16px_40px_-20px_rgb(37_99_235_/_0.45)]'
-          : 'border-border shadow-card'
+          ? 'border-accent bg-gradient-to-b from-accent/8 via-card to-card shadow-[0_16px_40px_-20px_rgb(37_99_235_/_0.45)]'
+          : 'border-border bg-card shadow-card'
       }`}
     >
       <div className="flex items-center justify-between gap-3">
@@ -155,8 +156,12 @@ export function PricingPlans() {
     <MotionConfig reducedMotion="user">
       <section
         id="harga"
-        className="mx-auto w-full max-w-5xl scroll-mt-4 px-5 pb-20 pt-14 sm:px-8 sm:pb-24 sm:pt-20"
+        className="relative mx-auto w-full max-w-5xl scroll-mt-4 px-5 pb-20 pt-14 sm:px-8 sm:pb-24 sm:pt-20"
       >
+        {/* Same drifting gradient identity as the homepage hero, so the two
+            pages read as one brand. */}
+        <Aurora />
+
         {/* First-viewport content uses `initial={false}` so the server HTML
             already paints it at full size, like the hero. */}
         <div className="text-center">

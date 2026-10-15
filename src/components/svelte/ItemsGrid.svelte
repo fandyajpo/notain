@@ -2,6 +2,7 @@
 
 <script lang="ts">
   import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-svelte';
+  import { cubicOut } from 'svelte/easing';
   import { calculateItemSubtotal } from '../../core/invoice/calculator';
   import {
     createItem,
@@ -70,6 +71,27 @@
     if (!canAdd) return;
     emit([...items, createItem(createItemId())]);
   }
+
+  // No `matchMedia` (SSR, jsdom tests) or an explicit reduced-motion preference
+  // both collapse the transition to nothing.
+  const prefersReduced =
+    typeof window === 'undefined' ||
+    typeof window.matchMedia !== 'function' ||
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /**
+   * Slide + fade for a row appearing or going away. Table rows ignore
+   * `transform`, so on the desktop layout this degrades to a clean fade; the
+   * mobile card layout also slides.
+   */
+  function itemRow(_node: Element, params?: { y?: number }) {
+    const y = params?.y ?? 10;
+    return {
+      duration: prefersReduced ? 0 : 190,
+      easing: cubicOut,
+      css: (t: number) => `opacity: ${t}; transform: translateY(${(1 - t) * y}px);`,
+    };
+  }
 </script>
 
 <div bind:this={root} class="flex flex-col gap-3" data-items-grid>
@@ -77,7 +99,11 @@
     <!-- Mobile: one stacked card per item so nothing needs a horizontal scroll. -->
     <div class="flex flex-col gap-3">
       {#each items as item, index (item.id)}
-        <div class="rounded-card border border-border bg-card p-3" data-item-row={item.id}>
+        <div
+          class="rounded-card border border-border bg-card p-3"
+          data-item-row={item.id}
+          transition:itemRow={{ y: 12 }}
+        >
           <div class="flex items-center gap-2">
             <span class="shrink-0 text-xs font-medium tabular-nums text-muted">#{index + 1}</span>
             <input
@@ -201,7 +227,11 @@
         </thead>
         <tbody>
           {#each items as item, index (item.id)}
-            <tr class="border-b border-border/70 align-middle" data-item-row={item.id}>
+            <tr
+              class="border-b border-border/70 align-middle"
+              data-item-row={item.id}
+              transition:itemRow={{ y: 8 }}
+            >
               <td class="py-2 pr-2">
                 <input
                   type="text"

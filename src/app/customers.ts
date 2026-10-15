@@ -77,10 +77,22 @@ export async function listCustomers(): Promise<Customer[]> {
 
 export async function createCustomer(draft: CustomerDraft): Promise<Customer> {
   const user = await requireSession();
+  const parsed = parseCustomer(draft);
+
+  // Reject an exact duplicate: same email AND same phone. Same email with a
+  // different phone (or vice versa) is a different person and is allowed.
+  const all = await container.customers.listByOwner(user.id);
+  if (all.some((row) => isSameCustomer(row, parsed))) {
+    throw new AppError(
+      ERROR_CODES.CONFLICT,
+      'Customer dengan email dan nomor WhatsApp yang sama sudah ada.',
+    );
+  }
+
   return container.customers.create({
     id: ID.unique(),
     ownerId: user.id,
-    customer: parseCustomer(draft),
+    customer: parsed,
     lastUsedAt: new Date().toISOString(),
   });
 }
@@ -100,12 +112,45 @@ export async function deleteCustomer(id: string): Promise<void> {
 }
 
 /**
+ * Collapses several customer rows into one.
+ *
+ * The user picks which value survives for each field; `draft` carries that
+ * choice. The target row is updated in place and every source row is deleted,
+ * so the directory ends with a single entry and no dangling references (invoices
+ * embed their own copy of the customer name/phone and never read these rows).
+ *
+ * The target keeps its `lastUsedAt` so recency ordering is not disturbed by a
+ * bookkeeping merge.
+ */
+export async function mergeCustomers(input: {
+  targetId: string;
+  sourceIds: string[];
+  draft: CustomerDraft;
+}): Promise<Customer> {
+  await requireSession();
+  const parsed = parseCustomer(input.draft);
+  const lastUsedAt = new Date().toISOString();
+
+  const updated = await container.customers.update({
+    id: input.targetId,
+    customer: parsed,
+    lastUsedAt,
+  });
+
+  // Delete the sources after the target is safely updated, so a failure here
+  // leaves a duplicate rather than losing data.
+  await Promise.all(input.sourceIds.map((id) => container.customers.remove(id)));
+
+  return updated;
+}
+
+/**
  * Records the customer an invoice was issued to, reusing the row that already
  * stands for the same person.
  *
- * Called on every invoice save. Identity is email OR phone (folded), so
- * `0812…` and `+62812…` are one entry, and a contact that shares an email
- * with an existing row is the same person even under a different name.
+ * Called on every invoice save. Identity is email AND phone (both folded), so
+ * `0812…` and `+62812…` are one entry, while a contact that shares only an email
+ * or only a phone with an existing row is a different person.
  *
  * When a match is found the two are merged: empty fields on the existing row
  * are filled from the incoming draft, and fields it already has are kept.

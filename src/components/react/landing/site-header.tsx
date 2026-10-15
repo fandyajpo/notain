@@ -1,8 +1,13 @@
-import { motion, useScroll, useSpring, useTransform } from 'motion/react';
+import { AnimatePresence, motion, useScroll, useSpring, useTransform } from 'motion/react';
+import { useEffect, useState } from 'react';
+import { Menu, X } from 'lucide-react';
 import { EASE } from './reveal';
 
 const NAV_LINK =
   'relative px-3 py-2 text-sm text-muted transition-colors hover:text-foreground focus-ring';
+
+const MOBILE_LINK_CLASS =
+  'block rounded-control px-3 py-2.5 text-base text-foreground transition-colors hover:bg-accent-soft focus-ring';
 
 /** Header link whose underline wipes in from the left on hover. */
 function NavLink({
@@ -63,6 +68,32 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
     ['0 0 0 0 rgb(0 0 0 / 0)', '0 1px 2px 0 rgb(23 23 23 / 0.04)'],
   );
 
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Lock background scroll while the mobile drawer is open, and close on Escape.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [menuOpen]);
+
+  const mobileLinks = [
+    { href: `${anchorPrefix}#cara-kerja`, label: 'Cara kerja' },
+    { href: `${anchorPrefix}#whatsapp`, label: 'WhatsApp' },
+    { href: `${anchorPrefix}#kenapa`, label: 'Kenapa Notain' },
+    { href: `${anchorPrefix}#faq`, label: 'FAQ' },
+    { href: '/pricing', label: 'Harga' },
+    { href: '/login', label: 'Masuk' },
+  ];
+
   return (
     /* `initial={false}`: the sticky header is part of the first paint, so
        it must not wait for hydration to slide in. */
@@ -96,7 +127,7 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
           Notain
         </motion.a>
 
-        <nav className="flex items-center gap-1 sm:gap-2">
+        <nav className="hidden items-center gap-1 sm:flex sm:gap-2">
           <NavLink href={`${anchorPrefix}#cara-kerja`} className="hidden sm:block">
             Cara kerja
           </NavLink>
@@ -122,7 +153,52 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
             Buat Invoice Gratis
           </motion.a>
         </nav>
+
+        {/* Mobile: hamburger toggles an animated drawer with every nav item. */}
+        <button
+          type="button"
+          onClick={() => setMenuOpen((open) => !open)}
+          aria-expanded={menuOpen}
+          aria-controls="mobile-nav"
+          aria-label={menuOpen ? 'Tutup menu' : 'Buka menu'}
+          className="inline-flex items-center justify-center rounded-control p-2 text-foreground transition-colors hover:bg-accent-soft focus-ring sm:hidden"
+        >
+          {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+        </button>
       </div>
+
+      <AnimatePresence initial={false}>
+        {menuOpen && (
+          <motion.div
+            id="mobile-nav"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.28, ease: EASE }}
+            className="overflow-hidden border-t border-border bg-card sm:hidden"
+          >
+            <div className="flex flex-col gap-0.5 px-4 py-3">
+              {mobileLinks.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMenuOpen(false)}
+                  className={MOBILE_LINK_CLASS}
+                >
+                  {link.label}
+                </a>
+              ))}
+              <a
+                href="/register"
+                onClick={() => setMenuOpen(false)}
+                className="mt-2 inline-flex h-11 items-center justify-center rounded-control bg-accent px-4 text-base font-medium text-accent-foreground focus-ring"
+              >
+                Buat Invoice Gratis
+              </a>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.header>
   );
 }

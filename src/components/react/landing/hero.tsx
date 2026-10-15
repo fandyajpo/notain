@@ -7,12 +7,7 @@ import { BUILTIN_TEMPLATES } from '../../../core/template/builtins';
 import { resolveTemplate } from '../../../core/template/resolve';
 import { EASE, SplitWords } from './reveal';
 import { MagneticButton, TiltCard } from './interactive';
-
-const BLOBS = [
-  { className: '-left-24 -top-32 size-[26rem] bg-accent/20', duration: 26, delay: 0 },
-  { className: '-right-28 top-8 size-[20rem] bg-warning/15', duration: 21, delay: -6 },
-  { className: 'left-1/3 -bottom-36 size-[22rem] bg-accent/10', duration: 31, delay: -13 },
-];
+import { Aurora } from './aurora';
 
 const TRUST_POINTS = [
   'Gratis selamanya',
@@ -26,30 +21,6 @@ const TEMPLATES = BUILTIN_TEMPLATES.map((template) => ({
   id: template.id,
   label: template.name,
 }));
-
-/** Aurora blobs drifting behind the hero; the graph-paper texture lives on the page. */
-function Aurora() {
-  return (
-    <div
-      className="pointer-events-none absolute inset-y-0 left-1/2 -z-10 w-screen -translate-x-1/2 overflow-hidden"
-      aria-hidden="true"
-    >
-      {BLOBS.map((blob) => (
-        <motion.div
-          key={blob.className}
-          className={`absolute rounded-full blur-3xl will-change-transform ${blob.className}`}
-          animate={{ x: [0, 45, -35, 0], y: [0, -35, 25, 0], scale: [1, 1.18, 0.92, 1] }}
-          transition={{
-            duration: blob.duration,
-            delay: blob.delay,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-      ))}
-    </div>
-  );
-}
 
 function Eyebrow({ delay }: { delay: number }) {
   return (

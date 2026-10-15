@@ -2,6 +2,7 @@ import { ImagePlus, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { LOGO_MAX_BYTES, LOGO_ALLOWED_TYPES } from '../../../core/profile/logo';
 import { Button } from '../ui/button';
+import { Modal } from '../ui/modal';
 
 type Props = {
   logoUrl?: string | null;
@@ -17,6 +18,7 @@ const MAX_MB = LOGO_MAX_BYTES / (1024 * 1024);
 export function LogoUploader({ logoUrl, busy = false, onUpload, onRemove }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   const handleFile = (file: File | undefined) => {
     if (!file) return;
@@ -72,13 +74,37 @@ export function LogoUploader({ logoUrl, busy = false, onUpload, onRemove }: Prop
             {logoUrl ? 'Ganti logo' : 'Unggah logo'}
           </Button>
           {logoUrl && (
-            <Button variant="ghost" size="sm" onClick={onRemove} disabled={busy}>
+            <Button variant="ghost" size="sm" onClick={() => setConfirming(true)} disabled={busy}>
               <Trash2 size={14} aria-hidden="true" />
               Hapus
             </Button>
           )}
         </div>
       </div>
+
+      <Modal
+        open={confirming}
+        onClose={() => setConfirming(false)}
+        role="alertdialog"
+        size="sm"
+        ariaLabelledBy="remove-logo-title"
+        title={<span id="remove-logo-title">Hapus logo?</span>}
+        actions={[
+          { label: 'Batal', variant: 'secondary', onClick: () => setConfirming(false) },
+          {
+            label: 'Hapus',
+            variant: 'danger',
+            onClick: () => {
+              setConfirming(false);
+              onRemove();
+            },
+          },
+        ]}
+      >
+        <p className="text-sm text-muted">
+          Logo akan dihapus dari kop invoice dan PDF. Kamu bisa unggah lagi kapan saja.
+        </p>
+      </Modal>
 
       <p className="text-xs text-muted">
         Logo dipakai di kop invoice dan PDF. Format PNG/JPG/SVG/WEBP/ICO, maksimal {MAX_MB} MB.

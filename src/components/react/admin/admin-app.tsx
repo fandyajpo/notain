@@ -1,14 +1,18 @@
-import { useEffect, useState } from 'react';
-import { ChevronDown, Loader2, RefreshCw, Shield, Users } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Loader2, RefreshCw, Search, Shield, Users } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Card } from '../ui/card';
+import { Input } from '../ui/input';
+import { Modal } from '../ui/modal';
 import { PageHeader } from '../ui/page-header';
+import { Select } from '../ui/select';
 import { TableShell, Th, Td, TBODY_ROW, THEAD_ROW } from '../ui/table';
-import { controlClass, FieldShell } from '../ui/field';
+import { Textarea } from '../ui/textarea';
+import { FieldShell, useFieldIds } from '../ui/field';
+import { toast } from '../../../lib/ui/toast';
 import {
   useAdminMembership,
   useAdminUsers,
@@ -30,6 +34,39 @@ const PLAN_LABELS: Record<string, string> = {
   pro: 'Pro',
   business: 'Business',
 };
+
+const PLAN_OPTIONS = [
+  { value: 'free', label: PLAN_LABELS.free },
+  { value: 'pro', label: PLAN_LABELS.pro },
+  { value: 'business', label: PLAN_LABELS.business },
+];
+
+/** Quick subscribe only offers the paid tiers (free is the "Lepas" outcome). */
+const SUBSCRIBE_PLAN_OPTIONS = [
+  { value: 'pro', label: PLAN_LABELS.pro },
+  { value: 'business', label: PLAN_LABELS.business },
+];
+
+/**
+ * Builds a plan-only update payload, carrying the user's existing profile
+ * fields forward.
+ *
+ * The admin PATCH endpoint re-validates the whole profile (name is required),
+ * so a plan change has to ship the current fields alongside the new plan —
+ * otherwise it would blank them.
+ */
+function planUpdate(user: AdminUser, plan: string, planExpiresAt: string | null): AdminUserUpdate {
+  return {
+    userId: user.userId,
+    name: user.name,
+    businessName: user.businessName,
+    phone: user.phone,
+    address: user.address,
+    email: user.profileEmail,
+    plan,
+    planExpiresAt,
+  };
+}
 
 /** Admin panel: list users, update plan and expiry. */
 export function AdminApp() {
@@ -95,6 +132,34 @@ function AdminContent() {
   const [expiryDate, setExpiryDate] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
+  // List filter.
+  const [query, setQuery] = useState('');
+  const [planFilter, setPlanFilter] = useState('');
+  const searchIds = useFieldIds();
+  const planFilterIds = useFieldIds();
+
+  // Quick subscribe (pick a plan) / unsubscribe (back to free).
+  const [subscribeTarget, setSubscribeTarget] = useState<AdminUser | null>(null);
+  const [subPlan, setSubPlan] = useState('pro');
+  const [subExpiry, setSubExpiry] = useState('');
+  const subPlanIds = useFieldIds();
+  const subExpiryIds = useFieldIds();
+  const [unsubscribeTarget, setUnsubscribeTarget] = useState<AdminUser | null>(null);
+
+  // Client-side filter over the loaded list (already capped server-side).
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return users.filter((user) => {
+      if (planFilter && user.plan !== planFilter) return false;
+      if (!q) return true;
+      return (
+        user.name.toLowerCase().includes(q) ||
+        user.email.toLowerCase().includes(q) ||
+        user.businessName.toLowerCase().includes(q)
+      );
+    });
+  }, [users, query, planFilter]);
+
   const openEdit = (user: AdminUser) => {
     setEditing(user);
     setForm({
@@ -155,6 +220,50 @@ function AdminContent() {
     (error instanceof Error ? error.message : null) ??
     (updateAdminUser.error instanceof Error ? updateAdminUser.error.message : null);
 
+  function openSubscribe(user: AdminUser) {
+    setSubscribeTarget(user);
+    setSubPlan('pro');
+    setSubExpiry('');
+  }
+
+  async function confirmSubscribe() {
+    if (!subscribeTarget) return;
+    // The PATCH endpoint re-validates the whole profile and requires a name,
+    // so a nameless user would be rejected server-side. Say so up front.
+    if (!subscribeTarget.name.trim()) {
+      toast('User ini belum punya nama. Lengkapi lewat Edit dulu.', { variant: 'error' });
+      return;
+    }
+    try {
+      await updateAdminUser.mutateAsync(
+        planUpdate(subscribeTarget, subPlan, subExpiry || null),
+      );
+      toast(`${subscribeTarget.name || subscribeTarget.email} kini berlangganan ${PLAN_LABELS[subPlan] ?? subPlan}.`, {
+        variant: 'success',
+      });
+      setSubscribeTarget(null);
+    } catch {
+      // Surfaced via updateAdminUser.error in the banner.
+    }
+  }
+
+  async function confirmUnsubscribe() {
+    if (!unsubscribeTarget) return;
+    if (!unsubscribeTarget.name.trim()) {
+      toast('User ini belum punya nama. Lengkapi lewat Edit dulu.', { variant: 'error' });
+      return;
+    }
+    try {
+      await updateAdminUser.mutateAsync(planUpdate(unsubscribeTarget, 'free', null));
+      toast(`Langganan ${unsubscribeTarget.name || unsubscribeTarget.email} dilepas.`, {
+        variant: 'success',
+      });
+      setUnsubscribeTarget(null);
+    } catch {
+      // Surfaced via updateAdminUser.error in the banner.
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -184,6 +293,45 @@ function AdminContent() {
         </div>
       )}
 
+      {users.length > 0 && (
+        <div className="flex w-full flex-col gap-2 sm:max-w-md sm:flex-row sm:items-center">
+          <div className="relative w-full sm:max-w-xs">
+            <Search
+              size={15}
+              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted"
+              aria-hidden="true"
+            />
+            <label htmlFor={searchIds.id} className="sr-only">
+              Cari user
+            </label>
+            <Input
+              id={searchIds.id}
+              type="search"
+              value={query}
+              placeholder="Cari nama, email, atau usaha…"
+              className="h-10 pr-3 pl-9"
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </div>
+          <div className="w-full sm:w-auto">
+            <label htmlFor={planFilterIds.id} className="sr-only">
+              Filter plan
+            </label>
+            <Select
+              id={planFilterIds.id}
+              size="sm"
+              clearable
+              value={planFilter}
+              aria-label="Filter plan"
+              placeholder="Semua plan"
+              options={PLAN_OPTIONS}
+              onChange={setPlanFilter}
+              className="w-full sm:w-auto"
+            />
+          </div>
+        </div>
+      )}
+
       {isFetching && users.length === 0 ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 size={24} className="animate-spin text-muted" aria-hidden="true" />
@@ -208,8 +356,14 @@ function AdminContent() {
                   Belum ada user terdaftar.
                 </td>
               </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-12 text-center text-muted">
+                  Tidak ada user yang cocok.
+                </td>
+              </tr>
             ) : (
-              users.map((user) => (
+              filtered.map((user) => (
                 <tr key={user.userId} className={TBODY_ROW}>
                   <Td>
                     <div className="font-medium">{user.name || '—'}</div>
@@ -232,9 +386,25 @@ function AdminContent() {
                     {new Date(user.createdAt).toLocaleDateString('id-ID')}
                   </Td>
                   <Td align="right">
-                    <Button variant="secondary" size="sm" onClick={() => openEdit(user)}>
-                      Edit
-                    </Button>
+                    <div className="flex items-center justify-end gap-1.5">
+                      {user.plan === 'free' ? (
+                        <Button size="sm" onClick={() => openSubscribe(user)}>
+                          Subscribe
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setUnsubscribeTarget(user)}
+                          className="text-muted hover:border-danger/40 hover:text-danger"
+                        >
+                          Lepas
+                        </Button>
+                      )}
+                      <Button variant="secondary" size="sm" onClick={() => openEdit(user)}>
+                        Edit
+                      </Button>
+                    </div>
                   </Td>
                 </tr>
               ))
@@ -244,127 +414,177 @@ function AdminContent() {
       )}
 
       {/* Edit modal */}
-      {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <Card padding="lg" className="w-full max-w-lg">
-            <h2 className="text-title">Edit Profil</h2>
-            <p className="mt-1 text-sm text-muted">
-              {editing.email}
-              <span className="text-muted"> · login</span>
-            </p>
+      <Modal
+        open={editing !== null}
+        onClose={() => setEditing(null)}
+        size="lg"
+        title={
+          <>
+            Edit Profil
+            <span className="block text-sm font-normal text-muted">{editing?.email} · login</span>
+          </>
+        }
+        actions={[
+          {
+            label: 'Batal',
+            variant: 'secondary',
+            disabled: updateAdminUser.isPending,
+            onClick: () => setEditing(null),
+          },
+          {
+            label: 'Simpan',
+            loading: updateAdminUser.isPending,
+            onClick: () => void saveEdit(),
+          },
+        ]}
+      >
+        <div className="flex flex-col gap-4">
+          <FieldShell label="Nama" htmlFor="admin-name" required error={formErrors.name}>
+            <Input
+              id="admin-name"
+              type="text"
+              value={form.name}
+              invalid={Boolean(formErrors.name)}
+              onChange={(e) => setField('name', e.target.value)}
+            />
+          </FieldShell>
 
-            <div className="mt-5 flex flex-col gap-4">
-              <FieldShell label="Nama" htmlFor="admin-name" required error={formErrors.name}>
-                <input
-                  id="admin-name"
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setField('name', e.target.value)}
-                  className={controlClass({ invalid: Boolean(formErrors.name) })}
-                />
-              </FieldShell>
+          <FieldShell label="Nama usaha" htmlFor="admin-business" error={formErrors.businessName}>
+            <Input
+              id="admin-business"
+              type="text"
+              value={form.businessName}
+              invalid={Boolean(formErrors.businessName)}
+              onChange={(e) => setField('businessName', e.target.value)}
+            />
+          </FieldShell>
 
-              <FieldShell label="Nama usaha" htmlFor="admin-business" error={formErrors.businessName}>
-                <input
-                  id="admin-business"
-                  type="text"
-                  value={form.businessName}
-                  onChange={(e) => setField('businessName', e.target.value)}
-                  className={controlClass({ invalid: Boolean(formErrors.businessName) })}
-                />
-              </FieldShell>
+          <FieldShell
+            label="Email"
+            htmlFor="admin-email"
+            error={formErrors.email}
+            hint="Email bisnis (opsional) — bukan email login."
+          >
+            <Input
+              id="admin-email"
+              type="email"
+              value={form.email}
+              invalid={Boolean(formErrors.email)}
+              onChange={(e) => setField('email', e.target.value)}
+            />
+          </FieldShell>
 
-              <FieldShell
-                label="Email"
-                htmlFor="admin-email"
-                error={formErrors.email}
-                hint="Email bisnis (opsional) — bukan email login."
-              >
-                <input
-                  id="admin-email"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setField('email', e.target.value)}
-                  className={controlClass({ invalid: Boolean(formErrors.email) })}
-                />
-              </FieldShell>
+          <FieldShell label="Nomor WhatsApp" htmlFor="admin-phone" error={formErrors.phone}>
+            <Input
+              id="admin-phone"
+              type="tel"
+              value={form.phone}
+              invalid={Boolean(formErrors.phone)}
+              onChange={(e) => setField('phone', e.target.value)}
+            />
+          </FieldShell>
 
-              <FieldShell label="Nomor WhatsApp" htmlFor="admin-phone" error={formErrors.phone}>
-                <input
-                  id="admin-phone"
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => setField('phone', e.target.value)}
-                  className={controlClass({ invalid: Boolean(formErrors.phone) })}
-                />
-              </FieldShell>
+          <FieldShell label="Alamat" htmlFor="admin-address" error={formErrors.address}>
+            <Textarea
+              id="admin-address"
+              value={form.address}
+              invalid={Boolean(formErrors.address)}
+              onChange={(e) => setField('address', e.target.value)}
+            />
+          </FieldShell>
 
-              <FieldShell label="Alamat" htmlFor="admin-address" error={formErrors.address}>
-                <textarea
-                  id="admin-address"
-                  value={form.address}
-                  onChange={(e) => setField('address', e.target.value)}
-                  className={controlClass({ multiline: true, invalid: Boolean(formErrors.address) })}
-                />
-              </FieldShell>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FieldShell label="Plan" htmlFor="admin-plan">
+              <Select
+                id="admin-plan"
+                value={form.plan}
+                options={PLAN_OPTIONS}
+                onChange={(next) => setField('plan', next)}
+              />
+            </FieldShell>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FieldShell label="Plan" htmlFor="admin-plan">
-                  <div className="relative">
-                    <select
-                      id="admin-plan"
-                      value={form.plan}
-                      onChange={(e) => setField('plan', e.target.value)}
-                      className={`${controlClass()} appearance-none pr-10`}
-                    >
-                      <option value="free">Free</option>
-                      <option value="pro">Pro</option>
-                      <option value="business">Business</option>
-                    </select>
-                    <ChevronDown
-                      size={16}
-                      className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-muted"
-                      aria-hidden="true"
-                    />
-                  </div>
-                </FieldShell>
-
-                <FieldShell
-                  label="Berlaku sampai"
-                  htmlFor="admin-expiry"
-                  hint="Kosongkan untuk lifetime."
-                >
-                  <input
-                    id="admin-expiry"
-                    type="date"
-                    value={expiryDate}
-                    onChange={(e) => setExpiryDate(e.target.value)}
-                    className={controlClass()}
-                  />
-                </FieldShell>
-              </div>
-            </div>
-
-            <div className="mt-6 flex gap-3">
-              <Button
-                variant="secondary"
-                full
-                disabled={updateAdminUser.isPending}
-                onClick={() => setEditing(null)}
-              >
-                Batal
-              </Button>
-              <Button
-                full
-                loading={updateAdminUser.isPending}
-                onClick={() => void saveEdit()}
-              >
-                Simpan
-              </Button>
-            </div>
-          </Card>
+            <FieldShell
+              label="Berlaku sampai"
+              htmlFor="admin-expiry"
+              hint="Kosongkan untuk lifetime."
+            >
+              <Input
+                id="admin-expiry"
+                type="date"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.target.value)}
+              />
+            </FieldShell>
+          </div>
         </div>
-      )}
+      </Modal>
+
+      {/* Quick subscribe: pick a plan + optional expiry. */}
+      <Modal
+        open={subscribeTarget !== null}
+        onClose={() => setSubscribeTarget(null)}
+        size="sm"
+        title="Subscribe user"
+        actions={[
+          {
+            label: 'Batal',
+            variant: 'secondary',
+            disabled: updateAdminUser.isPending,
+            onClick: () => setSubscribeTarget(null),
+          },
+          {
+            label: 'Subscribe',
+            loading: updateAdminUser.isPending,
+            onClick: () => void confirmSubscribe(),
+          },
+        ]}
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted">
+            {subscribeTarget?.name || subscribeTarget?.email} akan diberi plan berbayar.
+          </p>
+          <FieldShell label="Plan" htmlFor={subPlanIds.id}>
+            <Select
+              id={subPlanIds.id}
+              value={subPlan}
+              options={SUBSCRIBE_PLAN_OPTIONS}
+              onChange={setSubPlan}
+            />
+          </FieldShell>
+          <FieldShell label="Berlaku sampai" htmlFor={subExpiryIds.id} hint="Kosongkan untuk lifetime.">
+            <Input
+              id={subExpiryIds.id}
+              type="date"
+              value={subExpiry}
+              onChange={(e) => setSubExpiry(e.target.value)}
+            />
+          </FieldShell>
+        </div>
+      </Modal>
+
+      {/* Unsubscribe confirmation: back to free, expiry cleared. */}
+      <Modal
+        open={unsubscribeTarget !== null}
+        onClose={() => setUnsubscribeTarget(null)}
+        role="alertdialog"
+        size="sm"
+        ariaLabelledBy="unsubscribe-title"
+        title={<span id="unsubscribe-title">Lepas langganan?</span>}
+        actions={[
+          { label: 'Batal', variant: 'secondary', onClick: () => setUnsubscribeTarget(null) },
+          {
+            label: 'Lepas',
+            variant: 'danger',
+            loading: updateAdminUser.isPending,
+            onClick: () => void confirmUnsubscribe(),
+          },
+        ]}
+      >
+        <p className="text-sm text-muted">
+          Plan <span className="font-medium text-foreground">{unsubscribeTarget?.name || unsubscribeTarget?.email}</span>{' '}
+          akan kembali ke Free dan masa berlakunya dihapus.
+        </p>
+      </Modal>
     </div>
   );
 }

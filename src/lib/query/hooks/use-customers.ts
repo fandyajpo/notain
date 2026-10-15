@@ -5,7 +5,9 @@ import {
   deleteCustomer,
   importCustomers,
   listCustomers,
+  mergeCustomers,
   rememberCustomer,
+  updateCustomer,
 } from '../../../app/customers';
 import { queryPolicy } from '../policies';
 import { queryKeys } from '../keys';
@@ -44,6 +46,35 @@ export function useCreateCustomer() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (draft: CustomerDraft) => createCustomer(draft),
+    onSuccess: (customer) => {
+      queryClient.setQueryData(queryKeys.customer(customer.id), customer);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
+    },
+  });
+}
+
+/** Edits a stored customer in place; refreshes the directory after. */
+export function useUpdateCustomer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, draft }: { id: string; draft: CustomerDraft }) => updateCustomer(id, draft),
+    onSuccess: (customer) => {
+      queryClient.setQueryData(queryKeys.customer(customer.id), customer);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+    },
+  });
+}
+
+/**
+ * Collapses several rows into one. The surviving row is refreshed and the
+ * whole directory is invalidated, which drops the deleted rows from the cache.
+ */
+export function useMergeCustomers() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { targetId: string; sourceIds: string[]; draft: CustomerDraft }) =>
+      mergeCustomers(input),
     onSuccess: (customer) => {
       queryClient.setQueryData(queryKeys.customer(customer.id), customer);
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });

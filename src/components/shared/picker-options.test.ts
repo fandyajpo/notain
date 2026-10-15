@@ -11,6 +11,7 @@ function invoice(overrides: Partial<Invoice> = {}): Invoice {
     updatedAt: '2026-01-01T00:00:00.000Z',
     invoiceNumber: 'INV-2026-001',
     date: '2026-01-01',
+    status: 'sent',
     customerName: 'Budi Santoso',
     customerPhone: '081234567890',
     items: [{ id: 'item-1', name: 'Nasi Goreng', quantity: 1, unitPrice: 25_000 }],
