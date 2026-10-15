@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
+import { FileText } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
 import { Button } from '../ui/button';
-import { Card } from '../ui/card';
+import { EmptyState, ErrorState, LoadingState } from '../ui/state';
 import { InvoiceBuilder } from './invoice-builder';
 import { TemplatePicker } from '../template/template-picker';
 import { useInvoice, useInvoiceNumbers } from '../../../lib/query/hooks/use-invoices';
@@ -12,6 +13,7 @@ import { useTemplates } from '../../../lib/query/hooks/use-templates';
 import { createEmptyDraft, duplicateDraft } from '../../../core/invoice/model';
 import { nextInvoiceNumber } from '../../../core/invoice/numbering';
 import { addDaysIsoDate, todayIsoDate } from '../../../core/shared/dates';
+import { ERROR_CODES, isAppError } from '../../../core/shared/errors';
 import { listSelectableTemplates } from '../../../core/template/resolve';
 import { EMPTY_PROFILE } from '../../../core/profile/model';
 
@@ -62,6 +64,10 @@ function InvoiceNewContent() {
   const [pickedTemplateId, setPickedTemplateId] = useState<string | null>(null);
 
   const duplicating = Boolean(sourceId);
+  // A definitive 404 means the source invoice is gone — that is the EmptyState
+  // below's case, not a connectivity failure worth a retry button.
+  const sourceNotFound =
+    isAppError(sourceQuery.error) && sourceQuery.error.code === ERROR_CODES.NOT_FOUND;
 
   const draft = useMemo(() => {
     const date = todayIsoDate();
@@ -75,23 +81,17 @@ function InvoiceNewContent() {
   }, [source, numbers]);
 
   if (profileLoading || numbersLoading || templatesLoading) {
-    return (
-      <Card padding="none" className="px-6 py-10 text-center text-sm text-muted">
-        Menyiapkan invoice…
-      </Card>
-    );
+    return <LoadingState label="Menyiapkan invoice…" />;
   }
 
   if (setupFailed) {
     // Never fall through to the builder with a blank profile or an empty
     // number list — that could produce a wrong number or letterhead.
     return (
-      <Card padding="none" className="px-6 py-14 text-center">
-        <p className="text-base font-semibold text-danger">Gagal menyiapkan invoice</p>
-        <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
-          Periksa koneksi internet kamu, lalu coba lagi.
-        </p>
-        <div className="mt-6 flex justify-center">
+      <ErrorState
+        title="Gagal menyiapkan invoice"
+        message="Periksa koneksi internet kamu, lalu coba lagi."
+        action={
           <Button
             onClick={() => {
               void profileQuery.refetch();
@@ -101,48 +101,38 @@ function InvoiceNewContent() {
           >
             Coba lagi
           </Button>
-        </div>
-      </Card>
+        }
+      />
     );
   }
 
   if (duplicating && sourceLoading) {
-    return (
-      <Card padding="none" className="px-6 py-10 text-center text-sm text-muted">
-        Menyalin invoice…
-      </Card>
-    );
+    return <LoadingState label="Menyalin invoice…" />;
   }
 
-  if (duplicating && sourceError && !source) {
+  if (duplicating && sourceError && !source && !sourceNotFound) {
     // The fetch failed — that's a connectivity problem, not a missing invoice.
     return (
-      <Card padding="none" className="px-6 py-14 text-center">
-        <p className="text-base font-semibold text-danger">Gagal menyalin invoice</p>
-        <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
-          Periksa koneksi internet kamu, lalu coba lagi.
-        </p>
-        <div className="mt-6 flex justify-center">
+      <ErrorState
+        title="Gagal menyalin invoice"
+        message="Periksa koneksi internet kamu, lalu coba lagi."
+        action={
           <Button loading={sourceQuery.isFetching} onClick={() => void sourceQuery.refetch()}>
             Coba lagi
           </Button>
-        </div>
-      </Card>
+        }
+      />
     );
   }
 
   if (duplicating && !source) {
     return (
-      <Card padding="none" className="px-6 py-14 text-center">
-        <p className="text-base font-semibold">Invoice tidak ditemukan</p>
-        <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
-          Invoice yang mau disalin ini mungkin sudah dihapus, atau kamu membuka tautan dari akun
-          lain.
-        </p>
-        <div className="mt-6 flex justify-center">
-          <Button href="/invoice/new">Buat invoice baru</Button>
-        </div>
-      </Card>
+      <EmptyState
+        icon={FileText}
+        title="Invoice tidak ditemukan"
+        description="Invoice yang mau disalin ini mungkin sudah dihapus, atau kamu membuka tautan dari akun lain."
+        action={<Button href="/invoice/new">Buat invoice baru</Button>}
+      />
     );
   }
 

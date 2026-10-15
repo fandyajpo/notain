@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useScroll, useSpring, useTransform } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { EASE } from './reveal';
 
@@ -69,6 +69,8 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
   );
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const firstLinkRef = useRef<HTMLAnchorElement>(null);
 
   // Lock background scroll while the mobile drawer is open, and close on Escape.
   useEffect(() => {
@@ -85,6 +87,20 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
     };
   }, [menuOpen]);
 
+  // The open drawer is the focused surface: land on its first link, and hand
+  // focus back to the hamburger when it closes. (`wasOpen` — never steal
+  // focus on the initial page mount.)
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (menuOpen) {
+      wasOpen.current = true;
+      firstLinkRef.current?.focus();
+    } else if (wasOpen.current) {
+      wasOpen.current = false;
+      menuButtonRef.current?.focus();
+    }
+  }, [menuOpen]);
+
   const mobileLinks = [
     { href: `${anchorPrefix}#cara-kerja`, label: 'Cara kerja' },
     { href: `${anchorPrefix}#whatsapp`, label: 'WhatsApp' },
@@ -95,110 +111,132 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
   ];
 
   return (
-    /* `initial={false}`: the sticky header is part of the first paint, so
-       it must not wait for hydration to slide in. */
-    <motion.header
-      initial={false}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, ease: EASE }}
-      style={{
-        backgroundColor: headerBg,
-        borderColor: headerBorder,
-        boxShadow: headerShadow,
-      }}
-      className="sticky top-0 z-40 border-b"
-    >
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 sm:px-8">
-        <motion.a
-          href="/"
-          whileHover={{ y: -1 }}
-          whileTap={{ y: 0, scale: 0.96 }}
-          className="flex items-center gap-2 font-semibold tracking-tight focus-ring rounded-control"
-        >
-          <motion.img
-            src="/notain-remove-bg.png"
-            alt=""
-            width={28}
-            height={28}
-            className="size-7 rounded-lg"
-            whileHover={{ rotate: -10, scale: 1.1 }}
-            transition={{ type: 'spring', stiffness: 380, damping: 16 }}
-          />
-          Notain
-        </motion.a>
-
-        <nav className="hidden items-center gap-1 sm:flex sm:gap-2">
-          <NavLink href={`${anchorPrefix}#cara-kerja`} className="hidden sm:block">
-            Cara kerja
-          </NavLink>
-          <NavLink href={`${anchorPrefix}#whatsapp`} className="hidden sm:block">
-            WhatsApp
-          </NavLink>
-          <NavLink href={`${anchorPrefix}#kenapa`}>Kenapa Notain</NavLink>
-          <NavLink href={`${anchorPrefix}#faq`} className="hidden md:block">
-            FAQ
-          </NavLink>
-          <NavLink href="/pricing" className="hidden sm:block">
-            Harga
-          </NavLink>
-          <NavLink href="/login">Masuk</NavLink>
-
+    <>
+      {/* `initial={false}`: the sticky header is part of the first paint, so
+          it must not wait for hydration to slide in. */}
+      <motion.header
+        initial={false}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: EASE }}
+        style={{
+          backgroundColor: headerBg,
+          borderColor: headerBorder,
+          boxShadow: headerShadow,
+        }}
+        className="sticky top-0 z-40 border-b"
+      >
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 sm:px-8">
           <motion.a
-            href="/register"
-            whileHover={{ y: -1, scale: 1.03 }}
-            whileTap={{ y: 0, scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-            className="ml-1 inline-flex h-9 items-center rounded-control bg-accent px-3 text-sm font-medium text-accent-foreground shadow-[0_8px_20px_-12px_rgb(37_99_235_/_0.9)] focus-ring"
+            href="/"
+            whileHover={{ y: -1 }}
+            whileTap={{ y: 0, scale: 0.96 }}
+            className="flex items-center gap-2 font-semibold tracking-tight focus-ring rounded-control"
           >
-            Buat Invoice Gratis
+            <motion.img
+              src="/notain-remove-bg.png"
+              alt=""
+              width={28}
+              height={28}
+              className="size-7 rounded-control"
+              whileHover={{ rotate: -10, scale: 1.1 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 16 }}
+            />
+            Notain
           </motion.a>
-        </nav>
 
-        {/* Mobile: hamburger toggles an animated drawer with every nav item. */}
-        <button
-          type="button"
-          onClick={() => setMenuOpen((open) => !open)}
-          aria-expanded={menuOpen}
-          aria-controls="mobile-nav"
-          aria-label={menuOpen ? 'Tutup menu' : 'Buka menu'}
-          className="inline-flex items-center justify-center rounded-control p-2 text-foreground transition-colors hover:bg-accent-soft focus-ring sm:hidden"
-        >
-          {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
-        </button>
-      </div>
+          <nav className="hidden items-center gap-1 sm:flex sm:gap-2">
+            <NavLink href={`${anchorPrefix}#cara-kerja`} className="hidden sm:block">
+              Cara kerja
+            </NavLink>
+            <NavLink href={`${anchorPrefix}#whatsapp`} className="hidden sm:block">
+              WhatsApp
+            </NavLink>
+            <NavLink href={`${anchorPrefix}#kenapa`}>Kenapa Notain</NavLink>
+            <NavLink href={`${anchorPrefix}#faq`} className="hidden md:block">
+              FAQ
+            </NavLink>
+            <NavLink href="/pricing" className="hidden sm:block">
+              Harga
+            </NavLink>
+            <NavLink href="/login">Masuk</NavLink>
 
+            <motion.a
+              href="/register"
+              whileHover={{ y: -1, scale: 1.03 }}
+              whileTap={{ y: 0, scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+              className="ml-1 inline-flex h-9 items-center rounded-control bg-accent px-3 text-sm font-medium text-accent-foreground shadow-accent focus-ring"
+            >
+              Buat Invoice Gratis
+            </motion.a>
+          </nav>
+
+          {/* Mobile: hamburger toggles an animated drawer with every nav item. */}
+          <button
+            ref={menuButtonRef}
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-nav"
+            aria-label={menuOpen ? 'Tutup menu' : 'Buka menu'}
+            className="inline-flex items-center justify-center rounded-control p-2 text-foreground transition-colors hover:bg-accent-soft focus-ring sm:hidden"
+          >
+            {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+          </button>
+        </div>
+
+        <AnimatePresence initial={false}>
+          {menuOpen && (
+            <motion.div
+              id="mobile-nav"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.28, ease: EASE }}
+              className="overflow-hidden border-t border-border bg-card sm:hidden"
+            >
+              <div className="flex flex-col gap-0.5 px-4 py-3">
+                {mobileLinks.map((link, index) => (
+                  <a
+                    key={link.href}
+                    ref={index === 0 ? firstLinkRef : undefined}
+                    href={link.href}
+                    onClick={() => setMenuOpen(false)}
+                    className={MOBILE_LINK_CLASS}
+                  >
+                    {link.label}
+                  </a>
+                ))}
+                <a
+                  href="/register"
+                  onClick={() => setMenuOpen(false)}
+                  className="mt-2 inline-flex h-11 items-center justify-center rounded-control bg-accent px-4 text-base font-medium text-accent-foreground focus-ring"
+                >
+                  Buat Invoice Gratis
+                </a>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.header>
+
+      {/* Blur veil behind the drawer: keeps the navbar as the clear focal
+          surface and doubles as the "click outside" target. Sits below the
+          header (z-40) so only the page gets blurred, never the menu. */}
       <AnimatePresence initial={false}>
         {menuOpen && (
           <motion.div
-            id="mobile-nav"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.28, ease: EASE }}
-            className="overflow-hidden border-t border-border bg-card sm:hidden"
-          >
-            <div className="flex flex-col gap-0.5 px-4 py-3">
-              {mobileLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMenuOpen(false)}
-                  className={MOBILE_LINK_CLASS}
-                >
-                  {link.label}
-                </a>
-              ))}
-              <a
-                href="/register"
-                onClick={() => setMenuOpen(false)}
-                className="mt-2 inline-flex h-11 items-center justify-center rounded-control bg-accent px-4 text-base font-medium text-accent-foreground focus-ring"
-              >
-                Buat Invoice Gratis
-              </a>
-            </div>
-          </motion.div>
+            key="nav-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25, ease: EASE }}
+            aria-hidden="true"
+            className="fixed inset-0 z-30 bg-background/50 backdrop-blur-sm sm:hidden"
+            onClick={() => setMenuOpen(false)}
+          />
         )}
       </AnimatePresence>
-    </motion.header>
+    </>
   );
 }

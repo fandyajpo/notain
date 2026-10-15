@@ -26,6 +26,18 @@ const {
     <meta name="theme-color" content="#F8F8F6" />
     <title>{title}</title>
     <ClientRouter />
+    <!-- Applies the persisted sidebar state before first paint so a collapsed
+         preference never flashes open. The interactive half (toggle wiring)
+         lives in DashboardLayout's module script. -->
+    <script is:inline>
+      try {
+        if (localStorage.getItem('notain.sidebar') === 'closed') {
+          document.documentElement.dataset.sidebar = 'closed';
+        }
+      } catch {
+        /* private mode */
+      }
+    </script>
     <!-- The landing SSRs its animated sections hidden (opacity/transform) and
          relies on hydration to reveal them. Without JS they would never appear. -->
     <noscript>

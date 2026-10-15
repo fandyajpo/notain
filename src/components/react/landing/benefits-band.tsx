@@ -30,6 +30,8 @@ export function BenefitsBand() {
   return (
     <MotionConfig reducedMotion="user">
       <section id="kenapa" className="relative scroll-mt-4 overflow-hidden bg-foreground">
+        {/* White graph paper: the inverse band's texture. White has no token;
+            this overlay is part of the dark-section identity, not app chrome. */}
         <div
           aria-hidden="true"
           className="absolute inset-0 bg-[linear-gradient(to_right,rgb(255_255_255_/_0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgb(255_255_255_/_0.05)_1px,transparent_1px)] [background-size:28px_28px]"
@@ -69,7 +71,7 @@ export function BenefitsBand() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 0.55, delay: index * 0.08, ease: EASE }}
-                className="group relative bg-foreground p-6 transition-colors hover:bg-[#1d1d1d]"
+                className="group relative bg-foreground p-6 transition-colors hover:bg-foreground/90"
               >
                 <span
                   aria-hidden="true"

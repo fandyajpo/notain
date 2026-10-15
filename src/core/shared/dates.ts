@@ -60,3 +60,25 @@ export function formatTanggalRelatif(value: string | Date, now: Date = new Date(
   if (diffDays > 1 && diffDays <= 7) return `${diffDays} hari lalu`;
   return formatTanggal(value);
 }
+
+/**
+ * How long ago a *timestamp* was, at the granularity a cache caption needs:
+ * "Baru saja" under a minute, then minutes, then hours, and day granularity
+ * (`formatTanggalRelatif`) once a full day has passed. Returns '' for an
+ * unparseable value.
+ */
+export function formatWaktuLalu(value: string | Date, now: Date = new Date()): string {
+  const then = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(then.getTime())) return '';
+
+  const diffMs = now.getTime() - then.getTime();
+  if (diffMs < 60_000) return 'Baru saja';
+
+  const minutes = Math.floor(diffMs / 60_000);
+  if (minutes < 60) return `${minutes} menit lalu`;
+
+  const hours = Math.floor(diffMs / 3_600_000);
+  if (hours < 24) return `${hours} jam lalu`;
+
+  return formatTanggalRelatif(then, now);
+}

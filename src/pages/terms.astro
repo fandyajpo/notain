@@ -1,0 +1,99 @@
+---
+import ContentPage from '../layouts/ContentPage.astro';
+import { Notice } from '../components/react/ui/notice';
+---
+
+<ContentPage
+  title="Syarat & Ketentuan | Notain"
+  description="Syarat dan ketentuan penggunaan layanan Notain untuk membuat dan mengirim invoice."
+>
+  <p class="text-eyebrow uppercase text-muted">Legal</p>
+  <h1 class="text-title">Syarat &amp; Ketentuan</h1>
+  <p class="mt-3 text-base text-muted">Terakhir diperbarui: 15 Oktober 2026</p>
+
+  <div class="mt-6">
+    <Notice variant="warning">
+      Draf umum untuk pratinjau. Ganti dengan teks yang sudah direview pihak berwenang sebelum
+      peluncuran resmi.
+    </Notice>
+  </div>
+
+  <h2 class="text-section mt-10">1. Tentang layanan</h2>
+  <p class="mt-3 text-sm leading-relaxed text-muted">
+    Notain adalah aplikasi untuk membuat invoice dan nota digital, menghitung total otomatis,
+    mengunduh PDF, serta membagikannya ke customer lewat WhatsApp. Dengan membuat akun atau memakai
+    layanan ini, kamu setuju pada ketentuan di halaman ini.
+  </p>
+
+  <h2 class="text-section mt-10">2. Akun kamu</h2>
+  <ul class="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted">
+    <li>Kamu bertanggung jawab menjaga kerahasiaan email dan akses akunmu.</li>
+    <li>Info yang kamu isi (nama usaha, kontak, logo) harus benar dan boleh kamu pakai.</li>
+    <li>Kabari kami segera kalau ada tanda-tanda akunmu dipakai tanpa izin.</li>
+  </ul>
+
+  <h2 class="text-section mt-10">3. Penggunaan yang dibolehkan</h2>
+  <p class="mt-3 text-sm leading-relaxed text-muted">
+    Notain dipakai untuk kebutuhan bisnis yang sah: membuat invoice, mengelola customer, dan
+    mengirim dokumen dagang. kamu tidak boleh memakai layanan ini untuk aktivitas ilegal, penipuan,
+    atau mengirim konten yang melanggar hak orang lain.
+  </p>
+
+  <h2 class="text-section mt-10">4. Konten dan data invoice</h2>
+  <ul class="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted">
+    <li>Semua isi invoice (customer, barang, harga, catatan) adalah tanggung jawab kamu.</li>
+    <li>
+      Kami tidak menjamin keabsahan dokumen secara hukum; Notain adalah alat bantu buat, bukan
+      penerbit resmi.
+    </li>
+    <li>
+      Data disimpan di penyedia infrastruktur cloud kami dan diamankan sesuai praktik standar.
+    </li>
+  </ul>
+
+  <h2 class="text-section mt-10">5. Pembayaran dan langganan</h2>
+  <p class="mt-3 text-sm leading-relaxed text-muted">
+    Fitur berbayar dibuka setelah pembayaran dikonfirmasi. Harga dan cakupan paket tercantum di
+    halaman
+    <a href="/pricing" class="font-medium text-foreground underline underline-offset-2">
+      harga
+    </a>
+    . Perubahan harga akan diberitahukan lebih dulu sebelum berlaku untuk periode berikutnya.
+  </p>
+
+  <h2 class="text-section mt-10">6. Pembatasan tanggung jawab</h2>
+  <p class="mt-3 text-sm leading-relaxed text-muted">
+    Layanan disediakan "sebagaimana adanya". Sejauh diizinkan hukum, kami tidak bertanggung jawab
+    atas kerugian tidak langsung yang muncul dari pemakaian atau ketidakmampuan memakai layanan,
+    termasuk keterlambatan pembayaran dari customer kamu.
+  </p>
+
+  <h2 class="text-section mt-10">7. Perubahan ketentuan</h2>
+  <p class="mt-3 text-sm leading-relaxed text-muted">
+    Kami bisa memperbarui ketentuan ini sewaktu-waktu. Tanggal pembaruan selalu dicatat di atas
+    halaman. Pemakaian layanan setelah perubahan berarti kamu menerima versi terbaru.
+  </p>
+
+  <h2 class="text-section mt-10">8. Kontak</h2>
+  <p class="mt-3 text-sm leading-relaxed text-muted">
+    Ada pertanyaan soal ketentuan ini? Hubungi kami lewat email di
+    <a
+      href="mailto:halo@notain.my.id"
+      class="font-medium text-foreground underline underline-offset-2"
+    >
+      halo@notain.my.id
+    </a>
+    .
+  </p>
+
+  <p class="mt-10 text-sm text-muted">
+    Baca juga
+    <a
+      href="/privacy"
+      class="font-medium text-foreground underline underline-offset-2 hover:text-muted"
+    >
+      Kebijakan Privasi
+    </a>
+    .
+  </p>
+</ContentPage>

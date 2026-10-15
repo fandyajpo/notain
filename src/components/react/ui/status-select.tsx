@@ -4,13 +4,8 @@ import {
   type InvoiceStatus,
 } from '../../../core/invoice/model';
 import { badgeClass } from './badge';
+import { STATUS_BADGE_VARIANTS } from './status-badge';
 import { Select } from './select';
-
-const VARIANTS: Record<InvoiceStatus, 'neutral' | 'success' | 'danger'> = {
-  sent: 'neutral',
-  paid: 'success',
-  void: 'danger',
-};
 
 type Props = {
   value: InvoiceStatus;
@@ -18,6 +13,11 @@ type Props = {
   disabled?: boolean;
   /** Accessible name — the invoice number, e.g. "INV-2026-001". */
   label: string;
+  /**
+   * Pill size. `sm` for dense table rows; `lg` for the invoice builder
+   * header, where the status is a primary control and needs to read at a glance.
+   */
+  size?: 'sm' | 'lg';
 };
 
 /**
@@ -29,7 +29,8 @@ type Props = {
  * own the persistence (the table and the builder wire it to
  * `useUpdateInvoiceStatus`).
  */
-export function StatusSelect({ value, onChange, disabled, label }: Props) {
+export function StatusSelect({ value, onChange, disabled, label, size = 'sm' }: Props) {
+  const padding = size === 'lg' ? 'pr-7 pl-2.5' : 'pr-6 pl-2';
   return (
     <Select
       value={value}
@@ -41,7 +42,7 @@ export function StatusSelect({ value, onChange, disabled, label }: Props) {
         label: INVOICE_STATUS_LABELS[status],
       }))}
       onChange={(next) => onChange(next as InvoiceStatus)}
-      triggerClassName={`${badgeClass(VARIANTS[value], 'sm')} cursor-pointer pr-6 pl-2 disabled:cursor-wait`}
+      triggerClassName={`${badgeClass(STATUS_BADGE_VARIANTS[value], size)} cursor-pointer ${padding} disabled:cursor-wait`}
     />
   );
 }

@@ -207,8 +207,8 @@ describe('rememberCustomer', () => {
   });
 
   it('updates the existing row when the phone matches (folded)', async () => {
-    // Identity is email AND phone: the same person under a trunk prefix must
-    // reuse the row. Merge keeps the stored phone, not the incoming one.
+    // Exact identity still matches a trunk-prefix twin, and the freshest typed
+    // value wins: the folded `+62…` spelling overwrites the stored one.
     listByOwner.mockResolvedValue([budi()]);
     update.mockResolvedValue(budi());
 
@@ -221,7 +221,7 @@ describe('rememberCustomer', () => {
     expect(create).not.toHaveBeenCalled();
     expect(update).toHaveBeenCalledWith({
       id: 'cus-1',
-      customer: { name: 'Budi Santoso', email: 'budi@mail.com', phone: '081234567890' },
+      customer: { name: 'Budi Santoso', email: 'budi@mail.com', phone: '+62 812-3456-7890' },
       lastUsedAt: expect.any(String),
     });
   });
@@ -241,38 +241,40 @@ describe('rememberCustomer', () => {
     });
   });
 
-  it('fills an empty email on the existing row when the phone matches', async () => {
-    // The existing row has a phone but no email; the incoming draft supplies
-    // the email under the same phone. Merge keeps the stored phone and fills
-    // the gap.
-    listByOwner.mockResolvedValue([budi({ email: '' })]);
-    update.mockResolvedValue(budi({ email: 'budi@mail.com' }));
+  it('never erases stored data with an empty incoming field', async () => {
+    // Same name (case-insensitive) matches even when the incoming email is
+    // blank; the blank must not wipe the stored email.
+    listByOwner.mockResolvedValue([budi()]);
+    update.mockResolvedValue(budi());
 
-    await rememberCustomer({ name: 'Budi', email: '', phone: '081234567890' });
+    await rememberCustomer({ name: 'budi santoso', email: '', phone: '081234567890' });
 
     expect(update).toHaveBeenCalledWith({
       id: 'cus-1',
-      customer: { name: 'Budi Santoso', email: '', phone: '081234567890' },
+      customer: { name: 'Budi Santoso', email: 'budi@mail.com', phone: '081234567890' },
       lastUsedAt: expect.any(String),
     });
   });
 
-  it('adds a second row when the email and phone both differ', async () => {
+  it('updates the row when only the phone differs — same name is the same person', async () => {
     listByOwner.mockResolvedValue([budi()]);
-    create.mockResolvedValue(budi({ id: 'cus-2', email: '', phone: '081111111111' }));
+    update.mockResolvedValue(budi({ phone: '081111111111' }));
 
     await rememberCustomer({ name: 'Budi Santoso', email: '', phone: '081111111111' });
 
-    expect(update).not.toHaveBeenCalled();
-    expect(create).toHaveBeenCalledTimes(1);
+    expect(create).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalledWith({
+      id: 'cus-1',
+      customer: { name: 'Budi Santoso', email: 'budi@mail.com', phone: '081111111111' },
+      lastUsedAt: expect.any(String),
+    });
   });
 
-  it('adds a second row when only the email matches but the phone differs', async () => {
-    // The identity rule is email AND phone: same email alone is a different person.
+  it('creates a second row only when the name and both contacts differ', async () => {
     listByOwner.mockResolvedValue([budi()]);
-    create.mockResolvedValue(budi({ id: 'cus-2', phone: '089999999999' }));
+    create.mockResolvedValue(budi({ id: 'cus-2', name: 'Siti', email: '', phone: '089999999999' }));
 
-    await rememberCustomer({ name: 'Budi Santoso', email: 'budi@mail.com', phone: '089999999999' });
+    await rememberCustomer({ name: 'Siti', email: '', phone: '089999999999' });
 
     expect(update).not.toHaveBeenCalled();
     expect(create).toHaveBeenCalledTimes(1);

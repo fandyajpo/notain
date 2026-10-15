@@ -1,6 +1,7 @@
 import type { TemplateTheme, TemplateWallpaper } from '../../../core/template/model';
 import { DEFAULT_THEME } from '../../../core/template/model';
 import { Input } from '../ui/input';
+import { SegmentedControl } from '../ui/segmented';
 
 type Props = {
   theme: TemplateTheme;
@@ -133,9 +134,10 @@ function ColorField({
         value={value}
         maxLength={7}
         spellCheck={false}
+        size="sm"
         aria-label={`Kode warna ${label}`}
         onChange={(event) => onChange(event.target.value)}
-        className="h-10 font-mono uppercase"
+        className="font-mono uppercase"
       />
     </div>
   );
@@ -159,6 +161,7 @@ function switchWallpaperKind(
   return {
     kind: 'gradient',
     from: current.kind === 'solid' ? current.color : fallback,
+    // Template-data default mirroring --color-card; keep it in step with the token.
     to: '#ffffff',
     angle: 135,
   };
@@ -180,28 +183,15 @@ function WallpaperForm({
         </p>
       </div>
 
-      <div
-        role="group"
-        aria-label="Jenis latar"
-        className="flex flex-wrap gap-2 rounded-control border border-border bg-background p-1"
-      >
-        {WALLPAPER_KINDS.map(({ kind, label }) => (
-          <button
-            key={kind}
-            type="button"
-            aria-pressed={wallpaper.kind === kind}
-            onClick={() => onChange(switchWallpaperKind(wallpaper, kind, '#f8f8f6'))}
-            className={[
-              'rounded-md px-3 py-1.5 text-sm transition-colors focus-ring',
-              wallpaper.kind === kind
-                ? 'bg-card font-medium text-foreground shadow-card'
-                : 'text-muted hover:text-foreground',
-            ].join(' ')}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl<TemplateWallpaper['kind']>
+        value={wallpaper.kind}
+        // The '#f8f8f6' fallback is the template-data default that mirrors
+        // --color-background (see DEFAULT_THEME in core/template/model).
+        onChange={(kind) => onChange(switchWallpaperKind(wallpaper, kind, '#f8f8f6'))}
+        options={WALLPAPER_KINDS.map(({ kind, label }) => ({ value: kind, label }))}
+        size="sm"
+        ariaLabel="Jenis latar"
+      />
 
       {wallpaper.kind === 'solid' && (
         <ColorField

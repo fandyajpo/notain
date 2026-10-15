@@ -1,17 +1,20 @@
 import { Loader2 } from 'lucide-react';
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'react';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'danger-soft';
 type Size = 'sm' | 'md' | 'lg';
 
 const BASE =
-  'inline-flex select-none items-center justify-center gap-2 rounded-control font-medium whitespace-nowrap transition-colors focus-ring disabled:pointer-events-none';
+  'inline-flex select-none items-center justify-center gap-2 rounded-control font-medium whitespace-nowrap transition-colors focus-ring disabled:pointer-events-none disabled:opacity-50 [aria-disabled=true]:opacity-50';
 
 const VARIANTS: Record<Variant, string> = {
   primary: 'bg-accent text-accent-foreground hover:bg-accent/90 active:bg-accent/80',
   secondary: 'border border-border bg-card text-foreground shadow-card hover:bg-background',
-  ghost: 'text-foreground hover:bg-border/60',
+  ghost: 'text-foreground hover:bg-border/70',
   danger: 'bg-danger text-danger-foreground hover:bg-danger/90 active:bg-danger/80',
+  // Destructive, but not the page's primary action: quiet until hovered.
+  'danger-soft':
+    'border border-danger/25 bg-danger-soft text-danger hover:border-danger/40 hover:bg-danger/10',
 };
 
 const SIZES: Record<Size, string> = {

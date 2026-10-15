@@ -80,7 +80,7 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
       transition={{ duration: 0.6, delay, ease: EASE }}
       className={`relative flex flex-col rounded-card border p-6 sm:p-8 ${
         primary
-          ? 'border-accent bg-gradient-to-b from-accent/8 via-card to-card shadow-[0_16px_40px_-20px_rgb(37_99_235_/_0.45)]'
+          ? 'border-accent bg-gradient-to-b from-accent/8 via-card to-card shadow-accent'
           : 'border-border bg-card shadow-card'
       }`}
     >
@@ -108,7 +108,7 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
         {primary ? (
           <MagneticButton
             href={plan.cta.href}
-            className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-control bg-accent px-5 text-base font-medium text-accent-foreground shadow-[0_10px_28px_-12px_rgb(37_99_235_/_0.7)] transition-colors hover:bg-accent/90 focus-ring"
+            className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-control bg-accent px-5 text-base font-medium text-accent-foreground shadow-accent transition-colors hover:bg-accent/90 focus-ring"
           >
             {plan.cta.label}
             <ArrowRight
@@ -130,7 +130,7 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
         )}
       </div>
 
-      <p className="mt-8 border-t border-border pt-6 text-xs font-semibold uppercase tracking-wide text-muted">
+      <p className="mt-8 border-t border-border pt-6 text-eyebrow uppercase text-muted">
         Yang kamu dapat
       </p>
       <ul className="mt-4 space-y-3">

@@ -54,6 +54,8 @@ function PreviewStage() {
 
   return (
     <div className="relative mx-auto w-full max-w-lg">
+      {/* Glow pulse behind the preview — brand identity. The 2.5rem radius
+          echoes the invoice card silhouette under the 3xl blur. */}
       <motion.div
         aria-hidden="true"
         className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-accent/12 blur-3xl will-change-transform"
@@ -173,7 +175,7 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
             alt=""
             width={140}
             height={140}
-            className="size-28 rounded-full drop-shadow-[0_8px_24px_rgb(37_99_235_/_0.25)] sm:size-36"
+            className="size-28 rounded-full drop-shadow-[0_8px_24px_color-mix(in_srgb,var(--color-accent)_25%,transparent)] sm:size-36"
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
           />
@@ -210,7 +212,7 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
           >
             <MagneticButton
               href={ctaHref}
-              className="group inline-flex h-12 items-center gap-2 rounded-control bg-accent px-5 text-base font-medium text-accent-foreground shadow-[0_10px_28px_-12px_rgb(37_99_235_/_0.7)] transition-colors hover:bg-accent/90 focus-ring"
+              className="group inline-flex h-12 items-center gap-2 rounded-control bg-accent px-5 text-base font-medium text-accent-foreground shadow-accent transition-colors hover:bg-accent/90 focus-ring"
             >
               {ctaLabel}
               <ArrowRight

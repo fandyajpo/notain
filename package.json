@@ -15,6 +15,8 @@
     "reset:dev": "node --env-file=.env scripts/reset-dev.mjs",
     "indexes:ensure": "node --env-file=.env scripts/ensure-indexes.mjs",
     "migrate:invoice-status": "node --env-file=.env scripts/migrate-invoice-status.mjs",
+    "migrate:customer-email": "node --env-file=.env scripts/migrate-customer-email.mjs",
+    "stats:ensure": "node --env-file=.env scripts/ensure-stats.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "lint": "eslint .",

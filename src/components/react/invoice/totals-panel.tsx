@@ -2,6 +2,8 @@ import type { InvoiceAdjustment, AdjustmentType } from '../../../core/invoice/mo
 import { calculateTotals } from '../../../core/invoice/calculator';
 import { formatAmountForInput, parseRupiah } from '../../../core/shared/money';
 import type { InvoiceItem } from '../../../core/invoice/model';
+import { Input } from '../ui/input';
+import { SegmentedControl } from '../ui/segmented';
 import { CalcInspector } from './calc-inspector';
 
 type Props = {
@@ -63,44 +65,41 @@ function AdjustmentRow({ label, adjustment, onChange, error }: AdjustmentRowProp
         </label>
 
         <div className="flex items-center gap-2">
-          <div className="flex overflow-hidden rounded-control border border-border bg-card shadow-card">
-            <TypeButton
-              label={`${label} nominal`}
-              active={!isPercent}
-              onClick={() => onChange({ ...adjustment, type: 'amount' })}
-            >
-              Rp
-            </TypeButton>
-            <TypeButton
-              label={`${label} persen`}
-              active={isPercent}
-              onClick={() => onChange({ ...adjustment, type: 'percent' })}
-            >
-              %
-            </TypeButton>
-          </div>
-
-          <input
-            id={`${label}-value`}
-            type="text"
-            inputMode="numeric"
-            aria-label={`${label} ${isPercent ? 'dalam persen' : 'dalam rupiah'}`}
-            aria-invalid={error ? 'true' : undefined}
-            aria-describedby={error ? `${label}-value-error` : undefined}
-            value={
-              isPercent ? String(adjustment.value || '') : formatAmountForInput(adjustment.value)
-            }
-            placeholder="0"
-            className={[
-              'h-10 w-28 rounded-control border bg-card px-3 text-right text-sm tabular-nums shadow-card focus-ring',
-              error ? 'border-danger' : 'border-border',
-            ].join(' ')}
-            onChange={(event) => {
-              const raw = event.target.value.replace(/[^\d.,]/g, '');
-              const parsed = raw === '' ? 0 : parseRupiah(raw);
-              onChange({ ...adjustment, value: Number.isFinite(parsed) ? parsed : 0 });
-            }}
+          <SegmentedControl<AdjustmentType>
+            value={adjustment.type}
+            onChange={(type) => onChange({ ...adjustment, type })}
+            options={[
+              { value: 'amount', label: 'Rp' },
+              { value: 'percent', label: '%' },
+            ]}
+            size="sm"
+            ariaLabel={`${label} tipe`}
           />
+
+          <div className="w-28 shrink-0">
+            <Input
+              id={`${label}-value`}
+              type="text"
+              inputMode="numeric"
+              size="sm"
+              aria-label={`${label} ${isPercent ? 'dalam persen' : 'dalam rupiah'}`}
+              aria-invalid={error ? 'true' : undefined}
+              aria-describedby={error ? `${label}-value-error` : undefined}
+              invalid={Boolean(error)}
+              value={
+                isPercent
+                  ? String(adjustment.value || '')
+                  : formatAmountForInput(adjustment.value)
+              }
+              placeholder="0"
+              className="text-right tabular-nums"
+              onChange={(event) => {
+                const raw = event.target.value.replace(/[^\d.,]/g, '');
+                const parsed = raw === '' ? 0 : parseRupiah(raw);
+                onChange({ ...adjustment, value: Number.isFinite(parsed) ? parsed : 0 });
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -110,33 +109,6 @@ function AdjustmentRow({ label, adjustment, onChange, error }: AdjustmentRowProp
         </p>
       )}
     </div>
-  );
-}
-
-function TypeButton({
-  label,
-  active,
-  onClick,
-  children,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      aria-pressed={active}
-      onClick={onClick}
-      className={[
-        'px-2.5 py-1.5 text-xs font-medium transition-colors focus-ring',
-        active ? 'bg-accent text-accent-foreground' : 'text-muted hover:text-foreground',
-      ].join(' ')}
-    >
-      {children}
-    </button>
   );
 }
 

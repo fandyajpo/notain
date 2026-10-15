@@ -2,7 +2,14 @@ import { type AnyFieldApi, useForm } from '@tanstack/react-form';
 import { useHotkeys } from '@tanstack/react-hotkeys';
 import { useDebouncer } from '@tanstack/react-pacer';
 import { useSelector } from '@tanstack/react-store';
-import { Check, FileDown, Keyboard, LayoutTemplate, MessageCircle, Save } from 'lucide-react';
+import {
+  Check,
+  FileDown,
+  Keyboard,
+  LayoutTemplate,
+  MessageCircle,
+  Save,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { calculateTotals } from '../../../core/invoice/calculator';
 import {
@@ -46,7 +53,9 @@ import { Card } from '../ui/card';
 import { FieldShell, errorMessage, useFieldIds } from '../ui/field';
 import { Input } from '../ui/input';
 import { Modal } from '../ui/modal';
+import { Notice } from '../ui/notice';
 import { StatusSelect } from '../ui/status-select';
+import { setShortcutsOpen } from '../../../lib/store/shortcuts';
 import { Textarea } from '../ui/textarea';
 import { BuilderTabs } from './builder-tabs';
 import { ItemsGrid } from './items-grid';
@@ -196,7 +205,11 @@ export function InvoiceBuilder({
         // Fire-and-forget: the directory is a convenience for the next picker,
         // so it must not delay or block the redirect.
         rememberCustomer.mutate({
-          draft: { name: value.customerName, email: '', phone: value.customerPhone ?? '' },
+          draft: {
+            name: value.customerName,
+            email: value.customerEmail ?? '',
+            phone: value.customerPhone ?? '',
+          },
         });
         toast('Invoice berhasil disimpan.', { variant: 'success' });
         // Disarm the unsaved-changes guard so this intentional redirect is not
@@ -299,6 +312,7 @@ export function InvoiceBuilder({
       if (pick.kind === 'customer') {
         form.setFieldValue('customerName', pick.name);
         form.setFieldValue('customerPhone', pick.phone);
+        form.setFieldValue('customerEmail', pick.email);
         return;
       }
       const current = form.state.values.items;
@@ -376,7 +390,7 @@ export function InvoiceBuilder({
   );
 
   return (
-    <div className="flex flex-col gap-8 pb-32 lg:grid lg:grid-cols-2 lg:items-start lg:gap-10 lg:pb-0">
+    <div className="flex flex-col gap-6 pb-32 lg:grid lg:grid-cols-2 lg:items-start lg:gap-10 lg:pb-0">
       <form
         id="invoice-form"
         className="flex flex-col gap-6"
@@ -388,30 +402,30 @@ export function InvoiceBuilder({
       >
         <header className="flex flex-col gap-1">
           <div className="flex items-start justify-between gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {isEditing ? 'Ubah Invoice' : 'Buat Invoice'}
-            </h1>
-            <div className="flex items-center gap-2">
-              {isEditing && (
-                <StatusSelect
-                  value={values.status}
-                  label={values.invoiceNumber}
-                  disabled={updateStatus.isPending}
-                  onChange={changeStatus}
-                />
-              )}
-              <button
-                type="button"
-                onClick={() => window.open('/#pintasan', '_blank')}
-                className="hidden items-center gap-1.5 rounded-control border border-border bg-card px-2.5 py-1.5 text-xs text-muted shadow-card transition-colors hover:text-foreground focus-ring lg:inline-flex"
-                title="Pintasan keyboard"
-              >
+            <h1 className="text-title">{isEditing ? 'Ubah Invoice' : 'Buat Invoice'}</h1>
+            <button
+              type="button"
+              onClick={() => setShortcutsOpen(true)}
+              className="hidden rounded-control focus-ring lg:inline-flex"
+              aria-haspopup="dialog"
+              title="Pintasan keyboard"
+            >
+              <kbd className="inline-flex items-center gap-1.5 rounded-control border border-border bg-sunken px-2 py-0.5 text-eyebrow font-mono text-muted transition-colors hover:text-foreground">
                 <Keyboard size={14} aria-hidden="true" />
-                Mod+S simpan
-              </button>
-            </div>
+                Pintasan
+                <kbd className="rounded-control border border-border bg-background px-1 text-muted">
+                  ?
+                </kbd>
+              </kbd>
+            </button>
           </div>
           <p className="text-sm text-muted">Isi customer dan barangnya, total dihitung otomatis.</p>
+          <p className="text-sm text-muted">
+            Dari: <span className="font-medium text-foreground">{profile.name || '-'}</span> ·{' '}
+            <a href="/settings" className="underline underline-offset-2 hover:text-foreground">
+              Ubah profil
+            </a>
+          </p>
           {autosaved && (
             <p role="status" className="inline-flex w-fit items-center gap-1.5 text-xs text-muted">
               <Check size={13} className="text-accent" aria-hidden="true" />
@@ -419,21 +433,21 @@ export function InvoiceBuilder({
               beneran.
             </p>
           )}
-          <p className="mt-1 text-sm text-muted">
-            Dari: <span className="font-medium text-foreground">{profile.name || '-'}</span> ·{' '}
-            <a href="/settings" className="underline underline-offset-2 hover:text-foreground">
-              Ubah profil
-            </a>
-          </p>
         </header>
 
-        {saveError && (
-          <p
-            role="alert"
-            className="rounded-control border border-danger/25 bg-danger-soft px-4 py-3 text-sm font-medium text-danger"
-          >
-            {saveError}
-          </p>
+        {saveError && <Notice variant="danger">{saveError}</Notice>}
+
+        {isEditing && (
+          <div className="flex items-center gap-2.5">
+            <span className="text-sm text-muted">Status</span>
+            <StatusSelect
+              size="lg"
+              value={values.status}
+              label={values.invoiceNumber}
+              disabled={updateStatus.isPending}
+              onChange={changeStatus}
+            />
+          </div>
         )}
 
         <form.Subscribe selector={(state) => state.values.discount}>
@@ -463,7 +477,7 @@ export function InvoiceBuilder({
           <Section title="Untuk siapa invoice ini?">
             <Picker
               mode="customer"
-              label="Ambil customer dari riwayat"
+              label="Cari customer"
               placeholder="Ketik nama customer…"
               onPick={onPick}
             />
@@ -488,6 +502,18 @@ export function InvoiceBuilder({
                   placeholder="081234567890"
                   inputMode="tel"
                   hint="Dipakai untuk kirim invoice lewat WhatsApp."
+                  showError={shouldShow(submissionAttempts, field.state.meta.isBlurred)}
+                />
+              )}
+            </form.Field>
+
+            <form.Field name="customerEmail">
+              {(field) => (
+                <TextField
+                  field={field}
+                  label="Email customer (opsional)"
+                  placeholder="budi@email.com"
+                  hint="Ikut tercetak di invoice dan ekspor Excel."
                   showError={shouldShow(submissionAttempts, field.state.meta.isBlurred)}
                 />
               )}
@@ -546,9 +572,15 @@ export function InvoiceBuilder({
               errors={flattenErrors(submissionAttempts > 0 ? form.state.errors : [])}
             />
             <p className="text-xs text-muted">
-              Tekan <kbd className="rounded border border-border bg-background px-1">Mod</kbd> +{' '}
-              <kbd className="rounded border border-border bg-background px-1">Enter</kbd> untuk
-              menambah barang.
+              Tekan{' '}
+              <kbd className="rounded-control border border-border bg-sunken px-1.5 py-0.5 font-mono">
+                Mod
+              </kbd>{' '}
+              +{' '}
+              <kbd className="rounded-control border border-border bg-sunken px-1.5 py-0.5 font-mono">
+                Enter
+              </kbd>{' '}
+              untuk menambah barang.
             </p>
           </Section>
         </div>
@@ -623,40 +655,52 @@ export function InvoiceBuilder({
         className="flex flex-col gap-3 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted">Preview invoice</p>
+          <p className="text-eyebrow uppercase text-muted">Preview invoice</p>
           <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
             <Button
               size="sm"
               variant="secondary"
-              aria-expanded={showTemplates}
-              onClick={() => setShowTemplates((open) => !open)}
+              aria-haspopup="dialog"
+              onClick={() => setShowTemplates(true)}
               className="min-w-0"
             >
               <LayoutTemplate size={14} className="shrink-0" aria-hidden="true" />
               Template
             </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={openPrint}
-              className="min-w-0 whitespace-normal text-left leading-tight"
-            >
-              <FileDown size={14} className="shrink-0" aria-hidden="true" />
-              Cetak / Simpan PDF
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={openWhatsApp}
-              className="col-span-2 sm:col-span-1"
-            >
-              <MessageCircle size={14} aria-hidden="true" />
-              WhatsApp
-            </Button>
+            {/* Sharing tools are for a saved invoice: an unsaved draft cannot
+                be printed or sent to anyone yet. */}
+            {isEditing && (
+              <>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={openPrint}
+                  className="min-w-0 whitespace-normal text-left leading-tight"
+                >
+                  <FileDown size={14} className="shrink-0" aria-hidden="true" />
+                  Cetak / Simpan PDF
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={openWhatsApp}
+                  className="col-span-2 sm:col-span-1"
+                >
+                  <MessageCircle size={14} aria-hidden="true" />
+                  WhatsApp
+                </Button>
+              </>
+            )}
           </div>
         </div>
-        {showTemplates && (
-          <div className="grid grid-cols-2 gap-3" data-template-switcher>
+        <Modal
+          open={showTemplates}
+          onClose={() => setShowTemplates(false)}
+          title="Ganti template"
+          size="xl"
+          bodyClassName="max-h-[65dvh] overflow-y-auto px-5 py-4 sm:px-6"
+        >
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" data-template-switcher>
             {listSelectableTemplates(savedTemplates ?? []).map((template) => (
               <TemplateCard
                 key={template.id}
@@ -668,7 +712,7 @@ export function InvoiceBuilder({
               />
             ))}
           </div>
-        )}
+        </Modal>
         <InvoicePreview
           business={profile}
           invoice={values}
@@ -686,9 +730,11 @@ export function InvoiceBuilder({
             </p>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="secondary" onClick={openPrint}>
-              Cetak / PDF
-            </Button>
+            {isEditing && (
+              <Button size="sm" variant="secondary" onClick={openPrint}>
+                Cetak / PDF
+              </Button>
+            )}
             <Button type="submit" form="invoice-form" loading={isSubmitting}>
               {isEditing ? 'Simpan' : 'Simpan invoice'}
             </Button>
@@ -732,7 +778,7 @@ function Section({
   return (
     <Card className="flex flex-col gap-5" data-tour={dataTour}>
       <div className="flex items-center justify-between gap-4">
-        <h2 className="text-base font-semibold">{title}</h2>
+        <h2 className="text-section">{title}</h2>
         {action}
       </div>
       {children}
@@ -780,7 +826,6 @@ function TextField({
         autoComplete="off"
         invalid={Boolean(error)}
         aria-invalid={error ? 'true' : undefined}
-        className={`h-11 ${readOnly ? 'read-only:cursor-default read-only:bg-background' : ''}`}
         onChange={(event) => field.handleChange(event.target.value)}
         onBlur={field.handleBlur}
       />
@@ -837,6 +882,7 @@ function flattenErrors(errors: unknown): Record<string, string> {
 const SECTION_BY_ERROR_PATH: ReadonlyArray<readonly [prefix: string, section: BuilderSection]> = [
   ['customerName', 'detail'],
   ['customerPhone', 'detail'],
+  ['customerEmail', 'detail'],
   ['invoiceNumber', 'detail'],
   ['date', 'detail'],
   ['dueDate', 'detail'],

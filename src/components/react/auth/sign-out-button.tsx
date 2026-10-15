@@ -12,6 +12,7 @@ export function SignOutButton() {
     <Button
       variant="ghost"
       size="sm"
+      aria-label="Keluar dari akun"
       loading={signOut.isPending}
       onClick={() => {
         signOut
@@ -33,7 +34,7 @@ export function SignOutButton() {
       }}
     >
       <LogOut size={15} aria-hidden="true" />
-      Keluar
+      <span className="sidebar-label">Keluar</span>
     </Button>
   );
 }

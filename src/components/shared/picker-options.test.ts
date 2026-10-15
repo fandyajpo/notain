@@ -200,50 +200,36 @@ describe('mergeCustomerOptions', () => {
     expect(mergeCustomerOptions([customer({ name: '   ' })], [])).toEqual([]);
   });
 
-  it('keeps a history customer that was never filed', () => {
+  it('lists only the directory when it has rows — history must not double a person', () => {
     const derived = derivePickerOptions([
       invoice({
         customerName: 'Siti',
         customerPhone: '08111',
         createdAt: '2026-03-01T00:00:00.000Z',
       }),
+      invoice({ customerName: 'Budi Santoso', customerPhone: '089999999999' }),
     ]).customers;
 
     expect(mergeCustomerOptions([customer()], derived).map((o) => o.name)).toEqual([
       'Budi Santoso',
-      'Siti',
     ]);
   });
 
-  it('does not list a history customer twice when the directory already has them', () => {
+  it('falls back to history when the directory is still empty', () => {
     const derived = derivePickerOptions([
-      invoice({ customerName: 'Budi Santoso', customerPhone: '081234567890' }),
+      invoice({ customerName: 'Siti', customerPhone: '08111' }),
     ]).customers;
 
-    expect(mergeCustomerOptions([customer()], derived)).toHaveLength(1);
-  });
-
-  it('matches on the folded phone, so 62-prefixed history is not a second person', () => {
-    const derived = derivePickerOptions([
-      invoice({ customerName: 'Budi Santoso', customerPhone: '+62 812-3456-7890' }),
-    ]).customers;
-
-    expect(mergeCustomerOptions([customer()], derived)).toHaveLength(1);
+    expect(mergeCustomerOptions([], derived).map((o) => o.name)).toEqual(['Siti']);
   });
 
   it('sorts the most recently used customer first', () => {
-    const derived = derivePickerOptions([
-      invoice({
-        customerName: 'Siti',
-        customerPhone: '08999',
-        createdAt: '2026-06-01T00:00:00.000Z',
-      }),
-    ]).customers;
+    const stored = [
+      customer({ name: 'Lama', phone: '08111', lastUsedAt: '2026-01-01T00:00:00.000Z' }),
+      customer({ name: 'Baru', phone: '08222', lastUsedAt: '2026-06-01T00:00:00.000Z' }),
+    ];
 
-    expect(
-      mergeCustomerOptions([customer({ lastUsedAt: '2026-01-01T00:00:00.000Z' })], derived)[0]
-        ?.name,
-    ).toBe('Siti');
+    expect(mergeCustomerOptions(stored, []).map((o) => o.name)).toEqual(['Baru', 'Lama']);
   });
 
   it('caps the merged list at the picker limit, newest first', () => {

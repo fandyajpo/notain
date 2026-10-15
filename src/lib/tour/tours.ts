@@ -113,7 +113,7 @@ export const TOURS: Record<string, TourDef> = {
         target: 'inv-preview',
         title: 'Pratinjau & simpan',
         description:
-          'Pratinjau invoice di samping selalu ikut terbaru. Selesai mengisi? Simpan, unduh PDF A4, atau kirim langsung ke WhatsApp customer.',
+          'Pratinjau invoice di samping selalu ikut terbaru. Selesai mengisi? Simpan invoice-nya.',
         side: 'left',
       },
     ],

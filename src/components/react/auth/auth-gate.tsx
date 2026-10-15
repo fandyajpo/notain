@@ -3,7 +3,7 @@ import { useSession } from '../../../lib/query/hooks/use-session';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
 import { toast } from '../../../lib/ui/toast';
 import { Button } from '../ui/button';
-import { Card } from '../ui/card';
+import { ErrorState, LoadingState } from '../ui/state';
 import { OnboardingModal } from './onboarding-modal';
 
 type Props = {
@@ -67,11 +67,7 @@ export function AuthGate({ children, fallback }: Props) {
 }
 
 function SessionFallback() {
-  return (
-    <Card padding="none" className="px-6 py-10 text-center text-sm text-muted">
-      Memeriksa sesi…
-    </Card>
-  );
+  return <LoadingState label="Memeriksa sesi…" />;
 }
 
 /**
@@ -80,18 +76,14 @@ function SessionFallback() {
  */
 function SessionLoadError({ onRetry, retrying }: { onRetry: () => void; retrying: boolean }) {
   return (
-    <div
-      role="alert"
-      className="rounded-card border border-danger/25 bg-danger-soft p-10 text-center"
-    >
-      <p className="text-sm font-medium text-danger">
-        Gagal memeriksa sesi. Periksa koneksi internet kamu.
-      </p>
-      <div className="mt-4 flex justify-center">
+    <ErrorState
+      title="Gagal memeriksa sesi"
+      message="Periksa koneksi internet kamu."
+      action={
         <Button size="sm" loading={retrying} onClick={onRetry}>
           Coba lagi
         </Button>
-      </div>
-    </div>
+      }
+    />
   );
 }

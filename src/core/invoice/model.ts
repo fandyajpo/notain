@@ -31,6 +31,7 @@ export const INVOICE_LIMITS = {
   invoiceNumber: 32,
   customerName: 128,
   customerPhone: 32,
+  customerEmail: 255,
   itemName: 200,
   maxItems: 100,
   maxQuantity: 1_000_000,
@@ -82,6 +83,8 @@ export type InvoiceDraft = {
   status: InvoiceStatus;
   customerName: string;
   customerPhone?: string;
+  /** Optional contact carried from the customer directory; never required. */
+  customerEmail?: string;
   items: InvoiceItem[];
   discount: InvoiceAdjustment;
   tax: InvoiceAdjustment;
@@ -107,7 +110,7 @@ export type Invoice = InvoiceDraft & {
  */
 export type InvoiceHistoryEntry = Pick<
   Invoice,
-  'customerName' | 'customerPhone' | 'items' | 'date' | 'createdAt' | 'updatedAt'
+  'customerName' | 'customerPhone' | 'customerEmail' | 'items' | 'date' | 'createdAt' | 'updatedAt'
 >;
 
 export const EMPTY_ADJUSTMENT: InvoiceAdjustment = { type: 'amount', value: 0 };
@@ -182,6 +185,7 @@ export function duplicateDraft(
     status: 'sent',
     customerName: source.customerName,
     customerPhone: source.customerPhone,
+    customerEmail: source.customerEmail,
     items: source.items.map((item) => ({ ...item, id: createItemId() })),
     discount: { ...source.discount },
     tax: { ...source.tax },

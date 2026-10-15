@@ -18,6 +18,15 @@ export const queryKeys = {
   },
   invoice: (id: string) => ['invoice', id] as const,
   invoiceNumbers: ['invoice-numbers'] as const,
+  /**
+   * Count of invoices in one lifecycle state (a `limit: 1` read of the
+   * response's `total`). Keyed apart from `invoices(...)` so a count never
+   * shares — or evicts — a list cache entry.
+   */
+  invoiceStatusCount: (status: InvoiceStatus): readonly unknown[] => [
+    'invoice-status-count',
+    status,
+  ],
   /** Projected recent-invoice slice the picker derives its suggestions from. */
   pickerHistory: ['picker-history'] as const,
   templates: ['templates'] as const,
@@ -25,6 +34,8 @@ export const queryKeys = {
   customers: ['customers'] as const,
   customerCount: ['customer-count'] as const,
   customer: (id: string) => ['customers', id] as const,
+  /** Cached dashboard counters — one row per owner (the `stats` table). */
+  stats: ['dashboard-stats'] as const,
   /** Admin panel user list. Only fetched by members of the `admins` team. */
   adminUsers: ['admin-users'] as const,
   /** Whether the current user belongs to the `admins` team (gates the nav link). */

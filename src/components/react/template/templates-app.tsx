@@ -1,14 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Copy, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Copy, Pencil, Plus, Trash2 } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { Button } from '../ui/button';
-import { Card, EmptyCard } from '../ui/card';
 import { Modal } from '../ui/modal';
 import { PageHeader } from '../ui/page-header';
 import { IslandBoundary } from '../ui/island-boundary';
-import { useFieldIds } from '../ui/field';
-import { Input } from '../ui/input';
+import { SearchField } from '../ui/search-field';
+import { EmptyState, ErrorState, LoadingState } from '../ui/state';
 import { TemplateCard } from './template-picker';
 import { toast } from '../../../lib/ui/toast';
 import { useDeleteTemplate, useTemplates } from '../../../lib/query/hooks/use-templates';
@@ -37,7 +36,6 @@ function TemplatesContent() {
   const remove = useDeleteTemplate();
   const [pendingDelete, setPendingDelete] = useState<InvoiceTemplate | null>(null);
   const [query, setQuery] = useState('');
-  const searchIds = useFieldIds();
 
   // Client-side name filter over both grids (both lists are fully loaded).
   const filteredBuiltins = useMemo(() => {
@@ -65,7 +63,7 @@ function TemplatesContent() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Template invoice"
         description="Atur urutan blok, warna, dan teks default sekali, dipakai tiap kali invoice baru dibuat."
@@ -77,24 +75,12 @@ function TemplatesContent() {
         }
       />
 
-      <div className="relative w-full sm:max-w-xs">
-        <Search
-          size={15}
-          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted"
-          aria-hidden="true"
-        />
-        <label htmlFor={searchIds.id} className="sr-only">
-          Cari template
-        </label>
-        <Input
-          id={searchIds.id}
-          type="search"
-          value={query}
-          placeholder="Cari template…"
-          className="h-10 pr-3 pl-9"
-          onChange={(event) => setQuery(event.target.value)}
-        />
-      </div>
+      <SearchField
+        value={query}
+        onChange={setQuery}
+        placeholder="Cari template…"
+        aria-label="Cari template"
+      />
 
       <Modal
         open={pendingDelete !== null}
@@ -121,14 +107,12 @@ function TemplatesContent() {
       </Modal>
 
       {nothingMatches && !isLoading ? (
-        <Card padding="none" className="px-6 py-10 text-center text-sm text-muted">
-          Tidak ada template yang cocok.
-        </Card>
+        <EmptyState title="Tidak ada template yang cocok." />
       ) : null}
 
       {filteredBuiltins.length > 0 && (
         <section className="flex flex-col gap-4">
-          <h2 className="text-base font-semibold">Bawaan</h2>
+          <h2 className="text-section">Bawaan</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredBuiltins.map((template) => (
               <TemplateCard
@@ -153,39 +137,33 @@ function TemplatesContent() {
       )}
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-base font-semibold">Template saya</h2>
+        <h2 className="text-section">Template saya</h2>
 
         {isLoading ? (
-          <Card padding="none" className="px-6 py-10 text-center text-sm text-muted">
-            Memuat template…
-          </Card>
+          <LoadingState label="Memuat template…" />
         ) : isError ? (
-          <div
-            role="alert"
-            className="flex flex-col items-start gap-3 rounded-card border border-danger/25 bg-danger-soft p-6"
-          >
-            <p className="text-sm font-medium text-danger">Template gagal dimuat. Coba lagi.</p>
-            <Button variant="secondary" size="sm" onClick={() => void refetch()}>
-              Coba lagi
-            </Button>
-          </div>
+          <ErrorState
+            title="Template gagal dimuat"
+            message="Coba lagi."
+            action={
+              <Button variant="secondary" size="sm" onClick={() => void refetch()}>
+                Coba lagi
+              </Button>
+            }
+          />
         ) : !data?.length ? (
-          <EmptyCard className="px-6">
-            <p className="text-sm font-medium text-foreground">Belum ada template sendiri</p>
-            <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
-              Duplikat salah satu template bawaan, lalu sesuaikan urutan blok dan warnanya.
-            </p>
-            <div className="mt-4 flex justify-center">
+          <EmptyState
+            title="Belum ada template sendiri"
+            description="Duplikat salah satu template bawaan, lalu sesuaikan urutan blok dan warnanya."
+            action={
               <Button variant="secondary" onClick={() => window.location.assign('/templates/new')}>
                 <Plus size={16} aria-hidden="true" />
                 Template baru
               </Button>
-            </div>
-          </EmptyCard>
+            }
+          />
         ) : filteredMine.length === 0 ? (
-          <Card padding="none" className="px-6 py-10 text-center text-sm text-muted">
-            Tidak ada template kamu yang cocok.
-          </Card>
+          <EmptyState title="Tidak ada template kamu yang cocok." />
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredMine.map((template) => (
@@ -201,10 +179,9 @@ function TemplatesContent() {
                       Ubah
                     </Button>
                     <Button
-                      variant="secondary"
+                      variant="danger-soft"
                       size="sm"
                       onClick={() => setPendingDelete(template)}
-                      className="text-muted hover:border-danger/40 hover:text-danger"
                     >
                       <Trash2 size={13} aria-hidden="true" />
                       Hapus

@@ -4,6 +4,7 @@ import { createSampleInvoice, SAMPLE_BUSINESS } from '../../../core/invoice/samp
 import type { BusinessProfile } from '../../../core/profile/model';
 import type { InvoiceTemplate } from '../../../core/template/model';
 import { InvoicePreview } from '../invoice/invoice-preview';
+import { PageHeader } from '../ui/page-header';
 
 /**
  * Width the thumbnail lays the invoice out at before scaling it down to the
@@ -103,9 +104,9 @@ export function TemplateCard({
   );
 
   const className = [
-    'block w-full overflow-hidden rounded-card border bg-card text-left shadow-card transition-colors',
-    'focus-ring hover:border-accent/60',
-    selected ? 'border-accent ring-1 ring-accent' : 'border-border',
+    'block w-full overflow-hidden rounded-card border bg-card text-left shadow-card transition-shadow',
+    'focus-ring hover:border-accent/60 hover:shadow-raised',
+    selected ? 'border-accent ring-1 ring-accent shadow-raised' : 'border-border',
   ].join(' ');
 
   if (onPick) {
@@ -145,13 +146,11 @@ type PickerProps = {
 /** Step one of `/invoice/new`: choose the look before entering any data. */
 export function TemplatePicker({ templates, selectedId, logoUrl, business, onPick }: PickerProps) {
   return (
-    <div className="mx-auto w-full max-w-5xl">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-foreground">Pilih template invoice</h1>
-        <p className="mt-1 text-sm text-muted">
-          Tampilannya bisa diganti kapan saja. Data invoice yang kamu isi tetap tersimpan.
-        </p>
-      </div>
+    <div className="flex w-full flex-col gap-6">
+      <PageHeader
+        title="Pilih template invoice"
+        description="Tampilannya bisa diganti kapan saja. Data invoice yang kamu isi tetap tersimpan."
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {templates.map((template) => (

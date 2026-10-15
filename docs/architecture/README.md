@@ -57,22 +57,40 @@ tercantum di ADR 0002.
   Invoice ↔ template diselesaikan oleh `resolveTemplate` di
   `src/core/template/resolve.ts`.
 - Skema Appwrite — tabel `customers` adalah **direktori** customer, bukan sumber
-  kebenaran atas invoice. Kolomnya: `ownerId`, `name`, `phone` (boleh null),
-  `lastUsedAt`, dengan index `owner` atas `["ownerId"]` dan `rowSecurity: true`.
+  kebenaran atas invoice. Kolomnya: `ownerId`, `name`, `email` (boleh null),
+  `phone` (boleh null), `lastUsedAt`, dengan index `owner` atas `["ownerId"]` dan
+  `rowSecurity: true`.
   **Tabel level permissions harus `["create(\"users\")"]`** — sama seperti `invoices`
   dan `templates`. Tanpa izin create di level tabel, `createRow` dari klien ditolak
   401 `user_unauthorized` ("No permissions provided for action 'create'"), karena
   `ownerRowPermissions` hanya menambah `read`/`update`/`delete` di level baris.
-  Invoice tetap menyimpan salinan `customerName`/`customerPhone` sendiri, jadi
-  menghapus customer tidak mengubah dokumen yang sudah dikirim.
+  Invoice tetap menyimpan salinan `customerName`/`customerPhone`/`customerEmail`
+  sendiri, jadi menghapus customer tidak mengubah dokumen yang sudah dikirim.
+  Kolom `invoices.customerEmail` ditambahkan lewat
+  `npm run migrate:customer-email` (jalankan sebelum deploy yang membawa kode email).
+- Skema Appwrite — tabel `stats` adalah **cache ringkasan dashboard**, bukan sumber
+  kebenaran: satu baris per akun (`ownerId` string 64) berisi enam counter integer
+  (`totalInvoices`, `sentCount`, `paidCount`, `voidCount`, `totalCustomers`,
+  `totalTemplates`, default 0), index `owner` atas `["ownerId"]`, izin tabel
+  `["create(\"users\")"]` + `rowSecurity: true` (kontrak yang sama dengan
+  `invoices`/`customers`/`templates`). `refreshDashboardStats`
+  (`src/app/stats.ts`) menghitung ulang keenam angka dari tabel sumber lalu
+  menulisnya balik — sekali per kunjungan dashboard, jadi drift antar kunjungan
+  selalu sembuh sendiri. Pembacaan (`getDashboardStats`) bersifat best-effort:
+  tabel belum dibuat (belum jalan `npm run stats:ensure`) akan mengembalikan
+  `null` dan UI jatuh ke hitungan seperti sebelum ada cache. Skema dibuat oleh
+  `scripts/ensure-stats.mjs` (dry-run tanpa argumen, terapkan dengan `--yes`);
+  tidak ada backfill — barisnya dibuat sendiri pada kunjungan pertama.
 - Direktori customer — `rememberCustomer` di `src/app/customers.ts` dipanggil setiap
-  invoice disimpan (fire-and-forget, tidak menunda redirect). Identitas customer adalah
-  **nama + nomor telepon yang dinormalisasi** (`normalizePhone` di
-  `src/core/customer/model.ts` melipat prefiks `62` jadi `0`), supaya `0812…` dan
-  `+62812…` tidak jadi dua baris. Nomor yang disimpan tetap apa adanya; hanya kuncinya
-  yang dilipat. Picker menggabungkan direktori dengan riwayat invoice
-  (`mergeCustomerOptions`), dan baris "Tambah …" di `Picker.vue` mengisi nama yang
-  belum terdaftar.
+  invoice disimpan (fire-and-forget, tidak menunda redirect). Sebuah baris cocok lewat
+  identitas persis (email + nomor yang dinormalisasi — `normalizePhone` di
+  `src/core/customer/model.ts` melipat prefiks `62` jadi `0`) **atau** lewat nama yang
+  sama (case-insensitive): "Budi" dengan nomor baru meng-update baris Budi yang ada,
+  bukan membuat baris kedua. Field yang diisi menimpa nilai tersimpan; field kosong tidak
+  pernah menghapus data. Picker bersifat **select-only** dan menampilkan isi direktori
+  customer saja (`mergeCustomerOptions`) — riwayat invoice hanya jadi fallback kalau
+  direktori masih kosong (akun lama); contact baru terarsip otomatis lewat
+  `rememberCustomer` saat invoice disimpan.
 - Editor template — `/templates` (daftar), `/templates/new` (editor baru) dan
   `/templates/<id>` (editor isi). Kedua URL editor adalah **shell yang sama**
   (`dist/templates/new/index.html`), disajikan di balik path itu oleh

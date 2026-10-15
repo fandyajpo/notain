@@ -70,7 +70,7 @@ export function CustomerImportPanel() {
     <Card padding="sm" className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="font-medium">Impor dari Excel</p>
+          <p className="text-section">Impor dari Excel</p>
           <p className="text-sm text-muted">
             Upload file <code className="rounded bg-background px-1">.csv</code> atau{' '}
             <code className="rounded bg-background px-1">.xlsx</code> berisi kolom{' '}

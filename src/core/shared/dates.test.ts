@@ -4,6 +4,7 @@ import {
   diffDaysIsoDate,
   formatTanggal,
   formatTanggalRelatif,
+  formatWaktuLalu,
   isIsoDate,
   todayIsoDate,
 } from './dates';
@@ -93,5 +94,38 @@ describe('formatTanggalRelatif', () => {
 
   it('falls back to a full date beyond a week', () => {
     expect(formatTanggalRelatif('2026-10-03', now)).toBe('3 Oktober 2026');
+  });
+});
+
+describe('formatWaktuLalu', () => {
+  const now = new Date('2026-10-11T12:00:00.000Z');
+  const ago = (minutes: number) => new Date(now.getTime() - minutes * 60_000).toISOString();
+
+  it('says baru saja under a minute', () => {
+    expect(formatWaktuLalu(ago(0.5), now)).toBe('Baru saja');
+  });
+
+  it('counts minutes', () => {
+    expect(formatWaktuLalu(ago(5), now)).toBe('5 menit lalu');
+    expect(formatWaktuLalu(ago(59), now)).toBe('59 menit lalu');
+  });
+
+  it('counts hours once a minute count would be unreadable', () => {
+    expect(formatWaktuLalu(ago(60), now)).toBe('1 jam lalu');
+    expect(formatWaktuLalu(ago(5 * 60), now)).toBe('5 jam lalu');
+  });
+
+  it('hands over to the day-granular formatter after 24 hours', () => {
+    expect(formatWaktuLalu(ago(24 * 60), now)).toBe('Kemarin');
+    expect(formatWaktuLalu(ago(3 * 24 * 60), now)).toBe('3 hari lalu');
+    expect(formatWaktuLalu(ago(10 * 24 * 60), now)).toBe('1 Oktober 2026');
+  });
+
+  it('returns an empty string for an invalid value', () => {
+    expect(formatWaktuLalu('not-a-date', now)).toBe('');
+  });
+
+  it('treats a future timestamp as baru saja', () => {
+    expect(formatWaktuLalu(new Date(now.getTime() + 30_000).toISOString(), now)).toBe('Baru saja');
   });
 });

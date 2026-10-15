@@ -19,7 +19,7 @@
  * bulk-delete endpoint, so concurrency is what keeps a big wipe quick.
  */
 
-const TABLES = ['profiles', 'invoices', 'templates', 'customers'];
+const TABLES = ['profiles', 'invoices', 'templates', 'customers', 'stats'];
 const PAGE_SIZE = 100;
 /** Appwrite has no bulk-delete: throughput comes from parallel DELETEs per page. */
 const DELETE_CONCURRENCY = 8;

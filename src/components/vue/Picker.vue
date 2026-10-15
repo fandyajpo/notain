@@ -37,20 +37,6 @@ const query = ref('');
 const open = ref(false);
 const activeIndex = ref(-1);
 
-/**
- * Sentinel appended to the list when the typed name is not on file. It is
- * compared by identity in the template, so it never collides with a real
- * suggestion.
- */
-const NEW_ROW: AnyOption = {
-  kind: 'customer',
-  label: '__new__',
-  name: '',
-  phone: '',
-  lastUsedAt: '',
-  invoiceCount: 0,
-};
-
 const options = computed<AnyOption[]>(() =>
   props.mode === 'customer' ? props.customers : props.products,
 );
@@ -67,46 +53,22 @@ const activeDescendant = computed(() =>
   activeIndex.value >= 0 && open.value ? `${listId}-${activeIndex.value}` : undefined,
 );
 
-/**
- * A typed customer that is not already in the list is offered as a new entry.
- * Products never get this: an unknown product belongs in the item grid, where
- * the quantity and price can actually be set.
- */
-const canCreate = computed(() => {
-  if (props.mode !== 'customer') return false;
-  const needle = query.value.trim().toLowerCase();
-  if (!needle) return false;
-  return !options.value.some((option) => option.label.trim().toLowerCase() === needle);
-});
-
-/** `matches` plus the trailing "add as new" row, so arrow keys reach it too. */
-const rows = computed<AnyOption[]>(() =>
-  canCreate.value ? [...matches.value, NEW_ROW] : matches.value,
-);
-
-function createCustomer() {
-  const name = query.value.trim();
-  if (!name) return;
-  host.dispatchEvent(
-    new CustomEvent(CE_EVENTS.pick, {
-      detail: { kind: 'customer', name, phone: '' },
-      bubbles: true,
-    }),
-  );
-  query.value = '';
-  open.value = false;
-  activeIndex.value = -1;
-}
-
 function meta(option: AnyOption): string {
-  if (option.kind === 'customer') return option.phone || 'Tanpa nomor';
+  if (option.kind === 'customer') {
+    return option.phone || option.email || 'Tanpa kontak';
+  }
   return formatRupiah(option.unitPrice);
 }
 
+/**
+ * Select-only: picking fills the form but files nothing. A customer that is
+ * not on file yet is filed automatically when the invoice is saved — the
+ * builder's submit path records whoever the invoice was issued to.
+ */
 function choose(option: AnyOption) {
   const detail =
     option.kind === 'customer'
-      ? { kind: 'customer', name: option.name, phone: option.phone }
+      ? { kind: 'customer', name: option.name, phone: option.phone, email: option.email }
       : { kind: 'product', name: option.name, quantity: 1, unitPrice: option.unitPrice };
   host.dispatchEvent(new CustomEvent(CE_EVENTS.pick, { detail, bubbles: true }));
   query.value = '';
@@ -115,7 +77,7 @@ function choose(option: AnyOption) {
 }
 
 function onKeydown(event: KeyboardEvent) {
-  const last = rows.value.length - 1;
+  const last = matches.value.length - 1;
   if (event.key === 'ArrowDown') {
     event.preventDefault();
     open.value = true;
@@ -124,11 +86,10 @@ function onKeydown(event: KeyboardEvent) {
     event.preventDefault();
     activeIndex.value = activeIndex.value <= 0 ? last : activeIndex.value - 1;
   } else if (event.key === 'Enter') {
-    const option = rows.value[activeIndex.value];
+    const option = matches.value[activeIndex.value];
     if (open.value && option) {
       event.preventDefault();
-      if (option === NEW_ROW) createCustomer();
-      else choose(option);
+      choose(option);
     }
   } else if (event.key === 'Escape') {
     open.value = false;
@@ -175,39 +136,33 @@ function onBlur(event: FocusEvent) {
     />
 
     <ul
-      v-if="open && rows.length > 0"
+      v-if="open && matches.length > 0"
       :id="listId"
       role="listbox"
       class="flex max-h-56 flex-col gap-0.5 overflow-y-auto rounded-control border border-border bg-card p-1 shadow-card"
       data-picker-list
     >
       <li
-        v-for="(option, index) in rows"
+        v-for="(option, index) in matches"
         :id="`${listId}-${index}`"
         :key="`${option.kind}-${option.label}-${option.unitPrice ?? 0}`"
         role="option"
         :aria-selected="index === activeIndex"
         class="cursor-pointer rounded-control px-2.5 py-2 text-sm"
         :class="index === activeIndex ? 'bg-background text-foreground' : 'text-foreground'"
-        :data-picker-option="option === NEW_ROW ? 'create' : option.kind"
+        :data-picker-option="option.kind"
         @mouseenter="activeIndex = index"
-        @mousedown.prevent="option === NEW_ROW ? createCustomer() : choose(option)"
+        @mousedown.prevent="choose(option)"
       >
         <span class="flex items-center justify-between gap-3">
-          <span class="truncate">
-            <template v-if="option === NEW_ROW">Tambah “{{ query.trim() }}”</template>
-            <template v-else>{{ option.label }}</template>
-          </span>
-          <span v-if="option !== NEW_ROW" class="shrink-0 text-xs text-muted">{{
-            meta(option)
-          }}</span>
-          <span v-else class="shrink-0 text-xs text-muted">Customer baru</span>
+          <span class="truncate">{{ option.label }}</span>
+          <span class="shrink-0 text-xs text-muted">{{ meta(option) }}</span>
         </span>
       </li>
     </ul>
 
     <p v-else-if="open && query.trim()" class="text-xs text-muted" data-picker-empty>
-      Tidak ada riwayat yang cocok.
+      {{ props.mode === 'customer' ? 'Tidak ada customer yang cocok.' : 'Tidak ada riwayat yang cocok.' }}
     </p>
   </div>
 </template>

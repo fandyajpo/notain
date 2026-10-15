@@ -1,8 +1,11 @@
 import { useEffect, useMemo, type ReactNode } from 'react';
+import { FileText } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
 import { Button } from '../ui/button';
+import { EmptyState, LoadingState } from '../ui/state';
+import { Notice } from '../ui/notice';
 import { InvoicePreview } from './invoice-preview';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
 import { useTemplates } from '../../../lib/query/hooks/use-templates';
@@ -65,18 +68,20 @@ function PrintContent() {
   }, [autoPrint, ready]);
 
   if (!invoice) return <MissingPayload />;
-  if (profileLoading) return <Status>Menyiapkan halaman cetak…</Status>;
+  if (profileLoading) return <LoadingState label="Menyiapkan halaman cetak…" />;
 
   if (profileError && !profile) {
     // Refuse to print a blank letterhead — surface the failure and offer a retry.
     return (
       <Status>
-        <div className="flex flex-col items-center text-center">
-          <p className="font-semibold text-danger">Gagal memuat data usaha</p>
-          <p className="mt-1 max-w-sm text-sm text-muted">
-            Periksa koneksi internet kamu, lalu muat ulang sebelum mencetak.
-          </p>
-          <div className="mt-4 flex justify-center gap-2">
+        <div className="flex w-full max-w-md flex-col items-center gap-4">
+          <Notice variant="danger" className="w-full">
+            <p className="font-medium">Gagal memuat data usaha</p>
+            <p className="mt-1">
+              Periksa koneksi internet kamu, lalu muat ulang sebelum mencetak.
+            </p>
+          </Notice>
+          <div className="flex justify-center gap-2">
             <Button variant="secondary" onClick={() => window.history.back()}>
               Kembali
             </Button>
@@ -136,19 +141,21 @@ function Status({ children }: { children: ReactNode }) {
 
 function MissingPayload() {
   return (
-    <div className="mx-auto flex min-h-[50vh] w-full max-w-md flex-col items-center justify-center gap-4 px-5 text-center">
-      <div>
-        <h1 className="text-title">Tidak ada invoice untuk dicetak</h1>
-        <p className="mt-2 text-sm text-muted">
-          Halaman ini hanya terisi saat kamu menekan tombol PDF dari builder.
-        </p>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button variant="secondary" onClick={() => window.history.back()}>
-          Kembali
-        </Button>
-        <Button onClick={() => window.location.assign('/dashboard')}>Ke dashboard</Button>
-      </div>
+    <div className="flex min-h-[50vh] items-center justify-center px-5">
+      <EmptyState
+        icon={FileText}
+        className="w-full max-w-md"
+        title="Tidak ada invoice untuk dicetak"
+        description="Halaman ini hanya terisi saat kamu menekan tombol PDF dari builder."
+        action={
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" onClick={() => window.history.back()}>
+              Kembali
+            </Button>
+            <Button onClick={() => window.location.assign('/dashboard')}>Ke dashboard</Button>
+          </div>
+        }
+      />
     </div>
   );
 }

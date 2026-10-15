@@ -40,6 +40,7 @@ function PhoneChat({ businessName, message, fileName }: PhoneChatProps) {
   return (
     <MotionConfig reducedMotion="user">
       <div className="relative mx-auto w-full max-w-[19rem]">
+        {/* Glow pulse echoing the phone silhouette (3rem radius) under blur. */}
         <motion.div
           aria-hidden="true"
           className="absolute -inset-6 -z-10 rounded-[3rem] bg-accent/12 blur-3xl will-change-transform"
@@ -47,6 +48,8 @@ function PhoneChat({ businessName, message, fileName }: PhoneChatProps) {
           transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
         />
 
+        {/* Device mockup: the frame/screen radii mimic a phone body — deliberate
+            hardware chrome, not app-card radii (rounded-card/control/item). */}
         <div className="rounded-[2.5rem] border border-border bg-foreground p-2 shadow-modal">
           <div className="relative overflow-hidden rounded-[2rem] bg-background">
             <div
@@ -69,12 +72,14 @@ function PhoneChat({ businessName, message, fileName }: PhoneChatProps) {
               <Phone size={15} aria-hidden="true" className="ml-auto shrink-0 text-muted" />
             </div>
 
+            {/* Chat wallpaper: 14px radial dot grid, foreground-tinted —
+                part of the messaging mockup, not the app texture. */}
             <motion.div
               initial="hidden"
               whileInView="shown"
               viewport={{ once: true, amount: 0.4 }}
               transition={{ staggerChildren: 0.35, delayChildren: 0.15 }}
-              className="min-h-[21rem] space-y-2.5 bg-[radial-gradient(rgb(23_23_23_/_0.07)_1px,transparent_1px)] px-3.5 py-5 [background-size:14px_14px]"
+              className="min-h-[21rem] space-y-2.5 bg-[radial-gradient(color-mix(in_srgb,var(--color-foreground)_7%,transparent)_1px,transparent_1px)] px-3.5 py-5 [background-size:14px_14px]"
             >
               <motion.div
                 variants={BUBBLE}

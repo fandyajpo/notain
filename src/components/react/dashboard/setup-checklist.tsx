@@ -72,7 +72,7 @@ export function SetupChecklist({ profile, hasInvoices, hidden }: Props) {
       className={cardClass('md')}
     >
       <div className="flex items-center justify-between gap-3">
-        <h2 id="setup-checklist-title" className="text-base font-semibold">
+        <h2 id="setup-checklist-title" className="text-section">
           Langkah awal
         </h2>
         <span className="text-xs text-muted tabular-nums">

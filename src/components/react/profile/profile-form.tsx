@@ -11,6 +11,7 @@ import { toast } from '../../../lib/ui/toast';
 import { Button } from '../ui/button';
 import { FieldShell, useFieldIds } from '../ui/field';
 import { Input } from '../ui/input';
+import { Notice } from '../ui/notice';
 import { LogoUploader } from '../invoice/logo-uploader';
 
 type Props = {
@@ -79,14 +80,7 @@ export function ProfileForm({ profile }: Props) {
         void form.handleSubmit();
       }}
     >
-      {serverError && (
-        <p
-          role="alert"
-          className="rounded-control border border-danger/25 bg-danger-soft px-4 py-3 text-sm font-medium text-danger"
-        >
-          {serverError}
-        </p>
-      )}
+      {serverError && <Notice variant="danger">{serverError}</Notice>}
 
       <LogoUploader
         logoUrl={logoUrl}

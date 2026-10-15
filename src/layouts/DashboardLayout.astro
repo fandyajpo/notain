@@ -1,7 +1,10 @@
 ---
-import { FileText, LayoutGrid, Palette, Settings, Users } from 'lucide-react';
+import { Menu, PanelLeft, X } from 'lucide-react';
 import { SignOutIsland } from '../components/react/auth/sign-out-island';
 import { AdminNavLink } from '../components/react/auth/admin-nav-link';
+import { ShortcutsIsland, ShortcutsTrigger } from '../components/react/ui/shortcuts';
+import { NAV_ITEMS } from '../lib/nav';
+import { navLinkClass } from '../lib/ui/classes';
 import Layout from './Layout.astro';
 
 interface Props {
@@ -13,14 +16,6 @@ interface Props {
 const { title, description, wide = false } = Astro.props;
 const path = Astro.url.pathname;
 const is_active = (href: string) => path === href || path.startsWith(`${href}/`);
-
-const NAV = [
-  { href: '/dashboard', label: 'Dashboard', Icon: LayoutGrid },
-  { href: '/invoices', label: 'Faktur', Icon: FileText },
-  { href: '/customers', label: 'Customer', Icon: Users },
-  { href: '/templates', label: 'Template', Icon: Palette },
-  { href: '/settings', label: 'Pengaturan', Icon: Settings },
-];
 ---
 
 <Layout title={title} description={description}>
@@ -30,8 +25,8 @@ const NAV = [
       class="pointer-events-none fixed inset-0 -z-10 texture-dots [mask-image:linear-gradient(to_bottom,transparent,black_8%,black_92%,transparent)]"
     ></div>
 
-    {/* Mobile: compact brand bar plus a scrollable nav row — a sidebar has no
-        room to live on a phone, so the same links stay reachable up top. */}
+    {/* Mobile & tablet: a compact brand bar with a hamburger; the nav itself
+        lives in an animated drawer underneath (grid-rows 0fr→1fr). */}
     <header
       transition:persist="mobile-header"
       class="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 lg:hidden"
@@ -43,57 +38,49 @@ const NAV = [
             alt=""
             width={28}
             height={28}
-            class="h-7 w-7 rounded-lg"
+            class="h-7 w-7 rounded-control"
           />
           <span>Notain</span>
         </a>
-        <div class="ml-auto">
+        <div class="ml-auto flex items-center gap-1">
+          <button
+            type="button"
+            id="mobile-nav-toggle"
+            aria-expanded="false"
+            aria-controls="mobile-nav-drawer"
+            aria-label="Buka menu navigasi"
+            class="relative inline-flex h-9 w-9 items-center justify-center rounded-control text-foreground transition-colors hover:bg-accent-soft focus-ring"
+          >
+            <Menu size={18} className="nav-icon-menu transition-opacity" aria-hidden="true" />
+            <X
+              size={18}
+              className="nav-icon-x absolute opacity-0 transition-opacity"
+              aria-hidden="true"
+            />
+          </button>
           <SignOutIsland client:only="react" />
         </div>
       </div>
-      <nav class="flex gap-1 overflow-x-auto px-2 pb-2" aria-label="Navigasi utama">
-        {NAV.map(({ href, label }) => (
-          <a
-            href={href}
-            data-astro-prefetch
-            data-nav-link
-            class:list={[
-              'shrink-0 rounded-lg px-3 py-1.5 text-sm transition-colors hover:bg-background hover:text-foreground',
-              is_active(href) ? 'bg-background font-medium text-foreground' : 'text-muted',
-            ]}
+      <div
+        id="mobile-nav-drawer"
+        data-open="false"
+        inert
+        class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-smooth lg:hidden"
+      >
+        <div class="overflow-hidden">
+          <nav
+            class="flex flex-col gap-0.5 border-t border-border px-2 py-2"
+            aria-label="Navigasi utama"
           >
-            {label}
-          </a>
-        ))}
-        <AdminNavLink client:only="react" />
-      </nav>
-    </header>
-
-    {/* Desktop: a persistent sidebar beside the content. The aside stretches
-        to the full row so its border runs the whole height; the sticky inner
-        column is what actually stays in view while the page scrolls. */}
-    <div class="lg:grid lg:min-h-screen lg:grid-cols-[15rem_1fr]">
-      <aside transition:persist="sidebar" class="hidden border-r border-border bg-card lg:block">
-        <div class="sticky top-0 flex h-screen flex-col p-4">
-          <a href="/dashboard" class="flex items-center gap-2 px-2 font-semibold tracking-tight">
-            <img
-              src="/notain-remove-bg.png"
-              alt=""
-              width={28}
-              height={28}
-              class="h-7 w-7 rounded-lg"
-            />
-            <span>Notain</span>
-          </a>
-          <nav class="mt-8 flex flex-col gap-1" aria-label="Navigasi utama">
-            {NAV.map(({ href, label, Icon }) => (
+            {NAV_ITEMS.map(({ href, label, Icon }) => (
               <a
                 href={href}
                 data-astro-prefetch
                 data-nav-link
+                aria-label={label}
                 class:list={[
-                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-background hover:text-foreground',
-                  is_active(href) ? 'bg-background font-medium text-foreground' : 'text-muted',
+                  'flex items-center gap-2.5 rounded-control px-3 py-2.5 text-sm transition-colors',
+                  navLinkClass(is_active(href)),
                 ]}
               >
                 <Icon size={16} aria-hidden="true" />
@@ -101,40 +88,265 @@ const NAV = [
               </a>
             ))}
             <AdminNavLink client:only="react" />
+            <ShortcutsTrigger client:only="react" variant="drawer" />
+          </nav>
+        </div>
+      </div>
+    </header>
+
+    {/* Desktop: a persistent sidebar beside the content. The aside stretches
+        to the full row so its border runs the whole height; the sticky inner
+        column is what actually stays in view while the page scrolls. The
+        `html[data-sidebar]` attribute (set from localStorage before paint)
+        collapses it to an icon rail to widen the view. */}
+    <div class="app-shell lg:grid lg:min-h-screen lg:grid-cols-[15rem_1fr]">
+      <aside
+        id="app-sidebar"
+        transition:persist="sidebar"
+        class="hidden border-r border-border bg-card lg:block"
+      >
+        <div class="sticky top-0 flex h-screen flex-col p-4">
+          <div class="flex items-center justify-between gap-2 px-2">
+            <a
+              href="/dashboard"
+              aria-label="Notain"
+              class="flex min-w-0 items-center gap-2 font-semibold tracking-tight"
+            >
+              <img
+                src="/notain-remove-bg.png"
+                alt=""
+                width={28}
+                height={28}
+                class="h-7 w-7 shrink-0 rounded-control"
+              />
+              <span class="sidebar-label truncate">Notain</span>
+            </a>
+            <button
+              type="button"
+              id="sidebar-toggle"
+              aria-expanded="true"
+              aria-controls="app-sidebar"
+              aria-label="Tutup sidebar"
+              class="hidden shrink-0 rounded-control p-2 text-muted transition-colors hover:bg-background hover:text-foreground focus-ring lg:inline-flex"
+            >
+              <PanelLeft size={16} aria-hidden="true" />
+            </button>
+          </div>
+          <nav class="mt-8 flex flex-col gap-1" aria-label="Navigasi utama">
+            {NAV_ITEMS.map(({ href, label, Icon }) => (
+              <a
+                href={href}
+                data-astro-prefetch
+                data-nav-link
+                aria-label={label}
+                class:list={[
+                  'sidebar-link flex items-center gap-2 rounded-control px-3 py-2 text-sm transition-colors',
+                  navLinkClass(is_active(href)),
+                ]}
+              >
+                <Icon size={16} aria-hidden="true" />
+                <span class="sidebar-label">{label}</span>
+              </a>
+            ))}
+            <AdminNavLink client:only="react" />
+            <ShortcutsTrigger client:only="react" variant="sidebar" />
           </nav>
           {/* Sign-out sits at the foot of the column so it is reachable without
               scrolling and never competes with the nav for attention. */}
-          <div class="mt-auto pt-4">
+          <div class="sidebar-foot mt-auto pt-4">
             <SignOutIsland client:only="react" />
           </div>
         </div>
       </aside>
 
-      <main class:list={['mx-auto w-full px-4 py-8 sm:px-6', wide ? 'max-w-6xl' : 'max-w-5xl']}>
+      <main
+        class:list={['app-main mx-auto w-full px-4 py-8 sm:px-6', wide ? 'max-w-6xl' : 'max-w-5xl']}
+      >
         <slot />
       </main>
+
+      {/* Mounts the shared pintasan dialog + the global `?` hotkey once. */}
+      <ShortcutsIsland client:only="react" />
     </div>
   </div>
 </Layout>
 
 <script>
+  import { NAV_ACTIVE_CLASS, NAV_IDLE_CLASS } from '../lib/ui/classes';
+
   // The sidebar and mobile header are `transition:persist`, so their SSR'd
   // active state freezes on whatever page was loaded first. Re-point it at the
-  // live URL after every ClientRouter swap (and once on first paint).
+  // live URL after every ClientRouter swap (and once on first paint). The
+  // toggled tokens come from the same constants the SSR class lists use.
+  const activeTokens = NAV_ACTIVE_CLASS.split(/\s+/);
+  const idleTokens = NAV_IDLE_CLASS.split(/\s+/);
+
   function syncNav() {
     const path = window.location.pathname;
     const links = document.querySelectorAll<HTMLAnchorElement>('a[data-nav-link]');
     for (const link of links) {
       const href = link.getAttribute('href') ?? '';
       const active = path === href || path.startsWith(`${href}/`);
-      link.classList.toggle('bg-background', active);
-      link.classList.toggle('font-medium', active);
-      link.classList.toggle('text-foreground', active);
-      link.classList.toggle('text-muted', !active);
+      for (const token of activeTokens) link.classList.toggle(token, active);
+      for (const token of idleTokens) link.classList.toggle(token, !active);
       if (active) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
     }
   }
 
   document.addEventListener('astro:page-load', syncNav);
+
+  // --- Mobile nav drawer -------------------------------------------------
+  const drawer = document.getElementById('mobile-nav-drawer');
+  const navToggle = document.getElementById('mobile-nav-toggle');
+  const mobileHeader = navToggle?.closest('header');
+
+  function setNavOpen(open: boolean) {
+    if (!drawer || !navToggle) return;
+    drawer.dataset.open = String(open);
+    // `inert` keeps the collapsed drawer out of the tab order and hit-testing.
+    drawer.toggleAttribute('inert', !open);
+    navToggle.setAttribute('aria-expanded', String(open));
+    navToggle.setAttribute('aria-label', open ? 'Tutup menu navigasi' : 'Buka menu navigasi');
+    mobileHeader?.toggleAttribute('data-nav-open', open);
+  }
+
+  navToggle?.addEventListener('click', () => {
+    setNavOpen(drawer?.dataset.open !== 'true');
+  });
+
+  // Picking any link (nav item or admin) closes the drawer.
+  drawer?.addEventListener('click', (event) => {
+    if ((event.target as HTMLElement).closest('a')) setNavOpen(false);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && drawer?.dataset.open === 'true') {
+      setNavOpen(false);
+      navToggle?.focus();
+    }
+  });
+
+  document.addEventListener('pointerdown', (event) => {
+    if (drawer?.dataset.open !== 'true' || !mobileHeader) return;
+    if (!mobileHeader.contains(event.target as Node)) setNavOpen(false);
+  });
+
+  // Growing past the sidebar breakpoint hides the header; reset so the drawer
+  // does not reappear still-open when the viewport shrinks back.
+  window.addEventListener('resize', () => {
+    if (window.innerWidth >= 1024 && drawer?.dataset.open === 'true') setNavOpen(false);
+  });
+
+  // --- Desktop sidebar collapse ------------------------------------------
+  const SIDEBAR_KEY = 'notain.sidebar';
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+
+  function applySidebar(open: boolean) {
+    document.documentElement.dataset.sidebar = open ? 'open' : 'closed';
+    if (sidebarToggle) {
+      sidebarToggle.setAttribute('aria-expanded', String(open));
+      sidebarToggle.setAttribute('aria-label', open ? 'Tutup sidebar' : 'Buka sidebar');
+    }
+  }
+
+  // A tiny inline script in the head applies `closed` before first paint;
+  // this pass wires the toggle and normalises anything else.
+  applySidebar(localStorage.getItem(SIDEBAR_KEY) !== 'closed');
+
+  sidebarToggle?.addEventListener('click', () => {
+    const next = document.documentElement.dataset.sidebar === 'closed';
+    applySidebar(next);
+    try {
+      localStorage.setItem(SIDEBAR_KEY, next ? 'open' : 'closed');
+    } catch {
+      /* private mode — session-only preference */
+    }
+  });
 </script>
+
+<style is:global>
+  /* The app's mobile header (brand bar + drawer) is taller than the landing's
+     4rem header, so in-page anchors and tour spotlights need a larger offset
+     on app pages only. */
+  html {
+    scroll-padding-top: 7rem;
+  }
+
+  /* --- Mobile nav drawer ------------------------------------------------ */
+  #mobile-nav-drawer[data-open='true'] {
+    grid-template-rows: 1fr;
+  }
+  #mobile-nav-drawer a {
+    transition:
+      opacity 0.25s ease,
+      transform 0.25s ease;
+  }
+  #mobile-nav-drawer[data-open='false'] a {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  /* Staggered entrance so the list cascades in instead of popping as a block. */
+  #mobile-nav-drawer[data-open='true'] a:nth-child(1) {
+    transition-delay: 0.04s;
+  }
+  #mobile-nav-drawer[data-open='true'] a:nth-child(2) {
+    transition-delay: 0.08s;
+  }
+  #mobile-nav-drawer[data-open='true'] a:nth-child(3) {
+    transition-delay: 0.12s;
+  }
+  #mobile-nav-drawer[data-open='true'] a:nth-child(4) {
+    transition-delay: 0.16s;
+  }
+  #mobile-nav-drawer[data-open='true'] a:nth-child(5) {
+    transition-delay: 0.2s;
+  }
+  #mobile-nav-drawer[data-open='true'] a:nth-child(6) {
+    transition-delay: 0.24s;
+  }
+  #mobile-nav-toggle .nav-icon-menu,
+  #mobile-nav-toggle .nav-icon-x {
+    transition: opacity 0.2s ease;
+  }
+  header[data-nav-open='true'] #mobile-nav-toggle .nav-icon-menu {
+    opacity: 0;
+  }
+  header[data-nav-open='true'] #mobile-nav-toggle .nav-icon-x {
+    opacity: 1;
+  }
+
+  /* --- Desktop sidebar collapse ----------------------------------------- */
+  @media (min-width: 1024px) {
+    .app-shell {
+      transition: grid-template-columns 0.3s var(--ease-smooth);
+    }
+  }
+  html[data-sidebar='closed'] .app-shell {
+    grid-template-columns: 4.5rem 1fr;
+  }
+  html[data-sidebar='closed'] .sidebar-label {
+    display: none;
+  }
+  html[data-sidebar='closed'] .sidebar-link,
+  html[data-sidebar='closed'] aside nav a {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  html[data-sidebar='closed'] .sidebar-foot button {
+    width: 100%;
+    justify-content: center;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  html[data-sidebar='closed'] .app-main {
+    max-width: none;
+  }
+  #sidebar-toggle svg {
+    transition: transform 0.3s var(--ease-smooth);
+  }
+  html[data-sidebar='closed'] #sidebar-toggle svg {
+    transform: rotate(180deg);
+  }
+</style>

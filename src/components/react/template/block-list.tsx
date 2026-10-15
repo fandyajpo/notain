@@ -38,6 +38,9 @@ import {
   setBlockWidth,
   toggleBlockVisible,
 } from '../../../core/template/layout';
+import { cx, iconButtonClass } from '../../../lib/ui/classes';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 
 type Props = {
   layout: TemplateBlock[];
@@ -139,9 +142,9 @@ export function BlockList({ layout, onChange }: Props) {
                 <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                   <span className="truncate">{BLOCK_LABELS[block.type]}</span>
                   {REQUIRED.has(block.type) && (
-                    <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-accent">
+                    <Badge variant="accent" size="sm">
                       wajib
-                    </span>
+                    </Badge>
                   )}
                 </span>
                 <span className="block text-xs text-muted">
@@ -154,7 +157,7 @@ export function BlockList({ layout, onChange }: Props) {
             <span
               role="group"
               aria-label={`Perataan ${BLOCK_LABELS[block.type]}`}
-              className="flex items-center gap-0.5 rounded-control border border-border bg-background p-0.5"
+              className="inline-flex rounded-control border border-border bg-sunken p-0.5"
             >
               {ALIGN_OPTIONS.map(({ align, label, Icon }) => (
                 <button
@@ -164,12 +167,12 @@ export function BlockList({ layout, onChange }: Props) {
                   aria-label={`${label}: ${BLOCK_LABELS[block.type]}`}
                   aria-pressed={block.align === align}
                   onClick={() => onChange(setBlockAlign(layout, block.id, align))}
-                  className={[
-                    'rounded-md p-1.5 transition-colors focus-ring',
+                  className={cx(
+                    'inline-flex items-center justify-center rounded-item p-1.5 font-medium transition-colors focus-ring',
                     block.align === align
                       ? 'bg-card text-foreground shadow-card'
                       : 'text-muted hover:text-foreground',
-                  ].join(' ')}
+                  )}
                 >
                   <Icon size={14} aria-hidden="true" />
                 </button>
@@ -179,7 +182,7 @@ export function BlockList({ layout, onChange }: Props) {
             <span
               role="group"
               aria-label={`Lebar ${BLOCK_LABELS[block.type]}`}
-              className="flex items-center gap-0.5 rounded-control border border-border bg-background p-0.5"
+              className="inline-flex rounded-control border border-border bg-sunken p-0.5"
             >
               {WIDTH_OPTIONS.map(({ width, label }) => (
                 <button
@@ -189,12 +192,12 @@ export function BlockList({ layout, onChange }: Props) {
                   aria-label={`Lebar ${label}: ${BLOCK_LABELS[block.type]}`}
                   aria-pressed={block.width === width}
                   onClick={() => onChange(setBlockWidth(layout, block.id, width))}
-                  className={[
-                    'rounded-md px-2 py-1.5 text-xs transition-colors focus-ring',
+                  className={cx(
+                    'inline-flex items-center justify-center rounded-item px-2 py-1.5 text-xs font-medium transition-colors focus-ring',
                     block.width === width
-                      ? 'bg-card font-medium text-foreground shadow-card'
+                      ? 'bg-card text-foreground shadow-card'
                       : 'text-muted hover:text-foreground',
-                  ].join(' ')}
+                  )}
                 >
                   {label}
                 </button>
@@ -245,21 +248,22 @@ export function BlockList({ layout, onChange }: Props) {
       </ul>
 
       <div className="flex flex-col gap-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted">Tambah blok</p>
+        <p className="text-eyebrow uppercase text-muted">Tambah blok</p>
         <div className="flex flex-wrap gap-2">
           {BLOCK_TYPES.map((type) => {
             const Icon = BLOCK_ICONS[type];
             return (
-              <button
+              <Button
                 key={type}
                 type="button"
+                variant="secondary"
+                size="sm"
                 disabled={atLimit}
                 onClick={() => onChange(addBlock(layout, type))}
-                className="inline-flex items-center gap-1.5 rounded-control border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-foreground shadow-card transition-colors hover:border-accent/60 focus-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Icon size={13} className="text-muted" aria-hidden="true" />
+                <Icon size={14} className="text-muted" aria-hidden="true" />
                 {BLOCK_LABELS[type]}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -294,11 +298,11 @@ function IconButton({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className={[
-        'rounded-md p-1.5 transition-colors focus-ring',
-        'disabled:cursor-not-allowed disabled:opacity-40',
-        danger ? 'text-muted hover:text-danger' : 'text-muted hover:text-foreground',
-      ].join(' ')}
+      className={cx(
+        iconButtonClass('sm'),
+        // The danger tone has to win `iconButtonClass`'s own hover text.
+        danger && 'hover:bg-danger-soft hover:text-danger!',
+      )}
     >
       {children}
     </button>

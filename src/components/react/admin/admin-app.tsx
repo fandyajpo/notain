@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2, RefreshCw, Search, Shield, Users } from 'lucide-react';
+import { RefreshCw, Search, Users } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
@@ -7,8 +7,11 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Modal } from '../ui/modal';
+import { Notice } from '../ui/notice';
 import { PageHeader } from '../ui/page-header';
+import { SearchField } from '../ui/search-field';
 import { Select } from '../ui/select';
+import { ErrorState, LoadingState } from '../ui/state';
 import { TableShell, Th, Td, TBODY_ROW, THEAD_ROW } from '../ui/table';
 import { Textarea } from '../ui/textarea';
 import { FieldShell, useFieldIds } from '../ui/field';
@@ -104,11 +107,7 @@ function AdminGate({ children }: { children: React.ReactNode }) {
   }, [isLoading, isAdmin]);
 
   if (isLoading || isAdmin !== true) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 size={24} className="animate-spin text-muted" aria-hidden="true" />
-      </div>
-    );
+    return <LoadingState />;
   }
 
   return <>{children}</>;
@@ -136,7 +135,6 @@ function AdminContent() {
   // List filter.
   const [query, setQuery] = useState('');
   const [planFilter, setPlanFilter] = useState('');
-  const searchIds = useFieldIds();
   const planFilterIds = useFieldIds();
 
   // Quick subscribe (pick a plan) / unsubscribe (back to free).
@@ -272,12 +270,7 @@ function AdminContent() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={
-          <span className="flex items-center gap-2">
-            <Shield size={22} aria-hidden="true" className="text-accent" />
-            Admin
-          </span>
-        }
+        title="Admin"
         description="Kelola profil dan subscription plan user."
         actions={
           <Button
@@ -292,32 +285,16 @@ function AdminContent() {
         }
       />
 
-      {errorMessage && (
-        <div className="rounded-control border border-danger/40 bg-danger-soft px-4 py-3 text-sm text-danger">
-          {errorMessage}
-        </div>
-      )}
+      {errorMessage && <Notice variant="danger">{errorMessage}</Notice>}
 
       {users.length > 0 && (
         <div className="flex w-full flex-col gap-2 sm:max-w-md sm:flex-row sm:items-center">
-          <div className="relative w-full sm:max-w-xs">
-            <Search
-              size={15}
-              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted"
-              aria-hidden="true"
-            />
-            <label htmlFor={searchIds.id} className="sr-only">
-              Cari user
-            </label>
-            <Input
-              id={searchIds.id}
-              type="search"
-              value={query}
-              placeholder="Cari nama, email, atau usaha…"
-              className="h-10 pr-3 pl-9"
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </div>
+          <SearchField
+            value={query}
+            placeholder="Cari nama, email, atau usaha…"
+            aria-label="Cari user"
+            onChange={setQuery}
+          />
           <div className="w-full sm:w-auto">
             <label htmlFor={planFilterIds.id} className="sr-only">
               Filter plan
@@ -338,9 +315,7 @@ function AdminContent() {
       )}
 
       {isFetching && users.length === 0 ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 size={24} className="animate-spin text-muted" aria-hidden="true" />
-        </div>
+        <LoadingState label="Memuat user…" />
       ) : (
         <TableShell minWidth="720px">
           <thead>
@@ -356,32 +331,39 @@ function AdminContent() {
           <tbody>
             {users.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-muted">
+                <td colSpan={6} className="px-4 py-4 text-center text-muted">
                   {error ? (
                     // The list failed to load — don't claim there are no users.
-                    <>
-                      <p className="font-medium text-danger">Gagal memuat user</p>
-                      <p className="mt-1 text-sm text-muted">
-                        Periksa koneksi internet kamu, lalu muat ulang.
-                      </p>
-                      <div className="mt-4 flex justify-center">
-                        <Button size="sm" loading={isFetching} onClick={() => void refetch()}>
+                    <ErrorState
+                      inline
+                      title="Gagal memuat user"
+                      message="Periksa koneksi internet kamu, lalu muat ulang."
+                      action={
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          loading={isFetching}
+                          onClick={() => void refetch()}
+                        >
                           Coba lagi
                         </Button>
-                      </div>
-                    </>
+                      }
+                    />
                   ) : (
-                    <>
-                      <Users size={20} className="mx-auto mb-2 opacity-50" aria-hidden="true" />
-                      Belum ada user terdaftar.
-                    </>
+                    <div className="flex flex-col items-center gap-2 py-8">
+                      <Users size={22} className="text-muted" aria-hidden="true" />
+                      <p className="text-section text-foreground">Belum ada user terdaftar.</p>
+                    </div>
                   )}
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center text-muted">
-                  Tidak ada user yang cocok.
+                  <div className="flex flex-col items-center gap-2">
+                    <Search size={22} className="text-muted" aria-hidden="true" />
+                    <p className="text-section text-foreground">Tidak ada user yang cocok.</p>
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -408,25 +390,24 @@ function AdminContent() {
                     {new Date(user.createdAt).toLocaleDateString('id-ID')}
                   </Td>
                   <Td align="right">
-                    <div className="flex items-center justify-end gap-1.5">
+                    <div className="flex items-center justify-end gap-2">
                       {user.plan === 'free' ? (
-                        <Button size="sm" onClick={() => openSubscribe(user)}>
+                        <Button variant="secondary" size="sm" onClick={() => openSubscribe(user)}>
                           Subscribe
                         </Button>
                       ) : (
                         <Button
-                          variant="secondary"
+                          variant="danger-soft"
                           size="sm"
                           onClick={() => {
                             updateAdminUser.reset();
                             setUnsubscribeTarget(user);
                           }}
-                          className="text-muted hover:border-danger/40 hover:text-danger"
                         >
                           Lepas
                         </Button>
                       )}
-                      <Button variant="secondary" size="sm" onClick={() => openEdit(user)}>
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(user)}>
                         Edit
                       </Button>
                     </div>
@@ -465,12 +446,7 @@ function AdminContent() {
       >
         <div className="flex flex-col gap-4">
           {updateAdminUser.isError && (
-            <p
-              role="alert"
-              className="rounded-control border border-danger/25 bg-danger-soft px-3 py-2 text-sm text-danger"
-            >
-              {toAppError(updateAdminUser.error).message}
-            </p>
+            <Notice variant="danger">{toAppError(updateAdminUser.error).message}</Notice>
           )}
           <FieldShell label="Nama" htmlFor="admin-name" required error={formErrors.name}>
             <Input
@@ -574,12 +550,7 @@ function AdminContent() {
       >
         <div className="flex flex-col gap-4">
           {updateAdminUser.isError && (
-            <p
-              role="alert"
-              className="rounded-control border border-danger/25 bg-danger-soft px-3 py-2 text-sm text-danger"
-            >
-              {toAppError(updateAdminUser.error).message}
-            </p>
+            <Notice variant="danger">{toAppError(updateAdminUser.error).message}</Notice>
           )}
           <p className="text-sm text-muted">
             {subscribeTarget?.name || subscribeTarget?.email} akan diberi plan berbayar.
@@ -622,12 +593,9 @@ function AdminContent() {
         ]}
       >
         {updateAdminUser.isError && (
-          <p
-            role="alert"
-            className="mb-3 rounded-control border border-danger/25 bg-danger-soft px-3 py-2 text-sm text-danger"
-          >
+          <Notice variant="danger" className="mb-3">
             {toAppError(updateAdminUser.error).message}
-          </p>
+          </Notice>
         )}
         <p className="text-sm text-muted">
           Plan <span className="font-medium text-foreground">{unsubscribeTarget?.name || unsubscribeTarget?.email}</span>{' '}

@@ -112,7 +112,7 @@
               placeholder="Nasi Goreng"
               aria-label="Nama barang"
               autoComplete="off"
-              class={controlClass({ className: 'h-10 min-w-0 flex-1' })}
+              class={controlClass({ size: 'sm', className: 'min-w-0 flex-1' })}
               oninput={(event) => patch(item.id, { name: event.currentTarget.value })}
             />
             <button
@@ -135,7 +135,7 @@
                 step={1}
                 value={item.quantity}
                 aria-label="Jumlah"
-                class={controlClass({ className: 'h-10 text-right' })}
+                class={controlClass({ size: 'sm', className: 'text-right' })}
                 oninput={(event) =>
                   patch(item.id, {
                     quantity: Math.max(1, Number(event.currentTarget.value) || 1),
@@ -150,7 +150,7 @@
                 value={formatAmountForInput(item.unitPrice)}
                 placeholder="0"
                 aria-label="Harga satuan dalam rupiah"
-                class={controlClass({ className: 'h-10 text-right' })}
+                class={controlClass({ size: 'sm', className: 'text-right' })}
                 oninput={(event) =>
                   patch(item.id, { unitPrice: parseRupiah(event.currentTarget.value) || 0 })}
               />
@@ -199,7 +199,7 @@
           type="button"
           data-add-item
           onclick={add}
-          class="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-control border border-dashed border-border bg-transparent px-3 text-sm font-medium text-muted transition-colors hover:border-foreground/30 hover:text-foreground focus-ring"
+          class="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-control border border-dashed border-border-strong bg-transparent px-3 text-sm font-medium text-muted transition-colors hover:border-accent hover:text-accent focus-ring"
         >
           <Plus size={15} strokeWidth={2.5} aria-hidden="true" />
           Tambah barang
@@ -211,16 +211,16 @@
       <table class="w-full min-w-[720px] border-collapse text-sm">
         <thead>
           <tr class="border-b border-border">
-            <th scope="col" class="pb-2 text-left text-xs font-medium text-muted">Nama barang</th>
-            <th scope="col" class="w-24 pb-2 text-right text-xs font-medium text-muted">Jumlah</th>
-            <th scope="col" class="w-40 pb-2 text-right text-xs font-medium text-muted"
+            <th scope="col" class="pb-2 text-left text-eyebrow uppercase text-muted">Nama barang</th>
+            <th scope="col" class="w-24 pb-2 text-right text-eyebrow uppercase text-muted">Jumlah</th>
+            <th scope="col" class="w-40 pb-2 text-right text-eyebrow uppercase text-muted"
               >Harga satuan</th
             >
-            <th scope="col" class="w-36 pb-2 text-right text-xs font-medium text-muted">Subtotal</th>
-            <th scope="col" class="w-20 pb-2 text-right text-xs font-medium text-muted">
+            <th scope="col" class="w-36 pb-2 text-right text-eyebrow uppercase text-muted">Subtotal</th>
+            <th scope="col" class="w-20 pb-2 text-right text-eyebrow uppercase text-muted">
               <span class="sr-only">Urutan</span>
             </th>
-            <th scope="col" class="w-12 pb-2 text-right text-xs font-medium text-muted">
+            <th scope="col" class="w-12 pb-2 text-right text-eyebrow uppercase text-muted">
               <span class="sr-only">Aksi</span>
             </th>
           </tr>
@@ -228,7 +228,7 @@
         <tbody>
           {#each items as item, index (item.id)}
             <tr
-              class="border-b border-border/70 align-middle"
+              class="border-b border-border/60 align-middle hover:bg-background/60"
               data-item-row={item.id}
               transition:itemRow={{ y: 8 }}
             >
@@ -239,7 +239,7 @@
                   placeholder="Nasi Goreng"
                   aria-label="Nama barang"
                   autoComplete="off"
-                  class={controlClass({ className: 'h-10' })}
+                  class={controlClass({ size: 'sm' })}
                   oninput={(event) => patch(item.id, { name: event.currentTarget.value })}
                 />
               </td>
@@ -251,7 +251,7 @@
                   step={1}
                   value={item.quantity}
                   aria-label="Jumlah"
-                  class={controlClass({ className: 'h-10 text-right' })}
+                  class={controlClass({ size: 'sm', className: 'text-right' })}
                   oninput={(event) =>
                     patch(item.id, {
                       quantity: Math.max(1, Number(event.currentTarget.value) || 1),
@@ -265,7 +265,7 @@
                   value={formatAmountForInput(item.unitPrice)}
                   placeholder="0"
                   aria-label="Harga satuan dalam rupiah"
-                  class={controlClass({ className: 'h-10 text-right' })}
+                  class={controlClass({ size: 'sm', className: 'text-right' })}
                   oninput={(event) =>
                     patch(item.id, { unitPrice: parseRupiah(event.currentTarget.value) || 0 })}
                 />
@@ -327,7 +327,7 @@
                   type="button"
                   data-add-item
                   onclick={add}
-                  class="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-control border border-dashed border-border bg-transparent px-3 text-sm font-medium text-muted transition-colors hover:border-foreground/30 hover:text-foreground focus-ring"
+                  class="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-control border border-dashed border-border-strong bg-transparent px-3 text-sm font-medium text-muted transition-colors hover:border-accent hover:text-accent focus-ring"
                 >
                   <Plus size={15} strokeWidth={2.5} aria-hidden="true" />
                   Tambah barang

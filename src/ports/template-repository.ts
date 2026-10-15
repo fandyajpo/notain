@@ -9,6 +9,13 @@ import type { AuthoredTemplate, InvoiceTemplate } from '../core/template/model';
  */
 export interface TemplateRepository {
   listByOwner(ownerId: string): Promise<InvoiceTemplate[]>;
+  /**
+   * Total saved templates the owner has, without transferring them.
+   *
+   * Backed by the list response's `total` with a one-row limit — the same
+   * trick as `CustomerRepository.countByOwner`.
+   */
+  countByOwner(ownerId: string): Promise<number>;
   getById(id: string): Promise<InvoiceTemplate | null>;
   create(input: {
     id: string;

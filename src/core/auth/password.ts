@@ -17,8 +17,8 @@ export type PasswordStrength = {
 
 const STRENGTH: PasswordStrength[] = [
   { score: 0, label: 'Lemah', colorClass: 'bg-danger text-danger' },
-  { score: 1, label: 'Lumayan', colorClass: 'bg-amber-500 text-amber-600' },
-  { score: 2, label: 'Kuat', colorClass: 'bg-accent text-accent' },
+  { score: 1, label: 'Lumayan', colorClass: 'bg-warning text-warning' },
+  { score: 2, label: 'Kuat', colorClass: 'bg-success text-success' },
 ];
 
 export function passwordStrength(password: string): PasswordStrength {

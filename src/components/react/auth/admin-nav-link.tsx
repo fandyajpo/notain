@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Shield } from 'lucide-react';
 import { getShellClient } from '../../../lib/query/shell-client';
 import { useAdminMembership } from '../../../lib/query/hooks/use-admin';
+import { navLinkClass } from '../../../lib/ui/classes';
 
 /**
  * Admin nav link that only renders when the signed-in user is a member of
@@ -33,10 +34,12 @@ function AdminLink() {
     <a
       href="/admin"
       data-astro-prefetch
-      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-background hover:text-foreground"
+      data-nav-link
+      aria-label="Admin"
+      className={`flex items-center gap-2 rounded-control px-3 py-2 text-sm transition-colors ${navLinkClass(false)}`}
     >
       <Shield size={16} aria-hidden="true" />
-      Admin
+      <span className="sidebar-label">Admin</span>
     </a>
   );
 }

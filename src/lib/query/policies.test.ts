@@ -92,6 +92,7 @@ describe('QUERY_POLICIES', () => {
         'invoices',
         'profile',
         'session',
+        'stats',
         'templates',
       ].sort(),
     );

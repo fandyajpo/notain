@@ -10,7 +10,7 @@ const CUSTOMERS: CustomerOption[] = [
     kind: 'customer',
     label: 'Budi',
     name: 'Budi',
-    email: '',
+    email: 'budi@email.test',
     phone: '081234567890',
     lastUsedAt: '2026-01-02T00:00:00.000Z',
     invoiceCount: 3,
@@ -23,6 +23,15 @@ const CUSTOMERS: CustomerOption[] = [
     phone: '',
     lastUsedAt: '2026-01-01T00:00:00.000Z',
     invoiceCount: 1,
+  },
+  {
+    kind: 'customer',
+    label: 'Toko Maju',
+    name: 'Toko Maju',
+    email: 'halo@tokomaju.test',
+    phone: '',
+    lastUsedAt: '2025-12-30T00:00:00.000Z',
+    invoiceCount: 2,
   },
 ];
 
@@ -98,100 +107,88 @@ beforeEach(async () => {
 
 describe('notain-picker', () => {
   it('renders the label and a combobox input', () => {
-    expect(host.textContent).toContain('Cari riwayat');
-    expect(input().getAttribute('role')).toBe('combobox');
-    expect(input().getAttribute('aria-autocomplete')).toBe('list');
-    expect(input().getAttribute('aria-controls')).toBe(
-      host.querySelector('[data-picker-list]')?.id,
-    );
+    const box = input();
+    expect(host.querySelector('label')?.textContent).toContain('Cari riwayat');
+    expect(box.getAttribute('role')).toBe('combobox');
+    expect(box.getAttribute('aria-autocomplete')).toBe('list');
+    expect(box.getAttribute('placeholder')).toBe('Ketik…');
   });
 
   it('lists customer history on focus', () => {
     expect(input().getAttribute('aria-expanded')).toBe('true');
-    expect(options()).toHaveLength(2);
+    expect(options()).toHaveLength(3);
     expect(options()[0]?.textContent).toContain('Budi');
     expect(options()[0]?.textContent).toContain('081234567890');
-    expect(options()[1]?.textContent).toContain('Tanpa nomor');
+  });
+
+  it('shows the phone, then the email, then a fallback as the row meta', () => {
+    // Budi has both: the phone is the WhatsApp number, so it leads.
+    expect(options()[0]?.textContent).toContain('081234567890');
+    // Toko Maju has an email but no phone.
+    expect(options()[2]?.textContent).toContain('halo@tokomaju.test');
+    // Siti has neither.
+    expect(options()[1]?.textContent).toContain('Tanpa kontak');
   });
 
   it('filters options by the typed query', async () => {
     await type('sit');
-    // The typed text is not on file verbatim, so the "add new" row trails the
-    // match rather than replacing it.
-    expect(options()).toHaveLength(2);
+    expect(options()).toHaveLength(1);
     expect(options()[0]?.textContent).toContain('Siti');
-    expect(options()[1]?.textContent).toContain('Tambah');
   });
 
-  it('does not offer to add a name that already exists verbatim', async () => {
-    await type('budi');
-    expect(options()).toHaveLength(1);
-    expect(options()[0]?.textContent).toContain('Budi');
-    expect(host.querySelector('[data-picker-option="create"]')).toBeNull();
-  });
-
-  it('offers to file a typed name that is not on the list', async () => {
-    await type('zzzz');
-    expect(options()).toHaveLength(1);
-    expect(options()[0]?.textContent).toContain('Tambah');
-    expect(options()[0]?.textContent).toContain('zzzz');
-    expect(options()[0]?.getAttribute('data-picker-option')).toBe('create');
-    // The empty hint is the fallback for product mode, where there is no
-    // directory to add to; a customer always has somewhere to go.
-    expect(host.querySelector('[data-picker-empty]')).toBeNull();
-  });
-
-  it('shows an empty message when nothing matches in product mode', async () => {
-    await mount({ mode: 'product' });
-    await focusInput();
+  it('shows an empty message when nothing matches', async () => {
     await type('zzzz');
     expect(options()).toHaveLength(0);
     expect(host.querySelector('[data-picker-empty]')?.textContent).toContain('Tidak ada');
   });
 
-  it('emits a customer pick for the create row, carrying the typed name', async () => {
+  it('never offers to create a row from the typed text', async () => {
     await type('zzzz');
+    expect(host.querySelector('[data-picker-option="create"]')).toBeNull();
+    expect(host.querySelector('[data-picker-empty]')?.textContent).toContain('Tidak ada');
+  });
+
+  it('emits a validated customer pick carrying name, phone and email', async () => {
     options()[0]?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
     await nextTick();
 
     expect(events).toHaveLength(1);
     const parsed = pickEventSchema.safeParse(events[0]);
     expect(parsed.success).toBe(true);
-    expect(events[0]).toEqual({ kind: 'customer', name: 'zzzz', phone: '' });
-  });
-
-  it('reaches the create row with the arrow keys and files it on Enter', async () => {
-    await type('zzzz');
-    await press('ArrowDown');
-    expect(options()[0]?.getAttribute('aria-selected')).toBe('true');
-
-    await press('Enter');
-    expect(events.at(-1)).toEqual({ kind: 'customer', name: 'zzzz', phone: '' });
-  });
-
-  it('emits a validated customer pick and resets', async () => {
-    options()[0]?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-    await nextTick();
-
-    expect(events).toHaveLength(1);
-    const parsed = pickEventSchema.safeParse(events[0]);
-    expect(parsed.success).toBe(true);
-    expect(events[0]).toEqual({ kind: 'customer', name: 'Budi', phone: '081234567890' });
+    expect(events[0]).toEqual({
+      kind: 'customer',
+      name: 'Budi',
+      phone: '081234567890',
+      email: 'budi@email.test',
+    });
     expect(input().value).toBe('');
     expect(input().getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('emits an empty email for a customer without one', async () => {
+    await type('siti');
+    options()[0]?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    await nextTick();
+
+    expect(events.at(-1)).toEqual({
+      kind: 'customer',
+      name: 'Siti',
+      phone: '',
+      email: '',
+    });
   });
 
   it('emits a product pick with quantity 1 when mode is product', async () => {
     await mount({ mode: 'product' });
     await focusInput();
 
-    expect(options()).toHaveLength(2);
-    expect(options()[0]?.textContent).toContain('Kopi Susu');
-    expect(options()[0]?.textContent).toContain('Rp18.000');
-
     options()[0]?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
     await nextTick();
-    expect(events.at(-1)).toEqual({
+
+    expect(events).toHaveLength(1);
+    const parsed = pickEventSchema.safeParse(events[0]);
+    expect(parsed.success).toBe(true);
+    expect(events[0]).toEqual({
       kind: 'product',
       name: 'Kopi Susu',
       quantity: 1,
@@ -202,13 +199,22 @@ describe('notain-picker', () => {
   it('supports keyboard navigation and Enter to pick', async () => {
     await press('ArrowDown');
     expect(options()[0]?.getAttribute('aria-selected')).toBe('true');
+
     await press('ArrowDown');
     expect(options()[1]?.getAttribute('aria-selected')).toBe('true');
-    await press('ArrowUp');
-    expect(options()[0]?.getAttribute('aria-selected')).toBe('true');
 
     await press('Enter');
-    expect(events.at(-1)).toEqual({ kind: 'customer', name: 'Budi', phone: '081234567890' });
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({ kind: 'customer', name: 'Siti' });
+  });
+
+  it('wraps the highlight from the last option back to the first', async () => {
+    await press('ArrowUp');
+    const last = options().length - 1;
+    expect(options()[last]?.getAttribute('aria-selected')).toBe('true');
+
+    await press('ArrowDown');
+    expect(options()[0]?.getAttribute('aria-selected')).toBe('true');
   });
 
   it('closes on Escape and reopens on the next focus', async () => {

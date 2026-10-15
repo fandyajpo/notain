@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { cx, iconButtonClass, menuItemClass, popoverClass } from '../../../lib/ui/classes';
 
 export type MenuItem = {
   label: string;
@@ -30,9 +31,6 @@ type Props = {
   /** Trigger content — usually an icon. */
   children: ReactNode;
 };
-
-const ITEM_BASE =
-  'flex w-full items-center gap-2.5 rounded-[0.375rem] px-2.5 py-2 text-left text-sm transition-colors';
 
 /**
  * An icon-triggered action menu (WAI-ARIA `menu` + `menuitem`).
@@ -158,7 +156,7 @@ export function Menu({ label, items, align = 'end', className, children }: Props
         aria-controls={open ? menuId : undefined}
         aria-label={label}
         onClick={() => (open ? closeMenu(false) : openMenu())}
-        className="rounded-control p-2 text-muted transition-colors hover:bg-background hover:text-foreground focus-ring"
+        className={iconButtonClass()}
       >
         {children}
       </button>
@@ -174,15 +172,10 @@ export function Menu({ label, items, align = 'end', className, children }: Props
             // First pass is invisible at the origin so we can measure the
             // height, then re-place it anchored to the trigger.
             style={pos ?? { top: 0, left: 0, visibility: 'hidden' }}
-            className="fixed z-[100] min-w-44 rounded-control border border-border bg-card p-1 shadow-popover animate-popover-in"
+            className={cx('fixed z-[100] min-w-44', popoverClass())}
           >
             {items.map((item) => {
               const danger = item.variant === 'danger';
-              const tone = item.disabled
-                ? 'cursor-not-allowed text-muted/60'
-                : danger
-                  ? 'text-danger hover:bg-danger-soft focus:bg-danger-soft'
-                  : 'text-foreground hover:bg-accent-soft hover:text-accent focus:bg-accent-soft focus:text-accent';
               const iconTone = item.disabled
                 ? 'text-muted/60'
                 : danger
@@ -202,7 +195,10 @@ export function Menu({ label, items, align = 'end', className, children }: Props
                 closeMenu(false);
                 item.onClick?.();
               };
-              const classes = `${ITEM_BASE} focus:outline-none ${tone}`;
+              const itemClasses = menuItemClass({
+                tone: danger ? 'danger' : 'default',
+                disabled: item.disabled,
+              });
 
               if (item.href && !item.disabled) {
                 return (
@@ -212,7 +208,7 @@ export function Menu({ label, items, align = 'end', className, children }: Props
                     href={item.href}
                     tabIndex={-1}
                     onClick={handle}
-                    className={classes}
+                    className={itemClasses}
                   >
                     {content}
                   </a>
@@ -226,7 +222,7 @@ export function Menu({ label, items, align = 'end', className, children }: Props
                   disabled={item.disabled}
                   tabIndex={-1}
                   onClick={handle}
-                  className={classes}
+                  className={itemClasses}
                 >
                   {content}
                 </button>

@@ -29,15 +29,3 @@ export function Card({ padding = 'md', className, children, ...rest }: Props) {
     </div>
   );
 }
-
-/** Card with a dashed border — the "nothing here yet" empty-state shell. */
-export function EmptyCard({ className, children, ...rest }: HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cardClass('none', `border-dashed py-12 text-center ${className ?? ''}`)}
-      {...rest}
-    >
-      {children}
-    </div>
-  );
-}

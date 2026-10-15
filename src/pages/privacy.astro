@@ -1,0 +1,110 @@
+---
+import ContentPage from '../layouts/ContentPage.astro';
+import { Notice } from '../components/react/ui/notice';
+---
+
+<ContentPage
+  title="Kebijakan Privasi | Notain"
+  description="Kebijakan privasi Notain: data apa yang dikumpulkan, bagaimana dipakai, dan hak kamu atas datanya."
+>
+  <p class="text-eyebrow uppercase text-muted">Legal</p>
+  <h1 class="text-title">Kebijakan Privasi</h1>
+  <p class="mt-3 text-base text-muted">Terakhir diperbarui: 15 Oktober 2026</p>
+
+  <div class="mt-6">
+    <Notice variant="warning">
+      Draf umum untuk pratinjau. Ganti dengan teks yang sudah direview pihak berwenang sebelum
+      peluncuran resmi.
+    </Notice>
+  </div>
+
+  <h2 class="text-section mt-10">1. Data yang kami kumpulkan</h2>
+  <ul class="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted">
+    <li>
+      <span class="font-medium text-foreground">Data akun:</span> nama, email, dan kata sandi
+      (disimpan terenkripsi di penyedia autentikasi kami).
+    </li>
+    <li>
+      <span class="font-medium text-foreground">Data usaha:</span> nama usaha, alamat, nomor
+      WhatsApp, dan logo yang kamu isi di pengaturan profil.
+    </li>
+    <li>
+      <span class="font-medium text-foreground">Data invoice:</span> nomor invoice, nama dan kontak
+      customer, detail barang atau jasa, harga, serta catatan yang kamu buat di aplikasi.
+    </li>
+    <li>
+      <span class="font-medium text-foreground">Data teknis:</span> log server standar seperti
+      alamat IP, jenis browser, dan waktu akses untuk keamanan serta diagnosis masalah.
+    </li>
+  </ul>
+
+  <h2 class="text-section mt-10">2. Cara kami memakai data</h2>
+  <ul class="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted">
+    <li>Menyediakan layanan: membuat, menghitung, menyimpan, dan menampilkan invoice kamu.</li>
+    <li>Mengirim email terkait akun, seperti verifikasi dan reset kata sandi.</li>
+    <li>Menjaga keamanan akun dan mencegah penyalahgunaan.</li>
+    <li>Meningkatkan aplikasi berdasarkan pola pemakaian yang tidak mengidentifikasi individu.</li>
+  </ul>
+
+  <h2 class="text-section mt-10">3. Penyimpanan dan keamanan</h2>
+  <p class="mt-3 text-sm leading-relaxed text-muted">
+    Data disimpan di infrastruktur cloud Appwrite dengan enkripsi saat transit (HTTPS) dan kontrol
+    akses di sisi server. Draft invoice yang belum disimpan bisa disimpan sementara di browser kamu
+    (localStorage) supaya tidak hilang saat halaman dimuat ulang.
+  </p>
+
+  <h2 class="text-section mt-10">4. Berbagi data</h2>
+  <ul class="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted">
+    <li>Kami tidak menjual atau menyewakan data kamu ke pihak lain.</li>
+    <li>
+      Pengiriman lewat WhatsApp terjadi di perangkat kamu: tombol kirim membuka WhatsApp dengan isi
+      pesan yang kamu pilih, dan dikirim langsung oleh kamu ke customer.
+    </li>
+    <li>
+      Data hanya dibagikan ke penyedia infrastruktur yang menjalankan layanan (hosting, database,
+      autentikasi), dan hanya seperlunya.
+    </li>
+  </ul>
+
+  <h2 class="text-section mt-10">5. Hak kamu</h2>
+  <ul class="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-muted">
+    <li>Mengubah info akun dan usaha kapan saja lewat halaman pengaturan.</li>
+    <li>Menghapus invoice dan customer yang kamu buat.</li>
+    <li>Meminta penghapusan akun beserta datanya lewat kontak di bawah.</li>
+  </ul>
+
+  <h2 class="text-section mt-10">6. Cookie dan penyimpanan lokal</h2>
+  <p class="mt-3 text-sm leading-relaxed text-muted">
+    Notain memakai cookie untuk status login dan localStorage untuk draft otomatis serta preferensi
+    tampilan. Tidak ada cookie iklan atau pelacak pihak ketiga di aplikasi ini.
+  </p>
+
+  <h2 class="text-section mt-10">7. Perubahan kebijakan</h2>
+  <p class="mt-3 text-sm leading-relaxed text-muted">
+    Kebijakan ini bisa diperbarui sewaktu-waktu dengan pencatatan tanggal di atas halaman. Kalau
+    perubahan berdampak besar, kami beritahukan lewat email atau pemberitahuan di aplikasi.
+  </p>
+
+  <h2 class="text-section mt-10">8. Kontak</h2>
+  <p class="mt-3 text-sm leading-relaxed text-muted">
+    Pertanyaan soal privasi atau permintaan hapus data? Email kami di
+    <a
+      href="mailto:halo@notain.my.id"
+      class="font-medium text-foreground underline underline-offset-2"
+    >
+      halo@notain.my.id
+    </a>
+    .
+  </p>
+
+  <p class="mt-10 text-sm text-muted">
+    Baca juga
+    <a
+      href="/terms"
+      class="font-medium text-foreground underline underline-offset-2 hover:text-muted"
+    >
+      Syarat &amp; Ketentuan
+    </a>
+    .
+  </p>
+</ContentPage>

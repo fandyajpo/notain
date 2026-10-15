@@ -148,12 +148,17 @@ export async function mergeCustomers(input: {
  * Records the customer an invoice was issued to, reusing the row that already
  * stands for the same person.
  *
- * Called on every invoice save. Identity is email AND phone (both folded), so
- * `0812…` and `+62812…` are one entry, while a contact that shares only an email
- * or only a phone with an existing row is a different person.
+ * Called on every invoice save. A row is matched in two steps:
  *
- * When a match is found the two are merged: empty fields on the existing row
- * are filled from the incoming draft, and fields it already has are kept.
+ * 1. Exact identity — same folded email AND phone (so `0812…` and `+62812…`
+ *    are one entry), which also catches a renamed spelling of the same person.
+ * 2. Same name, case-insensitive — "Budi" with a new phone number updates the
+ *    row that already represents Budi instead of filing a second one. The
+ *    directory is a picker aid: one name is one person there.
+ *
+ * On a match, a non-empty field in the draft overwrites the stored value (the
+ * number the user just typed is the freshest one); an empty field never erases
+ * stored data. `lastUsedAt` is stamped from the invoice's own timestamp.
  *
  * Returns `null` when there is nothing worth recording, so a draft with no
  * customer name yet never creates an unlabelled row.
@@ -176,10 +181,18 @@ export async function rememberCustomer(
   // account has at most a few hundred customers, so the transfer is cheap and
   // the identity check stays in one place.
   const all = await container.customers.listByOwner(user.id);
-  const existing = all.find((row) => isSameCustomer(row, customer));
+  // Sorted newest-first by `lastUsedAt`, so among several same-name rows the
+  // most recently used one absorbs the update.
+  const existing =
+    all.find((row) => isSameCustomer(row, customer)) ??
+    all.find((row) => row.name.trim().toLowerCase() === customer.name.toLowerCase());
 
   if (existing) {
-    const merged = mergeCustomer(existing, customer);
+    const merged: CustomerDraft = {
+      name: existing.name.trim() || customer.name,
+      email: customer.email || existing.email,
+      phone: customer.phone || existing.phone,
+    };
     return container.customers.update({ id: existing.id, customer: merged, lastUsedAt });
   }
 

@@ -3,12 +3,14 @@ import { AppwriteAuthRepository } from './appwrite-auth-repository';
 import { AppwriteCustomerRepository } from './appwrite-customer-repository';
 import { AppwriteInvoiceRepository } from './appwrite-invoice-repository';
 import { AppwriteProfileRepository } from './appwrite-profile-repository';
+import { AppwriteStatsRepository } from './appwrite-stats-repository';
 import { AppwriteTemplateRepository } from './appwrite-template-repository';
 import type { AssetRepository } from '../ports/asset-repository';
 import type { AuthRepository } from '../ports/auth-repository';
 import type { CustomerRepository } from '../ports/customer-repository';
 import type { InvoiceRepository } from '../ports/invoice-repository';
 import type { ProfileRepository } from '../ports/profile-repository';
+import type { StatsRepository } from '../ports/stats-repository';
 import type { TemplateRepository } from '../ports/template-repository';
 
 /**
@@ -21,6 +23,7 @@ export const container = {
   profiles: new AppwriteProfileRepository(),
   templates: new AppwriteTemplateRepository(),
   customers: new AppwriteCustomerRepository(),
+  stats: new AppwriteStatsRepository(),
   assets: new R2AssetRepository(),
 } satisfies {
   auth: AuthRepository;
@@ -28,6 +31,7 @@ export const container = {
   profiles: ProfileRepository;
   templates: TemplateRepository;
   customers: CustomerRepository;
+  stats: StatsRepository;
   assets: AssetRepository;
 };
 

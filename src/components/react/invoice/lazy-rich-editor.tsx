@@ -2,6 +2,7 @@ import { lazy, Suspense, useState, type ComponentType } from 'react';
 import { toast } from '../../../lib/ui/toast';
 import { Button } from '../ui/button';
 import { ErrorBoundary } from '../ui/error-boundary';
+import { Notice } from '../ui/notice';
 
 type Props = {
   label: string;
@@ -90,29 +91,28 @@ function EditorLoadError({
   onGiveUp,
 }: EditorLoadErrorProps) {
   return (
-    <div role="alert" className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1.5">
       <span className="text-sm font-medium text-foreground">{label}</span>
-      <div
-        className="flex flex-col items-start gap-3 rounded-control border border-danger/40 bg-danger-soft p-4"
-        style={{ minHeight: minHeight + 36 }}
-      >
-        <p className="text-sm text-danger">
-          Editor teks gagal dimuat. Invoice kamu tidak hilang; bagian lain tetap bisa diisi.
-        </p>
-        <div className="flex gap-2">
-          <Button size="sm" onClick={onRetry}>
-            Coba lagi
-          </Button>
-          <Button size="sm" variant="ghost" onClick={onGiveUp}>
-            Lewati
-          </Button>
-        </div>
-        {import.meta.env.DEV && (
-          <p className="break-all text-xs text-muted" title={error.message}>
-            {error.message}
+      <Notice style={{ minHeight: minHeight + 36 }}>
+        <div className="flex flex-col items-start gap-3">
+          <p>
+            Editor teks gagal dimuat. Invoice kamu tidak hilang; bagian lain tetap bisa diisi.
           </p>
-        )}
-      </div>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={onRetry}>
+              Coba lagi
+            </Button>
+            <Button size="sm" variant="ghost" onClick={onGiveUp}>
+              Lewati
+            </Button>
+          </div>
+          {import.meta.env.DEV && (
+            <p className="break-all text-xs text-muted" title={error.message}>
+              {error.message}
+            </p>
+          )}
+        </div>
+      </Notice>
     </div>
   );
 }

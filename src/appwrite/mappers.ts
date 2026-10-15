@@ -17,6 +17,7 @@ import { DEFAULT_THEME } from '../core/template/model';
 import { invoiceTemplateShapeSchema } from '../core/template/schema';
 import type { Customer } from '../core/customer/model';
 import { customerShapeSchema } from '../core/customer/schema';
+import { toCounts, type DashboardStats, type StatsCounts } from '../core/stats/model';
 
 /** Row shape returned by the `invoices` table. */
 export type InvoiceRow = Models.Row &
@@ -29,6 +30,7 @@ export type InvoiceRow = Models.Row &
     status: string;
     customerName: string;
     customerPhone: string | null;
+    customerEmail: string | null;
     items: string;
     discountType: AdjustmentType;
     discountValue: number;
@@ -74,6 +76,18 @@ export type CustomerRow = Models.Row &
     email: string | null;
     phone: string | null;
     lastUsedAt: string | null;
+  };
+
+/** Row shape returned by the `stats` table (dashboard counters cache). */
+export type StatsRow = Models.Row &
+  Record<string, unknown> & {
+    ownerId: string;
+    totalInvoices: number | null;
+    sentCount: number | null;
+    paidCount: number | null;
+    voidCount: number | null;
+    totalCustomers: number | null;
+    totalTemplates: number | null;
   };
 
 function optionalString(value: unknown): string | undefined {
@@ -138,6 +152,7 @@ export function invoiceRowToDomain(row: InvoiceRow): Invoice {
     status: parseInvoiceStatus(row.status),
     customerName: row.customerName,
     customerPhone: optionalString(row.customerPhone),
+    customerEmail: optionalString(row.customerEmail),
     items: parseInvoiceItems(row.items),
     discount: toAdjustment(row.discountType, row.discountValue),
     tax: toAdjustment(row.taxType, row.taxValue),
@@ -158,6 +173,7 @@ export function draftToRowData(draft: InvoiceDraft): Record<string, unknown> {
     status: draft.status,
     customerName: draft.customerName,
     customerPhone: draft.customerPhone ?? null,
+    customerEmail: draft.customerEmail ?? null,
     items: JSON.stringify(draft.items),
     discountType: draft.discount.type,
     discountValue: draft.discount.value,
@@ -286,9 +302,7 @@ export function customerRowToDomain(row: CustomerRow): Customer {
     lastUsedAt: row.lastUsedAt,
   });
 
-  const shape = parsed.success
-    ? parsed.data
-    : { name: '', email: '', phone: '', lastUsedAt: '' };
+  const shape = parsed.success ? parsed.data : { name: '', email: '', phone: '', lastUsedAt: '' };
 
   return {
     id: row.$id,
@@ -324,9 +338,35 @@ export function invoiceHistoryRowToEntry(row: InvoiceRow): InvoiceHistoryEntry {
   return {
     customerName: typeof row.customerName === 'string' ? row.customerName : '',
     customerPhone: optionalString(row.customerPhone),
+    customerEmail: optionalString(row.customerEmail),
     items: parseInvoiceItems(row.items),
     date: typeof row.date === 'string' ? row.date : '',
     createdAt: row.$createdAt,
     updatedAt: row.$updatedAt,
+  };
+}
+
+/**
+ * Reads a `stats` row back. A missing or corrupt counter degrades to 0 —
+ * the row is a cache, and the next refresh recomputes the real number.
+ */
+export function statsRowToDomain(row: StatsRow): DashboardStats {
+  return {
+    id: row.$id,
+    ownerId: typeof row.ownerId === 'string' ? row.ownerId : '',
+    ...toCounts(row),
+    updatedAt: typeof row.$updatedAt === 'string' ? row.$updatedAt : '',
+  };
+}
+
+/** Serializes the counters into the flat column payload expected by the table. */
+export function statsToRowData(counts: StatsCounts): Record<string, number> {
+  return {
+    totalInvoices: counts.totalInvoices,
+    sentCount: counts.sentCount,
+    paidCount: counts.paidCount,
+    voidCount: counts.voidCount,
+    totalCustomers: counts.totalCustomers,
+    totalTemplates: counts.totalTemplates,
   };
 }

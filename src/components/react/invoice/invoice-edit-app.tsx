@@ -1,13 +1,15 @@
+import { FileText } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
 import { Button } from '../ui/button';
-import { Card } from '../ui/card';
+import { EmptyState, ErrorState, LoadingState } from '../ui/state';
 import { InvoiceBuilder } from './invoice-builder';
 import { useInvoice } from '../../../lib/query/hooks/use-invoices';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
 import { invoiceIdFromLocation } from '../../../lib/edit-route';
 import { EMPTY_PROFILE } from '../../../core/profile/model';
+import { ERROR_CODES, isAppError } from '../../../core/shared/errors';
 
 /**
  * `/invoice/<id>` — edits an existing invoice. The site is fully static, so the
@@ -33,7 +35,8 @@ function readInvoiceId(): string | undefined {
 }
 
 function InvoiceEditContent({ invoiceId }: { invoiceId: string | undefined }) {
-  const { data: invoice, isLoading, isError, isFetching, refetch } = useInvoice(invoiceId);
+  const { data: invoice, isLoading, isError, isFetching, refetch, error } =
+    useInvoice(invoiceId);
   const { data: profile } = useProfile();
 
   if (!invoiceId) {
@@ -41,28 +44,26 @@ function InvoiceEditContent({ invoiceId }: { invoiceId: string | undefined }) {
   }
 
   if (isLoading) {
-    return (
-      <Card padding="none" className="px-6 py-10 text-center text-sm text-muted">
-        Memuat invoice…
-      </Card>
-    );
+    return <LoadingState label="Memuat invoice…" />;
   }
+
+  // A definitive 404 IS the answer — the invoice is gone, and retrying will
+  // never change that. Only genuine failures (offline, 5xx) get the retry state.
+  const notFound = isAppError(error) && error.code === ERROR_CODES.NOT_FOUND;
 
   // A failed fetch is not a missing invoice — offer a retry rather than
   // claiming the invoice was deleted or belongs to another account.
-  if (isError && !invoice) {
+  if (isError && !invoice && !notFound) {
     return (
-      <Card padding="none" className="px-6 py-14 text-center">
-        <p className="text-base font-semibold text-danger">Gagal memuat invoice</p>
-        <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
-          Periksa koneksi internet kamu, lalu coba lagi. Data kamu tidak hilang.
-        </p>
-        <div className="mt-6 flex justify-center">
+      <ErrorState
+        title="Gagal memuat invoice"
+        message="Periksa koneksi internet kamu, lalu coba lagi. Data kamu tidak hilang."
+        action={
           <Button loading={isFetching} onClick={() => void refetch()}>
             Coba lagi
           </Button>
-        </div>
-      </Card>
+        }
+      />
     );
   }
 
@@ -84,12 +85,11 @@ function InvoiceEditContent({ invoiceId }: { invoiceId: string | undefined }) {
 
 function NotFound({ message }: { message: string }) {
   return (
-    <Card padding="none" className="px-6 py-14 text-center">
-      <p className="text-base font-semibold">Invoice tidak ditemukan</p>
-      <p className="mx-auto mt-2 max-w-sm text-sm text-muted">{message}</p>
-      <div className="mt-6 flex justify-center">
-        <Button href="/dashboard">Kembali ke dashboard</Button>
-      </div>
-    </Card>
+    <EmptyState
+      icon={FileText}
+      title="Invoice tidak ditemukan"
+      description={message}
+      action={<Button href="/dashboard">Kembali ke dashboard</Button>}
+    />
   );
 }

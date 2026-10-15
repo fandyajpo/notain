@@ -15,9 +15,11 @@ export function FinaleCta() {
           transition={{ duration: 0.7, ease: EASE }}
           className="relative overflow-hidden rounded-card p-px"
         >
+          {/* The rotating ring: accent-tinted alpha stops (color-mix keeps the
+              gradient on-token) so the border sweeps from faint to full accent. */}
           <motion.span
             aria-hidden="true"
-            className="absolute left-1/2 top-1/2 block size-[170%] bg-[conic-gradient(from_0deg,rgb(37_99_235_/_0.06),rgb(37_99_235_/_0.65),rgb(191_219_254_/_0.45),rgb(37_99_235_/_0.06))] will-change-transform"
+            className="absolute left-1/2 top-1/2 block size-[170%] bg-[conic-gradient(from_0deg,color-mix(in_srgb,var(--color-accent)_6%,transparent),color-mix(in_srgb,var(--color-accent)_65%,transparent),color-mix(in_srgb,var(--color-accent)_15%,transparent),color-mix(in_srgb,var(--color-accent)_6%,transparent))] will-change-transform"
             initial={{ x: '-50%', y: '-50%', rotate: 0 }}
             animate={{ x: '-50%', y: '-50%', rotate: 360 }}
             transition={{ duration: 11, repeat: Infinity, ease: 'linear' }}
@@ -41,7 +43,7 @@ export function FinaleCta() {
             >
               <MagneticButton
                 href="/register"
-                className="group inline-flex h-12 items-center gap-2 rounded-control bg-accent px-5 text-base font-medium text-accent-foreground shadow-[0_12px_32px_-14px_rgb(37_99_235_/_0.9)] transition-colors hover:bg-accent/90 focus-ring"
+                className="group inline-flex h-12 items-center gap-2 rounded-control bg-accent px-5 text-base font-medium text-accent-foreground shadow-accent transition-colors hover:bg-accent/90 focus-ring"
               >
                 Buat Invoice Gratis
                 <ArrowRight

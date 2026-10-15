@@ -7,9 +7,12 @@ import {
   templateRowToDomain,
   customerRowToDomain,
   customerToRowData,
+  statsRowToDomain,
+  statsToRowData,
   type InvoiceRow,
   type TemplateRow,
   type CustomerRow,
+  type StatsRow,
 } from './mappers';
 
 const item = (over: Record<string, unknown> = {}) => ({
@@ -207,5 +210,82 @@ describe('customerToRowData', () => {
     );
     expect(row.email).toBe('budi@mail.com');
     expect(row.phone).toBe('0812');
+  });
+});
+
+describe('statsRowToDomain', () => {
+  const statsRow = (over: Partial<StatsRow> = {}): StatsRow =>
+    ({
+      $id: 'stats-1',
+      $createdAt: '2026-10-10T00:00:00.000+00:00',
+      $updatedAt: '2026-10-11T08:30:00.000+00:00',
+      ownerId: 'user-1',
+      totalInvoices: 12,
+      sentCount: 5,
+      paidCount: 4,
+      voidCount: 1,
+      totalCustomers: 7,
+      totalTemplates: 3,
+      ...over,
+    }) as StatsRow;
+
+  it('reads the counters and row identity back', () => {
+    expect(statsRowToDomain(statsRow())).toEqual({
+      id: 'stats-1',
+      ownerId: 'user-1',
+      totalInvoices: 12,
+      sentCount: 5,
+      paidCount: 4,
+      voidCount: 1,
+      totalCustomers: 7,
+      totalTemplates: 3,
+      updatedAt: '2026-10-11T08:30:00.000+00:00',
+    });
+  });
+
+  it('degrades a null or corrupt counter to 0 — the next refresh recomputes it', () => {
+    const parsed = statsRowToDomain(
+      statsRow({
+        sentCount: null,
+        paidCount: -3 as unknown as number,
+        totalCustomers: 'x' as unknown as number,
+      }),
+    );
+
+    expect(parsed.sentCount).toBe(0);
+    expect(parsed.paidCount).toBe(0);
+    expect(parsed.totalCustomers).toBe(0);
+    expect(parsed.totalInvoices).toBe(12);
+  });
+
+  it('keeps a genuinely empty row (all zeros) intact', () => {
+    const parsed = statsRowToDomain(
+      statsRow({ totalInvoices: 0, sentCount: 0, paidCount: 0, voidCount: 0 }),
+    );
+
+    expect(parsed.totalInvoices).toBe(0);
+    expect(parsed.updatedAt).toBe('2026-10-11T08:30:00.000+00:00');
+  });
+});
+
+describe('statsToRowData', () => {
+  it('serializes exactly the six counter columns', () => {
+    expect(
+      statsToRowData({
+        totalInvoices: 12,
+        sentCount: 5,
+        paidCount: 4,
+        voidCount: 1,
+        totalCustomers: 7,
+        totalTemplates: 3,
+      }),
+    ).toEqual({
+      totalInvoices: 12,
+      sentCount: 5,
+      paidCount: 4,
+      voidCount: 1,
+      totalCustomers: 7,
+      totalTemplates: 3,
+    });
   });
 });

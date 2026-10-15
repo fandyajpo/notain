@@ -138,7 +138,7 @@ export class AppwriteInvoiceRepository implements InvoiceRepository {
       // sections are the bulkiest columns in the table and the picker never
       // looks at them; leaving them behind server-side is what makes this
       // fetch a fraction of the full-row payload.
-      Query.select(['customerName', 'customerPhone', 'items', 'date']),
+      Query.select(['customerName', 'customerPhone', 'customerEmail', 'items', 'date']),
       Query.orderDesc('date'),
       Query.orderDesc('$createdAt'),
       Query.limit(limit),

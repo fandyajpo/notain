@@ -1,34 +1,9 @@
 import { CircleAlert } from 'lucide-react';
 import { cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from 'react';
 
-type ControlProps = {
-  invalid?: boolean;
-  /** Multi-line controls (textarea) drop the fixed height and grow instead. */
-  multiline?: boolean;
-  className?: string;
-};
-
-/**
- * Shared surface for every text-like control so styles stay in one place.
- * Mirrors the Astro twin in `lib/ui/field.ts` — change one, change both.
- */
-export function controlClass({
-  invalid = false,
-  multiline = false,
-  className = '',
-}: ControlProps = {}): string {
-  return [
-    'w-full rounded-control border bg-card px-3.5 text-sm text-foreground shadow-card',
-    'transition-colors placeholder:text-muted focus-ring',
-    invalid ? 'border-danger' : 'border-border',
-    'disabled:cursor-not-allowed disabled:bg-background disabled:text-muted disabled:shadow-none',
-    'read-only:cursor-default read-only:bg-background',
-    multiline ? 'min-h-24 resize-y py-2.5 leading-relaxed' : 'h-11',
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
-}
+// Single source lives in `lib/ui/classes.ts`; re-exported here so existing
+// `import { controlClass } from './field'` callers keep working.
+export { controlClass } from '../../../lib/ui/classes';
 
 type FieldShellProps = {
   label: string;

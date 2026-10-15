@@ -25,6 +25,8 @@ import {
 import { Button } from '../ui/button';
 import { FieldShell, useFieldIds } from '../ui/field';
 import { Input } from '../ui/input';
+import { Notice } from '../ui/notice';
+import { LoadingState } from '../ui/state';
 import { Turnstile } from './turnstile';
 
 type Mode = 'sign-in' | 'sign-up' | 'forgot-password' | 'reset-password';
@@ -54,11 +56,7 @@ export function AuthForm({ mode, redirectTo = DEFAULT_REDIRECT }: Props) {
   }, [isLoading, session, redirectTarget]);
 
   if (isLoading || session) {
-    return (
-      <p className="rounded-control border border-border bg-card px-4 py-3 text-center text-sm text-muted">
-        Memeriksa sesi…
-      </p>
-    );
+    return <LoadingState label="Memeriksa sesi…" />;
   }
 
   return mode === 'sign-up' ? (
@@ -334,14 +332,11 @@ function ForgotPasswordForm() {
 
   if (sent) {
     return (
-      <div className="flex flex-col gap-5">
-        <div
-          role="status"
-          className="rounded-control border border-accent/25 bg-accent-soft px-4 py-3 text-sm font-medium text-accent"
-        >
+      <div className="flex flex-col gap-6">
+        <Notice variant="accent">
           Tautan reset sudah dikirim ke <span className="font-semibold">{sent}</span>. Cek inbox
           (dan folder spam) kamu, lalu ikuti tautan di email untuk ganti kata sandi.
-        </div>
+        </Notice>
         <p className="text-center text-sm text-muted">
           <a
             href="/login"
@@ -421,13 +416,10 @@ function ResetPasswordForm() {
 
   if (done) {
     return (
-      <div className="flex flex-col gap-5">
-        <div
-          role="status"
-          className="rounded-control border border-accent/25 bg-accent-soft px-4 py-3 text-sm font-medium text-accent"
-        >
+      <div className="flex flex-col gap-6">
+        <Notice variant="accent">
           Kata sandi berhasil diganti. Masuk dengan kata sandi barumu ya.
-        </div>
+        </Notice>
         <Button full size="lg" onClick={() => window.location.assign('/login')}>
           Masuk sekarang
         </Button>
@@ -437,14 +429,11 @@ function ResetPasswordForm() {
 
   if (!tokens.userId || !tokens.secret) {
     return (
-      <div className="flex flex-col gap-5">
-        <p
-          role="alert"
-          className="rounded-control border border-danger/25 bg-danger-soft px-4 py-3 text-sm font-medium text-danger"
-        >
+      <div className="flex flex-col gap-6">
+        <Notice variant="danger">
           Tautan reset tidak lengkap atau sudah tidak berlaku. Minta tautan baru lewat halaman lupa
           password.
-        </p>
+        </Notice>
         <Button full size="lg" onClick={() => window.location.assign('/forgot-password')}>
           Minta tautan baru
         </Button>
@@ -521,21 +510,14 @@ function FormShell({
 }: FormShellProps) {
   return (
     <form
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-6"
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit();
       }}
     >
-      {serverError && (
-        <p
-          role="alert"
-          className="rounded-control border border-danger/25 bg-danger-soft px-4 py-3 text-sm font-medium text-danger"
-        >
-          {serverError}
-        </p>
-      )}
+      {serverError && <Notice variant="danger">{serverError}</Notice>}
 
       {fields}
 

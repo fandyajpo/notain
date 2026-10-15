@@ -20,10 +20,10 @@ type Props = {
 /**
  * React side of the Vue picker.
  *
- * Customers come from the `customers` directory, which is written to every
- * time an invoice is saved. History still contributes: an account that predates
- * the directory would otherwise show an empty picker, so anything that appears
- * in an invoice but was never filed is offered after the saved rows.
+ * Customers come from the `customers` directory — the picker searches that
+ * list and nothing else, so one stored person is one option. An account that
+ * predates the directory (no stored rows at all) still gets suggestions
+ * derived from invoice history until its first save fills the directory.
  * Products have no directory of their own and stay derived from history.
  */
 export function Picker({ mode, label, placeholder, onPick }: Props) {

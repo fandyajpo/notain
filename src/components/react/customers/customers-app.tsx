@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react';
-import { Check, Merge, Pencil, Plus, Search, Trash2, Users, X } from 'lucide-react';
+import { Check, Merge, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
 import { Button } from '../ui/button';
-import { Card, cardClass, EmptyCard } from '../ui/card';
+import { cardClass } from '../ui/card';
 import { Modal } from '../ui/modal';
 import { PageHeader } from '../ui/page-header';
 import { FieldShell, useFieldIds } from '../ui/field';
 import { Input } from '../ui/input';
+import { SearchField } from '../ui/search-field';
+import { EmptyState, ErrorState, LoadingState } from '../ui/state';
 import { usePageTour } from '../../../lib/tour/use-tour';
 import {
   useCreateCustomer,
@@ -290,80 +292,68 @@ function CustomersContent() {
         }}
         className={cardClass('sm', 'flex flex-col gap-4 sm:flex-row sm:items-end')}
       >
-        <div className="flex flex-1 flex-col gap-1.5">
-          <label htmlFor={nameIds.id} className="text-sm font-medium text-foreground">
-            Nama <span className="text-danger">*</span>
-          </label>
-          <Input
-            id={nameIds.id}
-            value={name}
-            onChange={(event) => {
-              setName(event.target.value);
-              if (createFieldErrors.name) setCreateFieldErrors((rest) => ({ ...rest, name: '' }));
-            }}
-            placeholder="Budi Santoso"
-            autoComplete="off"
-            invalid={Boolean(createFieldErrors.name)}
-            aria-invalid={createFieldErrors.name ? 'true' : undefined}
-            aria-describedby={createFieldErrors.name ? nameIds.errorId : undefined}
-          />
-          {createFieldErrors.name && (
-            <p id={nameIds.errorId} role="alert" className="text-xs font-medium text-danger">
-              {createFieldErrors.name}
-            </p>
-          )}
+        <div className="flex-1">
+          <FieldShell
+            label="Nama"
+            htmlFor={nameIds.id}
+            required
+            error={createFieldErrors.name || undefined}
+          >
+            <Input
+              id={nameIds.id}
+              value={name}
+              onChange={(event) => {
+                setName(event.target.value);
+                if (createFieldErrors.name) setCreateFieldErrors((rest) => ({ ...rest, name: '' }));
+              }}
+              placeholder="Budi Santoso"
+              autoComplete="off"
+              invalid={Boolean(createFieldErrors.name)}
+              aria-invalid={createFieldErrors.name ? 'true' : undefined}
+            />
+          </FieldShell>
         </div>
-        <div className="flex flex-1 flex-col gap-1.5">
-          <label htmlFor={emailIds.id} className="text-sm font-medium text-foreground">
-            Email
-          </label>
-          <Input
-            id={emailIds.id}
-            value={email}
-            onChange={(event) => {
-              setEmail(event.target.value);
-              if (createFieldErrors.email) {
-                setCreateFieldErrors((rest) => ({ ...rest, email: '' }));
-              }
-            }}
-            placeholder="budi@email.com"
-            autoComplete="off"
-            inputMode="email"
-            invalid={Boolean(createFieldErrors.email)}
-            aria-invalid={createFieldErrors.email ? 'true' : undefined}
-            aria-describedby={createFieldErrors.email ? emailIds.errorId : undefined}
-          />
-          {createFieldErrors.email && (
-            <p id={emailIds.errorId} role="alert" className="text-xs font-medium text-danger">
-              {createFieldErrors.email}
-            </p>
-          )}
+        <div className="flex-1">
+          <FieldShell label="Email" htmlFor={emailIds.id} error={createFieldErrors.email || undefined}>
+            <Input
+              id={emailIds.id}
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                if (createFieldErrors.email) {
+                  setCreateFieldErrors((rest) => ({ ...rest, email: '' }));
+                }
+              }}
+              placeholder="budi@email.com"
+              autoComplete="off"
+              inputMode="email"
+              invalid={Boolean(createFieldErrors.email)}
+              aria-invalid={createFieldErrors.email ? 'true' : undefined}
+            />
+          </FieldShell>
         </div>
-        <div className="flex flex-1 flex-col gap-1.5">
-          <label htmlFor={phoneIds.id} className="text-sm font-medium text-foreground">
-            WhatsApp
-          </label>
-          <Input
-            id={phoneIds.id}
-            value={phone}
-            onChange={(event) => {
-              setPhone(event.target.value);
-              if (createFieldErrors.phone) {
-                setCreateFieldErrors((rest) => ({ ...rest, phone: '' }));
-              }
-            }}
-            placeholder="0812…"
-            autoComplete="off"
-            inputMode="tel"
-            invalid={Boolean(createFieldErrors.phone)}
-            aria-invalid={createFieldErrors.phone ? 'true' : undefined}
-            aria-describedby={createFieldErrors.phone ? phoneIds.errorId : undefined}
-          />
-          {createFieldErrors.phone && (
-            <p id={phoneIds.errorId} role="alert" className="text-xs font-medium text-danger">
-              {createFieldErrors.phone}
-            </p>
-          )}
+        <div className="flex-1">
+          <FieldShell
+            label="WhatsApp"
+            htmlFor={phoneIds.id}
+            error={createFieldErrors.phone || undefined}
+          >
+            <Input
+              id={phoneIds.id}
+              value={phone}
+              onChange={(event) => {
+                setPhone(event.target.value);
+                if (createFieldErrors.phone) {
+                  setCreateFieldErrors((rest) => ({ ...rest, phone: '' }));
+                }
+              }}
+              placeholder="0812…"
+              autoComplete="off"
+              inputMode="tel"
+              invalid={Boolean(createFieldErrors.phone)}
+              aria-invalid={createFieldErrors.phone ? 'true' : undefined}
+            />
+          </FieldShell>
         </div>
         <Button
           type="submit"
@@ -379,60 +369,42 @@ function CustomersContent() {
       <CustomerImportPanel />
 
       {isLoading ? (
-        <Card padding="none" className="px-4 py-10 text-center text-sm text-muted">
-          Memuat customer…
-        </Card>
+        <LoadingState label="Memuat customer…" />
       ) : isError && !customers ? (
         // A failed load must not masquerade as "Belum ada customer" — copy the
         // invoice table's two-state handling: full error + retry when empty,
         // stale rows when we still have them.
-        <div
-          role="alert"
-          className="rounded-card border border-danger/25 bg-danger-soft px-6 py-12 text-center"
-        >
-          <p className="text-base font-semibold text-danger">Gagal memuat customer</p>
-          <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
-            Periksa koneksi internet kamu, lalu coba lagi.
-          </p>
-          <div className="mt-5 flex justify-center">
+        <ErrorState
+          title="Gagal memuat customer"
+          message="Periksa koneksi internet kamu, lalu coba lagi."
+          action={
             <Button size="sm" loading={isFetching} onClick={() => void refetch()}>
               Coba lagi
             </Button>
-          </div>
-        </div>
+          }
+        />
       ) : !customers || customers.length === 0 ? (
-        <EmptyCard>
-          <Users size={24} className="mx-auto text-muted" aria-hidden="true" />
-          <p className="mt-2 font-medium">Belum ada customer</p>
-          <p className="mt-1 text-sm text-muted">
-            Tambahkan lewat form di atas, atau simpan invoice.
-          </p>
-        </EmptyCard>
+        <EmptyState
+          icon={Users}
+          title="Belum ada customer"
+          description="Tambahkan lewat form di atas, atau simpan invoice."
+        />
       ) : (
         <div className="flex flex-col gap-3">
-          <div className="relative w-full sm:max-w-xs">
-            <Search
-              size={15}
-              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted"
-              aria-hidden="true"
-            />
+          <div className="w-full sm:max-w-xs">
             <label htmlFor={searchIds.id} className="sr-only">
               Cari customer
             </label>
-            <Input
+            <SearchField
               id={searchIds.id}
-              type="search"
               value={query}
               placeholder="Cari nama, email, atau nomor…"
-              className="h-10 pr-3 pl-9"
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={setQuery}
             />
           </div>
 
           {filtered.length === 0 ? (
-            <Card padding="none" className="px-4 py-10 text-center text-sm text-muted">
-              Tidak ada customer yang cocok.
-            </Card>
+            <EmptyState title="Tidak ada customer yang cocok." />
           ) : (
             <ul data-tour="cust-list" className={cardClass('none', 'flex flex-col divide-y divide-border')}>
               {filtered.map((customer) => (

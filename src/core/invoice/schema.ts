@@ -117,6 +117,14 @@ export const invoiceDraftSchema = z
         message: 'Masukkan nomor WhatsApp customer yang valid.',
       })
       .transform((value) => value || undefined),
+    // Optional contact from the directory. Length-bounded only, mirroring
+    // customerDraftSchema — an imperfect address is not worth blocking a save.
+    customerEmail: z
+      .string()
+      .trim()
+      .max(INVOICE_LIMITS.customerEmail, 'Email customer terlalu panjang.')
+      .optional()
+      .transform((value) => value || undefined),
     discount: invoiceAdjustmentSchema,
     tax: invoiceAdjustmentSchema,
     items: z
@@ -177,6 +185,7 @@ export const invoiceDraftShapeSchema = z.object({
   status: z.enum(INVOICE_STATUSES).catch('sent'),
   customerName: z.string().max(INVOICE_LIMITS.customerName),
   customerPhone: z.string().max(INVOICE_LIMITS.customerPhone).optional().catch(undefined),
+  customerEmail: z.string().max(INVOICE_LIMITS.customerEmail).optional().catch(undefined),
   discount: invoiceAdjustmentSchema,
   tax: invoiceAdjustmentSchema,
   items: z.array(invoiceItemShapeSchema).max(INVOICE_LIMITS.maxItems),

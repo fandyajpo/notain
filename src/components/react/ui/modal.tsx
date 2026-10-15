@@ -2,18 +2,19 @@ import { X } from 'lucide-react';
 import { useEffect, useId, type ReactNode } from 'react';
 import { Button } from './button';
 
-type Size = 'sm' | 'md' | 'lg';
+type Size = 'sm' | 'md' | 'lg' | 'xl';
 
 const SIZE: Record<Size, string> = {
   sm: 'max-w-sm',
   md: 'max-w-md',
   lg: 'max-w-lg',
+  xl: 'max-w-3xl',
 };
 
-const HEADER = 'flex items-center justify-between gap-3 px-4 py-3 sm:px-5';
-const BODY = 'px-4 py-3 sm:px-5';
+const HEADER = 'flex items-center justify-between gap-3 px-5 py-4 sm:px-6';
+const BODY = 'px-5 py-4 sm:px-6';
 const FOOTER =
-  'flex flex-col gap-2 border-t border-border bg-background px-4 py-3 sm:flex-row sm:justify-end sm:px-5';
+  'flex flex-col gap-2 border-t border-border bg-background px-5 py-3.5 sm:flex-row sm:justify-end sm:px-6';
 
 /** One button in the standard footer row. */
 export type ModalAction = {
@@ -112,7 +113,7 @@ export function Modal({
     header ??
     (title ? (
       <>
-        <h2 id={titleId} className="text-sm font-semibold">
+        <h2 id={titleId} className="text-section">
           {title}
         </h2>
         {showClose && <CloseButton onClick={onClose} />}

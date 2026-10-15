@@ -1,6 +1,5 @@
 import type { InvoiceHistoryEntry } from '../../core/invoice/model';
 import type { Customer } from '../../core/customer/model';
-import { isSameCustomer } from '../../core/customer/model';
 
 /**
  * Derives picker suggestions from invoice history instead of a dedicated
@@ -75,17 +74,19 @@ export function derivePickerOptions(
     const name = invoice.customerName.trim();
     if (name) {
       const phone = (invoice.customerPhone ?? '').trim();
+      const email = (invoice.customerEmail ?? '').trim();
       const key = name.toLowerCase() + ' ' + phone;
       const existing = customers.get(key);
       if (existing) {
         existing.invoiceCount += 1;
         existing.lastUsedAt = usedAt;
+        if (email && !existing.email) existing.email = email;
       } else {
         customers.set(key, {
           kind: 'customer',
           label: name,
           name,
-          email: '',
+          email,
           phone,
           lastUsedAt: usedAt,
           invoiceCount: 1,
@@ -154,16 +155,17 @@ function topByRecency<T extends { lastUsedAt: string; label: string; invoiceCoun
 }
 
 /**
- * Folds the saved-customer directory into the suggestions.
+ * Folds the saved-customer directory into the picker suggestions.
  *
- * The directory is the source of truth for who exists, but it only starts
- * filling up from the moment it shipped — an account with a year of invoices
- * and no rows would show an empty picker. So stored customers lead, and any
- * customer that appears in history but was never filed is appended after them
- * rather than dropped.
+ * The directory is the only source of truth while it has rows. Merging invoice
+ * history back in on top of it is what used to surface the same person twice —
+ * once from the stored row, once derived from an older invoice under a
+ * different phone number.
  *
- * `derived` is expected to already be sorted newest-first, which is what
- * `derivePickerOptions` returns.
+ * History stays as a fallback for an account that predates the directory: with
+ * no stored rows at all, suggestions are derived from invoices so the picker is
+ * not empty for a long-time user. The first save files the customer, and from
+ * then on the directory answers alone.
  */
 export function mergeCustomerOptions(
   stored: readonly Customer[],
@@ -181,20 +183,5 @@ export function mergeCustomerOptions(
       invoiceCount: 0,
     }));
 
-  // A derived option that shares an email or phone with a stored customer is
-  // the same person and is skipped — the stored row already represents them.
-  const missing = derived.filter(
-    (option) => !filed.some((f) => isSameCustomer(f, option)),
-  );
-
-  // Deduplicate the combined list by email-or-phone identity. The first
-  // occurrence wins; `filed` comes first so a stored row beats a derived one.
-  const combined: CustomerOption[] = [];
-  for (const option of [...filed, ...missing]) {
-    if (!combined.some((row) => isSameCustomer(row, option))) {
-      combined.push(option);
-    }
-  }
-
-  return topByRecency(combined, PICKER_OPTION_LIMIT);
+  return topByRecency(filed.length > 0 ? filed : derived, PICKER_OPTION_LIMIT);
 }

@@ -51,6 +51,21 @@ export class AppwriteTemplateRepository implements TemplateRepository {
     return templates.sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  async countByOwner(ownerId: string): Promise<number> {
+    try {
+      // One row is enough: Appwrite reports how many rows the query matched
+      // in `total`, independent of `limit`, so counting never ships a row.
+      const response = await getTables().listRows<TemplateRow>({
+        databaseId: APPWRITE.databaseId,
+        tableId: APPWRITE.templatesTableId,
+        queries: [Query.equal('ownerId', ownerId), Query.limit(1)],
+      });
+      return response.total;
+    } catch (error) {
+      throw toAppError(error);
+    }
+  }
+
   async getById(id: string): Promise<InvoiceTemplate | null> {
     try {
       const row = await getTables().getRow<TemplateRow>({

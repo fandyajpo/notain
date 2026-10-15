@@ -93,6 +93,9 @@ export function InvoicePreview({ business, invoice, template, logoUrl, className
   });
 
   const muted = { color: theme.muted };
+  // The letterhead names the business, not the owner behind it — the owner
+  // name is only the fallback for profiles that never set one.
+  const issuer = business.businessName || business.name;
 
   function renderBlock(block: TemplateBlock): ReactNode {
     switch (block.type) {
@@ -121,13 +124,11 @@ export function InvoicePreview({ business, invoice, template, logoUrl, className
                   className="flex size-12 shrink-0 items-center justify-center rounded-control text-sm font-semibold transition-colors duration-300"
                   style={{ backgroundColor: theme.accentSoft, color: theme.accent }}
                 >
-                  {businessInitials(business.name)}
+                  {businessInitials(issuer)}
                 </span>
               )}
               <div>
-                <h2 className="text-lg font-semibold tracking-tight">
-                  {business.name || 'Nama usaha'}
-                </h2>
+                <h2 className="text-lg font-semibold tracking-tight">{issuer || 'Nama usaha'}</h2>
                 {business.address && (
                   <p className="mt-0.5 text-xs" style={muted}>
                     {business.address}
@@ -184,6 +185,11 @@ export function InvoicePreview({ business, invoice, template, logoUrl, className
               Untuk
             </p>
             <p className="mt-1 text-sm font-semibold">{invoice.customerName || 'Nama customer'}</p>
+            {invoice.customerEmail && (
+              <p className="text-xs" style={muted}>
+                {invoice.customerEmail}
+              </p>
+            )}
             {invoice.customerPhone && (
               <p className="text-xs" style={muted}>
                 {invoice.customerPhone}

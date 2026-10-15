@@ -24,7 +24,7 @@ export function IslandBoundary({ children }: Props) {
           role="alert"
           className="flex min-h-[50vh] flex-col items-center justify-center px-5 text-center"
         >
-          <p className="text-base font-semibold">Halaman ini gagal dimuat</p>
+          <p className="text-section">Halaman ini gagal dimuat</p>
           <p className="mt-2 max-w-sm text-sm text-muted">
             Muat ulang halaman untuk mencoba lagi. Data kamu tidak hilang.
           </p>

@@ -1,0 +1,32 @@
+---
+import Layout from './Layout.astro';
+import { SiteHeader } from '../components/react/landing/site-header';
+import { SiteFooter } from '../components/react/landing/site-footer';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<Layout title={title} description={description}>
+  <!-- Same shell as the landing: dot texture, sticky marketing header, and the
+       shared footer. `anchorPrefix="/"` so footer links point at the homepage
+       anchors instead of this page. -->
+  <div class="min-h-screen overflow-x-clip">
+    <div
+      aria-hidden="true"
+      class="pointer-events-none fixed inset-0 -z-10 texture-dots [mask-image:linear-gradient(to_bottom,transparent,black_8%,black_92%,transparent)]"
+    ></div>
+
+    <SiteHeader client:load anchorPrefix="/" />
+
+    <main class="mx-auto w-full max-w-3xl px-5 py-16 sm:px-8">
+      <slot />
+    </main>
+
+    <SiteFooter client:visible anchorPrefix="/" />
+  </div>
+</Layout>

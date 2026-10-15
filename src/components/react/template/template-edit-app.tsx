@@ -7,8 +7,11 @@ import { AppProviders } from '../providers';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { IslandBoundary } from '../ui/island-boundary';
-import { useFieldIds } from '../ui/field';
+import { FieldShell, useFieldIds } from '../ui/field';
 import { Input } from '../ui/input';
+import { Notice } from '../ui/notice';
+import { PageHeader } from '../ui/page-header';
+import { EmptyState, ErrorState, LoadingState } from '../ui/state';
 import { BlockList } from './block-list';
 import { DefaultsForm } from './defaults-form';
 import { ThemeForm } from './theme-form';
@@ -75,30 +78,30 @@ function TemplateEditContent() {
   const { data, isLoading, isError, refetch } = useTemplates();
 
   if (isLoading) {
-    return <Message>Memuat template…</Message>;
+    return <LoadingState label="Memuat template…" />;
   }
 
   if (isError) {
     return (
-      <div
-        role="alert"
-        className="flex flex-col items-start gap-3 rounded-card border border-danger/25 bg-danger-soft p-6"
-      >
-        <p className="text-sm font-medium text-danger">Template gagal dimuat. Coba lagi.</p>
-        <Button variant="secondary" size="sm" onClick={() => void refetch()}>
-          Coba lagi
-        </Button>
-      </div>
+      <ErrorState
+        title="Template gagal dimuat"
+        message="Coba lagi."
+        action={
+          <Button variant="secondary" size="sm" onClick={() => void refetch()}>
+            Coba lagi
+          </Button>
+        }
+      />
     );
   }
 
   const existing = id ? data?.find((template) => template.id === id) : undefined;
   if (id && !existing) {
     return (
-      <Card className="flex flex-col items-start gap-4">
-        <p className="text-sm text-muted">Template ini tidak ditemukan atau sudah dihapus.</p>
-        <BackButton />
-      </Card>
+      <EmptyState
+        title="Template ini tidak ditemukan atau sudah dihapus."
+        action={<BackButton />}
+      />
     );
   }
 
@@ -177,31 +180,36 @@ function TemplateForm({
         <header className="flex flex-col gap-4">
           <BackButton />
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div className="flex flex-1 flex-col gap-1.5">
-              <label htmlFor={nameId} className="text-sm font-medium text-foreground">
-                Nama template
-              </label>
-              <Input
-                id={nameId}
-                value={values.name}
-                maxLength={128}
-                onChange={(event) => form.setFieldValue('name', event.target.value)}
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="secondary" onClick={() => window.location.assign('/templates')}>
-                Batal
-              </Button>
-              <Button type="submit" loading={isSubmitting}>
-                <Save size={16} aria-hidden="true" />
-                Simpan template
-              </Button>
-            </div>
-          </div>
+          <PageHeader
+            title={existing ? 'Edit template' : 'Template baru'}
+            actions={
+              <>
+                <Button variant="secondary" onClick={() => window.location.assign('/templates')}>
+                  Batal
+                </Button>
+                <Button type="submit" loading={isSubmitting}>
+                  <Save size={16} aria-hidden="true" />
+                  Simpan template
+                </Button>
+              </>
+            }
+          />
 
-          {(saveError || errors.length > 0) && <Problem>{saveProblem(saveError, errors)}</Problem>}
+          {(saveError || errors.length > 0) && (
+            <Notice variant="danger">{saveProblem(saveError, errors)}</Notice>
+          )}
         </header>
+
+        <Card>
+          <FieldShell label="Nama template" htmlFor={nameId}>
+            <Input
+              id={nameId}
+              value={values.name}
+              maxLength={128}
+              onChange={(event) => form.setFieldValue('name', event.target.value)}
+            />
+          </FieldShell>
+        </Card>
 
         <Section
           title="Blok invoice"
@@ -233,7 +241,7 @@ function TemplateForm({
 
       <aside className="flex flex-col gap-3 lg:sticky lg:top-6 lg:self-start">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted">Preview</p>
+          <p className="text-eyebrow uppercase text-muted">Preview</p>
           <span className="text-xs text-muted">{visibleCount} blok tampil</span>
         </div>
         <InvoicePreview
@@ -255,17 +263,6 @@ function saveProblem(saveError: string | null, errors: readonly unknown[]): stri
   return messages.join(' ') || GENERIC_ERROR_MESSAGE;
 }
 
-function Problem({ children }: { children: React.ReactNode }) {
-  return (
-    <p
-      role="alert"
-      className="rounded-control border border-danger/25 bg-danger-soft px-4 py-3 text-sm font-medium text-danger"
-    >
-      {children}
-    </p>
-  );
-}
-
 function BackButton() {
   return (
     <a
@@ -275,14 +272,6 @@ function BackButton() {
       <ArrowLeft size={15} aria-hidden="true" />
       Daftar template
     </a>
-  );
-}
-
-function Message({ children }: { children: React.ReactNode }) {
-  return (
-    <Card padding="none" className="px-6 py-10 text-center text-sm text-muted">
-      {children}
-    </Card>
   );
 }
 
@@ -298,7 +287,7 @@ function Section({
   return (
     <Card className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <h2 className="text-base font-semibold">{title}</h2>
+        <h2 className="text-section">{title}</h2>
         {description && <p className="text-sm text-muted">{description}</p>}
       </div>
       {children}

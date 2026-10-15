@@ -85,6 +85,13 @@ const DESIRED = [
       { key: 'owner', type: 'key', attributes: ['ownerId'], orders: ['asc'] },
     ],
   },
+  {
+    collectionId: 'stats',
+    indexes: [
+      // The dashboard's single-row-per-owner lookup: equal(ownerId).
+      { key: 'owner', type: 'key', attributes: ['ownerId'], orders: ['asc'] },
+    ],
+  },
 ];
 
 const args = process.argv.slice(2);

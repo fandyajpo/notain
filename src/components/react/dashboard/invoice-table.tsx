@@ -9,7 +9,7 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import { useDebouncedCallback } from '@tanstack/react-pacer';
-import { ArrowUpDown, ChevronRight, Copy, EllipsisVertical, Search, Trash2 } from 'lucide-react';
+import { ArrowUpDown, ChevronRight, Copy, EllipsisVertical, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { calculateTotals } from '../../../core/invoice/calculator';
 import {
@@ -20,20 +20,17 @@ import {
 } from '../../../core/invoice/model';
 import { formatRupiah } from '../../../core/shared/money';
 import { formatTanggalRelatif } from '../../../core/shared/dates';
-import {
-  useDeleteInvoice,
-  useInvoices,
-  useUpdateInvoiceStatus,
-} from '../../../lib/query/hooks/use-invoices';
+import { useDeleteInvoice, useInvoices } from '../../../lib/query/hooks/use-invoices';
 import { toast } from '../../../lib/ui/toast';
 import { Button } from '../ui/button';
-import { Card } from '../ui/card';
-import { Input } from '../ui/input';
 import { Menu } from '../ui/menu';
 import { Modal } from '../ui/modal';
+import { Notice } from '../ui/notice';
+import { SearchField } from '../ui/search-field';
 import { Select } from '../ui/select';
-import { StatusSelect } from '../ui/status-select';
-import { TABLE, TABLE_SHELL, TBODY_ROW, THEAD_ROW, thClass } from '../ui/table';
+import { StatusBadge } from '../ui/status-badge';
+import { EmptyState, ErrorState, LoadingState } from '../ui/state';
+import { TABLE, TABLE_SHELL, TBODY_ROW, THEAD_ROW, tdClass, thClass } from '../ui/table';
 import { useFieldIds } from '../ui/field';
 
 const features = tableFeatures({
@@ -43,30 +40,6 @@ const features = tableFeatures({
 });
 const columnHelper = createColumnHelper<typeof features, Invoice>();
 const SEARCH_WAIT = 300;
-
-/**
- * The status cell: flips an invoice's lifecycle state straight from the table.
- *
- * Persistence is a targeted status-only write, not a full-draft round-trip —
- * rich-text sections are never shipped just to change one enum.
- */
-function StatusCell({ invoice }: { invoice: Invoice }) {
-  const updateStatus = useUpdateInvoiceStatus();
-
-  return (
-    <StatusSelect
-      value={invoice.status}
-      label={invoice.invoiceNumber}
-      disabled={updateStatus.isPending}
-      onChange={(status) => {
-        if (status === invoice.status) return;
-        updateStatus.mutateAsync({ id: invoice.id, status }).catch(() => {
-          toast('Status gagal disimpan. Coba lagi.', { variant: 'error' });
-        });
-      }}
-    />
-  );
-}
 
 export function InvoiceTable() {
   const [searchInput, setSearchInput] = useState('');
@@ -113,7 +86,17 @@ export function InvoiceTable() {
           id: 'invoiceNumber',
           header: 'Nomor',
           size: 140,
-          cell: (info) => <span className="font-medium tabular-nums">{info.getValue()}</span>,
+          // The stretched link is what makes the whole row clickable: its
+          // `::after` covers the row (the `tr` is the positioned ancestor),
+          // while controls in later cells sit above it in paint order.
+          cell: (info) => (
+            <a
+              href={`/invoice/${info.row.original.id}`}
+              className="rounded-control font-medium tabular-nums focus-ring after:absolute after:inset-0"
+            >
+              {info.getValue()}
+            </a>
+          ),
         }),
         columnHelper.accessor('customerName', {
           id: 'customerName',
@@ -148,7 +131,7 @@ export function InvoiceTable() {
           id: 'status',
           header: 'Status',
           size: 120,
-          cell: (info) => <StatusCell invoice={info.row.original} />,
+          cell: (info) => <StatusBadge status={info.row.original.status} />,
         }),
         columnHelper.display({
           id: 'actions',
@@ -201,24 +184,17 @@ export function InvoiceTable() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex w-full flex-col gap-2 sm:max-w-md sm:flex-row sm:items-center">
-          <div data-tour="invoices-search" className="relative w-full sm:max-w-xs">
-            <Search
-              size={15}
-              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted"
-              aria-hidden="true"
-            />
+          <div data-tour="invoices-search" className="w-full sm:max-w-xs">
             <label htmlFor={searchField.id} className="sr-only">
               Cari invoice
             </label>
-            <Input
+            <SearchField
               id={searchField.id}
-              type="search"
               value={searchInput}
               placeholder="Cari nomor, customer, atau barang…"
-              className="h-10 pr-3 pl-9"
-              onChange={(event) => {
-                setSearchInput(event.target.value);
-                debouncedSearch(event.target.value);
+              onChange={(value) => {
+                setSearchInput(value);
+                debouncedSearch(value);
               }}
             />
           </div>
@@ -244,7 +220,10 @@ export function InvoiceTable() {
             />
           </div>
         </div>
-        <Button href="/invoice/new">+ Buat Invoice</Button>
+        <Button href="/invoice/new">
+          <Plus size={16} aria-hidden="true" />
+          Buat Invoice
+        </Button>
       </div>
 
       {/* A failed background refresh still has rows to show, so the banner is
@@ -252,49 +231,40 @@ export function InvoiceTable() {
           below owns the panel — showing it next to "Belum ada invoice" would
           claim both "we could not load your invoices" and "you have none". */}
       {isError && invoices.length > 0 && (
-        <p
-          role="alert"
-          className="rounded-control border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
-        >
+        <Notice variant="accent">
           Gagal memperbarui daftar invoice. Menampilkan data terakhir yang dimuat.
-        </p>
+        </Notice>
       )}
 
       {isError && invoices.length === 0 ? (
-        <div
-          role="alert"
-          className="rounded-card border border-danger/25 bg-danger-soft px-6 py-14 text-center"
-        >
-          <p className="text-base font-semibold text-danger">Gagal memuat invoice</p>
-          <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
-            Periksa koneksi internet kamu, lalu coba lagi.
-          </p>
-          <div className="mt-6 flex justify-center">
+        <ErrorState
+          title="Gagal memuat invoice"
+          message="Periksa koneksi internet kamu, lalu coba lagi."
+          action={
             <Button size="sm" loading={isFetching} onClick={() => void refetch()}>
               Coba lagi
             </Button>
-          </div>
-        </div>
+          }
+        />
       ) : isLoading ? (
-        <Card padding="none" className="px-6 py-10 text-center text-sm text-muted">
-          Memuat invoice…
-        </Card>
+        <LoadingState label="Memuat invoice…" />
       ) : invoices.length === 0 ? (
-        <Card padding="none" className="px-6 py-14 text-center">
-          <p className="text-base font-semibold">
-            {search || statusFilter ? 'Tidak ada invoice yang cocok' : 'Belum ada invoice'}
-          </p>
-          <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
-            {search || statusFilter
+        <EmptyState
+          title={search || statusFilter ? 'Tidak ada invoice yang cocok' : 'Belum ada invoice'}
+          description={
+            search || statusFilter
               ? 'Coba kata kunci lain, atau ubah/hapus filter pencarian dan status.'
-              : 'Buat invoice pertama kamu dan kirim ke customer dalam hitungan menit.'}
-          </p>
-          {!(search || statusFilter) && (
-            <div className="mt-6 flex justify-center">
-              <Button onClick={() => window.location.assign('/invoice/new')}>Buat Invoice</Button>
-            </div>
-          )}
-        </Card>
+              : 'Buat invoice pertama kamu dan kirim ke customer dalam hitungan menit.'
+          }
+          action={
+            !(search || statusFilter) ? (
+              <Button href="/invoice/new">
+                <Plus size={16} aria-hidden="true" />
+                Buat Invoice
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
         <div data-tour="invoices-table" className={TABLE_SHELL}>
           <table className={TABLE} style={{ minWidth: '640px' }}>
@@ -339,7 +309,7 @@ export function InvoiceTable() {
               {table.getRowModel().rows.map((row) => (
                 <tr key={row.id} className={TBODY_ROW}>
                   {row.getAllCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-3">
+                    <td key={cell.id} className={tdClass()}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}

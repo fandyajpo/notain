@@ -52,6 +52,8 @@ export const pickEventSchema = z.discriminatedUnion('kind', [
     kind: z.literal('customer'),
     name: z.string(),
     phone: z.string(),
+    /** Empty string when the customer has no email on file. */
+    email: z.string().default(''),
   }),
   z.object({
     kind: z.literal('product'),

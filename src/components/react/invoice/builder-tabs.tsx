@@ -22,7 +22,7 @@ export function BuilderTabs() {
     <div
       role="tablist"
       aria-label="Bagian invoice"
-      className="flex gap-1 overflow-x-auto rounded-control border border-border bg-card p-1 shadow-card"
+      className="inline-flex max-w-full overflow-x-auto rounded-control border border-border bg-sunken p-0.5"
     >
       {SECTIONS.map((section) => {
         const selected = section.id === active;
@@ -34,8 +34,10 @@ export function BuilderTabs() {
             aria-selected={selected}
             onClick={() => setBuilderSection(section.id)}
             className={[
-              'shrink-0 rounded-[calc(var(--radius-control)-2px)] px-3 py-1.5 text-sm font-medium transition-colors focus-ring',
-              selected ? 'bg-accent text-accent-foreground' : 'text-muted hover:text-foreground',
+              'shrink-0 rounded-item px-3 py-1.5 text-sm font-medium transition-colors focus-ring',
+              selected
+                ? 'bg-accent text-accent-foreground shadow-card'
+                : 'text-muted hover:text-foreground',
             ].join(' ')}
           >
             {section.label}

@@ -18,4 +18,5 @@ export const APPWRITE = {
   invoicesTableId: 'invoices',
   templatesTableId: 'templates',
   customersTableId: 'customers',
+  statsTableId: 'stats',
 } as const;
