@@ -3,6 +3,7 @@ import { Copy, Pencil, Plus, Trash2 } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { Button } from '../ui/button';
+import { LoadMore } from '../ui/load-more';
 import { Modal } from '../ui/modal';
 import { PageHeader } from '../ui/page-header';
 import { IslandBoundary } from '../ui/island-boundary';
@@ -10,7 +11,7 @@ import { SearchField } from '../ui/search-field';
 import { EmptyState, ErrorState, LoadingState } from '../ui/state';
 import { TemplateCard } from './template-picker';
 import { toast } from '../../../lib/ui/toast';
-import { useDeleteTemplate, useTemplates } from '../../../lib/query/hooks/use-templates';
+import { useDeleteTemplate, useTemplatesPage } from '../../../lib/query/hooks/use-templates';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
 import { BUILTIN_TEMPLATES } from '../../../core/template/builtins';
 import { GENERIC_ERROR_MESSAGE, isAppError } from '../../../core/shared/errors';
@@ -30,14 +31,24 @@ export function TemplatesApp() {
 }
 
 function TemplatesContent() {
-  const { data, isLoading, isError, refetch } = useTemplates();
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useTemplatesPage();
+  const mine = useMemo(() => data?.pages.flatMap((page) => page.rows) ?? [], [data]);
   const { data: profile } = useProfile();
   const logoUrl = profile?.logoUrl ?? null;
   const remove = useDeleteTemplate();
   const [pendingDelete, setPendingDelete] = useState<InvoiceTemplate | null>(null);
   const [query, setQuery] = useState('');
 
-  // Client-side name filter over both grids (both lists are fully loaded).
+  // Client-side name filter over both grids (built-ins are in the bundle;
+  // "Template saya" filters the pages loaded so far).
   const filteredBuiltins = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return BUILTIN_TEMPLATES;
@@ -45,10 +56,9 @@ function TemplatesContent() {
   }, [query]);
   const filteredMine = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = data ?? [];
-    if (!q) return list;
-    return list.filter((t) => t.name.toLowerCase().includes(q));
-  }, [data, query]);
+    if (!q) return mine;
+    return mine.filter((t) => t.name.toLowerCase().includes(q));
+  }, [mine, query]);
   const nothingMatches = filteredBuiltins.length === 0 && filteredMine.length === 0;
 
   function confirmDelete(template: InvoiceTemplate) {
@@ -151,7 +161,7 @@ function TemplatesContent() {
               </Button>
             }
           />
-        ) : !data?.length ? (
+        ) : mine.length === 0 ? (
           <EmptyState
             title="Belum ada template sendiri"
             description="Duplikat salah satu template bawaan, lalu sesuaikan urutan blok dan warnanya."
@@ -165,32 +175,39 @@ function TemplatesContent() {
         ) : filteredMine.length === 0 ? (
           <EmptyState title="Tidak ada template kamu yang cocok." />
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredMine.map((template) => (
-              <TemplateCard
-                key={template.id}
-                template={template}
-                logoUrl={logoUrl}
-                business={profile}
-                actions={
-                  <>
-                    <Button href={`/templates/${template.id}`} variant="secondary" size="sm">
-                      <Pencil size={13} aria-hidden="true" />
-                      Ubah
-                    </Button>
-                    <Button
-                      variant="danger-soft"
-                      size="sm"
-                      onClick={() => setPendingDelete(template)}
-                    >
-                      <Trash2 size={13} aria-hidden="true" />
-                      Hapus
-                    </Button>
-                  </>
-                }
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredMine.map((template) => (
+                <TemplateCard
+                  key={template.id}
+                  template={template}
+                  logoUrl={logoUrl}
+                  business={profile}
+                  actions={
+                    <>
+                      <Button href={`/templates/${template.id}`} variant="secondary" size="sm">
+                        <Pencil size={13} aria-hidden="true" />
+                        Ubah
+                      </Button>
+                      <Button
+                        variant="danger-soft"
+                        size="sm"
+                        onClick={() => setPendingDelete(template)}
+                      >
+                        <Trash2 size={13} aria-hidden="true" />
+                        Hapus
+                      </Button>
+                    </>
+                  }
+                />
+              ))}
+            </div>
+            <LoadMore
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+              fetchNextPage={() => void fetchNextPage()}
+            />
+          </>
         )}
       </section>
     </div>

@@ -1,6 +1,6 @@
 import type { Env } from './types';
 
-export type Session = { userId: string };
+export type Session = { userId: string; email: string };
 
 /**
  * Resolves the Appwrite session a request carries.
@@ -28,10 +28,27 @@ export async function verifySession(request: Request, env: Env): Promise<Session
       headers: { 'X-Appwrite-Project': projectId, 'X-Appwrite-JWT': token },
     });
     if (!response.ok) return null;
-    const account = (await response.json()) as { $id?: unknown };
-    return typeof account.$id === 'string' && account.$id !== '' ? { userId: account.$id } : null;
+    const account = (await response.json()) as { $id?: unknown; email?: unknown };
+    if (typeof account.$id !== 'string' || account.$id === '') return null;
+    return { userId: account.$id, email: typeof account.email === 'string' ? account.email : '' };
   } catch {
     // Appwrite unreachable: fail closed. Never let an unverified caller in.
     return null;
   }
+}
+
+/**
+ * Appwrite ≥2.4 expects each query as a JSON object (`{ method, attribute,
+ * values }`) at a numeric-index key — the legacy `limit(100)` string form
+ * errors with "Invalid query: Syntax error". Returns a ready-to-append
+ * `queries[0]=...` search string; chain several with `&` after renumbering
+ * the index (see the admin users list).
+ */
+export function querySearch(
+  method: string,
+  values: unknown[],
+  attribute: string | null = null,
+): string {
+  const json = JSON.stringify({ method, attribute, values });
+  return `queries[0]=${encodeURIComponent(json)}`;
 }

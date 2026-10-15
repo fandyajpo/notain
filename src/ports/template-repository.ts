@@ -10,6 +10,15 @@ import type { AuthoredTemplate, InvoiceTemplate } from '../core/template/model';
 export interface TemplateRepository {
   listByOwner(ownerId: string): Promise<InvoiceTemplate[]>;
   /**
+   * One page of the owner's templates, in storage order, for the `/templates`
+   * page's "Muat lebih banyak" grid. `listByOwner` stays for callers that need
+   * the whole set (the invoice builder's picker).
+   */
+  listPage(
+    ownerId: string,
+    options?: { cursorAfter?: string; limit?: number },
+  ): Promise<{ rows: InvoiceTemplate[]; nextCursor: string | null }>;
+  /**
    * Total saved templates the owner has, without transferring them.
    *
    * Backed by the list response's `total` with a one-row limit — the same

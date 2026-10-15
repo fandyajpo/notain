@@ -30,14 +30,22 @@ export const queryKeys = {
   /** Projected recent-invoice slice the picker derives its suggestions from. */
   pickerHistory: ['picker-history'] as const,
   templates: ['templates'] as const,
+  /** Paginated `/templates` grid — separate from the full `templates` list the picker uses. */
+  templatesPage: ['templates-page'] as const,
   template: (id: string) => ['templates', id] as const,
   customers: ['customers'] as const,
+  /** Paginated `/customers` list — separate from the full `customers` list the picker uses. */
+  customersPage: ['customers-page'] as const,
   customerCount: ['customer-count'] as const,
   customer: (id: string) => ['customers', id] as const,
   /** Cached dashboard counters — one row per owner (the `stats` table). */
   stats: ['dashboard-stats'] as const,
   /** Admin panel user list. Only fetched by members of the `admins` team. */
   adminUsers: ['admin-users'] as const,
+  /** Admin action log (`/admin` → Log aktivitas tab). */
+  adminAudit: ['admin-audit'] as const,
+  /** Read-only drill-down into one admin user's data. */
+  adminUserDrilldown: (userId: string): readonly unknown[] => ['admin-user-drilldown', userId],
   /** Whether the current user belongs to the `admins` team (gates the nav link). */
   adminMembership: ['admin-membership'] as const,
 };

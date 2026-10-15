@@ -1,7 +1,9 @@
 import { useEffect, type ReactNode } from 'react';
-import { useSession } from '../../../lib/query/hooks/use-session';
+import { Ban } from 'lucide-react';
+import { useSession, useSignOut } from '../../../lib/query/hooks/use-session';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
 import { toast } from '../../../lib/ui/toast';
+import { ERROR_CODES, isAppError } from '../../../core/shared/errors';
 import { Button } from '../ui/button';
 import { ErrorState, LoadingState } from '../ui/state';
 import { OnboardingModal } from './onboarding-modal';
@@ -23,7 +25,7 @@ type Props = {
  * and the page loads normally.
  */
 export function AuthGate({ children, fallback }: Props) {
-  const { data: session, isLoading, isError, refetch, isFetching } = useSession();
+  const { data: session, isLoading, isError, error, refetch, isFetching } = useSession();
   const { data: profile, isLoading: profileLoading } = useProfile(Boolean(session));
 
   useEffect(() => {
@@ -37,6 +39,12 @@ export function AuthGate({ children, fallback }: Props) {
   }, [isLoading, isError, session]);
 
   if (isError) {
+    // A blocked account answers every request (including the session check)
+    // with `user_blocked`. It is a permanent state, not a load failure — the
+    // user gets a dedicated screen with no menus and a way out.
+    if (isAppError(error) && error.code === ERROR_CODES.SUSPENDED) {
+      return <SuspendedScreen message={error.message} />;
+    }
     return <SessionLoadError onRetry={() => void refetch()} retrying={isFetching} />;
   }
 
@@ -85,5 +93,42 @@ function SessionLoadError({ onRetry, retrying }: { onRetry: () => void; retrying
         </Button>
       }
     />
+  );
+}
+
+/**
+ * Full-viewport dead end for a blocked account. No sidebar, no menus, no
+ * children — the Appwrite middleware already rejects every request from a
+ * blocked user, so there is nothing the app could usefully render behind it.
+ */
+function SuspendedScreen({ message }: { message: string }) {
+  const signOut = useSignOut();
+
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-6 text-center">
+      <Ban size={32} className="text-muted" aria-hidden="true" />
+      <div className="flex flex-col gap-1">
+        <h1 className="text-lg font-semibold text-foreground">Akun dinonaktifkan</h1>
+        <p className="max-w-sm text-sm text-muted">{message}</p>
+      </div>
+      <Button
+        size="sm"
+        loading={signOut.isPending}
+        onClick={() => {
+          signOut
+            .mutateAsync()
+            .then(() => {
+              window.location.assign('/login');
+            })
+            .catch(() => {
+              // `signOut` already swallows the blocked-session failure and
+              // forgets locally; this only fires for a genuine network error.
+              toast('Gagal keluar. Coba lagi.', { variant: 'error' });
+            });
+        }}
+      >
+        Keluar
+      </Button>
+    </div>
   );
 }

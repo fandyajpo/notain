@@ -11,6 +11,8 @@ export const ERROR_CODES = {
   CONFLICT: 'conflict',
   RATE_LIMITED: 'rate_limited',
   NETWORK: 'network',
+  /** The account is blocked (Appwrite `user_blocked`) — not a transient failure. */
+  SUSPENDED: 'suspended',
   UNKNOWN: 'unknown',
 } as const;
 

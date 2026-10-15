@@ -39,10 +39,16 @@ export const QUERY_POLICIES = {
   // Templates change only in the editor, which invalidates this key on save.
   // Everything else reads them once per invoice and reuses the result.
   templates: { staleTime: 5 * 60_000, gcTime: 30 * 60_000 },
+  // The `/templates` page's own paginated grid; invalidated by the same
+  // editor saves as the full list above.
+  templatesPage: { staleTime: 5 * 60_000, gcTime: 30 * 60_000 },
   // The customer directory is written to on every invoice save, so it is only
   // trusted for a few seconds; a customer added moments ago has to appear in
   // the next picker.
   customers: { staleTime: 5_000, gcTime: 5 * 60_000 },
+  // The `/customers` page's own paginated list; same freshness window as the
+  // full directory above.
+  customersPage: { staleTime: 5_000, gcTime: 5 * 60_000 },
   // A bare "how many customers" figure for the dashboard. It changes only when
   // the directory changes, so it is trusted as long as the invoice list.
   customerCount: { staleTime: 15_000, gcTime: 5 * 60_000 },
@@ -53,6 +59,9 @@ export const QUERY_POLICIES = {
   // Admin data is only written by another admin session, so it is safe to
   // trust for a while; the "Muat ulang" button forces a refetch when needed.
   adminUsers: { staleTime: 60_000, gcTime: 5 * 60_000 },
+  // The action log is append-only and read-only in the UI; a short window
+  // absorbs tab switches without re-reading Appwrite.
+  adminAudit: { staleTime: 30_000, gcTime: 5 * 60_000 },
   // Team membership is fixed for the session's lifetime; a very long staleTime
   // avoids re-hitting Appwrite on every navigation.
   adminMembership: { staleTime: 10 * 60_000, gcTime: 30 * 60_000 },
@@ -92,6 +101,7 @@ const NON_RETRYABLE_CODES = new Set<string>([
   ERROR_CODES.VALIDATION,
   ERROR_CODES.CONFLICT,
   ERROR_CODES.RATE_LIMITED,
+  ERROR_CODES.SUSPENDED,
 ]);
 
 /**

@@ -12,6 +12,9 @@ const AUTH_MESSAGES: Record<string, string> = {
   rate_limit: 'Terlalu banyak percobaan. Coba lagi beberapa saat lagi.',
   rate_limit_exceeded: 'Terlalu banyak percobaan. Coba lagi beberapa saat lagi.',
   general_user_disabled: 'Akun ini dinonaktifkan.',
+  // A blocked account also surfaces as a 401, but it is a deliberate state —
+  // not "your JWT expired" — so it gets its own code and is never retried.
+  user_blocked: 'Akun kamu dinonaktifkan. Hubungi admin untuk informasi lebih lanjut.',
   invalid_token: 'Tautan reset tidak valid atau sudah dipakai. Minta tautan baru.',
   token_expired: 'Tautan reset sudah kedaluwarsa. Minta tautan baru.',
   recovery_error: 'Tautan reset tidak valid atau sudah kedaluwarsa. Minta tautan baru.',
@@ -21,6 +24,11 @@ const AUTH_MESSAGES: Record<string, string> = {
 export function toAppError(error: unknown): AppError {
   if (error instanceof AppwriteException) {
     const type = error.type ?? '';
+    // `user_blocked` answers with 401, but the *reason* is a permanent state,
+    // not an expired token — key off the type, not the status.
+    if (type === 'user_blocked') {
+      return new AppError(ERROR_CODES.SUSPENDED, AUTH_MESSAGES.user_blocked, { cause: error });
+    }
     const code = mapStatusCode(error.code);
 
     return new AppError(code, AUTH_MESSAGES[type] ?? fallbackFor(code), { cause: error });

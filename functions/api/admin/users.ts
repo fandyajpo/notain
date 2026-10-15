@@ -1,16 +1,20 @@
-import { verifySession } from '../../_lib/appwrite';
+import { writeAudit } from '../../_lib/audit';
+import { requireAdmin } from '../../_lib/admin';
+import { querySearch } from '../../_lib/appwrite';
 import { apiError, json } from '../../_lib/http';
 import type { Env, PagesFunction } from '../../_lib/types';
 
-const ADMIN_TEAM_ID = 'admins';
 const PROFILES_TABLE_ID = 'profiles';
 const DATABASE_ID = 'notain_db';
+const LIST_DEFAULT_LIMIT = 25;
+const LIST_MAX_LIMIT = 50;
 
 type AppwriteUser = {
   $id: string;
   email: string;
   name: string;
   $createdAt: string;
+  status: boolean;
 };
 
 type ProfileRow = {
@@ -29,6 +33,8 @@ type AdminUserEntry = {
   /** Login email from the Appwrite account. */
   email: string;
   createdAt: string;
+  /** Appwrite account status: false means the user is blocked (suspended). */
+  status: boolean;
   name: string;
   businessName: string;
   phone: string;
@@ -108,7 +114,9 @@ function parseProfileUpdate(
 }
 
 /**
- * `GET /api/admin/users` — list every registered user with their profile.
+ * `GET /api/admin/users` — one page of registered users joined with their
+ * profiles. Supports `?limit=` (1–50, default 25) and `?cursorAfter=<userId>`
+ * for the "Muat lebih banyak" pattern.
  * `PATCH /api/admin/users` — update one user's full profile (name, business,
  * contact fields, plan, and expiry).
  *
@@ -123,32 +131,13 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     return apiError(405, 'method_not_allowed', 'Gunakan GET atau PATCH.');
   }
 
-  const session = await verifySession(request, env);
-  if (!session) {
-    return apiError(401, 'unauthenticated', 'Sesi tidak valid. Masuk ulang.');
-  }
+  const gate = await requireAdmin(request, env);
+  if (!gate.ok) return gate.response;
+  const { endpoint, headers } = gate.admin;
 
-  const endpoint = env.PUBLIC_APPWRITE_ENDPOINT?.replace(/\/+$/, '');
-  const projectId = env.PUBLIC_APPWRITE_PROJECT_ID;
-  const apiKey = env.APPWRITE_API_KEY;
-  if (!endpoint || !projectId || !apiKey) {
-    return apiError(500, 'validation', 'Konfigurasi server tidak lengkap.');
-  }
-
-  const headers = {
-    'X-Appwrite-Project': projectId,
-    'X-Appwrite-Key': apiKey,
-  };
-
-  // 1. Check admin team membership.
-  const isAdmin = await checkAdmin(endpoint, headers, session.userId);
-  if (!isAdmin) {
-    return apiError(403, 'unauthenticated', 'Kamu bukan admin.');
-  }
-
-  // 2. Route by method.
+  // Route by method.
   if (request.method === 'GET') {
-    return listUsers(endpoint, headers);
+    return listUsers(endpoint, headers, new URL(request.url));
   }
 
   // PATCH
@@ -162,73 +151,58 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     return apiError(400, 'validation', parsed.message);
   }
 
-  return updateUserProfile(endpoint, headers, body.userId, parsed.value);
+  return updateUserProfile(endpoint, headers, body.userId, parsed.value, env, gate.admin.session);
 };
-
-/**
- * Appwrite ≥2.4 expects each query as a JSON object (`{ method, attribute,
- * values }`) at a numeric-index key — the legacy `limit(100)` string form
- * errors with "Invalid query: Syntax error". Returns a ready-to-append
- * `queries[0]=...` search string.
- */
-function querySearch(method: string, values: unknown[], attribute: string | null = null): string {
-  const json = JSON.stringify({ method, attribute, values });
-  return `queries[0]=${encodeURIComponent(json)}`;
-}
-
-async function checkAdmin(
-  endpoint: string,
-  headers: Record<string, string>,
-  userId: string,
-): Promise<boolean> {
-  try {
-    const response = await fetch(
-      `${endpoint}/teams/${ADMIN_TEAM_ID}/memberships?${querySearch('equal', [userId], 'userId')}`,
-      { headers },
-    );
-    if (!response.ok) return false;
-    const data = (await response.json()) as { total?: number };
-    return (data.total ?? 0) > 0;
-  } catch {
-    return false;
-  }
-}
 
 async function listUsers(
   endpoint: string,
   headers: Record<string, string>,
+  url: URL,
 ): Promise<Response> {
-  // Fetch all users (Appwrite paginates at 25 by default; request up to 100).
-  const usersResponse = await fetch(
-    `${endpoint}/users?${querySearch('limit', [100])}`,
-    { headers },
-  );
+  const limitParam = Number(url.searchParams.get('limit'));
+  const limit =
+    Number.isFinite(limitParam) && limitParam > 0
+      ? Math.min(Math.floor(limitParam), LIST_MAX_LIMIT)
+      : LIST_DEFAULT_LIMIT;
+  const cursor = url.searchParams.get('cursorAfter');
+
+  // Over-fetch by one so `nextCursor` is exact: a full page means "there may
+  // be more", an over-limit fetch means "there is".
+  const queries = [querySearch('limit', [limit + 1])];
+  if (cursor) queries.push(querySearch('cursorAfter', [cursor]));
+
+  const usersResponse = await fetch(`${endpoint}/users?${queries.join('&')}`, { headers });
   if (!usersResponse.ok) {
     return apiError(500, 'validation', 'Gagal mengambil daftar user.');
   }
   const usersData = (await usersResponse.json()) as { users: AppwriteUser[]; total: number };
 
-  // Fetch all profiles.
-  const profilesResponse = await fetch(
-    `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents?${querySearch('limit', [100])}`,
-    { headers },
-  );
-  const profilesData = profilesResponse.ok
-    ? ((await profilesResponse.json()) as { documents: ProfileRow[] })
-    : { documents: [] };
+  const hasMore = usersData.users.length > limit;
+  const page = hasMore ? usersData.users.slice(0, limit) : usersData.users;
 
-  // Index profiles by $id (which equals the owner's userId).
+  // Join profiles for just this page (document id = userId).
   const profileMap = new Map<string, ProfileRow>();
-  for (const row of profilesData.documents) {
-    profileMap.set(row.$id, row);
+  if (page.length > 0) {
+    const ids = page.map((user) => user.$id);
+    const profilesResponse = await fetch(
+      `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents?${querySearch('equal', [ids], '$id')}`,
+      { headers },
+    );
+    if (profilesResponse.ok) {
+      const profilesData = (await profilesResponse.json()) as { documents: ProfileRow[] };
+      for (const row of profilesData.documents) {
+        profileMap.set(row.$id, row);
+      }
+    }
   }
 
-  const entries: AdminUserEntry[] = usersData.users.map((user) => {
+  const entries: AdminUserEntry[] = page.map((user) => {
     const profile = profileMap.get(user.$id);
     return {
       userId: user.$id,
       email: user.email,
       createdAt: user.$createdAt,
+      status: user.status,
       name: profile?.name || user.name || '',
       businessName: profile?.businessName ?? '',
       phone: profile?.phone ?? '',
@@ -239,7 +213,11 @@ async function listUsers(
     };
   });
 
-  return json(200, { users: entries, total: usersData.total });
+  return json(200, {
+    users: entries,
+    total: usersData.total,
+    nextCursor: hasMore && page.length > 0 ? page[page.length - 1].$id : null,
+  });
 }
 
 async function updateUserProfile(
@@ -247,6 +225,8 @@ async function updateUserProfile(
   headers: Record<string, string>,
   userId: string,
   profile: ProfileUpdate,
+  env: Env,
+  actor: { userId: string; email: string },
 ): Promise<Response> {
   // Shape matches the app's `profileToRowData` so empty optionals persist as
   // null (the same value the client writes).
@@ -300,10 +280,26 @@ async function updateUserProfile(
           `Gagal membuat profil user: ${createBody.slice(0, 200)}`,
         );
       }
+      await writeAudit(env, {
+        actorId: actor.userId,
+        actorEmail: actor.email,
+        action: 'user.update',
+        targetType: 'user',
+        targetId: userId,
+        detail: JSON.stringify({ created: true, plan: profile.plan }),
+      });
       return json(200, { success: true });
     }
     return apiError(500, 'validation', `Gagal update profil: ${errorBody.slice(0, 200)}`);
   }
 
+  await writeAudit(env, {
+    actorId: actor.userId,
+    actorEmail: actor.email,
+    action: 'user.update',
+    targetType: 'user',
+    targetId: userId,
+    detail: JSON.stringify({ plan: profile.plan, planExpiresAt: profile.planExpiresAt }),
+  });
   return json(200, { success: true });
 }

@@ -28,6 +28,19 @@ export async function listTemplates(): Promise<InvoiceTemplate[]> {
   return container.templates.listByOwner(user.id);
 }
 
+/** One page of the owner's templates for the `/templates` page's grid. */
+export async function listTemplatesPage(params: {
+  cursorAfter?: string;
+  limit?: number;
+} = {}): Promise<{ rows: InvoiceTemplate[]; total: number; nextCursor: string | null }> {
+  const user = await requireSession();
+  const [page, total] = await Promise.all([
+    container.templates.listPage(user.id, params),
+    container.templates.countByOwner(user.id),
+  ]);
+  return { ...page, total };
+}
+
 export async function getTemplate(id: string): Promise<InvoiceTemplate> {
   await requireSession();
   const template = await container.templates.getById(id);

@@ -62,6 +62,34 @@ export class AppwriteCustomerRepository implements CustomerRepository {
     }
   }
 
+  async listPage(
+    ownerId: string,
+    options: { cursorAfter?: string; limit?: number } = {},
+  ): Promise<{ rows: Customer[]; nextCursor: string | null }> {
+    const limit = Math.min(Math.max(options.limit ?? 25, 1), 50);
+    try {
+      const response = await getTables().listRows<CustomerRow>({
+        databaseId: APPWRITE.databaseId,
+        tableId: APPWRITE.customersTableId,
+        queries: [
+          Query.equal('ownerId', ownerId),
+          Query.limit(limit),
+          ...(options.cursorAfter ? [Query.cursorAfter(options.cursorAfter)] : []),
+        ],
+      });
+      const rows = response.rows
+        .map(customerRowToDomain)
+        .filter((customer) => customer.name.trim() !== '');
+      const last = response.rows.at(-1);
+      return {
+        rows,
+        nextCursor: response.rows.length === limit && last ? last.$id : null,
+      };
+    } catch (error) {
+      throw toAppError(error);
+    }
+  }
+
   async findByName(ownerId: string, name: string): Promise<Customer[]> {
     try {
       const response = await getTables().listRows<CustomerRow>({

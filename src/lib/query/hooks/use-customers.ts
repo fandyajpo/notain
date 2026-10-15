@@ -1,10 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   countCustomers,
   createCustomer,
   deleteCustomer,
   importCustomers,
   listCustomers,
+  listCustomersPage,
   mergeCustomers,
   rememberCustomer,
   updateCustomer,
@@ -24,6 +25,23 @@ export function useCustomers() {
     queryKey: queryKeys.customers,
     queryFn: () => listCustomers(),
     ...queryPolicy('customers'),
+  });
+}
+
+/**
+ * The `/customers` page's own cursor-paginated list ("Muat lebih banyak").
+ *
+ * Kept apart from `useCustomers` on purpose: the picker and duplicate checks
+ * still need the whole directory in one shot, while this page only renders
+ * what the user has asked to load.
+ */
+export function useCustomersPage() {
+  return useInfiniteQuery({
+    queryKey: queryKeys.customersPage,
+    queryFn: ({ pageParam }) => listCustomersPage({ cursorAfter: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    ...queryPolicy('customersPage'),
   });
 }
 
@@ -49,6 +67,7 @@ export function useCreateCustomer() {
     onSuccess: (customer) => {
       queryClient.setQueryData(queryKeys.customer(customer.id), customer);
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
     },
   });
@@ -62,6 +81,7 @@ export function useUpdateCustomer() {
     onSuccess: (customer) => {
       queryClient.setQueryData(queryKeys.customer(customer.id), customer);
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
     },
   });
 }
@@ -78,6 +98,7 @@ export function useMergeCustomers() {
     onSuccess: (customer) => {
       queryClient.setQueryData(queryKeys.customer(customer.id), customer);
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
     },
   });
@@ -94,6 +115,7 @@ export function useRememberCustomer() {
       rememberCustomer(draft, lastUsedAt),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
     },
   });
@@ -118,6 +140,7 @@ export function useDeleteCustomer() {
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
     },
   });
@@ -130,6 +153,7 @@ export function useImportCustomers() {
     mutationFn: (drafts: CustomerDraft[]) => importCustomers(drafts),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
     },
   });

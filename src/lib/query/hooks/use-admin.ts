@@ -1,17 +1,33 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { listAdminUsers, updateAdminUser, type AdminUserUpdate } from '../../../app/admin';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import {
+  getAdminUserDrilldown,
+  listAdminAudit,
+  listAdminUsers,
+  setAdminUserStatus,
+  updateAdminUser,
+  type AdminDrillResource,
+  type AdminUserUpdate,
+} from '../../../app/admin';
 import { getTeams } from '../../../appwrite/client';
 import { queryPolicy } from '../policies';
 import { queryKeys } from '../keys';
 
 /**
- * Admin user list. Cached so revisiting the admin page does not re-fetch;
- * the "Muat ulang" button invalidates explicitly.
+ * Admin user list. Cursor-paginated ("Muat lebih banyak"), cached so
+ * revisiting the admin page does not re-fetch; the "Muat ulang" button
+ * invalidates explicitly.
  */
 export function useAdminUsers() {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: queryKeys.adminUsers,
-    queryFn: () => listAdminUsers(),
+    queryFn: ({ pageParam }) => listAdminUsers({ cursorAfter: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     ...queryPolicy('adminUsers'),
   });
 }
@@ -27,7 +43,50 @@ export function useUpdateAdminUser() {
     mutationFn: (update: AdminUserUpdate) => updateAdminUser(update),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.adminUsers });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.adminAudit });
     },
+  });
+}
+
+/** Suspend (block) or re-activate a user's account. */
+export function useSetAdminUserStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { userId: string; action: 'suspend' | 'unsuspend' }) =>
+      setAdminUserStatus(input.userId, input.action),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.adminUsers });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.adminAudit });
+    },
+  });
+}
+
+/** Newest-first page of admin action logs (cursor-paginated). */
+export function useAdminAudit() {
+  return useInfiniteQuery({
+    queryKey: queryKeys.adminAudit,
+    queryFn: ({ pageParam }) => listAdminAudit({ cursorAfter: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    ...queryPolicy('adminAudit'),
+  });
+}
+
+/** Read-only drill-down into one user's data, fetched only while the modal is open. */
+export function useAdminUserDrilldown(
+  userId: string | null,
+  resource: AdminDrillResource,
+  enabled = true,
+) {
+  return useInfiniteQuery({
+    queryKey: [...queryKeys.adminUserDrilldown(userId ?? ''), resource],
+    queryFn: ({ pageParam }) =>
+      getAdminUserDrilldown(userId as string, resource, { cursorAfter: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) =>
+      'nextCursor' in lastPage && lastPage.nextCursor ? lastPage.nextCursor : undefined,
+    enabled: Boolean(userId) && enabled,
+    ...queryPolicy('adminUsers'),
   });
 }
 

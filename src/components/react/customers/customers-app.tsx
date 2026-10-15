@@ -5,6 +5,7 @@ import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
 import { Button } from '../ui/button';
 import { cardClass } from '../ui/card';
+import { LoadMore } from '../ui/load-more';
 import { Modal } from '../ui/modal';
 import { PageHeader } from '../ui/page-header';
 import { FieldShell, useFieldIds } from '../ui/field';
@@ -14,11 +15,12 @@ import { EmptyState, ErrorState, LoadingState } from '../ui/state';
 import { usePageTour } from '../../../lib/tour/use-tour';
 import {
   useCreateCustomer,
-  useCustomers,
+  useCustomersPage,
   useDeleteCustomer,
   useMergeCustomers,
   useUpdateCustomer,
 } from '../../../lib/query/hooks/use-customers';
+import { listCustomers } from '../../../app/customers';
 import { formatTanggalRelatif } from '../../../core/shared/dates';
 import { toCustomerRows } from '../../../core/excel';
 import { toAppError } from '../../../appwrite/errors';
@@ -54,7 +56,18 @@ export function CustomersApp() {
 
 function CustomersContent() {
   usePageTour('customers');
-  const { data: customers, isLoading, isError, isFetching, refetch } = useCustomers();
+  const {
+    data,
+    isLoading,
+    isError,
+    isFetching,
+    refetch,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useCustomersPage();
+  const customers = useMemo(() => data?.pages.flatMap((page) => page.rows) ?? [], [data]);
+  const total = data?.pages[0]?.total ?? 0;
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
   const deleteCustomer = useDeleteCustomer();
@@ -92,17 +105,16 @@ function CustomersContent() {
   const searchIds = useFieldIds();
 
   const selectedCustomers = useMemo(
-    () => (customers ?? []).filter((c) => selected.has(c.id)),
+    () => customers.filter((c) => selected.has(c.id)),
     [customers, selected],
   );
 
-  // Client-side filter over the already-loaded directory (it is fetched whole,
-  // so narrowing here needs no extra round-trip).
+  // Client-side filter over the pages loaded so far (the search box narrows
+  // what is on screen; "Muat lebih banyak" pulls the rest).
   const filtered = useMemo(() => {
-    const list = customers ?? [];
     const q = query.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter(
+    if (!q) return customers;
+    return customers.filter(
       (c) =>
         c.name.toLowerCase().includes(q) ||
         c.email.toLowerCase().includes(q) ||
@@ -264,7 +276,7 @@ function CustomersContent() {
               <Button
                 variant="secondary"
                 size="sm"
-                disabled={!customers || customers.length < 2}
+                disabled={customers.length < 2}
                 onClick={() => {
                   setMergeMode(true);
                   setSelected(new Set());
@@ -277,8 +289,11 @@ function CustomersContent() {
             <ExportButtons
               filename="customer-notain"
               sheetName="Customer"
-              getRows={() => toCustomerRows(customers ?? [])}
-              disabled={!customers}
+              // The export always ships the whole directory, not just the pages
+              // loaded on screen — `getRows` may return a promise for exactly
+              // this reason.
+              getRows={async () => toCustomerRows(await listCustomers())}
+              disabled={customers.length === 0}
             />
           </div>
         }
@@ -370,7 +385,7 @@ function CustomersContent() {
 
       {isLoading ? (
         <LoadingState label="Memuat customer…" />
-      ) : isError && !customers ? (
+      ) : isError && customers.length === 0 ? (
         // A failed load must not masquerade as "Belum ada customer" — copy the
         // invoice table's two-state handling: full error + retry when empty,
         // stale rows when we still have them.
@@ -383,7 +398,7 @@ function CustomersContent() {
             </Button>
           }
         />
-      ) : !customers || customers.length === 0 ? (
+      ) : customers.length === 0 ? (
         <EmptyState
           icon={Users}
           title="Belum ada customer"
@@ -391,16 +406,23 @@ function CustomersContent() {
         />
       ) : (
         <div className="flex flex-col gap-3">
-          <div className="w-full sm:max-w-xs">
-            <label htmlFor={searchIds.id} className="sr-only">
-              Cari customer
-            </label>
-            <SearchField
-              id={searchIds.id}
-              value={query}
-              placeholder="Cari nama, email, atau nomor…"
-              onChange={setQuery}
-            />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="w-full sm:max-w-xs">
+              <label htmlFor={searchIds.id} className="sr-only">
+                Cari customer
+              </label>
+              <SearchField
+                id={searchIds.id}
+                value={query}
+                placeholder="Cari nama, email, atau nomor…"
+                onChange={setQuery}
+              />
+            </div>
+            {total > customers.length && (
+              <p className="text-xs text-muted">
+                {customers.length} dari {total} customer dimuat
+              </p>
+            )}
           </div>
 
           {filtered.length === 0 ? (
@@ -454,6 +476,12 @@ function CustomersContent() {
           ))}
             </ul>
           )}
+
+          <LoadMore
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            fetchNextPage={() => void fetchNextPage()}
+          />
         </div>
       )}
 

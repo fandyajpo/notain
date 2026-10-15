@@ -10,6 +10,15 @@ import type { Customer, CustomerDraft } from '../core/customer/model';
 export interface CustomerRepository {
   listByOwner(ownerId: string): Promise<Customer[]>;
   /**
+   * One page of the directory, in storage order, for the `/customers` page's
+   * "Muat lebih banyak" list. `listByOwner` stays for callers that need the
+   * whole directory (the picker, duplicate checks, merge).
+   */
+  listPage(
+    ownerId: string,
+    options?: { cursorAfter?: string; limit?: number },
+  ): Promise<{ rows: Customer[]; nextCursor: string | null }>;
+  /**
    * Total rows the owner has, without transferring them.
    *
    * Backed by the list response's `total` with a one-row limit, so a "how many

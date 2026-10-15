@@ -1,8 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createTemplate,
   deleteTemplate,
   listTemplates,
+  listTemplatesPage,
   updateTemplate,
 } from '../../../app/templates';
 import { queryPolicy } from '../policies';
@@ -21,6 +22,20 @@ export function useTemplates() {
   });
 }
 
+/**
+ * The `/templates` page's own cursor-paginated grid ("Muat lebih banyak").
+ * Kept apart from `useTemplates`, which the invoice builder still needs whole.
+ */
+export function useTemplatesPage() {
+  return useInfiniteQuery({
+    queryKey: queryKeys.templatesPage,
+    queryFn: ({ pageParam }) => listTemplatesPage({ cursorAfter: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    ...queryPolicy('templatesPage'),
+  });
+}
+
 export function useCreateTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -28,6 +43,7 @@ export function useCreateTemplate() {
     onSuccess: (template) => {
       queryClient.setQueryData(queryKeys.template(template.id), template);
       void queryClient.invalidateQueries({ queryKey: queryKeys.templates });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.templatesPage });
     },
   });
 }
@@ -40,6 +56,7 @@ export function useUpdateTemplate() {
     onSuccess: (saved) => {
       queryClient.setQueryData(queryKeys.template(saved.id), saved);
       void queryClient.invalidateQueries({ queryKey: queryKeys.templates });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.templatesPage });
     },
   });
 }
@@ -68,6 +85,7 @@ export function useDeleteTemplate() {
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.templates });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.templatesPage });
     },
   });
 }

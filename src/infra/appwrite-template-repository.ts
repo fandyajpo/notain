@@ -66,6 +66,31 @@ export class AppwriteTemplateRepository implements TemplateRepository {
     }
   }
 
+  async listPage(
+    ownerId: string,
+    options: { cursorAfter?: string; limit?: number } = {},
+  ): Promise<{ rows: InvoiceTemplate[]; nextCursor: string | null }> {
+    const limit = Math.min(Math.max(options.limit ?? 25, 1), 50);
+    try {
+      const response = await getTables().listRows<TemplateRow>({
+        databaseId: APPWRITE.databaseId,
+        tableId: APPWRITE.templatesTableId,
+        queries: [
+          Query.equal('ownerId', ownerId),
+          Query.limit(limit),
+          ...(options.cursorAfter ? [Query.cursorAfter(options.cursorAfter)] : []),
+        ],
+      });
+      const last = response.rows.at(-1);
+      return {
+        rows: response.rows.map(templateRowToDomain),
+        nextCursor: response.rows.length === limit && last ? last.$id : null,
+      };
+    } catch (error) {
+      throw toAppError(error);
+    }
+  }
+
   async getById(id: string): Promise<InvoiceTemplate | null> {
     try {
       const row = await getTables().getRow<TemplateRow>({

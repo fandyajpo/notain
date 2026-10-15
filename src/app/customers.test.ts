@@ -4,19 +4,22 @@ import type { Customer } from '../core/customer/model';
 import { AppError } from '../core/shared/errors';
 
 const { getSession } = vi.hoisted(() => ({ getSession: vi.fn() }));
-const { listByOwner, countByOwner, findByName, create, update, remove } = vi.hoisted(() => ({
-  listByOwner: vi.fn(),
-  countByOwner: vi.fn(),
-  findByName: vi.fn(),
-  create: vi.fn(),
-  update: vi.fn(),
-  remove: vi.fn(),
-}));
+const { listByOwner, listPage, countByOwner, findByName, create, update, remove } = vi.hoisted(
+  () => ({
+    listByOwner: vi.fn(),
+    listPage: vi.fn(),
+    countByOwner: vi.fn(),
+    findByName: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
+  }),
+);
 
 vi.mock('../infra/container', () => ({
   container: {
     auth: { getSession },
-    customers: { listByOwner, countByOwner, findByName, create, update, remove },
+    customers: { listByOwner, listPage, countByOwner, findByName, create, update, remove },
   },
 }));
 
@@ -26,6 +29,7 @@ const {
   deleteCustomer,
   importCustomers,
   listCustomers,
+  listCustomersPage,
   mergeCustomers,
   rememberCustomer,
   updateCustomer,
@@ -49,6 +53,7 @@ beforeEach(() => {
   forgetSession();
   getSession.mockReset();
   listByOwner.mockReset();
+  listPage.mockReset();
   countByOwner.mockReset();
   findByName.mockReset();
   create.mockReset();
@@ -77,6 +82,39 @@ describe('listCustomers', () => {
     getSession.mockResolvedValue(null);
 
     await expect(listCustomers()).rejects.toBeInstanceOf(AppError);
+  });
+});
+
+describe('listCustomersPage', () => {
+  it('returns one page plus the directory total', async () => {
+    listPage.mockResolvedValue({ rows: [budi()], nextCursor: 'cus-1' });
+    countByOwner.mockResolvedValue(42);
+
+    await expect(listCustomersPage({ cursorAfter: 'cus-0', limit: 25 })).resolves.toEqual({
+      rows: [budi()],
+      nextCursor: 'cus-1',
+      total: 42,
+    });
+    expect(listPage).toHaveBeenCalledWith('user-a', { cursorAfter: 'cus-0', limit: 25 });
+    expect(countByOwner).toHaveBeenCalledWith('user-a');
+  });
+
+  it('passes an empty cursor through untouched for the first page', async () => {
+    listPage.mockResolvedValue({ rows: [], nextCursor: null });
+    countByOwner.mockResolvedValue(0);
+
+    await expect(listCustomersPage()).resolves.toEqual({
+      rows: [],
+      nextCursor: null,
+      total: 0,
+    });
+    expect(listPage).toHaveBeenCalledWith('user-a', {});
+  });
+
+  it('requires a session', async () => {
+    getSession.mockResolvedValue(null);
+
+    await expect(listCustomersPage()).rejects.toBeInstanceOf(AppError);
   });
 });
 

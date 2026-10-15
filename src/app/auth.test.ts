@@ -1,20 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppError, ERROR_CODES } from '../core/shared/errors';
 
-const { createRecovery, completeRecovery } = vi.hoisted(() => ({
+const { createRecovery, completeRecovery, signOut } = vi.hoisted(() => ({
   createRecovery: vi.fn(),
   completeRecovery: vi.fn(),
+  signOut: vi.fn(),
 }));
 
 vi.mock('../infra/container', () => ({
-  container: { auth: { createRecovery, completeRecovery } },
+  container: { auth: { createRecovery, completeRecovery, signOut } },
 }));
 
-const { createRecovery: createRecoveryUseCase, completeRecovery: completeRecoveryUseCase } =
-  await import('./auth');
+const {
+  createRecovery: createRecoveryUseCase,
+  completeRecovery: completeRecoveryUseCase,
+  signOut: signOutUseCase,
+} = await import('./auth');
 
 beforeEach(() => {
   createRecovery.mockReset();
   completeRecovery.mockReset();
+  signOut.mockReset();
 });
 
 describe('createRecovery', () => {
@@ -56,5 +62,29 @@ describe('completeRecovery', () => {
     await expect(
       completeRecoveryUseCase({ userId: 'u', secret: 's', password: 'p' }),
     ).rejects.toThrow('Tautan reset tidak valid atau sudah dipakai.');
+  });
+});
+
+describe('signOut', () => {
+  it('forgets the local session when the server says the session is already gone', async () => {
+    // A blocked account (or one whose session was deleted elsewhere) cannot
+    // end its own session server-side; the local logout must still proceed or
+    // the user is stuck signed-in to a dead session.
+    signOut.mockRejectedValue(new AppError(ERROR_CODES.UNAUTHENTICATED, 'gone'));
+
+    await expect(signOutUseCase()).resolves.toBeUndefined();
+    expect(signOut).toHaveBeenCalled();
+  });
+
+  it('forgets the local session when the account is blocked (suspended)', async () => {
+    signOut.mockRejectedValue(new AppError(ERROR_CODES.SUSPENDED, 'blocked'));
+
+    await expect(signOutUseCase()).resolves.toBeUndefined();
+  });
+
+  it('surfaces a genuine network failure so the user can retry', async () => {
+    signOut.mockRejectedValue(new AppError(ERROR_CODES.NETWORK, 'Tidak bisa terhubung.'));
+
+    await expect(signOutUseCase()).rejects.toThrow('Tidak bisa terhubung.');
   });
 });

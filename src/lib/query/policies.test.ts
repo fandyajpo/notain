@@ -39,6 +39,7 @@ describe('shouldRetry', () => {
       ERROR_CODES.VALIDATION,
       ERROR_CODES.CONFLICT,
       ERROR_CODES.RATE_LIMITED,
+      ERROR_CODES.SUSPENDED,
     ]) {
       expect(shouldRetry(0, appError(code)), code).toBe(false);
     }
@@ -83,10 +84,12 @@ describe('QUERY_POLICIES', () => {
   it('declares a policy for every query in the app', () => {
     expect(Object.keys(QUERY_POLICIES).sort()).toEqual(
       [
+        'adminAudit',
         'adminMembership',
         'adminUsers',
         'customerCount',
         'customers',
+        'customersPage',
         'invoice',
         'invoiceNumbers',
         'invoices',
@@ -94,6 +97,7 @@ describe('QUERY_POLICIES', () => {
         'session',
         'stats',
         'templates',
+        'templatesPage',
       ].sort(),
     );
   });

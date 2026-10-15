@@ -30,6 +30,16 @@ describe('toAppError', () => {
     );
   });
 
+  it('maps a blocked account (user_blocked) to SUSPENDED, not UNAUTHENTICATED', () => {
+    // Appwrite answers a blocked user with 401, but the reason is a permanent
+    // state — retrying or treating it as "your token expired" would mislead
+    // the user. Key off the type string, not the status.
+    const error = toAppError(appwriteError(401, 'user_blocked'));
+
+    expect(error.code).toBe(ERROR_CODES.SUSPENDED);
+    expect(error.message).toContain('dinonaktifkan');
+  });
+
   it('maps the remaining status codes to their own error codes', () => {
     expect(toAppError(appwriteError(401)).code).toBe(ERROR_CODES.UNAUTHENTICATED);
     expect(toAppError(appwriteError(403)).code).toBe(ERROR_CODES.FORBIDDEN);
