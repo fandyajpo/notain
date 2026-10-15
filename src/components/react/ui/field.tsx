@@ -1,5 +1,5 @@
 import { CircleAlert } from 'lucide-react';
-import { useId, type ReactNode } from 'react';
+import { cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from 'react';
 
 type ControlProps = {
   invalid?: boolean;
@@ -77,13 +77,28 @@ export function FieldShell({
 }: FieldShellProps) {
   const message = errorMessage(error);
 
+  // Point the control at its error message so a screen reader re-announces it
+  // when the field regains focus (the error's own `role="alert"` already
+  // announces it on first appearance). Skipped when the caller wired its own
+  // describedby (auth-form does); a custom control that does not forward aria
+  // props simply ignores it.
+  let control: ReactNode = children;
+  if (message && isValidElement(children)) {
+    const props = children.props as Record<string, unknown>;
+    if (props['aria-describedby'] === undefined) {
+      control = cloneElement(children as ReactElement<Record<string, unknown>>, {
+        'aria-describedby': `${htmlFor}-error`,
+      });
+    }
+  }
+
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={htmlFor} className="text-sm font-medium text-foreground">
         {label}
         {required && <span className="text-danger"> *</span>}
       </label>
-      {children}
+      {control}
       {message ? (
         <p
           id={`${htmlFor}-error`}

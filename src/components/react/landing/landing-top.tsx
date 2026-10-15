@@ -2,6 +2,7 @@ import { MotionConfig, motion, useScroll, useSpring } from 'motion/react';
 import type { ReactNode } from 'react';
 import { SiteHeader } from './site-header';
 import { Hero } from './hero';
+import { IslandBoundary } from '../ui/island-boundary';
 
 type Props = {
   /**
@@ -26,27 +27,29 @@ export function LandingTop({ children }: Props) {
   const progress = useSpring(scrollYProgress, { stiffness: 150, damping: 30, mass: 0.3 });
 
   return (
-    <MotionConfig reducedMotion="user">
-      <motion.div
-        aria-hidden="true"
-        style={{ scaleX: progress }}
-        className="fixed inset-x-0 top-0 z-50 h-0.5 origin-left bg-accent will-change-transform"
-      />
+    <IslandBoundary>
+      <MotionConfig reducedMotion="user">
+        <motion.div
+          aria-hidden="true"
+          style={{ scaleX: progress }}
+          className="fixed inset-x-0 top-0 z-50 h-0.5 origin-left bg-accent will-change-transform"
+        />
 
-      <SiteHeader />
+        <SiteHeader />
 
-      <main>
-        <section className="mx-auto w-full max-w-6xl px-5 sm:px-8">
-          <Hero
-            ctaHref="/register"
-            ctaLabel="Buat Invoice Gratis"
-            secondaryHref="#cara-kerja"
-            secondaryLabel="Lihat cara kerjanya"
-          />
-        </section>
+        <main>
+          <section className="mx-auto w-full max-w-6xl px-5 sm:px-8">
+            <Hero
+              ctaHref="/register"
+              ctaLabel="Buat Invoice Gratis"
+              secondaryHref="#cara-kerja"
+              secondaryLabel="Lihat cara kerjanya"
+            />
+          </section>
 
-        {children}
-      </main>
-    </MotionConfig>
+          {children}
+        </main>
+      </MotionConfig>
+    </IslandBoundary>
   );
 }

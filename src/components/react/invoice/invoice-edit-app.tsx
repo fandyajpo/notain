@@ -33,7 +33,7 @@ function readInvoiceId(): string | undefined {
 }
 
 function InvoiceEditContent({ invoiceId }: { invoiceId: string | undefined }) {
-  const { data: invoice, isLoading, isError } = useInvoice(invoiceId);
+  const { data: invoice, isLoading, isError, isFetching, refetch } = useInvoice(invoiceId);
   const { data: profile } = useProfile();
 
   if (!invoiceId) {
@@ -48,7 +48,25 @@ function InvoiceEditContent({ invoiceId }: { invoiceId: string | undefined }) {
     );
   }
 
-  if (isError || !invoice) {
+  // A failed fetch is not a missing invoice — offer a retry rather than
+  // claiming the invoice was deleted or belongs to another account.
+  if (isError && !invoice) {
+    return (
+      <Card padding="none" className="px-6 py-14 text-center">
+        <p className="text-base font-semibold text-danger">Gagal memuat invoice</p>
+        <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
+          Periksa koneksi internet kamu, lalu coba lagi. Data kamu tidak hilang.
+        </p>
+        <div className="mt-6 flex justify-center">
+          <Button loading={isFetching} onClick={() => void refetch()}>
+            Coba lagi
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
+  if (!invoice) {
     return (
       <NotFound message="Invoice ini mungkin sudah dihapus, atau kamu membuka tautan dari akun lain." />
     );

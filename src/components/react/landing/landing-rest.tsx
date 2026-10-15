@@ -6,6 +6,7 @@ import { BenefitsBand } from './benefits-band';
 import { ExcelSection } from './excel-section';
 import { FaqSection } from './faq-section';
 import { FinaleCta } from './finale-cta';
+import { IslandBoundary } from '../ui/island-boundary';
 
 /**
  * The sections below the hero. This island mounts with `client:visible`
@@ -15,20 +16,22 @@ import { FinaleCta } from './finale-cta';
  */
 export function LandingRest() {
   return (
-    <MotionConfig reducedMotion="user">
-      <AudienceMarquee />
+    <IslandBoundary>
+      <MotionConfig reducedMotion="user">
+        <AudienceMarquee />
 
-      <WorkflowSteps />
+        <WorkflowSteps />
 
-      <WhatsAppSection />
+        <WhatsAppSection />
 
-      <BenefitsBand />
+        <BenefitsBand />
 
-      <ExcelSection />
+        <ExcelSection />
 
-      <FaqSection />
+        <FaqSection />
 
-      <FinaleCta />
-    </MotionConfig>
+        <FinaleCta />
+      </MotionConfig>
+    </IslandBoundary>
   );
 }

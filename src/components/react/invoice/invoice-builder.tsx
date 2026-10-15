@@ -37,6 +37,7 @@ import {
 import { useRememberCustomer } from '../../../lib/query/hooks/use-customers';
 import { usePageTour } from '../../../lib/tour/use-tour';
 import { useUnsavedChangesGuard } from '../../../lib/use-unsaved-changes-guard';
+import { toAppError } from '../../../appwrite/errors';
 import { useTemplates } from '../../../lib/query/hooks/use-templates';
 import { useSession } from '../../../lib/query/hooks/use-session';
 import type { PickPayload } from '../../shared/contracts';
@@ -203,10 +204,7 @@ export function InvoiceBuilder({
         disarmGuard.current();
         window.location.assign('/dashboard');
       } catch (error) {
-        const message =
-          typeof error === 'object' && error !== null && 'message' in error
-            ? String((error as { message: string }).message)
-            : 'Invoice gagal disimpan. Coba lagi.';
+        const message = toAppError(error).message;
         setSaveError(message);
         toast(message, { variant: 'error' });
       }

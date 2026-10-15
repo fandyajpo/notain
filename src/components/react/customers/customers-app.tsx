@@ -27,6 +27,16 @@ import { CustomerImportPanel } from './customer-import';
 
 const EMPTY_DRAFT: CustomerDraft = { name: '', email: '', phone: '' };
 
+/**
+ * Field-keyed validation messages on an `AppError`, or `null` when the failure
+ * was not a validation one (duplicate, network, storage) and so has no field
+ * to attach a message to.
+ */
+function takeFieldErrors(error: unknown): Record<string, string> | null {
+  const fields = toAppError(error).fieldErrors;
+  return Object.keys(fields).length > 0 ? { ...fields } : null;
+}
+
 /** The `/customers` island: the saved-customer directory, editable in place. */
 export function CustomersApp() {
   return (
@@ -42,7 +52,7 @@ export function CustomersApp() {
 
 function CustomersContent() {
   usePageTour('customers');
-  const { data: customers, isLoading } = useCustomers();
+  const { data: customers, isLoading, isError, isFetching, refetch } = useCustomers();
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
   const deleteCustomer = useDeleteCustomer();
@@ -51,10 +61,15 @@ function CustomersContent() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  // Server-side validation (overlong name/email/phone) comes back as
+  // `fieldErrors`, keyed by the schema path. Rejected instead of the blocking
+  // warning modal so the message sits under the field that caused it.
+  const [createFieldErrors, setCreateFieldErrors] = useState<Record<string, string>>({});
 
   // Edit modal state.
   const [editing, setEditing] = useState<Customer | null>(null);
   const [editForm, setEditForm] = useState<CustomerDraft>(EMPTY_DRAFT);
+  const [editFieldErrors, setEditFieldErrors] = useState<Record<string, string>>({});
 
   // Merge mode state.
   const [mergeMode, setMergeMode] = useState(false);
@@ -104,9 +119,14 @@ function CustomersContent() {
           setName('');
           setEmail('');
           setPhone('');
+          setCreateFieldErrors({});
         },
         onError: (error) => {
-          setWarning(toAppError(error).message);
+          const fieldErrors = takeFieldErrors(error);
+          // Only a validation failure carries field keys — a duplicate or a
+          // network drop still gets the blocking warning.
+          if (fieldErrors) setCreateFieldErrors(fieldErrors);
+          else setWarning(toAppError(error).message);
         },
       },
     );
@@ -115,6 +135,7 @@ function CustomersContent() {
   function openEdit(customer: Customer) {
     setEditing(customer);
     setEditForm({ name: customer.name, email: customer.email, phone: customer.phone });
+    setEditFieldErrors({});
   }
 
   function handleSaveEdit() {
@@ -130,7 +151,9 @@ function CustomersContent() {
           toast('Customer berhasil diperbarui.', { variant: 'success' });
         },
         onError: (error) => {
-          toast(toAppError(error).message, { variant: 'error' });
+          const fieldErrors = takeFieldErrors(error);
+          if (fieldErrors) setEditFieldErrors(fieldErrors);
+          else toast(toAppError(error).message, { variant: 'error' });
         },
       },
     );
@@ -274,10 +297,21 @@ function CustomersContent() {
           <Input
             id={nameIds.id}
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => {
+              setName(event.target.value);
+              if (createFieldErrors.name) setCreateFieldErrors((rest) => ({ ...rest, name: '' }));
+            }}
             placeholder="Budi Santoso"
             autoComplete="off"
+            invalid={Boolean(createFieldErrors.name)}
+            aria-invalid={createFieldErrors.name ? 'true' : undefined}
+            aria-describedby={createFieldErrors.name ? nameIds.errorId : undefined}
           />
+          {createFieldErrors.name && (
+            <p id={nameIds.errorId} role="alert" className="text-xs font-medium text-danger">
+              {createFieldErrors.name}
+            </p>
+          )}
         </div>
         <div className="flex flex-1 flex-col gap-1.5">
           <label htmlFor={emailIds.id} className="text-sm font-medium text-foreground">
@@ -286,11 +320,24 @@ function CustomersContent() {
           <Input
             id={emailIds.id}
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              if (createFieldErrors.email) {
+                setCreateFieldErrors((rest) => ({ ...rest, email: '' }));
+              }
+            }}
             placeholder="budi@email.com"
             autoComplete="off"
             inputMode="email"
+            invalid={Boolean(createFieldErrors.email)}
+            aria-invalid={createFieldErrors.email ? 'true' : undefined}
+            aria-describedby={createFieldErrors.email ? emailIds.errorId : undefined}
           />
+          {createFieldErrors.email && (
+            <p id={emailIds.errorId} role="alert" className="text-xs font-medium text-danger">
+              {createFieldErrors.email}
+            </p>
+          )}
         </div>
         <div className="flex flex-1 flex-col gap-1.5">
           <label htmlFor={phoneIds.id} className="text-sm font-medium text-foreground">
@@ -299,11 +346,24 @@ function CustomersContent() {
           <Input
             id={phoneIds.id}
             value={phone}
-            onChange={(event) => setPhone(event.target.value)}
+            onChange={(event) => {
+              setPhone(event.target.value);
+              if (createFieldErrors.phone) {
+                setCreateFieldErrors((rest) => ({ ...rest, phone: '' }));
+              }
+            }}
             placeholder="0812…"
             autoComplete="off"
             inputMode="tel"
+            invalid={Boolean(createFieldErrors.phone)}
+            aria-invalid={createFieldErrors.phone ? 'true' : undefined}
+            aria-describedby={createFieldErrors.phone ? phoneIds.errorId : undefined}
           />
+          {createFieldErrors.phone && (
+            <p id={phoneIds.errorId} role="alert" className="text-xs font-medium text-danger">
+              {createFieldErrors.phone}
+            </p>
+          )}
         </div>
         <Button
           type="submit"
@@ -322,6 +382,24 @@ function CustomersContent() {
         <Card padding="none" className="px-4 py-10 text-center text-sm text-muted">
           Memuat customer…
         </Card>
+      ) : isError && !customers ? (
+        // A failed load must not masquerade as "Belum ada customer" — copy the
+        // invoice table's two-state handling: full error + retry when empty,
+        // stale rows when we still have them.
+        <div
+          role="alert"
+          className="rounded-card border border-danger/25 bg-danger-soft px-6 py-12 text-center"
+        >
+          <p className="text-base font-semibold text-danger">Gagal memuat customer</p>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
+            Periksa koneksi internet kamu, lalu coba lagi.
+          </p>
+          <div className="mt-5 flex justify-center">
+            <Button size="sm" loading={isFetching} onClick={() => void refetch()}>
+              Coba lagi
+            </Button>
+          </div>
+        </div>
       ) : !customers || customers.length === 0 ? (
         <EmptyCard>
           <Users size={24} className="mx-auto text-muted" aria-hidden="true" />
@@ -429,28 +507,40 @@ function CustomersContent() {
         ]}
       >
         <div className="flex flex-col gap-4">
-          <FieldShell label="Nama" htmlFor="edit-customer-name" required>
+          <FieldShell label="Nama" htmlFor="edit-customer-name" required error={editFieldErrors.name}>
             <Input
               id="edit-customer-name"
               type="text"
               value={editForm.name}
-              onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+              onChange={(e) => {
+                setEditForm((f) => ({ ...f, name: e.target.value }));
+                if (editFieldErrors.name) setEditFieldErrors((r) => ({ ...r, name: '' }));
+              }}
+              invalid={Boolean(editFieldErrors.name)}
             />
           </FieldShell>
-          <FieldShell label="Email" htmlFor="edit-customer-email">
+          <FieldShell label="Email" htmlFor="edit-customer-email" error={editFieldErrors.email}>
             <Input
               id="edit-customer-email"
               type="email"
               value={editForm.email}
-              onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+              onChange={(e) => {
+                setEditForm((f) => ({ ...f, email: e.target.value }));
+                if (editFieldErrors.email) setEditFieldErrors((r) => ({ ...r, email: '' }));
+              }}
+              invalid={Boolean(editFieldErrors.email)}
             />
           </FieldShell>
-          <FieldShell label="WhatsApp" htmlFor="edit-customer-phone">
+          <FieldShell label="WhatsApp" htmlFor="edit-customer-phone" error={editFieldErrors.phone}>
             <Input
               id="edit-customer-phone"
               type="tel"
               value={editForm.phone}
-              onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
+              onChange={(e) => {
+                setEditForm((f) => ({ ...f, phone: e.target.value }));
+                if (editFieldErrors.phone) setEditFieldErrors((r) => ({ ...r, phone: '' }));
+              }}
+              invalid={Boolean(editFieldErrors.phone)}
             />
           </FieldShell>
         </div>

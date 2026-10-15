@@ -19,6 +19,7 @@ import {
   useUpdateAdminUser,
 } from '../../../lib/query/hooks/use-admin';
 import type { AdminUser, AdminUserUpdate } from '../../../app/admin';
+import { toAppError } from '../../../appwrite/errors';
 import { profileFormSchema } from '../../../core/profile/model';
 
 type PlanVariant = 'neutral' | 'accent' | 'warning';
@@ -161,6 +162,7 @@ function AdminContent() {
   }, [users, query, planFilter]);
 
   const openEdit = (user: AdminUser) => {
+    updateAdminUser.reset();
     setEditing(user);
     setForm({
       userId: user.userId,
@@ -216,11 +218,14 @@ function AdminContent() {
     }
   };
 
+  // Normalized through `toAppError` so a raw `HTTP 500`-style string from the
+  // admin route never reaches the user.
   const errorMessage =
-    (error instanceof Error ? error.message : null) ??
-    (updateAdminUser.error instanceof Error ? updateAdminUser.error.message : null);
+    (error ? toAppError(error).message : null) ??
+    (updateAdminUser.error ? toAppError(updateAdminUser.error).message : null);
 
   function openSubscribe(user: AdminUser) {
+    updateAdminUser.reset();
     setSubscribeTarget(user);
     setSubPlan('pro');
     setSubExpiry('');
@@ -352,8 +357,25 @@ function AdminContent() {
             {users.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center text-muted">
-                  <Users size={20} className="mx-auto mb-2 opacity-50" aria-hidden="true" />
-                  Belum ada user terdaftar.
+                  {error ? (
+                    // The list failed to load — don't claim there are no users.
+                    <>
+                      <p className="font-medium text-danger">Gagal memuat user</p>
+                      <p className="mt-1 text-sm text-muted">
+                        Periksa koneksi internet kamu, lalu muat ulang.
+                      </p>
+                      <div className="mt-4 flex justify-center">
+                        <Button size="sm" loading={isFetching} onClick={() => void refetch()}>
+                          Coba lagi
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Users size={20} className="mx-auto mb-2 opacity-50" aria-hidden="true" />
+                      Belum ada user terdaftar.
+                    </>
+                  )}
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
@@ -395,7 +417,10 @@ function AdminContent() {
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => setUnsubscribeTarget(user)}
+                          onClick={() => {
+                            updateAdminUser.reset();
+                            setUnsubscribeTarget(user);
+                          }}
                           className="text-muted hover:border-danger/40 hover:text-danger"
                         >
                           Lepas
@@ -439,6 +464,14 @@ function AdminContent() {
         ]}
       >
         <div className="flex flex-col gap-4">
+          {updateAdminUser.isError && (
+            <p
+              role="alert"
+              className="rounded-control border border-danger/25 bg-danger-soft px-3 py-2 text-sm text-danger"
+            >
+              {toAppError(updateAdminUser.error).message}
+            </p>
+          )}
           <FieldShell label="Nama" htmlFor="admin-name" required error={formErrors.name}>
             <Input
               id="admin-name"
@@ -540,6 +573,14 @@ function AdminContent() {
         ]}
       >
         <div className="flex flex-col gap-4">
+          {updateAdminUser.isError && (
+            <p
+              role="alert"
+              className="rounded-control border border-danger/25 bg-danger-soft px-3 py-2 text-sm text-danger"
+            >
+              {toAppError(updateAdminUser.error).message}
+            </p>
+          )}
           <p className="text-sm text-muted">
             {subscribeTarget?.name || subscribeTarget?.email} akan diberi plan berbayar.
           </p>
@@ -580,6 +621,14 @@ function AdminContent() {
           },
         ]}
       >
+        {updateAdminUser.isError && (
+          <p
+            role="alert"
+            className="mb-3 rounded-control border border-danger/25 bg-danger-soft px-3 py-2 text-sm text-danger"
+          >
+            {toAppError(updateAdminUser.error).message}
+          </p>
+        )}
         <p className="text-sm text-muted">
           Plan <span className="font-medium text-foreground">{unsubscribeTarget?.name || unsubscribeTarget?.email}</span>{' '}
           akan kembali ke Free dan masa berlakunya dihapus.

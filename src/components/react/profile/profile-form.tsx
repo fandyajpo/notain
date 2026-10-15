@@ -5,7 +5,7 @@ import {
   type BusinessProfile,
   type ProfileFormValues,
 } from '../../../core/profile/model';
-import { GENERIC_ERROR_MESSAGE } from '../../../core/shared/errors';
+import { toAppError } from '../../../appwrite/errors';
 import { useSaveProfile, useUploadLogo, useRemoveLogo } from '../../../lib/query/hooks/use-profile';
 import { toast } from '../../../lib/ui/toast';
 import { Button } from '../ui/button';
@@ -53,11 +53,7 @@ export function ProfileForm({ profile }: Props) {
         });
         toast('Profil usaha berhasil disimpan.', { variant: 'success' });
       } catch (error) {
-        setServerError(
-          typeof error === 'object' && error !== null && 'message' in error
-            ? String((error as { message: string }).message)
-            : GENERIC_ERROR_MESSAGE,
-        );
+        setServerError(toAppError(error).message);
       }
     },
   });

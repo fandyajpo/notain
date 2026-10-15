@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
@@ -32,7 +32,12 @@ export function PrintApp() {
 
 function PrintContent() {
   const invoice = useMemo(() => readPrintPayload(), []);
-  const { data: profile, isLoading: profileLoading } = useProfile();
+  const {
+    data: profile,
+    isLoading: profileLoading,
+    isError: profileError,
+    refetch: refetchProfile,
+  } = useProfile();
   const { data: templates, isLoading: templatesLoading } = useTemplates();
 
   const autoPrint = useMemo(
@@ -43,8 +48,11 @@ function PrintContent() {
   // A custom template has to be in hand before this page is ready. Printing
   // while the list is still in flight would silently render the built-in
   // fallback — the printed invoice would not match what the builder showed.
+  // A failed profile fetch blocks readiness too: auto-printing a blank
+  // letterhead would ship a broken kop with no warning.
   const pendingTemplate = Boolean(invoice?.templateId) && templatesLoading;
-  const ready = invoice !== null && !profileLoading && !pendingTemplate;
+  const ready =
+    invoice !== null && !profileLoading && !profileError && !pendingTemplate;
 
   // Opening the dialog straight away keeps "PDF" a single click. The short
   // delay is for layout, not data: it lets fonts and the logo settle before
@@ -58,6 +66,26 @@ function PrintContent() {
 
   if (!invoice) return <MissingPayload />;
   if (profileLoading) return <Status>Menyiapkan halaman cetak…</Status>;
+
+  if (profileError && !profile) {
+    // Refuse to print a blank letterhead — surface the failure and offer a retry.
+    return (
+      <Status>
+        <div className="flex flex-col items-center text-center">
+          <p className="font-semibold text-danger">Gagal memuat data usaha</p>
+          <p className="mt-1 max-w-sm text-sm text-muted">
+            Periksa koneksi internet kamu, lalu muat ulang sebelum mencetak.
+          </p>
+          <div className="mt-4 flex justify-center gap-2">
+            <Button variant="secondary" onClick={() => window.history.back()}>
+              Kembali
+            </Button>
+            <Button onClick={() => void refetchProfile()}>Coba lagi</Button>
+          </div>
+        </div>
+      </Status>
+    );
+  }
 
   const business = profile ?? EMPTY_PROFILE;
 
@@ -98,7 +126,7 @@ function PrintContent() {
   );
 }
 
-function Status({ children }: { children: string }) {
+function Status({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-[50vh] items-center justify-center px-5 text-center text-sm text-muted">
       {children}

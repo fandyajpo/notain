@@ -44,10 +44,19 @@ function readSourceId(): string | undefined {
 
 function InvoiceNewContent() {
   const sourceId = useMemo(readSourceId, []);
-  const { data: profile, isLoading: profileLoading } = useProfile();
-  const { data: numbers, isLoading: numbersLoading } = useInvoiceNumbers();
-  const { data: savedTemplates, isLoading: templatesLoading } = useTemplates();
-  const { data: source, isLoading: sourceLoading, isError: sourceError } = useInvoice(sourceId);
+  const profileQuery = useProfile();
+  const numbersQuery = useInvoiceNumbers();
+  const templatesQuery = useTemplates();
+  const sourceQuery = useInvoice(sourceId);
+
+  const { data: profile, isLoading: profileLoading, isError: profileError } = profileQuery;
+  const { data: numbers, isLoading: numbersLoading, isError: numbersError } = numbersQuery;
+  const { data: savedTemplates, isLoading: templatesLoading, isError: templatesError } =
+    templatesQuery;
+  const { data: source, isLoading: sourceLoading, isError: sourceError } = sourceQuery;
+  // A failed setup query must stop here: proceeding with an empty profile or an
+  // empty number list risks a blank letterhead or a duplicate invoice number.
+  const setupFailed = profileError || numbersError || templatesError;
   // `null` means "not chosen yet"; a built-in id can be any string, so the
   // picker step is keyed on absence rather than on a falsy value.
   const [pickedTemplateId, setPickedTemplateId] = useState<string | null>(null);
@@ -73,6 +82,30 @@ function InvoiceNewContent() {
     );
   }
 
+  if (setupFailed) {
+    // Never fall through to the builder with a blank profile or an empty
+    // number list — that could produce a wrong number or letterhead.
+    return (
+      <Card padding="none" className="px-6 py-14 text-center">
+        <p className="text-base font-semibold text-danger">Gagal menyiapkan invoice</p>
+        <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
+          Periksa koneksi internet kamu, lalu coba lagi.
+        </p>
+        <div className="mt-6 flex justify-center">
+          <Button
+            onClick={() => {
+              void profileQuery.refetch();
+              void numbersQuery.refetch();
+              void templatesQuery.refetch();
+            }}
+          >
+            Coba lagi
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
   if (duplicating && sourceLoading) {
     return (
       <Card padding="none" className="px-6 py-10 text-center text-sm text-muted">
@@ -81,7 +114,24 @@ function InvoiceNewContent() {
     );
   }
 
-  if (duplicating && (sourceError || !source)) {
+  if (duplicating && sourceError && !source) {
+    // The fetch failed — that's a connectivity problem, not a missing invoice.
+    return (
+      <Card padding="none" className="px-6 py-14 text-center">
+        <p className="text-base font-semibold text-danger">Gagal menyalin invoice</p>
+        <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
+          Periksa koneksi internet kamu, lalu coba lagi.
+        </p>
+        <div className="mt-6 flex justify-center">
+          <Button loading={sourceQuery.isFetching} onClick={() => void sourceQuery.refetch()}>
+            Coba lagi
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
+  if (duplicating && !source) {
     return (
       <Card padding="none" className="px-6 py-14 text-center">
         <p className="text-base font-semibold">Invoice tidak ditemukan</p>

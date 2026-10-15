@@ -24,7 +24,13 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    this.props.onError?.(error, info);
+    if (this.props.onError) {
+      this.props.onError(error, info);
+      return;
+    }
+    // No reporter supplied: at least log it, so a production render error that
+    // the fallback swallowed is still diagnosable.
+    console.error('[notain] render error caught by boundary:', error, info.componentStack);
   }
 
   private reset = (): void => {

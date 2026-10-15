@@ -86,6 +86,7 @@ function AdjustmentRow({ label, adjustment, onChange, error }: AdjustmentRowProp
             inputMode="numeric"
             aria-label={`${label} ${isPercent ? 'dalam persen' : 'dalam rupiah'}`}
             aria-invalid={error ? 'true' : undefined}
+            aria-describedby={error ? `${label}-value-error` : undefined}
             value={
               isPercent ? String(adjustment.value || '') : formatAmountForInput(adjustment.value)
             }
@@ -104,7 +105,7 @@ function AdjustmentRow({ label, adjustment, onChange, error }: AdjustmentRowProp
       </div>
 
       {error && (
-        <p role="alert" className="text-right text-xs font-medium text-danger">
+        <p id={`${label}-value-error`} role="alert" className="text-right text-xs font-medium text-danger">
           {error}
         </p>
       )}

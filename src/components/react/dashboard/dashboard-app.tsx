@@ -88,6 +88,8 @@ function DashboardContent() {
         totalCustomers={customerCount.data}
         recent={recent}
         invoicesLoading={invoices.isLoading}
+        invoicesError={invoices.isError}
+        onRetryInvoices={() => void invoices.refetch()}
       />
     </div>
   );
@@ -98,11 +100,15 @@ function SummarySection({
   totalCustomers,
   recent,
   invoicesLoading,
+  invoicesError,
+  onRetryInvoices,
 }: {
   totalInvoices: number | undefined;
   totalCustomers: number | undefined;
   recent: Invoice[];
   invoicesLoading: boolean;
+  invoicesError: boolean;
+  onRetryInvoices: () => void;
 }) {
   return (
     <div className="flex flex-col gap-6">
@@ -133,6 +139,22 @@ function SummarySection({
 
         {invoicesLoading ? (
           <p className="text-sm text-muted">Memuat faktur…</p>
+        ) : invoicesError && recent.length === 0 ? (
+          // A failed fetch must not read as "Belum ada faktur" — offer a retry.
+          <div
+            role="alert"
+            className="rounded-card border border-danger/25 bg-danger-soft px-5 py-8 text-center"
+          >
+            <p className="font-semibold text-danger">Gagal memuat faktur</p>
+            <p className="mt-1 text-sm text-muted">
+              Periksa koneksi internet kamu, lalu coba lagi.
+            </p>
+            <div className="mt-4 flex justify-center">
+              <Button size="sm" onClick={onRetryInvoices}>
+                Coba lagi
+              </Button>
+            </div>
+          </div>
         ) : recent.length === 0 ? (
           <EmptyCard>
             <FileText size={24} className="mx-auto text-muted" aria-hidden="true" />

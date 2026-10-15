@@ -37,6 +37,38 @@ const {
         }
       </style>
     </noscript>
+    <!-- Global safety net. Attached in the head so it is listening before any
+         island hydrates, and `window` listeners survive ClientRouter swaps.
+         Covers promise rejections no caller handled (a TanStack
+         `form.handleSubmit()` rethrow, a missed `.catch`) plus connectivity
+         changes — all of which would otherwise fail silently in production. -->
+    <script>
+      import { toast } from '../lib/ui/toast';
+
+      // Debounce so a burst of rejections toasts once, not once each.
+      let rejectionToastTimer = 0;
+      window.addEventListener('unhandledrejection', (event) => {
+        console.error('[notain] unhandled promise rejection:', event.reason);
+        event.preventDefault();
+        if (rejectionToastTimer) return;
+        toast('Terjadi kesalahan tak terduga. Coba lagi.', { variant: 'error' });
+        rejectionToastTimer = window.setTimeout(() => {
+          rejectionToastTimer = 0;
+        }, 5000);
+      });
+
+      // Background refetches and mutations fail quietly offline, so say so.
+      let wasOffline = false;
+      window.addEventListener('offline', () => {
+        wasOffline = true;
+        toast('Koneksi internet terputus. Periksa jaringan kamu.', { variant: 'info' });
+      });
+      window.addEventListener('online', () => {
+        if (!wasOffline) return;
+        wasOffline = false;
+        toast('Koneksi kembali tersambung.', { variant: 'success' });
+      });
+    </script>
   </head>
   <body class="min-h-screen bg-background text-foreground">
     <slot />
