@@ -72,7 +72,11 @@ gagal dimuat dan hydrate mati diam-diam. Tanpa test ini, halaman tampak "sudah r
 
 **Vite dep-optimizer bisa basi.** Run pertama gagal 7/8 dengan `504 Outdated Optimize
 Dep` — dev server sudah jalan ±6 jam dan dependency berubah. Solusinya `astro dev stop`
-lalu start ulang. Kalau e2e tiba-tiba gagal semua dengan 504, itu penyebabnya.
+lalu start ulang. Kalau e2e tiba-tiba gagal semua dengan 504, itu penyebabnya. Kalau
+restart saja tidak cukup (504-nya nyangkut di `dev-toolbar/entrypoint.js` walau sudah
+restart berkali-kali), stop sekali lagi dengan **cache `.vite` dibiarkan utuh** — state
+optimizer yang macet baru sembuh setelah start kedua; menghapus `node_modules/.vite`
+tidak membantu dan hanya menambah waktu re-optimize.
 
 **Astro dev toolbar punya shadow root.** Test "tanpa shadow root" sempat gagal karena
 `astro-dev-toolbar` memakai shadow DOM. Asumsinya dikoreksi: yang dicek adalah elemen
