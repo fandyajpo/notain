@@ -102,14 +102,10 @@ export async function updateInvoice(id: string, draft: InvoiceDraft): Promise<In
   if (!current) {
     throw new AppError(ERROR_CODES.NOT_FOUND, 'Invoice tidak ditemukan.');
   }
-  // A full-draft update carries a status too, so it must obey the same
-  // lifecycle as the one-field write below — otherwise editing a terminal
-  // invoice's contents would be a backdoor to rewinding its status.
-  if (!canChangeStatus(current.status, parsed.status)) {
-    throw new AppError(ERROR_CODES.VALIDATION, statusFlowMessage(current.status, parsed.status), {
-      fieldErrors: { status: statusFlowMessage(current.status, parsed.status) },
-    });
-  }
+  // No lifecycle check here on purpose: the repository's `update` omits the
+  // `status` column, so this call writes contents only. A stale form (or a
+  // second tab) cannot rewind a status it never gets to write — flips are the
+  // sole job of `updateInvoiceStatus` below, which checks against the row.
   return container.invoices.update({ id, draft: parsed });
 }
 
@@ -118,9 +114,9 @@ export async function updateInvoice(id: string, draft: InvoiceDraft): Promise<In
  * `null → sent → paid | void`. `paid` and `void` are terminal, and a status
  * can never be cleared back to unset.
  *
- * A one-field write from the status cell in the table. The target is checked
- * against the stored row (not just the enum) so a stale tab, a replayed
- * request or a corrupted caller cannot move an invoice backwards.
+ * A one-field write from the status select in the invoice builder. The target
+ * is checked against the stored row (not just the enum) so a stale tab, a
+ * replayed request or a corrupted caller cannot move an invoice backwards.
  */
 export async function updateInvoiceStatus(id: string, status: InvoiceStatus): Promise<Invoice> {
   await requireSession();

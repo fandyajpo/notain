@@ -5,6 +5,7 @@ import {
   parseInvoiceItems,
   parseInvoiceDetails,
   draftToRowData,
+  draftToRowUpdateData,
   invoiceRowToDomain,
   templateRowToDomain,
   profileRowToDomain,
@@ -228,6 +229,39 @@ describe('draftToRowData details column', () => {
     const written = draftToRowData({ ...baseDraft(), details: {} });
     expect(written.details).toBeNull();
     expect(parseInvoiceDetails(written.details)).toEqual({});
+  });
+});
+
+describe('draftToRowUpdateData', () => {
+  const draft = (status: 'sent' | 'paid' | null) => ({
+    invoiceNumber: 'INV-2026-001',
+    date: '2026-10-01',
+    status,
+    customerName: 'Budi',
+    items: [item()],
+    discount: { type: 'amount' as const, value: 0 },
+    tax: { type: 'amount' as const, value: 0 },
+    sections: { header: '<p>H</p>', content: '<p>C</p>', footer: '<p>F</p>' },
+    details: {},
+  });
+
+  it('omits the status column no matter what the draft carries', () => {
+    // The whole point: Appwrite writes only the keys present in `data`, so an
+    // absent `status` key is what keeps a content save off the lifecycle.
+    expect(draftToRowUpdateData(draft(null))).not.toHaveProperty('status');
+    expect(draftToRowUpdateData(draft('paid'))).not.toHaveProperty('status');
+    expect(draftToRowUpdateData(draft('sent'))).not.toHaveProperty('status');
+  });
+
+  it('writes every other column exactly as the full payload does', () => {
+    const source = draft('paid');
+    const full = draftToRowData(source);
+    const update = draftToRowUpdateData(source);
+    const withoutStatus = Object.fromEntries(
+      Object.entries(full).filter(([key]) => key !== 'status'),
+    );
+    expect(update).toEqual(withoutStatus);
+    expect(Object.keys(update)).toEqual(Object.keys(withoutStatus));
   });
 });
 

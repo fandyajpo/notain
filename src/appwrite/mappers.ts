@@ -218,6 +218,23 @@ export function draftToRowData(draft: InvoiceDraft): Record<string, unknown> {
   };
 }
 
+/**
+ * The same payload as `draftToRowData`, minus the lifecycle `status` column.
+ *
+ * Appwrite's `updateRow` writes only the keys present in `data`, so leaving
+ * `status` out is what makes a full-content save *structurally* unable to
+ * touch the lifecycle — a stale form (or a second tab) can overwrite contents
+ * but never rewind a status. `updateStatus` is the only writer of that column.
+ *
+ * Used by `update` alone: `create` still goes through `draftToRowData` so a
+ * new row always stores an explicit status key from its first write.
+ */
+export function draftToRowUpdateData(draft: InvoiceDraft): Record<string, unknown> {
+  const data = draftToRowData(draft);
+  delete data.status;
+  return data;
+}
+
 export function profileRowToDomain(row: ProfileRow): BusinessProfile {
   return {
     name: row.name,

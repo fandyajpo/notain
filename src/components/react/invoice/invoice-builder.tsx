@@ -308,9 +308,10 @@ export function InvoiceBuilder({
 
   /**
    * Flips the lifecycle status straight away (a status-only server write) and
-   * mirrors it into the form, so a later "Simpan perubahan" cannot write back
-   * the stale status loaded at mount. On failure the form rolls back, matching
-   * how the table's status cell behaves.
+   * mirrors it into the form so the select keeps showing the picked state.
+   * The mirror is cosmetic now — a full "Simpan perubahan" never writes the
+   * status column, so there is nothing for it to clobber. On failure the form
+   * rolls back so the select does not claim a flip the server refused.
    */
   const changeStatus = useCallback(
     (status: InvoiceStatus) => {

@@ -140,30 +140,41 @@ describe('updateInvoiceStatus lifecycle guard', () => {
   });
 });
 
-describe('updateInvoice lifecycle guard', () => {
-  it('lets a draft through when the status is unchanged or moved forward', async () => {
+describe('updateInvoice never writes the lifecycle status', () => {
+  it('saves contents even when the draft carries a stale forward status', async () => {
     getById.mockResolvedValue(invoice({ status: 'sent' }));
-    const updated = invoice({ status: 'paid' });
+    const updated = invoice({ status: 'sent' });
     update.mockResolvedValue(updated);
 
+    // The form still ships whatever status it holds, but the app layer no
+    // longer validates it: the repository omits the column from the write.
     await expect(updateInvoice('inv-1', draft({ status: 'paid' }))).resolves.toEqual(updated);
     expect(update).toHaveBeenCalledWith({ id: 'inv-1', draft: expect.any(Object) });
   });
 
-  it('blocks a full-draft save from rewinding a terminal status', async () => {
+  it('saves contents of a terminal invoice without any status objection', async () => {
     getById.mockResolvedValue(invoice({ status: 'paid' }));
+    const updated = invoice({ status: 'paid' });
+    update.mockResolvedValue(updated);
 
-    await expectValidationFailure(
-      () => updateInvoice('inv-1', draft({ status: 'sent' })),
-      'status akhir',
-    );
-    expect(update).not.toHaveBeenCalled();
+    await expect(updateInvoice('inv-1', draft({ status: 'sent' }))).resolves.toEqual(updated);
+    expect(update).toHaveBeenCalledWith({ id: 'inv-1', draft: expect.any(Object) });
   });
 
-  it('blocks a full-draft save from clearing a status back to unset', async () => {
+  it('accepts a draft that would clear the status back to unset', async () => {
     getById.mockResolvedValue(invoice({ status: 'sent' }));
+    const updated = invoice({ status: 'sent' });
+    update.mockResolvedValue(updated);
 
-    await expectValidationFailure(() => updateInvoice('inv-1', draft({ status: null })), 'kosong');
+    await expect(updateInvoice('inv-1', draft({ status: null }))).resolves.toEqual(updated);
+    expect(update).toHaveBeenCalledWith({ id: 'inv-1', draft: expect.any(Object) });
+  });
+
+  it('still 404s on an invoice the caller does not own', async () => {
+    getById.mockResolvedValue(null);
+    await expect(updateInvoice('inv-1', draft())).rejects.toMatchObject({
+      code: ERROR_CODES.NOT_FOUND,
+    });
     expect(update).not.toHaveBeenCalled();
   });
 });

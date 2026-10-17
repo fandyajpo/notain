@@ -138,9 +138,10 @@ export function useUpdateInvoice() {
 }
 
 /**
- * Flips only the status field. Kept separate from `useUpdateInvoice` so the
- * table's status cell does not have to round-trip the whole draft (rich-text
- * sections included) to change one enum value.
+ * Flips only the status field. Kept separate from `useUpdateInvoice` so
+ * changing one enum value does not have to round-trip the whole draft
+ * (rich-text sections included) — and so the full-draft save never carries a
+ * status at all, which is what makes a stale tab harmless to the lifecycle.
  */
 export function useUpdateInvoiceStatus() {
   const queryClient = useQueryClient();

@@ -78,10 +78,11 @@ export interface InvoiceRepository {
   /**
    * Flips only the lifecycle status, leaving every other column untouched.
    *
-   * A targeted write rather than a full `update`: the table's status cell
-   * changes one field, and round-tripping the whole draft (rich-text sections
-   * included) to flip a single enum would be both wasteful and a way to
-   * accidentally clobber a concurrent edit.
+   * A targeted write rather than a full `update`: flipping a status changes
+   * one field, and round-tripping the whole draft (rich-text sections
+   * included) to change a single enum would be both wasteful and a way to
+   * accidentally clobber a concurrent edit. This is the *only* method that
+   * writes the `status` column — `update` deliberately omits it.
    */
   updateStatus(input: { id: string; status: InvoiceStatus }): Promise<Invoice>;
   remove(id: string): Promise<void>;

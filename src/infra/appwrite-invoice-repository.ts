@@ -7,6 +7,7 @@ import { ownerRowPermissions } from '../appwrite/permissions';
 import { invoiceNumberPrefix } from '../core/invoice/numbering';
 import {
   draftToRowData,
+  draftToRowUpdateData,
   invoiceHistoryRowToEntry,
   invoiceRowToDomain,
   type InvoiceRow,
@@ -196,7 +197,10 @@ export class AppwriteInvoiceRepository implements InvoiceRepository {
         databaseId: APPWRITE.databaseId,
         tableId: APPWRITE.invoicesTableId,
         rowId: input.id,
-        data: draftToRowData(input.draft),
+        // `draftToRowUpdateData` omits `status` on purpose: a content save
+        // writes every column *except* the lifecycle, which `updateStatus`
+        // alone owns (see the mapper for the full rationale).
+        data: draftToRowUpdateData(input.draft),
       });
       return invoiceRowToDomain(row);
     } catch (error) {

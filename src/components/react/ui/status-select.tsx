@@ -15,7 +15,7 @@ type Props = {
   /** Accessible name — the invoice number, e.g. "INV-2026-001". */
   label: string;
   /**
-   * Pill size. `sm` for dense table rows; `lg` for the invoice builder
+   * Pill size. `sm` is the dense default; `lg` for the invoice builder
    * header, where the status is a primary control and needs to read at a glance.
    */
   size?: 'sm' | 'lg';
@@ -33,8 +33,8 @@ type Props = {
  * It rides the shared custom `Select` (so the open menu is themed like the rest
  * of the app, unlike a native `<select>`) but passes `bare` so the trigger keeps
  * the pill look from `badgeClass` instead of the standard field surface. Callers
- * own the persistence (the table and the builder wire it to
- * `useUpdateInvoiceStatus`).
+ * own the persistence (the builder wires it to `useUpdateInvoiceStatus`) — the
+ * table's status column is a read-only badge.
  */
 export function StatusSelect({ value, onChange, disabled, label, size = 'sm' }: Props) {
   const padding = size === 'lg' ? 'pr-7 pl-2.5' : 'pr-6 pl-2';
