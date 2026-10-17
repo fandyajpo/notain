@@ -13,11 +13,13 @@ export const queryKeys = {
   invoices: (
     search = '',
     limit?: number,
-    status?: InvoiceStatus,
+    status?: InvoiceStatus | null,
     templateId?: string,
   ): readonly unknown[] => {
     const key: unknown[] = ['invoices', search];
     if (limit !== undefined) key.push(limit);
+    // `null` (the "Belum dikirim" filter) is pushed as-is: it is a real
+    // bucket, not an absence, so it must land in a cache entry of its own.
     if (status !== undefined) key.push(status);
     if (templateId !== undefined) key.push(templateId);
     return key;

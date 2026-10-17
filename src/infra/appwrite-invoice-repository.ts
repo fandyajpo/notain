@@ -52,7 +52,11 @@ export class AppwriteInvoiceRepository implements InvoiceRepository {
 
     const queries = [
       Query.equal('ownerId', ownerId),
-      ...(options.status ? [Query.equal('status', options.status)] : []),
+      // `status` is tri-state: a value filters that lifecycle state, `null`
+      // filters the unset state (stored as '') and `undefined` sends nothing.
+      // Testing against `undefined` — not truthiness — is what keeps the
+      // unset bucket filterable instead of silently dropped.
+      ...(options.status !== undefined ? [Query.equal('status', options.status ?? '')] : []),
       ...(options.templateId ? [Query.equal('templateId', options.templateId)] : []),
       ...(serverSearch ? [serverSearchQuery(search)] : []),
       Query.orderDesc('date'),

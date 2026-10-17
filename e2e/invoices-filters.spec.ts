@@ -84,6 +84,36 @@ test('writes filter changes into the URL and keeps foreign params', async ({ pag
   await expect(page).toHaveURL(/utm_campaign=wa/);
 });
 
+test('round-trips the "Belum dikirim" (unset) status filter', async ({ page }) => {
+  await page.goto('/invoices?status=unset');
+  await closeTour(page);
+
+  // The sentinel re-seeds the select instead of being read as junk.
+  await expect(page.getByRole('combobox', { name: 'Filter status' })).toContainText(
+    'Belum dikirim',
+    { timeout: 20_000 },
+  );
+  await expect(page).toHaveURL(/status=unset/);
+
+  // Server-side proof: the unset bucket is a real filter, not "no filter" —
+  // a set-status invoice (the account's long-standing "Lunas" one) must not
+  // slip into the rows behind it.
+  await expect(page.locator('tbody tr').filter({ hasText: 'Lunas' })).toHaveCount(0);
+
+  // Clearing from the select drops the param rather than writing it empty…
+  await page
+    .getByRole('combobox', { name: 'Filter status' })
+    .locator('..')
+    .getByLabel('Hapus pilihan')
+    .click();
+  await expect(page).not.toHaveURL(/status=/);
+
+  // …and picking the unset option writes the sentinel back.
+  await page.getByRole('combobox', { name: 'Filter status' }).click();
+  await page.getByRole('option', { name: 'Belum dikirim' }).click();
+  await expect(page).toHaveURL(/status=unset/);
+});
+
 test('round-trips the template filter through reload', async ({ page }) => {
   await page.goto('/invoices');
   await closeTour(page);

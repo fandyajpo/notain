@@ -12,8 +12,13 @@ export type ListInvoicesOptions = {
   /**
    * Lifecycle filter. Matched server-side so it reaches rows beyond the first
    * page — a client-side filter would only narrow the pages already loaded.
+   *
+   * Tri-state: a value selects that lifecycle state, `null` selects the unset
+   * state ("Belum dikirim", stored as the empty string) and `undefined` sends
+   * no filter at all. The distinction matters because `null` is a real,
+   * filterable bucket — it must not be mistaken for "no filter".
    */
-  status?: InvoiceStatus;
+  status?: InvoiceStatus | null;
   /**
    * Template filter: only invoices dressed in this template. Matched
    * server-side for the same reason as `status` — it must reach rows beyond

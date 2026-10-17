@@ -37,7 +37,7 @@ type InvoiceListData = InfiniteData<InvoicePage>;
  */
 export function useInvoices(
   search = '',
-  options?: { limit?: number; status?: InvoiceStatus; templateId?: string },
+  options?: { limit?: number; status?: InvoiceStatus | null; templateId?: string },
 ) {
   const limit = options?.limit;
   const status = options?.status;

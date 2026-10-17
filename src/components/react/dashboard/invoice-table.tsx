@@ -15,6 +15,7 @@ import { calculateTotals } from '../../../core/invoice/calculator';
 import {
   INVOICE_STATUSES,
   INVOICE_STATUS_LABELS,
+  UNSET_STATUS_LABEL,
   type Invoice,
   type InvoiceStatus,
 } from '../../../core/invoice/model';
@@ -55,10 +56,21 @@ const SEARCH_WAIT = 300;
 const PARAMS = { keyword: 'keyword', status: 'status', template: 'template', sort: 'sort', dir: 'dir' } as const;
 /** Sortable column ids — anything else in `?sort=` is ignored as junk. */
 const SORTABLE_IDS = new Set(['invoiceNumber', 'customerName', 'total', 'date', 'status']);
+/**
+ * Query-string value for the unset status filter ("Belum dikirim").
+ *
+ * The domain represents that state as `null`, which cannot ride a query
+ * string, so the URL gets a sentinel word that `readParams` maps back.
+ */
+const UNSET_STATUS_FILTER = 'unset';
 
 type TableParams = {
   keyword: string;
-  status: InvoiceStatus | undefined;
+  /**
+   * Tri-state like the port's: a value filters that lifecycle state, `null`
+   * filters "Belum dikirim", `undefined` sends no filter at all.
+   */
+  status: InvoiceStatus | null | undefined;
   template: string | undefined;
   sorting: SortingState;
 };
@@ -75,9 +87,12 @@ function readParams(): TableParams {
   const dir = query.get(PARAMS.dir);
   return {
     keyword,
-    status: status && (INVOICE_STATUSES as readonly string[]).includes(status)
-      ? (status as InvoiceStatus)
-      : undefined,
+    status:
+      status === UNSET_STATUS_FILTER
+        ? null
+        : status && (INVOICE_STATUSES as readonly string[]).includes(status)
+          ? (status as InvoiceStatus)
+          : undefined,
     template: template || undefined,
     sorting: sort && SORTABLE_IDS.has(sort) ? [{ id: sort, desc: dir !== 'asc' }] : [],
   };
@@ -87,8 +102,11 @@ export function InvoiceTable() {
   const initial = useMemo(readParams, []);
   const [searchInput, setSearchInput] = useState(initial.keyword);
   const [search, setSearch] = useState(initial.keyword);
-  // `undefined` means "all statuses" — no server-side filter is sent.
-  const [statusFilter, setStatusFilter] = useState<InvoiceStatus | undefined>(initial.status);
+  // Tri-state: `undefined` is "all statuses" (no server-side filter), `null`
+  // is the "Belum dikirim" filter, anything else is that lifecycle state.
+  const [statusFilter, setStatusFilter] = useState<InvoiceStatus | null | undefined>(
+    initial.status,
+  );
   // `undefined` means "all templates" — no server-side filter is sent.
   const [templateFilter, setTemplateFilter] = useState<string | undefined>(initial.template);
   const [sorting, setSorting] = useState<SortingState>(initial.sorting);
@@ -103,7 +121,12 @@ export function InvoiceTable() {
       else query.delete(key);
     };
     set(PARAMS.keyword, search);
-    set(PARAMS.status, statusFilter ?? '');
+    // The unset filter (`null`) serialises to its sentinel word, not to ''
+    // — '' would mean "delete the param" and silently drop the filter.
+    set(
+      PARAMS.status,
+      statusFilter === undefined ? '' : statusFilter === null ? UNSET_STATUS_FILTER : statusFilter,
+    );
     set(PARAMS.template, templateFilter ?? '');
     set(PARAMS.sort, sorting[0]?.id ?? '');
     set(PARAMS.dir, sorting[0] ? (sorting[0].desc ? 'desc' : 'asc') : '');
@@ -158,7 +181,9 @@ export function InvoiceTable() {
   }
 
   const invoices = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
-  const anyFilter = Boolean(search || statusFilter || templateFilter);
+  // `statusFilter !== undefined` rather than truthiness: the unset filter is
+  // `null`, which is falsy but still an active filter.
+  const anyFilter = Boolean(search) || statusFilter !== undefined || Boolean(templateFilter);
 
   const debouncedSearch = useDebouncedCallback((value: string) => setSearch(value), {
     wait: SEARCH_WAIT,
@@ -292,15 +317,32 @@ export function InvoiceTable() {
               id={statusField.id}
               size="sm"
               clearable
-              value={statusFilter ?? ''}
+              value={
+                statusFilter === undefined
+                  ? ''
+                  : statusFilter === null
+                    ? UNSET_STATUS_FILTER
+                    : statusFilter
+              }
               aria-label="Filter status"
               placeholder="Semua status"
-              options={INVOICE_STATUSES.map((status) => ({
-                value: status,
-                label: INVOICE_STATUS_LABELS[status],
-              }))}
+              options={[
+                // "Belum dikirim" first: it is where every invoice starts,
+                // so the list of options reads in lifecycle order.
+                { value: UNSET_STATUS_FILTER, label: UNSET_STATUS_LABEL },
+                ...INVOICE_STATUSES.map((status) => ({
+                  value: status,
+                  label: INVOICE_STATUS_LABELS[status],
+                })),
+              ]}
               onChange={(next) =>
-                setStatusFilter(next === '' ? undefined : (next as InvoiceStatus))
+                setStatusFilter(
+                  next === ''
+                    ? undefined
+                    : next === UNSET_STATUS_FILTER
+                      ? null
+                      : (next as InvoiceStatus),
+                )
               }
               className="w-full sm:w-auto"
             />
