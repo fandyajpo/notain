@@ -16,7 +16,6 @@ import {
   createEmptyDraft,
   createItem,
   createItemId,
-  createPickedItem,
   EMPTY_SECTIONS,
   INVOICE_LIMITS,
   type AdjustmentType,
@@ -325,15 +324,10 @@ export function InvoiceBuilder({
 
   const onPick = useCallback(
     (pick: PickPayload) => {
-      if (pick.kind === 'customer') {
-        form.setFieldValue('customerName', pick.name);
-        form.setFieldValue('customerPhone', pick.phone);
-        form.setFieldValue('customerEmail', pick.email);
-        return;
-      }
-      const current = form.state.values.items;
-      if (current.length >= INVOICE_LIMITS.maxItems) return;
-      form.setFieldValue('items', [...current, createPickedItem(createItemId(), pick)]);
+      if (pick.kind !== 'customer') return;
+      form.setFieldValue('customerName', pick.name);
+      form.setFieldValue('customerPhone', pick.phone);
+      form.setFieldValue('customerEmail', pick.email);
     },
     [form],
   );
@@ -582,12 +576,6 @@ export function InvoiceBuilder({
 
         <div hidden={activeSection !== 'barang'} className="flex flex-col gap-6">
           <Section title="Barang">
-            <Picker
-              mode="product"
-              label="Tambah barang dari riwayat"
-              placeholder="Ketik nama barang…"
-              onPick={onPick}
-            />
             <ItemsGrid
               items={values.items}
               onChange={(items) => form.setFieldValue('items', items)}
