@@ -258,3 +258,40 @@ describe('InvoicePreview block width and wallpaper', () => {
     expect(style).toContain('linear-gradient(135deg');
   });
 });
+
+describe('InvoicePreview unit column', () => {
+  function headers(): string[] {
+    return [...container.querySelectorAll('[data-block="items"] th')].map(
+      (th) => th.textContent?.trim() ?? '',
+    );
+  }
+
+  it('keeps four columns while no item carries a unit', async () => {
+    const { business, draft } = setup();
+
+    await render(
+      <InvoicePreview business={business} invoice={draft} template={resolveTemplate('classic')} />,
+    );
+
+    expect(headers()).not.toContain('Satuan');
+    expect(headers()).toEqual(['Barang', 'Jumlah', 'Harga', 'Subtotal']);
+  });
+
+  it('shows the column as soon as one row uses it, with a dash where a row has none', async () => {
+    const { business, draft } = setup((invoice) => {
+      const second = invoice.items[1];
+      if (second) second.unit = 'gelas';
+    });
+
+    await render(
+      <InvoicePreview business={business} invoice={draft} template={resolveTemplate('classic')} />,
+    );
+
+    expect(headers()).toEqual(['Barang', 'Jumlah', 'Satuan', 'Harga', 'Subtotal']);
+
+    const rows = container.querySelectorAll('[data-block="items"] tbody tr');
+    // The seeded sample rows have no unit, so they read as a deliberate dash.
+    expect(rows[0]?.querySelectorAll('td')[2]?.textContent?.trim()).toBe('-');
+    expect(rows[1]?.querySelectorAll('td')[2]?.textContent?.trim()).toBe('gelas');
+  });
+});

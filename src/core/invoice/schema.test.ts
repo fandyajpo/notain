@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createSampleInvoice } from './sample';
 import { invoiceDraftSchema } from './schema';
 import { calculateTotals } from './calculator';
+import { INVOICE_LIMITS } from './model';
 
 const baseDraft = () => ({
   invoiceNumber: 'INV-2026-001',
@@ -82,6 +83,42 @@ describe('invoiceDraftSchema', () => {
 
   it('rejects an empty customer name', () => {
     const result = invoiceDraftSchema.safeParse({ ...baseDraft(), customerName: '   ' });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts an item with a unit label', () => {
+    const result = invoiceDraftSchema.safeParse({
+      ...baseDraft(),
+      items: [{ id: 'item-1', name: 'Oli mesin', quantity: 1, unitPrice: 120_000, unit: 'liter' }],
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.items[0]?.unit).toBe('liter');
+  });
+
+  it('normalises an empty unit to undefined so the column stays hidden', () => {
+    const result = invoiceDraftSchema.safeParse({
+      ...baseDraft(),
+      items: [{ id: 'item-1', name: 'Nasi Goreng', quantity: 2, unitPrice: 25_000, unit: '  ' }],
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.items[0]?.unit).toBeUndefined();
+  });
+
+  it('rejects a unit longer than the column allows', () => {
+    const result = invoiceDraftSchema.safeParse({
+      ...baseDraft(),
+      items: [
+        {
+          id: 'item-1',
+          name: 'Nasi Goreng',
+          quantity: 2,
+          unitPrice: 25_000,
+          unit: 'x'.repeat(INVOICE_LIMITS.unit + 1),
+        },
+      ],
+    });
     expect(result.success).toBe(false);
   });
 });

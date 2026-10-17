@@ -69,7 +69,13 @@ function choose(option: AnyOption) {
   const detail =
     option.kind === 'customer'
       ? { kind: 'customer', name: option.name, phone: option.phone, email: option.email }
-      : { kind: 'product', name: option.name, quantity: 1, unitPrice: option.unitPrice };
+      : {
+          kind: 'product',
+          name: option.name,
+          quantity: 1,
+          unitPrice: option.unitPrice,
+          ...(option.unit ? { unit: option.unit } : {}),
+        };
   host.dispatchEvent(new CustomEvent(CE_EVENTS.pick, { detail, bubbles: true }));
   query.value = '';
   open.value = false;

@@ -27,6 +27,8 @@ export type ProductOption = {
   label: string;
   name: string;
   unitPrice: number;
+  /** The unit the history row was counted in, when it had one. */
+  unit?: string;
   lastUsedAt: string;
   invoiceCount: number;
 };
@@ -106,12 +108,16 @@ export function derivePickerOptions(
       if (existing) {
         existing.invoiceCount += 1;
         existing.lastUsedAt = usedAt;
+        // The newest row decides the unit; a later invoice that stopped using
+        // one does not erase a unit older rows agreed on.
+        if (item.unit) existing.unit = item.unit;
       } else {
         products.set(key, {
           kind: 'product',
           label: itemName,
           name: itemName,
           unitPrice: item.unitPrice,
+          ...(item.unit ? { unit: item.unit } : {}),
           lastUsedAt: usedAt,
           invoiceCount: 1,
         });

@@ -89,6 +89,30 @@ describe('parseInvoiceItems', () => {
     expect(parseInvoiceItems('')).toEqual([]);
     expect(parseInvoiceItems(null)).toEqual([]);
   });
+
+  it('keeps a unit label when the item has one', () => {
+    const items = parseInvoiceItems(JSON.stringify([item({ unit: 'liter' })]));
+    expect(items[0]?.unit).toBe('liter');
+  });
+
+  it('reads a legacy item without a unit as having none', () => {
+    expect(parseInvoiceItems(JSON.stringify([item()]))[0]).not.toHaveProperty('unit');
+  });
+
+  it('drops a corrupt unit but keeps the row and its price', () => {
+    const items = parseInvoiceItems(JSON.stringify([item({ unit: 5 })]));
+    expect(items).toHaveLength(1);
+    expect(items[0]?.unit).toBeUndefined();
+    expect(items[0]?.unitPrice).toBe(100_000);
+  });
+
+  it('drops an over-long unit but keeps the row', () => {
+    const items = parseInvoiceItems(
+      JSON.stringify([item({ unit: 'x'.repeat(INVOICE_LIMITS.unit + 1) })]),
+    );
+    expect(items).toHaveLength(1);
+    expect(items[0]?.unit).toBeUndefined();
+  });
 });
 
 describe('invoiceRowToDomain', () => {

@@ -72,6 +72,25 @@ describe('itemsChangeEventSchema', () => {
         .success,
     ).toBe(false);
   });
+
+  it('carries a unit through untouched', () => {
+    const result = itemsChangeEventSchema.safeParse({ items: [{ ...validItem, unit: 'liter' }] });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.items[0]?.unit).toBe('liter');
+  });
+
+  it('treats an empty unit as legal mid-typing state', () => {
+    const result = itemsChangeEventSchema.safeParse({ items: [{ ...validItem, unit: '' }] });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a unit longer than the column allows', () => {
+    expect(
+      itemsChangeEventSchema.safeParse({ items: [{ ...validItem, unit: 'x'.repeat(17) }] })
+        .success,
+    ).toBe(false);
+  });
 });
 
 describe('pickEventSchema', () => {
@@ -90,6 +109,19 @@ describe('pickEventSchema', () => {
       unitPrice: 25_000,
     });
     expect(result.success).toBe(true);
+  });
+
+  it('accepts a product pick that carries its unit', () => {
+    const result = pickEventSchema.safeParse({
+      kind: 'product',
+      name: 'Oli mesin',
+      quantity: 1,
+      unitPrice: 120_000,
+      unit: 'liter',
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.kind === 'product' && result.data.unit).toBe('liter');
   });
 
   it('rejects an unknown kind', () => {

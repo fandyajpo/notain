@@ -49,6 +49,39 @@ describe('derivePickerOptions', () => {
     });
   });
 
+  it('carries the unit the history row was counted in', () => {
+    const options = derivePickerOptions([
+      invoice({
+        items: [{ id: 'i1', name: 'Oli mesin', quantity: 1, unitPrice: 120_000, unit: 'liter' }],
+      }),
+    ]);
+
+    expect(options.products[0]).toMatchObject({ name: 'Oli mesin', unit: 'liter' });
+  });
+
+  it('leaves the unit off an option whose history rows never had one', () => {
+    const options = derivePickerOptions([invoice()]);
+
+    expect(options.products[0]?.unit).toBeUndefined();
+  });
+
+  it('lets the newest row decide the unit of a repeated product', () => {
+    const older = invoice({
+      date: '2026-01-01',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      items: [{ id: 'i1', name: 'Bensin', quantity: 1, unitPrice: 10_000 }],
+    });
+    const newer = invoice({
+      date: '2026-02-01',
+      updatedAt: '2026-02-01T00:00:00.000Z',
+      items: [{ id: 'i2', name: 'Bensin', quantity: 1, unitPrice: 10_000, unit: 'liter' }],
+    });
+
+    const options = derivePickerOptions([newer, older]);
+    expect(options.products).toHaveLength(1);
+    expect(options.products[0]?.unit).toBe('liter');
+  });
+
   it('merges repeat customers and counts their invoices', () => {
     const options = derivePickerOptions([
       invoice({ id: 'a', updatedAt: '2026-01-01T00:00:00.000Z' }),

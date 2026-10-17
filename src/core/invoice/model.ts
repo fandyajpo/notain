@@ -33,6 +33,8 @@ export const INVOICE_LIMITS = {
   customerPhone: 32,
   customerEmail: 255,
   itemName: 200,
+  /** Unit label per item ('pcs', 'liter', 'sesi'…). Empty means "no unit". */
+  unit: 16,
   maxItems: 100,
   maxQuantity: 1_000_000,
   maxUnitPrice: 1_000_000_000_000,
@@ -46,6 +48,12 @@ export type InvoiceItem = {
   name: string;
   quantity: number;
   unitPrice: number;
+  /**
+   * Optional unit the quantity is counted in. Absent for the vast majority of
+   * rows written before this field existed, and for goods priced per piece —
+   * the item table only shows its "Satuan" column once one item uses it.
+   */
+  unit?: string;
 };
 
 /**
@@ -131,15 +139,23 @@ export function createEmptyDraft(invoiceNumber: string, date: string): InvoiceDr
 }
 
 export function createItem(id: string): InvoiceItem {
+  // No unit on a blank row: the grid's unit column stays hidden until the
+  // user actually types one (or a seeded sample item brings its own).
   return { id, name: '', quantity: 1, unitPrice: 0 };
 }
 
 /** A pre-filled row, as applied when a product is picked from invoice history. */
 export function createPickedItem(
   id: string,
-  pick: { name: string; quantity: number; unitPrice: number },
+  pick: { name: string; quantity: number; unitPrice: number; unit?: string },
 ): InvoiceItem {
-  return { id, name: pick.name, quantity: pick.quantity, unitPrice: pick.unitPrice };
+  return {
+    id,
+    name: pick.name,
+    quantity: pick.quantity,
+    unitPrice: pick.unitPrice,
+    ...(pick.unit ? { unit: pick.unit } : {}),
+  };
 }
 
 /**

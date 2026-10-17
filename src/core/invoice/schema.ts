@@ -21,12 +21,18 @@ export const invoiceItemSchema = z.object({
     .int('Jumlah harus berupa bilangan bulat.')
     .min(1, 'Jumlah minimal 1.')
     .max(INVOICE_LIMITS.maxQuantity, 'Jumlah terlalu besar.'),
-  unitPrice: z
-    .number({ error: 'Masukkan harga yang valid.' })
-    .int('Harga harus berupa bilangan bulat rupiah.')
-    .min(0, 'Harga tidak boleh negatif.')
-    .max(INVOICE_LIMITS.maxUnitPrice, 'Harga terlalu besar.'),
-});
+    unitPrice: z
+      .number({ error: 'Masukkan harga yang valid.' })
+      .int('Harga harus berupa bilangan bulat rupiah.')
+      .min(0, 'Harga tidak boleh negatif.')
+      .max(INVOICE_LIMITS.maxUnitPrice, 'Harga terlalu besar.'),
+    unit: z
+      .string()
+      .trim()
+      .max(INVOICE_LIMITS.unit, 'Satuan terlalu panjang.')
+      .optional()
+      .transform((value) => value || undefined),
+  });
 
 export type InvoiceItemInput = z.infer<typeof invoiceItemSchema>;
 
@@ -69,6 +75,7 @@ export const invoiceItemShapeSchema = z.object({
   name: z.string().max(INVOICE_LIMITS.itemName),
   quantity: z.number().min(0).max(INVOICE_LIMITS.maxQuantity),
   unitPrice: z.number().min(0).max(INVOICE_LIMITS.maxUnitPrice),
+  unit: z.string().max(INVOICE_LIMITS.unit).optional().catch(undefined),
 });
 
 export const invoiceSectionsSchema = z.object({

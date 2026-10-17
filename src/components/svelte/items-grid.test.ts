@@ -43,6 +43,7 @@ function listen() {
 const INPUT_LABELS = {
   name: 'Nama barang',
   quantity: 'Jumlah',
+  unit: 'Satuan',
   unitPrice: 'Harga satuan dalam rupiah',
 } as const;
 
@@ -98,6 +99,27 @@ describe('notain-items-grid', () => {
   it('emits a parsed unit price', async () => {
     type(inputAt(0, 'unitPrice'), '30.000');
     expect(capturedEvents().at(-1)?.items[0]?.unitPrice).toBe(30_000);
+  });
+
+  it('emits a typed unit and drops it again when the field is cleared', async () => {
+    type(inputAt(0, 'unit'), 'liter');
+    expect(capturedEvents().at(-1)?.items[0]?.unit).toBe('liter');
+
+    type(inputAt(0, 'unit'), '');
+    expect(capturedEvents().at(-1)?.items[0]?.unit).toBeUndefined();
+  });
+
+  it('shows the unit a seeded row already carries', async () => {
+    await mount([{ ...ROWS[0], unit: 'pcs' }, ROWS[1]] as Row[]);
+
+    const input = host.querySelector('input[aria-label="Satuan"]') as HTMLInputElement;
+    expect(input.value).toBe('pcs');
+  });
+
+  it('always offers the unit field, even on rows that have none', () => {
+    const inputs = host.querySelectorAll('input[aria-label="Satuan"]');
+    expect(inputs).toHaveLength(ROWS.length);
+    expect((inputs[0] as HTMLInputElement).value).toBe('');
   });
 
   it('never emits a quantity below one', async () => {

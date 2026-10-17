@@ -53,6 +53,12 @@
     emit(items.map((item) => (item.id === id ? { ...item, ...changes } : item)));
   }
 
+  /** An empty unit means "no unit" — the column stays hidden until one is typed. */
+  function patchUnit(id: string, raw: string) {
+    const unit = raw.trim() ? raw.slice(0, INVOICE_LIMITS.unit) : undefined;
+    patch(id, { unit });
+  }
+
   function remove(id: string) {
     emit(items.filter((item) => item.id !== id));
   }
@@ -125,7 +131,7 @@
             </button>
           </div>
 
-          <div class="mt-2 grid grid-cols-2 gap-2">
+          <div class="mt-2 grid grid-cols-3 gap-2">
             <label class="flex flex-col gap-1">
               <span class="text-xs text-muted">Jumlah</span>
               <input
@@ -140,6 +146,19 @@
                   patch(item.id, {
                     quantity: Math.max(1, Number(event.currentTarget.value) || 1),
                   })}
+              />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span class="text-xs text-muted">Satuan</span>
+              <input
+                type="text"
+                value={item.unit ?? ''}
+                placeholder="pcs"
+                aria-label="Satuan"
+                maxLength={INVOICE_LIMITS.unit}
+                autocomplete="off"
+                class={controlClass({ size: 'sm' })}
+                oninput={(event) => patchUnit(item.id, event.currentTarget.value)}
               />
             </label>
             <label class="flex flex-col gap-1">
@@ -208,11 +227,12 @@
     </div>
   {:else}
     <div class="overflow-x-auto">
-      <table class="w-full min-w-[720px] border-collapse text-sm">
+      <table class="w-full min-w-[820px] border-collapse text-sm">
         <thead>
           <tr class="border-b border-border">
             <th scope="col" class="pb-2 text-left text-eyebrow uppercase text-muted">Nama barang</th>
             <th scope="col" class="w-24 pb-2 text-right text-eyebrow uppercase text-muted">Jumlah</th>
+            <th scope="col" class="w-24 pb-2 text-left text-eyebrow uppercase text-muted">Satuan</th>
             <th scope="col" class="w-40 pb-2 text-right text-eyebrow uppercase text-muted"
               >Harga satuan</th
             >
@@ -256,6 +276,18 @@
                     patch(item.id, {
                       quantity: Math.max(1, Number(event.currentTarget.value) || 1),
                     })}
+                />
+              </td>
+              <td class="py-2 pr-2">
+                <input
+                  type="text"
+                  value={item.unit ?? ''}
+                  placeholder="pcs"
+                  aria-label="Satuan"
+                  maxLength={INVOICE_LIMITS.unit}
+                  autocomplete="off"
+                  class={controlClass({ size: 'sm' })}
+                  oninput={(event) => patchUnit(item.id, event.currentTarget.value)}
                 />
               </td>
               <td class="py-2 pr-2">
@@ -314,7 +346,7 @@
 
           {#if items.length === 0}
             <tr>
-              <td colspan={6} class="py-8 text-center text-sm text-muted">
+              <td colspan={7} class="py-8 text-center text-sm text-muted">
                 Belum ada barang. Tambahkan minimal satu item.
               </td>
             </tr>
@@ -322,7 +354,7 @@
 
           {#if canAdd}
             <tr>
-              <td colspan={6} class="pt-3">
+              <td colspan={7} class="pt-3">
                 <button
                   type="button"
                   data-add-item

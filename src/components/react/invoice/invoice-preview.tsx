@@ -198,7 +198,11 @@ export function InvoicePreview({ business, invoice, template, logoUrl, className
           </section>
         );
 
-      case 'items':
+      case 'items': {
+        // The unit column earns its width only when at least one row uses it —
+        // most invoices have none and a permanently empty column just steals
+        // space from the prices.
+        const showUnit = invoice.items.some((item) => Boolean(item.unit));
         return (
           <table className="w-full border-collapse text-sm">
             <thead>
@@ -212,6 +216,11 @@ export function InvoicePreview({ business, invoice, template, logoUrl, className
                 <th scope="col" className="pb-2 text-right font-medium">
                   Jumlah
                 </th>
+                {showUnit && (
+                  <th scope="col" className="pb-2 text-left font-medium">
+                    Satuan
+                  </th>
+                )}
                 <th scope="col" className="pb-2 text-right font-medium">
                   Harga
                 </th>
@@ -223,7 +232,7 @@ export function InvoicePreview({ business, invoice, template, logoUrl, className
             <tbody>
               {invoice.items.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-6 text-center text-sm" style={muted}>
+                  <td colSpan={showUnit ? 5 : 4} className="py-6 text-center text-sm" style={muted}>
                     Belum ada barang.
                   </td>
                 </tr>
@@ -232,6 +241,11 @@ export function InvoicePreview({ business, invoice, template, logoUrl, className
                 <tr key={item.id} style={{ borderBottom: `1px solid ${theme.border}` }}>
                   <td className="py-2 pr-3">{item.name || <span style={muted}>-</span>}</td>
                   <td className="py-2 text-right tabular-nums">{item.quantity}</td>
+                  {showUnit && (
+                    <td className="py-2 pl-3 text-left tabular-nums">
+                      {item.unit ?? <span style={muted}>-</span>}
+                    </td>
+                  )}
                   <td className="py-2 text-right tabular-nums">{formatRupiah(item.unitPrice)}</td>
                   <td className="py-2 text-right font-medium tabular-nums">
                     {formatRupiah(totals.itemSubtotals[invoice.items.indexOf(item)] ?? 0)}
@@ -241,6 +255,7 @@ export function InvoicePreview({ business, invoice, template, logoUrl, className
             </tbody>
           </table>
         );
+      }
 
       case 'richContent':
         return (

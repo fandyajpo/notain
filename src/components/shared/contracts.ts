@@ -34,6 +34,8 @@ export const gridItemSchema = z.object({
   name: z.string(),
   quantity: structuralQuantity,
   unitPrice: structuralCount,
+  /** Empty string is a legal mid-typing state; `invoiceDraftSchema` normalises it. */
+  unit: z.string().max(16).optional(),
 });
 
 /** Emitted as `itemschange` with `{ items: InvoiceItem[] }`. */
@@ -60,6 +62,8 @@ export const pickEventSchema = z.discriminatedUnion('kind', [
     name: z.string(),
     quantity: structuralQuantity,
     unitPrice: structuralCount,
+    /** The unit the history row was counted in, when it had one. */
+    unit: z.string().max(16).optional(),
   }),
 ]);
 
