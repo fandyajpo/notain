@@ -61,29 +61,6 @@ export function useInvoice(id: string | undefined) {
   });
 }
 
-function useStatusCount(status: InvoiceStatus) {
-  return useQuery({
-    queryKey: queryKeys.invoiceStatusCount(status),
-    // `limit: 1` — Appwrite reports the full `total` regardless of page size,
-    // so counting a state never ships a single invoice row.
-    queryFn: () => listInvoicesPage({ status, limit: 1 }).then((page) => page.total),
-    ...queryPolicy('invoices'),
-  });
-}
-
-/** Per-status invoice totals for the dashboard's summary table. */
-export function useInvoiceStatusCounts() {
-  const sent = useStatusCount('sent');
-  const paid = useStatusCount('paid');
-  const statusVoid = useStatusCount('void');
-  return {
-    sent: sent.data,
-    paid: paid.data,
-    void: statusVoid.data,
-    isLoading: sent.isLoading || paid.isLoading || statusVoid.isLoading,
-  };
-}
-
 /**
  * Numbers only — cheap to refresh and used to suggest the next invoice number.
  *

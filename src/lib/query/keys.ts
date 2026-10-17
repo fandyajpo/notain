@@ -26,15 +26,6 @@ export const queryKeys = {
   },
   invoice: (id: string) => ['invoice', id] as const,
   invoiceNumbers: ['invoice-numbers'] as const,
-  /**
-   * Count of invoices in one lifecycle state (a `limit: 1` read of the
-   * response's `total`). Keyed apart from `invoices(...)` so a count never
-   * shares — or evicts — a list cache entry.
-   */
-  invoiceStatusCount: (status: InvoiceStatus): readonly unknown[] => [
-    'invoice-status-count',
-    status,
-  ],
   /** Projected recent-invoice slice the picker derives its suggestions from. */
   pickerHistory: ['picker-history'] as const,
   templates: ['templates'] as const,
