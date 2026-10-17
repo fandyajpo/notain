@@ -18,6 +18,7 @@
     "migrate:customer-email": "node --env-file=.env scripts/migrate-customer-email.mjs",
     "stats:ensure": "node --env-file=.env scripts/ensure-stats.mjs",
     "audit:ensure": "node --env-file=.env scripts/ensure-audit.mjs",
+    "business-type:ensure": "node --env-file=.env scripts/ensure-business-type.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "lint": "eslint .",

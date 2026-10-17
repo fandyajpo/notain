@@ -58,6 +58,7 @@ export function OnboardingModal() {
           name: '',
           businessName: '',
           phone: '',
+          businessType: null,
           plan: 'free' as const,
           planExpiresAt: null,
         }),

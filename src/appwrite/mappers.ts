@@ -1,5 +1,5 @@
 import type { Models } from 'appwrite';
-import { invoiceItemShapeSchema } from '../core/invoice/schema';
+import { invoiceDetailShapeSchema, invoiceItemShapeSchema } from '../core/invoice/schema';
 import type {
   AdjustmentType,
   Invoice,
@@ -12,6 +12,7 @@ import type {
 } from '../core/invoice/model';
 import { INVOICE_STATUSES } from '../core/invoice/model';
 import type { BusinessProfile, Plan } from '../core/profile/model';
+import { isBusinessSubtypeSlug } from '../core/business/taxonomy';
 import type { AuthoredTemplate, InvoiceTemplate } from '../core/template/model';
 import { DEFAULT_THEME } from '../core/template/model';
 import { invoiceTemplateShapeSchema } from '../core/template/schema';
@@ -32,6 +33,8 @@ export type InvoiceRow = Models.Row &
     customerPhone: string | null;
     customerEmail: string | null;
     items: string;
+    /** Business detail JSON (`{ "nomor-polisi": "B 1234 XY" }`); null when empty. */
+    details?: string | null;
     discountType: AdjustmentType;
     discountValue: number;
     taxType: AdjustmentType;
@@ -51,6 +54,8 @@ export type ProfileRow = Models.Row &
     address: string | null;
     email: string | null;
     logoFileId: string | null;
+    /** Business-type slug; absent on rows written before the column existed. */
+    businessType?: string | null;
     plan: string;
     planExpiresAt: string | null;
   };
@@ -66,6 +71,8 @@ export type TemplateRow = Models.Row &
     contentHtml: string | null;
     footerHtml: string | null;
     notes: string | null;
+    /** Business-type slug; absent on rows written before the column existed. */
+    businessType?: string | null;
   };
 
 /** Row shape returned by the `customers` table. */
@@ -119,6 +126,23 @@ export function parseInvoiceItems(raw: unknown): InvoiceItem[] {
   }
 }
 
+/**
+ * Parses the `details` JSON column — the business-specific key-value facts
+ * (plate number, weight…) authored per invoice. Rows written before the column
+ * existed, or rows whose JSON is corrupt, degrade to an empty record: the
+ * invoice simply shows nothing extra rather than failing to load.
+ */
+export function parseInvoiceDetails(raw: unknown): Record<string, string> {
+  if (typeof raw !== 'string' || raw === '') return {};
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    const result = invoiceDetailShapeSchema.safeParse(parsed);
+    return result.success ? result.data : {};
+  } catch {
+    return {};
+  }
+}
+
 function toAdjustment(type: unknown, value: unknown): InvoiceAdjustment {
   return {
     type: type === 'percent' ? 'percent' : 'amount',
@@ -154,6 +178,7 @@ export function invoiceRowToDomain(row: InvoiceRow): Invoice {
     customerPhone: optionalString(row.customerPhone),
     customerEmail: optionalString(row.customerEmail),
     items: parseInvoiceItems(row.items),
+    details: parseInvoiceDetails(row.details),
     discount: toAdjustment(row.discountType, row.discountValue),
     tax: toAdjustment(row.taxType, row.taxValue),
     sections: toSections(row),
@@ -175,6 +200,7 @@ export function draftToRowData(draft: InvoiceDraft): Record<string, unknown> {
     customerPhone: draft.customerPhone ?? null,
     customerEmail: draft.customerEmail ?? null,
     items: JSON.stringify(draft.items),
+    details: Object.keys(draft.details).length > 0 ? JSON.stringify(draft.details) : null,
     discountType: draft.discount.type,
     discountValue: draft.discount.value,
     taxType: draft.tax.type,
@@ -194,6 +220,12 @@ export function profileRowToDomain(row: ProfileRow): BusinessProfile {
     address: optionalString(row.address),
     email: optionalString(row.email),
     logoFileId: optionalString(row.logoFileId),
+    // A slug the taxonomy no longer knows reads as "no type" rather than
+    // poisoning every form that loads this profile.
+    businessType:
+      typeof row.businessType === 'string' && isBusinessSubtypeSlug(row.businessType)
+        ? row.businessType
+        : null,
     plan: (row.plan as Plan) ?? 'free',
     planExpiresAt: optionalString(row.planExpiresAt) ?? null,
   };
@@ -207,6 +239,7 @@ export function profileToRowData(profile: BusinessProfile): Record<string, unkno
     address: profile.address ?? null,
     email: profile.email ?? null,
     logoFileId: profile.logoFileId ?? null,
+    businessType: profile.businessType ?? null,
     plan: profile.plan,
     planExpiresAt: profile.planExpiresAt ?? null,
   };
@@ -231,6 +264,7 @@ function emptyTemplateShape() {
     layout: [],
     theme: DEFAULT_THEME,
     defaults: { header: '', content: '', footer: '', notes: undefined },
+    businessType: null,
   };
 }
 
@@ -252,6 +286,7 @@ export function templateRowToDomain(row: TemplateRow): InvoiceTemplate {
       footer: row.footerHtml,
       notes: row.notes,
     },
+    businessType: row.businessType ?? null,
   });
 
   const shape = parsed.success ? parsed.data : emptyTemplateShape();
@@ -271,6 +306,7 @@ export function templateRowToDomain(row: TemplateRow): InvoiceTemplate {
       footer: typeof row.footerHtml === 'string' ? row.footerHtml : '',
       notes: optionalString(row.notes),
     },
+    businessType: shape.businessType,
     builtin: false,
   };
 }
@@ -285,6 +321,7 @@ export function templateToRowData(template: AuthoredTemplate): Record<string, un
     contentHtml: template.defaults.content,
     footerHtml: template.defaults.footer,
     notes: template.defaults.notes ?? null,
+    businessType: template.businessType ?? null,
   };
 }
 

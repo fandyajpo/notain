@@ -18,6 +18,7 @@ function invoice(overrides: Partial<Invoice> = {}): Invoice {
     discount: { type: 'amount', value: 0 },
     tax: { type: 'amount', value: 0 },
     sections: { header: '', content: '', footer: '' },
+    details: {},
     ...overrides,
   };
 }

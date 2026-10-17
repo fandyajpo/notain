@@ -5,6 +5,7 @@ import {
   type BusinessProfile,
   type ProfileFormValues,
 } from '../../../core/profile/model';
+import { isBusinessSubtypeSlug } from '../../../core/business/taxonomy';
 import { toAppError } from '../../../appwrite/errors';
 import { useSaveProfile, useUploadLogo, useRemoveLogo } from '../../../lib/query/hooks/use-profile';
 import { toast } from '../../../lib/ui/toast';
@@ -13,6 +14,7 @@ import { FieldShell, useFieldIds } from '../ui/field';
 import { Input } from '../ui/input';
 import { Notice } from '../ui/notice';
 import { LogoUploader } from '../invoice/logo-uploader';
+import { BusinessTypeField } from '../business/business-type-field';
 
 type Props = {
   profile: BusinessProfile;
@@ -37,6 +39,9 @@ export function ProfileForm({ profile }: Props) {
       phone: profile.phone,
       address: profile.address ?? '',
       email: profile.email ?? '',
+      // The form keeps every value as a string; '' means "no type". The
+      // grouped picker below owns the selection.
+      businessType: profile.businessType ?? '',
     } satisfies ProfileFormValues,
     validators: { onSubmit: profileFormSchema },
     onSubmit: async ({ value }) => {
@@ -48,6 +53,7 @@ export function ProfileForm({ profile }: Props) {
           phone: value.phone.trim(),
           address: value.address.trim() || undefined,
           email: value.email.trim() || undefined,
+          businessType: value.businessType || null,
           logoFileId: profile.logoFileId,
           plan: profile.plan,
           planExpiresAt: profile.planExpiresAt,
@@ -65,6 +71,7 @@ export function ProfileForm({ profile }: Props) {
     phone: form.state.values.phone.trim() || profile.phone,
     address: form.state.values.address.trim() || undefined,
     email: form.state.values.email.trim() || undefined,
+    businessType: form.state.values.businessType || profile.businessType,
     logoFileId: profile.logoFileId,
     logoUrl,
     plan: profile.plan,
@@ -135,6 +142,12 @@ export function ProfileForm({ profile }: Props) {
           />
         )}
       </form.Field>
+
+      <BusinessTypeField
+        value={isBusinessSubtypeSlug(form.state.values.businessType) ? form.state.values.businessType : null}
+        description="Dipakai untuk mengelompokkan template dan mengisi contoh invoice."
+        onChange={(slug) => form.setFieldValue('businessType', slug ?? '')}
+      />
 
       <form.Field name="phone">
         {(field) => (

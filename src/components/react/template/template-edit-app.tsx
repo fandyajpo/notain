@@ -23,26 +23,15 @@ import {
   useTemplates,
   useUpdateTemplate,
 } from '../../../lib/query/hooks/use-templates';
-import { useProfile } from '../../../lib/query/hooks/use-profile';
+import { useProfile, useSaveProfile } from '../../../lib/query/hooks/use-profile';
 import { createSampleInvoice, SAMPLE_BUSINESS } from '../../../core/invoice/sample';
 import { invoiceTemplateSchema } from '../../../core/template/schema';
-import { getBuiltinTemplate } from '../../../core/template/builtins';
-import { createDefaultLayout, DEFAULT_THEME } from '../../../core/template/model';
+import { defaultsForBusiness, seedTemplateForBusiness } from '../../../core/template/seed';
 import type { AuthoredTemplate, InvoiceTemplate } from '../../../core/template/model';
+import type { BusinessSubtypeSlug } from '../../../core/business/taxonomy';
+import { BusinessTypeField } from '../business/business-type-field';
+import { BusinessTypeStep } from '../business/business-type-step';
 import { GENERIC_ERROR_MESSAGE, isAppError } from '../../../core/shared/errors';
-
-const EMPTY_DEFAULTS = { header: '', content: '', footer: '' };
-
-/** A blank template, optionally seeded from a built-in so it starts usable. */
-function blankTemplate(seedId?: string | null): AuthoredTemplate {
-  const seed = seedId ? getBuiltinTemplate(seedId) : undefined;
-  return {
-    name: seed ? `${seed.name} (salinan)` : 'Template baru',
-    layout: seed ? seed.layout.map((block) => ({ ...block })) : createDefaultLayout(),
-    theme: seed ? { ...seed.theme, wallpaper: { ...seed.theme.wallpaper } } : { ...DEFAULT_THEME },
-    defaults: seed ? { ...seed.defaults } : { ...EMPTY_DEFAULTS },
-  };
-}
 
 /** Copies a stored template into editable form state, never by reference. */
 function authoredOf(template: InvoiceTemplate): AuthoredTemplate {
@@ -51,6 +40,7 @@ function authoredOf(template: InvoiceTemplate): AuthoredTemplate {
     layout: template.layout.map((block) => ({ ...block })),
     theme: { ...template.theme, wallpaper: { ...template.theme.wallpaper } },
     defaults: { ...template.defaults },
+    businessType: template.businessType,
   };
 }
 
@@ -76,8 +66,12 @@ export function TemplateEditApp() {
 function TemplateEditContent() {
   const { id, seedId } = templateEditorTargetFromLocation(window.location);
   const { data, isLoading, isError, refetch } = useTemplates();
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  const saveProfile = useSaveProfile();
+  // `undefined` = the first-run step is still waiting; `null` = skipped.
+  const [picked, setPicked] = useState<BusinessSubtypeSlug | null | undefined>(undefined);
 
-  if (isLoading) {
+  if (isLoading || profileLoading) {
     return <LoadingState label="Memuat template…" />;
   }
 
@@ -105,11 +99,48 @@ function TemplateEditContent() {
     );
   }
 
+  // Every new template opens with the question: the pick seeds this editor
+  // and, once the template is actually saved, preselects the next visit.
+  // Editing an existing template never asks — its type is its own.
+  const profileType = profile?.businessType ?? null;
+
+  /**
+   * Persists the step's answer into the profile after a successful create —
+   * and only then. Called with the form's final business type, so changing it
+   * inside the editor after the step wins over the step's pick. Skips and
+   * identical remembered choices leave the profile alone.
+   */
+  const persistStepPick = (finalType: BusinessSubtypeSlug | null) => {
+    if (picked === undefined || picked === null || !profile) return;
+    if (profile.businessType === finalType) return;
+    void saveProfile
+      .mutateAsync({ ...profile, businessType: finalType })
+      .catch(() =>
+        toast('Pilihan belum tersimpan ke profil. Bisa diatur lagi di Pengaturan.', {
+          variant: 'error',
+        }),
+      );
+  };
+
+  if (!existing && picked === undefined) {
+    return (
+      <BusinessTypeStep
+        value={profileType}
+        onPick={(slug) => setPicked(slug)}
+        onSkip={() => setPicked(null)}
+      />
+    );
+  }
+
+  const businessType = picked !== undefined ? picked : profileType;
+
   return (
     <TemplateForm
-      key={existing?.id ?? `seed-${seedId ?? 'blank'}`}
+      key={existing?.id ?? `seed-${seedId ?? 'blank'}-${businessType ?? 'none'}`}
       existing={existing}
       seedId={seedId}
+      businessType={businessType}
+      onCreated={persistStepPick}
     />
   );
 }
@@ -117,9 +148,14 @@ function TemplateEditContent() {
 function TemplateForm({
   existing,
   seedId,
+  businessType,
+  onCreated,
 }: {
   existing?: InvoiceTemplate;
   seedId?: string | null;
+  businessType: BusinessSubtypeSlug | null;
+  /** Runs after a successful *create* (never an update) with the saved type. */
+  onCreated?: (type: BusinessSubtypeSlug | null) => void;
 }) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const createMutation = useCreateTemplate();
@@ -128,7 +164,7 @@ function TemplateForm({
   const { id: nameId } = useFieldIds();
 
   const form = useForm({
-    defaultValues: existing ? authoredOf(existing) : blankTemplate(seedId),
+    defaultValues: existing ? authoredOf(existing) : seedTemplateForBusiness(seedId, businessType),
     validators: { onSubmit: invoiceTemplateSchema },
     onSubmit: async ({ value }) => {
       setSaveError(null);
@@ -137,6 +173,9 @@ function TemplateForm({
           await updateMutation.mutateAsync({ id: existing.id, template: value });
         } else {
           await createMutation.mutateAsync(value);
+          // Fire-and-forget: the template is already safe on the server, and a
+          // profile write that fails only means the next creation asks again.
+          onCreated?.(value.businessType);
         }
         toast('Template disimpan.', { variant: 'success' });
         window.location.assign('/templates');
@@ -160,9 +199,10 @@ function TemplateForm({
       layout: values.layout,
       theme: values.theme,
       defaults: values.defaults,
+      businessType: values.businessType,
       builtin: false,
     }),
-    [existing, values.name, values.layout, values.theme, values.defaults],
+    [existing, values.name, values.layout, values.theme, values.defaults, values.businessType],
   );
 
   const business = profile ?? SAMPLE_BUSINESS;
@@ -210,6 +250,19 @@ function TemplateForm({
             />
           </FieldShell>
         </Card>
+
+        <BusinessTypeField
+          value={values.businessType}
+          onChange={(slug) => {
+            // Switching trades re-seeds "Teks default" with the new trade's
+            // example prose — leaving it behind was the old (wrong) behaviour.
+            // Name, colours and block arrangement stay: those are the user's.
+            // Re-picking the same type touches nothing.
+            if (slug === values.businessType) return;
+            form.setFieldValue('businessType', slug);
+            form.setFieldValue('defaults', defaultsForBusiness(slug));
+          }}
+        />
 
         <Section
           title="Blok invoice"

@@ -32,6 +32,9 @@ export const BUILTIN_TEMPLATES: readonly InvoiceTemplate[] = [
     layout: cloneLayout(),
     theme: cloneTheme({}),
     defaults: { ...EMPTY_DEFAULTS },
+    // Built-ins are style presets: they suit every business type, so they
+    // carry none of their own and the picker offers them to everyone.
+    businessType: null,
     builtin: true,
   },
   {
@@ -44,6 +47,7 @@ export const BUILTIN_TEMPLATES: readonly InvoiceTemplate[] = [
       radius: 6,
     }),
     defaults: { ...EMPTY_DEFAULTS },
+    businessType: null,
     builtin: true,
   },
   {
@@ -55,6 +59,7 @@ export const BUILTIN_TEMPLATES: readonly InvoiceTemplate[] = [
       accentBar: true,
     }),
     defaults: { ...EMPTY_DEFAULTS },
+    businessType: null,
     builtin: true,
   },
 ];

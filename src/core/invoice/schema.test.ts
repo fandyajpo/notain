@@ -15,6 +15,7 @@ const baseDraft = () => ({
   tax: { type: 'percent' as const, value: 11 },
   sections: { header: '', content: '', footer: '' },
   notes: 'Terima kasih',
+  details: {},
 });
 
 describe('invoiceDraftSchema', () => {
@@ -119,6 +120,32 @@ describe('invoiceDraftSchema', () => {
         },
       ],
     });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts business detail values and trims them', () => {
+    const result = invoiceDraftSchema.safeParse({
+      ...baseDraft(),
+      details: { 'nama-kendaraan': '  Avanza  ', 'nomor-polisi': 'B 1234 XY' },
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.details).toEqual({ 'nama-kendaraan': 'Avanza', 'nomor-polisi': 'B 1234 XY' });
+  });
+
+  it('rejects a detail value longer than the column allows', () => {
+    const result = invoiceDraftSchema.safeParse({
+      ...baseDraft(),
+      details: { 'nama-kendaraan': 'x'.repeat(INVOICE_LIMITS.detailValue + 1) },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects more detail entries than the cap allows', () => {
+    const details = Object.fromEntries(
+      Array.from({ length: INVOICE_LIMITS.maxDetails + 1 }, (_, index) => [`key-${index}`, 'x']),
+    );
+    const result = invoiceDraftSchema.safeParse({ ...baseDraft(), details });
     expect(result.success).toBe(false);
   });
 });

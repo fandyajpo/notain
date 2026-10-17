@@ -58,6 +58,7 @@ function authoredTemplate(name: string): AuthoredTemplate {
     layout: createDefaultLayout(),
     theme: { ...DEFAULT_THEME },
     defaults: { header: '<p>Kop dari template</p>', content: '', footer: '', notes: undefined },
+    businessType: null,
   };
 }
 

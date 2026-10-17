@@ -34,6 +34,7 @@ function profile(logoFileId?: string): BusinessProfile {
     businessName: 'Bengkel Fa',
     phone: '081234567890',
     logoFileId,
+    businessType: null,
     plan: 'free',
     planExpiresAt: null,
   };

@@ -1,6 +1,7 @@
 import type { InvoiceTemplate } from './model';
 import { hasRequiredBlocks } from './model';
 import { BUILTIN_TEMPLATES, FALLBACK_TEMPLATE, getBuiltinTemplate } from './builtins';
+import type { BusinessSubtypeSlug } from '../business/taxonomy';
 
 /**
  * Resolves the template an invoice should render with.
@@ -34,4 +35,21 @@ export function resolveTemplate(
  */
 export function listSelectableTemplates(saved: readonly InvoiceTemplate[]): InvoiceTemplate[] {
   return [...BUILTIN_TEMPLATES, ...saved.filter((template) => hasRequiredBlocks(template.layout))];
+}
+
+/**
+ * Splits the picker's list into templates authored for the viewer's business
+ * type and everything else. Grouping must never *hide*: a builtin (always
+ * `businessType: null`) or a template for another trade stays one section away,
+ * and with no chosen type the caller gets the list back untouched as `others`.
+ */
+export function groupTemplatesForBusiness(
+  templates: readonly InvoiceTemplate[],
+  businessType: BusinessSubtypeSlug | null | undefined,
+): { matching: readonly InvoiceTemplate[]; others: readonly InvoiceTemplate[] } {
+  if (!businessType) return { matching: [], others: templates };
+  return {
+    matching: templates.filter((template) => template.businessType === businessType),
+    others: templates.filter((template) => template.businessType !== businessType),
+  };
 }

@@ -1,5 +1,6 @@
 import '../zod-csp';
 import { z } from 'zod';
+import { businessSubtypeSlugSchema } from '../business/schema';
 import {
   BLOCK_ALIGNS,
   BLOCK_TYPES,
@@ -78,6 +79,9 @@ export const invoiceTemplateSchema = z
       .max(TEMPLATE_LIMITS.maxBlocks, 'Terlalu banyak blok dalam template.'),
     theme: templateThemeSchema,
     defaults: templateDefaultsSchema,
+    // Nullable rather than optional: "no business type" is how the built-ins
+    // and every pre-feature template are stored, not an omission.
+    businessType: businessSubtypeSlugSchema.nullable(),
   })
   .superRefine((template, ctx) => {
     const seen = new Set<string>();
@@ -128,6 +132,9 @@ export const invoiceTemplateShapeSchema = z.object({
   layout: z.array(templateBlockShapeSchema).max(TEMPLATE_LIMITS.maxBlocks).catch([]),
   theme: templateThemeSchema.catch(DEFAULT_THEME),
   defaults: templateDefaultsSchema.catch({ header: '', content: '', footer: '', notes: undefined }),
+  // A slug the taxonomy no longer knows (a future rename) must not fail the
+  // whole row — it degrades to "no business type".
+  businessType: businessSubtypeSlugSchema.nullable().catch(null),
 });
 
 export type InvoiceTemplateShapeInput = z.infer<typeof invoiceTemplateShapeSchema>;

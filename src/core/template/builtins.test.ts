@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { BUILTIN_TEMPLATES, getBuiltinTemplate, isBuiltinTemplateId } from './builtins';
 import { invoiceTemplateSchema } from './schema';
 import { REQUIRED_BLOCK_TYPES, hasRequiredBlocks, visibleBlocks } from './model';
-import { listSelectableTemplates, resolveTemplate } from './resolve';
+import type { InvoiceTemplate } from './model';
+import { listSelectableTemplates, resolveTemplate, groupTemplatesForBusiness } from './resolve';
 
 /** The persisted subset — `id` and `builtin` are owned by the row and the code. */
 const authored = (template: (typeof BUILTIN_TEMPLATES)[number]) => ({
@@ -10,6 +11,7 @@ const authored = (template: (typeof BUILTIN_TEMPLATES)[number]) => ({
   layout: template.layout,
   theme: template.theme,
   defaults: template.defaults,
+  businessType: template.businessType,
 });
 
 describe('BUILTIN_TEMPLATES', () => {
@@ -68,6 +70,7 @@ describe('resolveTemplate', () => {
       layout: BUILTIN_TEMPLATES[0]!.layout.map((block) => ({ ...block })),
       theme: BUILTIN_TEMPLATES[0]!.theme,
       defaults: { header: '', content: '', footer: '' },
+      businessType: null,
       builtin: false,
     },
   ];
@@ -107,6 +110,7 @@ describe('listSelectableTemplates', () => {
         layout: BUILTIN_TEMPLATES[0]!.layout.map((block) => ({ ...block })),
         theme: BUILTIN_TEMPLATES[0]!.theme,
         defaults: { header: '', content: '', footer: '' },
+        businessType: null,
         builtin: false,
       },
     ];
@@ -135,6 +139,7 @@ describe('resolveTemplate guard rails', () => {
     layout: BUILTIN_TEMPLATES[0]!.layout.filter((block) => block.type !== 'items'),
     theme: BUILTIN_TEMPLATES[0]!.theme,
     defaults: { header: '', content: '', footer: '' },
+    businessType: null,
     builtin: false,
   };
 
@@ -149,5 +154,44 @@ describe('resolveTemplate guard rails', () => {
       'minimal',
       'modern',
     ]);
+  });
+});
+
+describe('groupTemplatesForBusiness', () => {
+  const saved = (id: string, businessType: InvoiceTemplate['businessType']): InvoiceTemplate => ({
+    id,
+    name: id,
+    layout: BUILTIN_TEMPLATES[0]!.layout.map((block) => ({ ...block })),
+    theme: BUILTIN_TEMPLATES[0]!.theme,
+    defaults: { header: '', content: '', footer: '' },
+    businessType,
+    builtin: false,
+  });
+
+  it('returns the whole list as others when no type was chosen', () => {
+    const all = [...BUILTIN_TEMPLATES, saved('row-1', 'restoran')];
+    const { matching, others } = groupTemplatesForBusiness(all, null);
+
+    expect(matching).toEqual([]);
+    expect(others).toEqual(all);
+  });
+
+  it('partitions by the viewer type and never drops a template', () => {
+    const all = [...BUILTIN_TEMPLATES, saved('row-resto', 'restoran'), saved('row-bengkel', 'bengkel-mobil')];
+    const { matching, others } = groupTemplatesForBusiness(all, 'restoran');
+
+    expect(matching.map((template) => template.id)).toEqual(['row-resto']);
+    expect(others.map((template) => template.id)).toEqual([
+      'classic',
+      'minimal',
+      'modern',
+      'row-bengkel',
+    ]);
+    expect(matching.length + others.length).toBe(all.length);
+  });
+
+  it('never files a builtin under the matching group', () => {
+    const { matching } = groupTemplatesForBusiness(BUILTIN_TEMPLATES, 'restoran');
+    expect(matching).toEqual([]);
   });
 });

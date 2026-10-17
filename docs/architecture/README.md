@@ -56,6 +56,21 @@ tercantum di ADR 0002.
   kodenya di `src/core/template/builtins.ts` dan selalu tersedia sebagai fallback.
   Invoice ↔ template diselesaikan oleh `resolveTemplate` di
   `src/core/template/resolve.ts`.
+- Skema Appwrite — kolom `businessType` (string 64, boleh null) di `templates` dan
+  `profiles` menyimpan **slug jenis bisnis** dari taxonomi di
+  `src/core/business/taxonomy.ts` (19 kategori, 175 sub-jenis). `null` berarti "belum
+  dipilih" (built-in, baris lama, profil baru). Konten per jenis — prose default,
+  sample item, resep layout, saran satuan — ada di preset kategori
+  `src/core/business/presets.ts` (kode, bukan data tersimpan). Field level invoice
+  yang spesifik per jenis (nama kendaraan, berat kiloan, dst.) dikatalogkan di
+  `src/core/business/detail-fields.ts` — default per kategori menggantung di preset,
+  plus override per sub-jenis yang butuh set berbeda — dan disimpan per invoice di
+  kolom `details` (JSON, boleh null) tabel `invoices`. Kolom dibuat lewat
+  `npm run business-type:ensure` (dry-run; `-- --yes` untuk menerapkan) — **jalankan
+  sebelum deploy yang membawa kode ini**, karena `createTemplate`/`saveProfile`/
+  simpan invoice akan menulis kolom yang belum ada. Tidak ada index: pengelompokan
+  picker terjadi di klien atas halaman yang sudah dimuat. Item invoice menyimpan
+  `unit` di dalam JSON kolom `items`, jadi butirannya tidak butuh migrasi apa pun.
 - Skema Appwrite — tabel `customers` adalah **direktori** customer, bukan sumber
   kebenaran atas invoice. Kolomnya: `ownerId`, `name`, `email` (boleh null),
   `phone` (boleh null), `lastUsedAt`, dengan index `owner` atas `["ownerId"]` dan

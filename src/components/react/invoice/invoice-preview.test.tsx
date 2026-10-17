@@ -295,3 +295,102 @@ describe('InvoicePreview unit column', () => {
     expect(rows[1]?.querySelectorAll('td')[2]?.textContent?.trim()).toBe('gelas');
   });
 });
+
+describe('InvoicePreview detail rows', () => {
+  it('prints the filled detail facts under the customer block', async () => {
+    const { business, draft } = setup((invoice) => {
+      invoice.details = { 'nama-kendaraan': 'Avanza', 'nomor-polisi': 'B 1234 XY' };
+    });
+
+    await render(
+      <InvoicePreview
+        business={business}
+        invoice={draft}
+        template={resolveTemplate('classic')}
+        businessType="bengkel-mobil"
+      />,
+    );
+
+    const rows = container.querySelector('[data-preview-part="detail-rows"]');
+    expect(rows).not.toBeNull();
+    const text = rows?.textContent ?? '';
+    expect(text).toContain('Nama kendaraan');
+    expect(text).toContain('Avanza');
+    expect(text).toContain('Nomor polisi');
+    expect(text).toContain('B 1234 XY');
+  });
+
+  it('skips facts the user left empty and hides the whole block when all are', async () => {
+    const { business, draft } = setup((invoice) => {
+      invoice.details = { 'nama-kendaraan': 'Avanza', 'nomor-polisi': '  ' };
+    });
+
+    await render(
+      <InvoicePreview
+        business={business}
+        invoice={draft}
+        template={resolveTemplate('classic')}
+        businessType="bengkel-mobil"
+      />,
+    );
+
+    const rows = container.querySelector('[data-preview-part="detail-rows"]');
+    expect(rows?.textContent).toContain('Avanza');
+    expect(rows?.textContent ?? '').not.toContain('Nomor polisi');
+
+    const empty = setup((invoice) => {
+      invoice.details = {};
+    });
+    await act(async () => {
+      root?.render(
+        <InvoicePreview
+          business={empty.business}
+          invoice={empty.draft}
+          template={resolveTemplate('classic')}
+          businessType="bengkel-mobil"
+        />,
+      );
+    });
+    expect(container.querySelector('[data-preview-part="detail-rows"]')).toBeNull();
+  });
+
+  it('formats a date fact through the Indonesian date formatter', async () => {
+    const { business, draft } = setup((invoice) => {
+      invoice.details = { 'tanggal-acara': '2026-10-01' };
+    });
+
+    await render(
+      <InvoicePreview
+        business={business}
+        invoice={draft}
+        template={resolveTemplate('classic')}
+        businessType="katering"
+      />,
+    );
+
+    const text = container.querySelector('[data-preview-part="detail-rows"]')?.textContent ?? '';
+    expect(text).toContain('Tanggal acara');
+    // `formatTanggal` renders ISO dates in Indonesian long form.
+    expect(text).toMatch(/Oktober/);
+  });
+
+  it('hides facts whose key the current catalogue does not list', async () => {
+    const { business, draft } = setup((invoice) => {
+      invoice.details = { 'nomor-tiket': 'T-001', 'nama-kendaraan': 'Avanza' };
+    });
+
+    await render(
+      <InvoicePreview
+        business={business}
+        invoice={draft}
+        template={resolveTemplate('classic')}
+        businessType="laundry"
+      />,
+    );
+
+    const text = container.querySelector('[data-preview-part="detail-rows"]')?.textContent ?? '';
+    expect(text).toContain('T-001');
+    // Typed under a previous business type: kept in the draft, hidden here.
+    expect(text).not.toContain('Avanza');
+  });
+});

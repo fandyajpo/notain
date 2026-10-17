@@ -1,5 +1,7 @@
 import '../zod-csp';
 import { z } from 'zod';
+import { businessSubtypeSlugSchema } from '../business/schema';
+import type { BusinessSubtypeSlug } from '../business/taxonomy';
 
 export const PROFILE_LIMITS = {
   name: 128,
@@ -21,6 +23,13 @@ export type BusinessProfile = {
   email?: string;
   logoFileId?: string;
   logoUrl?: string;
+  /**
+   * The account's business type (see `core/business/taxonomy`). Asked once
+   * when the first template is created, editable in settings afterwards.
+   * Prefills new templates and groups the invoice template picker.
+   * `null` means the user has not chosen one yet.
+   */
+  businessType: BusinessSubtypeSlug | null;
   plan: Plan;
   /** ISO date string. `null` means no expiry (lifetime or free). */
   planExpiresAt: string | null;
@@ -30,6 +39,7 @@ export const EMPTY_PROFILE: BusinessProfile = {
   name: '',
   businessName: '',
   phone: '',
+  businessType: null,
   plan: 'free',
   planExpiresAt: null,
 };
@@ -93,6 +103,9 @@ export const profileSchema = z.object({
       .optional(),
   ),
   logoFileId: z.preprocess(emptyToUndefined, z.string().trim().max(64).optional()),
+  // Nullable, not optional: "not chosen yet" is a stored state, and a slug the
+  // taxonomy has since renamed must not block a save — it reads back as null.
+  businessType: businessSubtypeSlugSchema.nullable().catch(null),
   plan: z.enum(PLAN_VALUES).default('free'),
   planExpiresAt: z.preprocess(
     emptyToUndefined,
@@ -128,6 +141,10 @@ export const profileFormSchema = z.object({
     .refine((value) => value === '' || emailPattern.test(value), {
       message: 'Masukkan email yang valid.',
     }),
+  // Kept as a plain value so the controlled picker stays simple: '' means
+  // "no type". Typed as the slug union (plus '') rather than `string`, so the
+  // form's values line up with `BusinessProfile.businessType` on submit.
+  businessType: z.union([businessSubtypeSlugSchema, z.literal('')]),
 });
 
 export type ProfileFormValues = z.infer<typeof profileFormSchema>;

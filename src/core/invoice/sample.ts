@@ -8,6 +8,7 @@ export const SAMPLE_BUSINESS: BusinessProfile = {
   phone: '081234567890',
   address: 'Jl. Melati No. 12, Bandung',
   email: 'halo@warungmaju.id',
+  businessType: null,
   plan: 'free',
   planExpiresAt: null,
 };
@@ -52,6 +53,7 @@ export function createSampleInvoice(
         footer: `<p><strong>Pembayaran:</strong> BCA 1234567890 a.n. ${business.name}</p><p>Terima kasih 🙏</p>`,
       },
       notes: 'Terima kasih sudah berbelanja. Semoga sehat selalu!',
+      details: {},
     },
   };
 }

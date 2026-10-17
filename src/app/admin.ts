@@ -13,6 +13,8 @@ export type AdminUser = {
   address: string;
   /** Optional business-contact email stored on the profile. */
   profileEmail: string;
+  /** Business-type slug from the taxonomy; '' when the user never chose one. */
+  businessType: string;
   plan: string;
   planExpiresAt: string | null;
 };

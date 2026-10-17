@@ -6,6 +6,8 @@ import { formatRupiah } from '../../../core/shared/money';
 import { formatTanggal } from '../../../core/shared/dates';
 import { sanitizeRichHtml } from '../../../core/shared/sanitize';
 import type { BusinessProfile } from '../../../core/profile/model';
+import { getDetailFields } from '../../../core/business/detail-fields';
+import type { BusinessSubtypeSlug } from '../../../core/business/taxonomy';
 import type {
   BlockWidth,
   InvoiceTemplate,
@@ -23,6 +25,12 @@ type Props = {
    * when the id is missing or points at something that no longer exists.
    */
   template: InvoiceTemplate;
+  /**
+   * The trade whose detail fields this invoice prints — the active template's
+   * type first, the profile's as fallback. Absent means no detail rows, which
+   * is what built-in-only accounts see.
+   */
+  businessType?: BusinessSubtypeSlug | null;
   logoUrl?: string | null;
   className?: string;
 };
@@ -84,13 +92,33 @@ function hasContent(block: TemplateBlock, invoice: InvoiceDraft): boolean {
  * edited in the console, and only an allowlist stands between that HTML and
  * the page.
  */
-export function InvoicePreview({ business, invoice, template, logoUrl, className }: Props) {
+export function InvoicePreview({
+  business,
+  invoice,
+  template,
+  businessType = null,
+  logoUrl,
+  className,
+}: Props) {
   const theme = template.theme;
   const totals = calculateTotals({
     items: invoice.items,
     discount: invoice.discount,
     tax: invoice.tax,
   });
+
+  // Catalogue order, filtered to the facts actually filled in. Keys the
+  // current catalogue no longer lists (typed under a previous business type)
+  // stay in the draft but stay hidden — switching a template never destroys
+  // values, and this is the render side of that bargain.
+  const detailRows = getDetailFields(businessType)
+    .map((field) => ({
+      key: field.key,
+      label: field.label,
+      value: invoice.details[field.key]?.trim() ?? '',
+      isDate: field.type === 'date',
+    }))
+    .filter((row) => row.value !== '');
 
   const muted = { color: theme.muted };
   // The letterhead names the business, not the owner behind it — the owner
@@ -194,6 +222,20 @@ export function InvoicePreview({ business, invoice, template, logoUrl, className
               <p className="text-xs" style={muted}>
                 {invoice.customerPhone}
               </p>
+            )}
+            {detailRows.length > 0 && (
+              <dl
+                data-preview-part="detail-rows"
+                className="mt-3 space-y-1 border-t pt-2"
+                style={{ borderColor: theme.border }}
+              >
+                {detailRows.map((row) => (
+                  <div key={row.key} className="flex justify-between gap-4 text-xs">
+                    <dt style={muted}>{row.label}</dt>
+                    <dd className="text-right">{row.isDate ? formatTanggal(row.value) : row.value}</dd>
+                  </div>
+                ))}
+              </dl>
             )}
           </section>
         );

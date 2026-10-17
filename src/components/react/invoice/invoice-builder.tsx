@@ -60,8 +60,12 @@ import { Textarea } from '../ui/textarea';
 import { BuilderTabs } from './builder-tabs';
 import { ItemsGrid } from './items-grid';
 import { InvoicePreview } from './invoice-preview';
-import { listSelectableTemplates, resolveTemplate } from '../../../core/template/resolve';
+import { listSelectableTemplates, resolveTemplate, groupTemplatesForBusiness } from '../../../core/template/resolve';
 import { applyTemplateDefaults } from '../../../core/template/apply';
+import type { InvoiceTemplate } from '../../../core/template/model';
+import type { BusinessSubtypeSlug } from '../../../core/business/taxonomy';
+import { getDetailFields } from '../../../core/business/detail-fields';
+import { DetailFieldsCard } from './detail-fields-card';
 import { TemplateCard } from '../template/template-picker';
 import { Picker } from './picker';
 import { LazyRichEditor } from './lazy-rich-editor';
@@ -172,9 +176,13 @@ export function InvoiceBuilder({
     // The pick rides on top of whatever draft was restored, and fills only the
     // sections still empty — so a resumed draft keeps its prose.
     return templateId
-      ? applyTemplateDefaults(base, resolveTemplate(templateId, savedTemplates))
+      ? applyTemplateDefaults(
+          base,
+          resolveTemplate(templateId, savedTemplates),
+          profile.businessType,
+        )
       : base;
-  }, [ownerId, invoiceId, initialDraft, templateId, savedTemplates]);
+  }, [ownerId, invoiceId, initialDraft, templateId, savedTemplates, profile.businessType]);
 
   // Declared before the form because `onSubmit` cancels it — see below.
   const autosave = useDebouncer(
@@ -248,6 +256,14 @@ export function InvoiceBuilder({
       }),
     [values.items, values.discount, values.tax],
   );
+
+  // The business type behind this invoice drives both the "Detail bisnis"
+  // card and the rows the preview prints under the customer: the active
+  // template's type first, the profile's as fallback for templates that never
+  // picked one (built-ins, rows from before types existed).
+  const activeTemplate = resolveTemplate(values.templateId, savedTemplates);
+  const detailBusinessType = activeTemplate.businessType ?? profile.businessType;
+  const detailFields = getDetailFields(detailBusinessType);
 
   useEffect(() => {
     restoredRef.current = true;
@@ -342,14 +358,14 @@ export function InvoiceBuilder({
   const switchTemplate = useCallback(
     (id: string) => {
       const template = resolveTemplate(id, savedTemplates);
-      const next = applyTemplateDefaults(values, template);
+      const next = applyTemplateDefaults(values, template, profile.businessType);
       form.setFieldValue('templateId', next.templateId);
       form.setFieldValue('sections', next.sections);
       if (next.notes !== values.notes) form.setFieldValue('notes', next.notes);
       setShowTemplates(false);
       toast(`Template diganti ke ${template.name}.`, { variant: 'success' });
     },
-    [form, savedTemplates, values],
+    [form, savedTemplates, values, profile.businessType],
   );
 
   const openWhatsApp = useCallback(() => {
@@ -519,6 +535,12 @@ export function InvoiceBuilder({
               )}
             </form.Field>
           </Section>
+
+          <DetailFieldsCard
+            fields={detailFields}
+            values={values.details}
+            onChange={(details) => form.setFieldValue('details', details)}
+          />
 
           <Section title="Detail invoice">
             <form.Field name="invoiceNumber">
@@ -700,23 +722,20 @@ export function InvoiceBuilder({
           size="xl"
           bodyClassName="max-h-[65dvh] overflow-y-auto px-5 py-4 sm:px-6"
         >
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" data-template-switcher>
-            {listSelectableTemplates(savedTemplates ?? []).map((template) => (
-              <TemplateCard
-                key={template.id}
-                template={template}
-                logoUrl={logoUrl}
-                business={profile}
-                selected={template.id === values.templateId}
-                onPick={switchTemplate}
-              />
-            ))}
-          </div>
+          <TemplateSwitcherGrid
+            templates={listSelectableTemplates(savedTemplates ?? [])}
+            businessType={profile.businessType}
+            logoUrl={logoUrl}
+            business={profile}
+            selectedId={values.templateId}
+            onPick={switchTemplate}
+          />
         </Modal>
         <InvoicePreview
           business={profile}
           invoice={values}
-          template={resolveTemplate(values.templateId, savedTemplates)}
+          template={activeTemplate}
+          businessType={detailBusinessType}
           logoUrl={logoUrl}
         />
       </aside>
@@ -886,6 +905,7 @@ const SECTION_BY_ERROR_PATH: ReadonlyArray<readonly [prefix: string, section: Bu
   ['invoiceNumber', 'detail'],
   ['date', 'detail'],
   ['dueDate', 'detail'],
+  ['details', 'detail'],
   ['items', 'barang'],
   ['sections.header', 'header'],
   ['sections.content', 'isi'],
@@ -902,6 +922,58 @@ function sectionForError(path: string): BuilderSection | undefined {
   return SECTION_BY_ERROR_PATH.find(
     ([prefix]) => path === prefix || path.startsWith(`${prefix}.`) || path.startsWith(`${prefix}[`),
   )?.[1];
+}
+
+/** The in-builder template grid, grouped the same way the picker step is. */
+function TemplateSwitcherGrid({
+  templates,
+  businessType,
+  logoUrl,
+  business,
+  selectedId,
+  onPick,
+}: {
+  templates: readonly InvoiceTemplate[];
+  businessType: BusinessSubtypeSlug | null;
+  logoUrl?: string | null;
+  business?: BusinessProfile | null;
+  selectedId?: string;
+  onPick: (templateId: string) => void;
+}) {
+  const { matching, others } = groupTemplatesForBusiness(templates, businessType);
+  const grouped = matching.length > 0;
+
+  const grid = (list: readonly InvoiceTemplate[]) => (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" data-template-switcher>
+      {list.map((template) => (
+        <TemplateCard
+          key={template.id}
+          template={template}
+          logoUrl={logoUrl}
+          business={business}
+          selected={template.id === selectedId}
+          onPick={onPick}
+        />
+      ))}
+    </div>
+  );
+
+  if (!grouped) return grid(templates);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <section className="flex flex-col gap-2">
+        <h3 className="text-eyebrow uppercase text-muted">Sesuai bisnis kamu</h3>
+        {grid(matching)}
+      </section>
+      {others.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <h3 className="text-eyebrow uppercase text-muted">Jenis lain</h3>
+          {grid(others)}
+        </section>
+      )}
+    </div>
+  );
 }
 
 export type { AdjustmentType };

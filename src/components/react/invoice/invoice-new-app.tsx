@@ -143,6 +143,7 @@ function InvoiceNewContent() {
         templates={listSelectableTemplates(savedTemplates ?? [])}
         logoUrl={profile?.logoUrl ?? null}
         business={profile}
+        businessType={profile?.businessType ?? null}
         onPick={setPickedTemplateId}
       />
     );

@@ -7,6 +7,7 @@ import { SegmentedControl } from '../ui/segmented';
 import { ErrorState, LoadingState } from '../ui/state';
 import { TableShell, Th, Td, TBODY_ROW, THEAD_ROW } from '../ui/table';
 import { useAdminUserDrilldown } from '../../../lib/query/hooks/use-admin';
+import { businessSubtypeLabel } from '../../../core/business/taxonomy';
 import {
   isDrillOverview,
   type AdminDrillOverview,
@@ -134,6 +135,7 @@ function OverviewPanel({ overview }: { overview: AdminDrillOverview }) {
         />
         <Field label="Daftar" value={new Date(user.createdAt).toLocaleDateString('id-ID')} />
         <Field label="Nama usaha" value={user.businessName || '—'} />
+        <Field label="Jenis bisnis" value={businessSubtypeLabel(user.businessType) || '—'} />
         <Field label="WhatsApp" value={user.phone || '—'} />
         <Field label="Email bisnis" value={user.profileEmail || '—'} />
         <Field label="Alamat" value={user.address || '—'} />

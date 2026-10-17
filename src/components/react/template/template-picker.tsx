@@ -3,7 +3,10 @@ import { Check } from 'lucide-react';
 import { createSampleInvoice, SAMPLE_BUSINESS } from '../../../core/invoice/sample';
 import type { BusinessProfile } from '../../../core/profile/model';
 import type { InvoiceTemplate } from '../../../core/template/model';
+import { groupTemplatesForBusiness } from '../../../core/template/resolve';
+import { businessSubtypeLabel, type BusinessSubtypeSlug } from '../../../core/business/taxonomy';
 import { InvoicePreview } from '../invoice/invoice-preview';
+import { Badge } from '../ui/badge';
 import { PageHeader } from '../ui/page-header';
 
 /**
@@ -94,9 +97,14 @@ export function TemplateCard({
     <>
       <TemplateThumbnail template={template} logoUrl={logoUrl} business={business} />
       <span className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-foreground">
-        {template.name}
-        {selected && <Check size={14} className="text-accent" aria-hidden="true" />}
-        <span className="ml-auto text-xs font-normal text-muted">
+        <span className="truncate">{template.name}</span>
+        {selected && <Check size={14} className="shrink-0 text-accent" aria-hidden="true" />}
+        {template.businessType && (
+          <Badge variant="accent" size="sm" className="shrink-0">
+            {businessSubtypeLabel(template.businessType)}
+          </Badge>
+        )}
+        <span className="ml-auto shrink-0 text-xs font-normal text-muted">
           {template.builtin ? 'Bawaan' : 'Template saya'}
         </span>
       </span>
@@ -140,30 +148,68 @@ type PickerProps = {
   logoUrl?: string | null;
   /** The viewer's own business, so the preview reads like their invoice. */
   business?: BusinessProfile | null;
+  /** The viewer's chosen business type; groups but never hides the rest. */
+  businessType?: BusinessSubtypeSlug | null;
   onPick: (templateId: string) => void;
 };
 
 /** Step one of `/invoice/new`: choose the look before entering any data. */
-export function TemplatePicker({ templates, selectedId, logoUrl, business, onPick }: PickerProps) {
+export function TemplatePicker({
+  templates,
+  selectedId,
+  logoUrl,
+  business,
+  businessType,
+  onPick,
+}: PickerProps) {
+  const { matching, others } = groupTemplatesForBusiness(templates, businessType);
+  // Grouping only earns its headers when something actually matched — with no
+  // chosen type (or a brand-new account) the flat list from before stands.
+  const grouped = matching.length > 0;
+
+  const grid = (list: readonly InvoiceTemplate[]) => (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {list.map((template) => (
+        <TemplateCard
+          key={template.id}
+          template={template}
+          logoUrl={logoUrl}
+          business={business}
+          selected={template.id === selectedId}
+          onPick={onPick}
+        />
+      ))}
+    </div>
+  );
+
+  if (!grouped) {
+    return (
+      <div className="flex w-full flex-col gap-6">
+        <PageHeader
+          title="Pilih template invoice"
+          description="Tampilannya bisa diganti kapan saja. Data invoice yang kamu isi tetap tersimpan."
+        />
+        {grid(templates)}
+      </div>
+    );
+  }
+
   return (
     <div className="flex w-full flex-col gap-6">
       <PageHeader
         title="Pilih template invoice"
         description="Tampilannya bisa diganti kapan saja. Data invoice yang kamu isi tetap tersimpan."
       />
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {templates.map((template) => (
-          <TemplateCard
-            key={template.id}
-            template={template}
-            logoUrl={logoUrl}
-            business={business}
-            selected={template.id === selectedId}
-            onPick={onPick}
-          />
-        ))}
-      </div>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-eyebrow uppercase text-muted">Sesuai bisnis kamu</h2>
+        {grid(matching)}
+      </section>
+      {others.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-eyebrow uppercase text-muted">Jenis lain</h2>
+          {grid(others)}
+        </section>
+      )}
     </div>
   );
 }

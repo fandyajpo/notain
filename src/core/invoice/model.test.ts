@@ -18,6 +18,7 @@ const source: InvoiceDraft = {
   tax: { type: 'amount', value: 5000 },
   sections: { header: '<p>Halo</p>', content: '', footer: '' },
   notes: 'Terima kasih.',
+  details: { 'nomor-polisi': 'B 1234 XY' },
 };
 
 describe('duplicateDraft', () => {
@@ -31,6 +32,10 @@ describe('duplicateDraft', () => {
     expect(copy.tax).toEqual({ type: 'amount', value: 5000 });
     expect(copy.sections).toEqual(source.sections);
     expect(copy.notes).toBe('Terima kasih.');
+    expect(copy.details).toEqual({ 'nomor-polisi': 'B 1234 XY' });
+    // A copy gets its own record: editing the duplicate's details must never
+    // write through into the invoice it came from.
+    expect(copy.details).not.toBe(source.details);
     expect(
       copy.items.map(({ name, quantity, unitPrice }) => ({ name, quantity, unitPrice })),
     ).toEqual([

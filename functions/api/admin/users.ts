@@ -24,6 +24,7 @@ type ProfileRow = {
   phone: string;
   address?: string | null;
   email?: string | null;
+  businessType?: string | null;
   plan?: string;
   planExpiresAt?: string | null;
 };
@@ -41,6 +42,8 @@ type AdminUserEntry = {
   address: string;
   /** Optional business-contact email stored on the profile (not the login). */
   profileEmail: string;
+  /** Business-type slug from the taxonomy; '' when the user never chose one. */
+  businessType: string;
   plan: string;
   planExpiresAt: string | null;
 };
@@ -208,6 +211,7 @@ async function listUsers(
       phone: profile?.phone ?? '',
       address: profile?.address ?? '',
       profileEmail: profile?.email ?? '',
+      businessType: profile?.businessType ?? '',
       plan: profile?.plan ?? 'free',
       planExpiresAt: profile?.planExpiresAt ?? null,
     };

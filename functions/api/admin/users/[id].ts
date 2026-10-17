@@ -15,6 +15,7 @@ type ProfileRow = {
   phone?: string | null;
   address?: string | null;
   email?: string | null;
+  businessType?: string | null;
   plan?: string | null;
   planExpiresAt?: string | null;
 };
@@ -166,6 +167,7 @@ async function overview(
       phone: profile?.phone ?? '',
       address: profile?.address ?? '',
       profileEmail: profile?.email ?? '',
+      businessType: profile?.businessType ?? '',
       plan: profile?.plan ?? 'free',
       planExpiresAt: profile?.planExpiresAt ?? null,
     },

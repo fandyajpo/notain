@@ -7,6 +7,7 @@ const baseTemplate = () => ({
   layout: createDefaultLayout(),
   theme: { ...DEFAULT_THEME },
   defaults: { header: '', content: '', footer: '' },
+  businessType: null,
 });
 
 /** A layout exactly as it looked before `width` existed. */
@@ -127,6 +128,16 @@ describe('invoiceTemplateSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('accepts a known business type and null', () => {
+    expect(parse({ businessType: 'bengkel-mobil' }).success).toBe(true);
+    expect(parse({ businessType: null }).success).toBe(true);
+  });
+
+  it('rejects a business type the taxonomy does not define', () => {
+    expect(parse({ businessType: 'bengkel-kapal' }).success).toBe(false);
+    expect(parse({ businessType: 'otomotif' }).success).toBe(false);
+  });
 });
 
 describe('invoiceTemplateShapeSchema', () => {
@@ -186,5 +197,24 @@ describe('invoiceTemplateShapeSchema', () => {
     expect(result.success).toBe(true);
     if (!result.success) return;
     expect(result.data.layout[0]?.width).toBe('full');
+  });
+
+  it('reads a row written before businessType existed as null', () => {
+    const legacy: Record<string, unknown> = { ...baseTemplate() };
+    delete legacy.businessType;
+    const result = invoiceTemplateShapeSchema.safeParse(legacy);
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.businessType).toBeNull();
+  });
+
+  it('degrades a business type the taxonomy no longer knows to null', () => {
+    const result = invoiceTemplateShapeSchema.safeParse({
+      ...baseTemplate(),
+      businessType: 'bengkel-kapal',
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.businessType).toBeNull();
   });
 });

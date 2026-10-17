@@ -3,14 +3,19 @@ import { INVOICE_LIMITS } from '../core/invoice/model';
 import { DEFAULT_THEME, createDefaultLayout } from '../core/template/model';
 import {
   parseInvoiceItems,
+  parseInvoiceDetails,
+  draftToRowData,
   invoiceRowToDomain,
   templateRowToDomain,
+  profileRowToDomain,
+  profileToRowData,
   customerRowToDomain,
   customerToRowData,
   statsRowToDomain,
   statsToRowData,
   type InvoiceRow,
   type TemplateRow,
+  type ProfileRow,
   type CustomerRow,
   type StatsRow,
 } from './mappers';
@@ -128,6 +133,67 @@ describe('invoiceRowToDomain', () => {
     expect(invoice.dueDate).toBeUndefined();
     expect(invoice.notes).toBeUndefined();
     expect(invoice.customerPhone).toBeUndefined();
+    expect(invoice.details).toEqual({});
+  });
+
+  it('reads the business detail record back', () => {
+    const invoice = invoiceRowToDomain(
+      row({ details: JSON.stringify({ 'nomor-polisi': 'B 1234 XY', 'berat-kg': '3' }) }),
+    );
+    expect(invoice.details).toEqual({ 'nomor-polisi': 'B 1234 XY', 'berat-kg': '3' });
+  });
+});
+
+describe('parseInvoiceDetails', () => {
+  it('keeps a well-formed record', () => {
+    expect(parseInvoiceDetails(JSON.stringify({ 'nama-kendaraan': 'Avanza' }))).toEqual({
+      'nama-kendaraan': 'Avanza',
+    });
+  });
+
+  it('returns an empty record for a column that was never written', () => {
+    expect(parseInvoiceDetails(null)).toEqual({});
+    expect(parseInvoiceDetails(undefined)).toEqual({});
+    expect(parseInvoiceDetails('')).toEqual({});
+  });
+
+  it('returns an empty record for corrupt JSON or a non-object payload', () => {
+    expect(parseInvoiceDetails('not json')).toEqual({});
+    expect(parseInvoiceDetails('["nama-kendaraan"]')).toEqual({});
+    expect(parseInvoiceDetails('"Avanza"')).toEqual({});
+  });
+
+  it('blanks an over-long value instead of dropping the whole record', () => {
+    const details = parseInvoiceDetails(
+      JSON.stringify({ 'nama-kendaraan': 'x'.repeat(INVOICE_LIMITS.detailValue + 1) }),
+    );
+    expect(details).toEqual({ 'nama-kendaraan': '' });
+  });
+});
+
+describe('draftToRowData details column', () => {
+  const baseDraft = () => ({
+    invoiceNumber: 'INV-2026-001',
+    date: '2026-10-01',
+    status: 'sent' as const,
+    customerName: 'Budi',
+    items: [item()],
+    discount: { type: 'amount' as const, value: 0 },
+    tax: { type: 'amount' as const, value: 0 },
+    sections: { header: '', content: '', footer: '' },
+    details: { 'nomor-polisi': 'B 1234 XY' },
+  });
+
+  it('serialises a non-empty record and reads it back', () => {
+    const written = draftToRowData(baseDraft());
+    expect(written.details).toBe(JSON.stringify({ 'nomor-polisi': 'B 1234 XY' }));
+    expect(parseInvoiceDetails(written.details)).toEqual({ 'nomor-polisi': 'B 1234 XY' });
+  });
+
+  it('writes null when the invoice has no details', () => {
+    const written = draftToRowData({ ...baseDraft(), details: {} });
+    expect(written.details).toBeNull();
+    expect(parseInvoiceDetails(written.details)).toEqual({});
   });
 });
 
@@ -167,6 +233,56 @@ describe('templateRowToDomain', () => {
     expect(template.layout.length).toBeGreaterThan(0);
     expect(template.theme).toEqual(DEFAULT_THEME);
     expect(template.defaults).toEqual({ header: '', content: '', footer: '', notes: undefined });
+  });
+
+  it('reads a row written before businessType existed as null', () => {
+    expect(templateRowToDomain(templateRow()).businessType).toBeNull();
+    expect(templateRowToDomain(templateRow({ businessType: null })).businessType).toBeNull();
+  });
+
+  it('keeps a business type the taxonomy still defines', () => {
+    expect(templateRowToDomain(templateRow({ businessType: 'bengkel-mobil' })).businessType).toBe(
+      'bengkel-mobil',
+    );
+  });
+
+  it('degrades a business type the taxonomy no longer knows to null', () => {
+    expect(templateRowToDomain(templateRow({ businessType: 'bengkel-kapal' })).businessType).toBe(
+      null,
+    );
+  });
+});
+
+describe('profile businessType round-trip', () => {
+  const profileRow = (over: Partial<ProfileRow> = {}): ProfileRow =>
+    ({
+      $id: 'user-1',
+      name: 'Fandy',
+      businessName: 'Bengkel Fa',
+      phone: '081234567890',
+      address: null,
+      email: null,
+      logoFileId: null,
+      plan: 'free',
+      planExpiresAt: null,
+      ...over,
+    }) as ProfileRow;
+
+  it('reads and writes a known slug', () => {
+    const profile = profileRowToDomain(profileRow({ businessType: 'bengkel-mobil' }));
+    expect(profile.businessType).toBe('bengkel-mobil');
+    expect(profileToRowData(profile).businessType).toBe('bengkel-mobil');
+  });
+
+  it('reads a missing column or an unknown slug as null', () => {
+    expect(profileRowToDomain(profileRow()).businessType).toBeNull();
+    expect(profileRowToDomain(profileRow({ businessType: 'bengkel-kapal' })).businessType).toBe(
+      null,
+    );
+  });
+
+  it('writes null when no type was ever chosen', () => {
+    expect(profileToRowData(profileRowToDomain(profileRow())).businessType).toBeNull();
   });
 });
 

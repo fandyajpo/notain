@@ -84,6 +84,37 @@ export const invoiceSectionsSchema = z.object({
   footer: z.string().max(INVOICE_LIMITS.richText, 'Bagian bawah terlalu panjang.'),
 });
 
+/**
+ * A single business detail value ('Avanza', '3', '2026-10-01'). Length-bounded
+ * only: the catalogue decides what each key means, and an imperfect plate
+ * number is not worth blocking a save.
+ */
+export const invoiceDetailValueSchema = z
+  .string()
+  .trim()
+  .max(INVOICE_LIMITS.detailValue, 'Nilai detail terlalu panjang.');
+
+/**
+ * Business detail values for a draft. Keys are catalogue keys (or stale ones
+ * kept from a previous business type); entries are capped so a corrupt record
+ * cannot grow without bound.
+ */
+export const invoiceDetailsSchema = z
+  .record(z.string(), invoiceDetailValueSchema)
+  .refine((details) => Object.keys(details).length <= INVOICE_LIMITS.maxDetails, {
+    message: 'Jumlah detail bisnis terlalu banyak.',
+  });
+
+/**
+ * Lenient twin of `invoiceDetailsSchema`, for reading persisted rows and
+ * restoring work-in-progress: a value that is simply too long degrades to an
+ * empty string (hidden, not fatal), and a wholly corrupt record degrades to
+ * none at all.
+ */
+export const invoiceDetailShapeSchema = z
+  .record(z.string(), z.string().max(INVOICE_LIMITS.detailValue).catch(''))
+  .catch({});
+
 export const invoiceDraftSchema = z
   .object({
     invoiceNumber: z
@@ -139,6 +170,7 @@ export const invoiceDraftSchema = z
       .min(1, 'Tambahkan minimal satu item ke invoice.')
       .max(INVOICE_LIMITS.maxItems, 'Jumlah item terlalu banyak.'),
     sections: invoiceSectionsSchema,
+    details: invoiceDetailsSchema,
     notes: z
       .string()
       .trim()
@@ -197,6 +229,7 @@ export const invoiceDraftShapeSchema = z.object({
   tax: invoiceAdjustmentSchema,
   items: z.array(invoiceItemShapeSchema).max(INVOICE_LIMITS.maxItems),
   sections: invoiceSectionsSchema,
+  details: invoiceDetailShapeSchema,
   notes: z.string().max(INVOICE_LIMITS.notes).optional().catch(undefined),
 });
 

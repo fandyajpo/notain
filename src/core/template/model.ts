@@ -1,5 +1,7 @@
 /** Domain model for an invoice template. Pure data — no framework or SDK types. */
 
+import type { BusinessSubtypeSlug } from '../business/taxonomy';
+
 /**
  * Hard limits shared by validation and persistence. The Appwrite columns are
  * sized from these numbers, so keep them in sync when either changes.
@@ -120,6 +122,13 @@ export type InvoiceTemplate = {
   layout: TemplateBlock[];
   theme: TemplateTheme;
   defaults: TemplateDefaults;
+  /**
+   * The business type this template was authored for (see
+   * `core/business/taxonomy`). Drives picker grouping and the sample items an
+   * invoice seeded from it starts with. `null` means "any type": the built-in
+   * style presets, and every template saved before this field existed.
+   */
+  businessType: BusinessSubtypeSlug | null;
   /**
    * Built-in templates are defined in code and never persisted, so they are
    * always selectable even when the `templates` table is empty or a row was

@@ -41,6 +41,10 @@ export const INVOICE_LIMITS = {
   maxPercent: 100,
   richText: 20_000,
   notes: 5_000,
+  /** One business detail fact (plate number, weight…). */
+  detailValue: 255,
+  /** Cap on detail facts per invoice. */
+  maxDetails: 20,
 } as const;
 
 export type InvoiceItem = {
@@ -97,6 +101,12 @@ export type InvoiceDraft = {
   discount: InvoiceAdjustment;
   tax: InvoiceAdjustment;
   sections: InvoiceSections;
+  /**
+   * Business-specific facts (plate number, weight, event date…) printed under
+   * the customer block. Catalogue keys only; the current business type decides
+   * which of them the preview actually shows.
+   */
+  details: Record<string, string>;
   notes?: string;
 };
 
@@ -135,6 +145,7 @@ export function createEmptyDraft(invoiceNumber: string, date: string): InvoiceDr
     discount: { ...EMPTY_ADJUSTMENT },
     tax: { ...EMPTY_ADJUSTMENT },
     sections: { ...EMPTY_SECTIONS },
+    details: {},
   };
 }
 
@@ -206,6 +217,9 @@ export function duplicateDraft(
     discount: { ...source.discount },
     tax: { ...source.tax },
     sections: { ...source.sections },
+    // A shallow copy on purpose: the keys are scalar strings, so only the
+    // record identity has to differ to keep the duplicate independent.
+    details: { ...source.details },
     notes: source.notes,
   };
 }

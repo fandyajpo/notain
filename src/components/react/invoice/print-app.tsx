@@ -93,6 +93,7 @@ function PrintContent() {
   }
 
   const business = profile ?? EMPTY_PROFILE;
+  const printTemplate = resolveTemplate(invoice.templateId, templates);
 
   return (
     <>
@@ -123,7 +124,8 @@ function PrintContent() {
         <InvoicePreview
           business={business}
           invoice={invoice}
-          template={resolveTemplate(invoice.templateId, templates)}
+          template={printTemplate}
+          businessType={printTemplate.businessType ?? business.businessType}
           logoUrl={business.logoUrl}
         />
       </div>
