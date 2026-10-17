@@ -41,6 +41,13 @@ const DESIRED = [
     indexes: [
       // List: equal(ownerId) + orderDesc(date) + orderDesc($createdAt).
       { key: 'owner_date', type: 'key', attributes: ['ownerId', 'date'], orders: ['asc', 'asc'] },
+      // Template filter: equal(ownerId) + equal(templateId) + orderDesc(date).
+      {
+        key: 'owner_template_date',
+        type: 'key',
+        attributes: ['ownerId', 'templateId', 'date'],
+        orders: ['asc', 'asc', 'asc'],
+      },
       // Number allocation: equal(ownerId) + startsWith('invoiceNumber', 'INV-YYYY-').
       {
         key: 'owner_invoiceNumber',

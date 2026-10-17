@@ -10,7 +10,7 @@ import {
 } from '@tanstack/react-table';
 import { useDebouncedCallback } from '@tanstack/react-pacer';
 import { ArrowUpDown, ChevronRight, Copy, EllipsisVertical, Plus, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { calculateTotals } from '../../../core/invoice/calculator';
 import {
   INVOICE_STATUSES,
@@ -18,9 +18,11 @@ import {
   type Invoice,
   type InvoiceStatus,
 } from '../../../core/invoice/model';
+import { BUILTIN_TEMPLATES } from '../../../core/template/builtins';
 import { formatRupiah } from '../../../core/shared/money';
 import { formatTanggalRelatif } from '../../../core/shared/dates';
 import { useDeleteInvoice, useInvoices } from '../../../lib/query/hooks/use-invoices';
+import { useTemplates } from '../../../lib/query/hooks/use-templates';
 import { toast } from '../../../lib/ui/toast';
 import { Button } from '../ui/button';
 import { Menu } from '../ui/menu';
@@ -41,13 +43,76 @@ const features = tableFeatures({
 const columnHelper = createColumnHelper<typeof features, Invoice>();
 const SEARCH_WAIT = 300;
 
+/**
+ * Every filter and the sort live in the URL query string (`keyword`,
+ * `status`, `template`, `sort`, `dir`) — state that survives reload, back
+ * navigation and copy-paste into another tab. The React state below is seeded
+ * from the query on first render (the island is client-only, so `window` is
+ * always there, the same read `invoice-new-app` does for `from`), then written
+ * back with `replaceState`, which does not stack an entry per keystroke into
+ * the session's history.
+ */
+const PARAMS = { keyword: 'keyword', status: 'status', template: 'template', sort: 'sort', dir: 'dir' } as const;
+/** Sortable column ids — anything else in `?sort=` is ignored as junk. */
+const SORTABLE_IDS = new Set(['invoiceNumber', 'customerName', 'total', 'date', 'status']);
+
+type TableParams = {
+  keyword: string;
+  status: InvoiceStatus | undefined;
+  template: string | undefined;
+  sorting: SortingState;
+};
+
+function readParams(): TableParams {
+  if (typeof window === 'undefined') {
+    return { keyword: '', status: undefined, template: undefined, sorting: [] };
+  }
+  const query = new URLSearchParams(window.location.search);
+  const keyword = query.get(PARAMS.keyword) ?? '';
+  const status = query.get(PARAMS.status);
+  const template = query.get(PARAMS.template);
+  const sort = query.get(PARAMS.sort);
+  const dir = query.get(PARAMS.dir);
+  return {
+    keyword,
+    status: status && (INVOICE_STATUSES as readonly string[]).includes(status)
+      ? (status as InvoiceStatus)
+      : undefined,
+    template: template || undefined,
+    sorting: sort && SORTABLE_IDS.has(sort) ? [{ id: sort, desc: dir !== 'asc' }] : [],
+  };
+}
+
 export function InvoiceTable() {
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
+  const initial = useMemo(readParams, []);
+  const [searchInput, setSearchInput] = useState(initial.keyword);
+  const [search, setSearch] = useState(initial.keyword);
   // `undefined` means "all statuses" — no server-side filter is sent.
-  const [statusFilter, setStatusFilter] = useState<InvoiceStatus | undefined>(undefined);
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [statusFilter, setStatusFilter] = useState<InvoiceStatus | undefined>(initial.status);
+  // `undefined` means "all templates" — no server-side filter is sent.
+  const [templateFilter, setTemplateFilter] = useState<string | undefined>(initial.template);
+  const [sorting, setSorting] = useState<SortingState>(initial.sorting);
   const [pendingDelete, setPendingDelete] = useState<Invoice | null>(null);
+
+  // Mirror the visible state into the query string. Unknown params (an auth
+  // token, a tour flag) are preserved — this only owns its own five keys.
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    const set = (key: string, value: string) => {
+      if (value) query.set(key, value);
+      else query.delete(key);
+    };
+    set(PARAMS.keyword, search);
+    set(PARAMS.status, statusFilter ?? '');
+    set(PARAMS.template, templateFilter ?? '');
+    set(PARAMS.sort, sorting[0]?.id ?? '');
+    set(PARAMS.dir, sorting[0] ? (sorting[0].desc ? 'desc' : 'asc') : '');
+    const qs = query.toString();
+    const next = `${window.location.pathname}${qs ? `?${qs}` : ''}`;
+    if (next !== `${window.location.pathname}${window.location.search}`) {
+      window.history.replaceState(null, '', next);
+    }
+  }, [search, statusFilter, templateFilter, sorting]);
 
   const {
     data,
@@ -58,8 +123,27 @@ export function InvoiceTable() {
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useInvoices(search, { status: statusFilter });
+  } = useInvoices(search, { status: statusFilter, templateId: templateFilter });
+  const { data: savedTemplates } = useTemplates();
   const deleteInvoice = useDeleteInvoice();
+
+  /** Built-ins first, then the user's saved copies — same order as the picker. */
+  const templateOptions = useMemo(() => {
+    const options = [
+      ...BUILTIN_TEMPLATES.map((template) => ({ value: template.id, label: template.name })),
+      ...(savedTemplates ?? []).map((template) => ({
+        value: template.id,
+        label: template.name,
+      })),
+    ];
+    // A filter pointing at a template that no longer exists (deleted while the
+    // tab was open) still has to render as *something* selectable and
+    // clearable, instead of the select silently reading as "all templates".
+    if (templateFilter && !options.some((option) => option.value === templateFilter)) {
+      options.push({ value: templateFilter, label: templateFilter });
+    }
+    return options;
+  }, [savedTemplates, templateFilter]);
 
   async function confirmDelete() {
     if (!pendingDelete) return;
@@ -74,6 +158,7 @@ export function InvoiceTable() {
   }
 
   const invoices = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
+  const anyFilter = Boolean(search || statusFilter || templateFilter);
 
   const debouncedSearch = useDebouncedCallback((value: string) => setSearch(value), {
     wait: SEARCH_WAIT,
@@ -179,6 +264,7 @@ export function InvoiceTable() {
 
   const searchField = useFieldIds();
   const statusField = useFieldIds();
+  const templateField = useFieldIds();
 
   return (
     <div className="flex flex-col gap-4">
@@ -219,11 +305,26 @@ export function InvoiceTable() {
               className="w-full sm:w-auto"
             />
           </div>
+          <div data-tour="invoices-template-filter" className="w-full sm:w-auto">
+            <label htmlFor={templateField.id} className="sr-only">
+              Filter template
+            </label>
+            <Select
+              id={templateField.id}
+              size="sm"
+              clearable
+              value={templateFilter ?? ''}
+              aria-label="Filter template"
+              placeholder="Semua template"
+              options={templateOptions}
+              onChange={(next) => setTemplateFilter(next || undefined)}
+              className="w-full sm:w-auto"
+            />
+          </div>
         </div>
-        <Button href="/invoice/new">
-          <Plus size={16} aria-hidden="true" />
-          Buat Invoice
-        </Button>
+        {/* No create button here on purpose: the page header already owns the
+            one primary "Buat Invoice" CTA (and the tour points at it), the
+            empty state gets its own contextual copy when there is nothing yet. */}
       </div>
 
       {/* A failed background refresh still has rows to show, so the banner is
@@ -250,14 +351,14 @@ export function InvoiceTable() {
         <LoadingState label="Memuat invoice…" />
       ) : invoices.length === 0 ? (
         <EmptyState
-          title={search || statusFilter ? 'Tidak ada invoice yang cocok' : 'Belum ada invoice'}
+          title={anyFilter ? 'Tidak ada invoice yang cocok' : 'Belum ada invoice'}
           description={
-            search || statusFilter
-              ? 'Coba kata kunci lain, atau ubah/hapus filter pencarian dan status.'
+            anyFilter
+              ? 'Coba kata kunci lain, atau ubah/hapus filter di atas.'
               : 'Buat invoice pertama kamu dan kirim ke customer dalam hitungan menit.'
           }
           action={
-            !(search || statusFilter) ? (
+            !anyFilter ? (
               <Button href="/invoice/new">
                 <Plus size={16} aria-hidden="true" />
                 Buat Invoice

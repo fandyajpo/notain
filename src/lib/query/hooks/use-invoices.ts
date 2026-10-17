@@ -37,13 +37,15 @@ type InvoiceListData = InfiniteData<InvoicePage>;
  */
 export function useInvoices(
   search = '',
-  options?: { limit?: number; status?: InvoiceStatus },
+  options?: { limit?: number; status?: InvoiceStatus; templateId?: string },
 ) {
   const limit = options?.limit;
   const status = options?.status;
+  const templateId = options?.templateId;
   return useInfiniteQuery({
-    queryKey: queryKeys.invoices(search, limit, status),
-    queryFn: ({ pageParam }) => listInvoicesPage({ search, status, cursorAfter: pageParam, limit }),
+    queryKey: queryKeys.invoices(search, limit, status, templateId),
+    queryFn: ({ pageParam }) =>
+      listInvoicesPage({ search, status, templateId, cursorAfter: pageParam, limit }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     ...queryPolicy('invoices'),

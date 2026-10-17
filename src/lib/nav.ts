@@ -14,7 +14,7 @@ export type NavItem = {
  */
 export const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', Icon: LayoutGrid },
-  { href: '/invoices', label: 'Faktur', Icon: FileText },
+  { href: '/invoices', label: 'Invoice', Icon: FileText },
   { href: '/customers', label: 'Customer', Icon: Users },
   { href: '/templates', label: 'Template', Icon: Palette },
   { href: '/settings', label: 'Pengaturan', Icon: Settings },

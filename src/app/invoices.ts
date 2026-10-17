@@ -7,6 +7,7 @@ import type {
 } from '../core/invoice/model';
 import { INVOICE_STATUSES } from '../core/invoice/model';
 import { invoiceDraftSchema } from '../core/invoice/schema';
+import { canChangeStatus, statusFlowMessage } from '../core/invoice/status';
 import { AppError, ERROR_CODES, flattenIssues } from '../core/shared/errors';
 import { container } from '../infra/container';
 import { requireSession } from './session';
@@ -96,19 +97,45 @@ export async function createInvoice(draft: InvoiceDraft): Promise<Invoice> {
 
 export async function updateInvoice(id: string, draft: InvoiceDraft): Promise<Invoice> {
   await requireSession();
-  return container.invoices.update({ id, draft: parseDraft(draft) });
+  const parsed = parseDraft(draft);
+  const current = await container.invoices.getById(id);
+  if (!current) {
+    throw new AppError(ERROR_CODES.NOT_FOUND, 'Invoice tidak ditemukan.');
+  }
+  // A full-draft update carries a status too, so it must obey the same
+  // lifecycle as the one-field write below — otherwise editing a terminal
+  // invoice's contents would be a backdoor to rewinding its status.
+  if (!canChangeStatus(current.status, parsed.status)) {
+    throw new AppError(ERROR_CODES.VALIDATION, statusFlowMessage(current.status, parsed.status), {
+      fieldErrors: { status: statusFlowMessage(current.status, parsed.status) },
+    });
+  }
+  return container.invoices.update({ id, draft: parsed });
 }
 
 /**
- * Flips an invoice's lifecycle status (sent / paid / void).
+ * Flips an invoice's lifecycle status along the forward-only chain:
+ * `null → sent → paid | void`. `paid` and `void` are terminal, and a status
+ * can never be cleared back to unset.
  *
- * A one-field write from the status cell in the table. The status is validated
- * against the enum so a corrupted caller cannot store an arbitrary string.
+ * A one-field write from the status cell in the table. The target is checked
+ * against the stored row (not just the enum) so a stale tab, a replayed
+ * request or a corrupted caller cannot move an invoice backwards.
  */
 export async function updateInvoiceStatus(id: string, status: InvoiceStatus): Promise<Invoice> {
   await requireSession();
   if (!(INVOICE_STATUSES as readonly string[]).includes(status)) {
     throw new AppError(ERROR_CODES.VALIDATION, 'Status invoice tidak valid.');
+  }
+  const current = await container.invoices.getById(id);
+  if (!current) {
+    throw new AppError(ERROR_CODES.NOT_FOUND, 'Invoice tidak ditemukan.');
+  }
+  if (!canChangeStatus(current.status, status)) {
+    const message = statusFlowMessage(current.status, status);
+    throw new AppError(ERROR_CODES.VALIDATION, message, {
+      fieldErrors: { status: message },
+    });
   }
   return container.invoices.updateStatus({ id, status });
 }

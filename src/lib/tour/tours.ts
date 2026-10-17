@@ -39,7 +39,7 @@ export const TOURS: Record<string, TourDef> = {
         target: 'dash-summary',
         title: 'Ringkasan usaha kamu',
         description:
-          'Jumlah faktur dan customer tampil di sini, selalu terbaru. Semua otomatis terhitung.',
+          'Jumlah invoice dan customer tampil di sini, selalu terbaru. Semua otomatis terhitung.',
         side: 'top',
       },
       {
@@ -51,9 +51,9 @@ export const TOURS: Record<string, TourDef> = {
       },
       {
         target: 'dash-recent',
-        title: 'Kelola & bagikan faktur',
+        title: 'Kelola & bagikan invoice',
         description:
-          'Faktur terbaru ada di sini. Buka satu untuk melihat detail, unduh PDF A4, atau kirim langsung ke WhatsApp customer. Selamat berkarya!',
+          'Invoice terbaru ada di sini. Buka satu untuk melihat detail, unduh PDF A4, atau kirim langsung ke WhatsApp customer. Selamat berkarya!',
         side: 'top',
       },
     ],
@@ -77,15 +77,16 @@ export const TOURS: Record<string, TourDef> = {
       },
       {
         target: 'invoices-filter',
-        title: 'Saring berdasar status',
-        description: 'Pilih status (Terkirim, Lunas, Batal) untuk menyaring daftar. Ketuk × untuk menghapus saringan.',
+        title: 'Saring daftar invoice',
+        description:
+          'Pilih status (Terkirim, Lunas, Batal) atau template untuk menyaring daftar. Ketuk × pada salah satunya untuk menghapus saringan.',
         side: 'bottom',
       },
       {
         target: 'invoices-table',
         title: 'Daftar invoice kamu',
         description:
-          'Setiap baris menampilkan nomor, customer, tanggal, total, dan status. Ubah status langsung dari badge, atau buka invoice untuk detail, unduh, dan kirim.',
+          'Setiap baris menampilkan nomor, customer, tanggal, total, dan status. Buka satu invoice untuk detailnya — ubah status di sana, unduh PDF A4, atau kirim ke WhatsApp customer.',
         side: 'top',
       },
     ],

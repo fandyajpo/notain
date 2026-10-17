@@ -144,6 +144,40 @@ describe('invoiceRowToDomain', () => {
   });
 });
 
+describe('invoice status round-trip', () => {
+  it('reads an unset (empty) column as null — "Belum dikirim"', () => {
+    expect(invoiceRowToDomain(row({ status: '' })).status).toBeNull();
+  });
+
+  it('reads a missing or corrupt column as null instead of crashing', () => {
+    expect(invoiceRowToDomain(row({ status: undefined as unknown as string })).status).toBeNull();
+    expect(invoiceRowToDomain(row({ status: 'banana' })).status).toBeNull();
+  });
+
+  it('reads each set status back verbatim', () => {
+    expect(invoiceRowToDomain(row({ status: 'sent' })).status).toBe('sent');
+    expect(invoiceRowToDomain(row({ status: 'paid' })).status).toBe('paid');
+    expect(invoiceRowToDomain(row({ status: 'void' })).status).toBe('void');
+  });
+
+  it('writes an unset status as the empty string, never null', () => {
+    const written = draftToRowData({
+      invoiceNumber: 'INV-2026-001',
+      date: '2026-10-01',
+      status: null,
+      customerName: 'Budi',
+      items: [item()],
+      discount: { type: 'amount' as const, value: 0 },
+      tax: { type: 'amount' as const, value: 0 },
+      sections: { header: '', content: '', footer: '' },
+      details: {},
+    });
+    expect(written.status).toBe('');
+    // Round trip: '' must come back as null, so the display label matches.
+    expect(invoiceRowToDomain(row({ status: written.status as string })).status).toBeNull();
+  });
+});
+
 describe('parseInvoiceDetails', () => {
   it('keeps a well-formed record', () => {
     expect(parseInvoiceDetails(JSON.stringify({ 'nama-kendaraan': 'Avanza' }))).toEqual({

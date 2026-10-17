@@ -150,11 +150,14 @@ function toAdjustment(type: unknown, value: unknown): InvoiceAdjustment {
   };
 }
 
-/** A stored status that is missing or corrupt degrades to `sent`, never crashes. */
-function parseInvoiceStatus(raw: unknown): InvoiceStatus {
+/**
+ * A stored status that is unset (empty), missing or corrupt reads back as
+ * `null` — "Belum dikirim" — never crashes and never pretends to be sent.
+ */
+function parseInvoiceStatus(raw: unknown): InvoiceStatus | null {
   return typeof raw === 'string' && (INVOICE_STATUSES as readonly string[]).includes(raw)
     ? (raw as InvoiceStatus)
-    : 'sent';
+    : null;
 }
 
 export function toSections(row: InvoiceRow): InvoiceSections {
@@ -195,7 +198,10 @@ export function draftToRowData(draft: InvoiceDraft): Record<string, unknown> {
     date: draft.date,
     dueDate: draft.dueDate ?? null,
     templateId: draft.templateId ?? null,
-    status: draft.status,
+    // The column is a plain non-required string (default 'sent' only applies
+    // when the key is omitted), so unset is stored as '' — the round trip
+    // `parseInvoiceStatus('')` → `null` reads it back as "Belum dikirim".
+    status: draft.status ?? '',
     customerName: draft.customerName,
     customerPhone: draft.customerPhone ?? null,
     customerEmail: draft.customerEmail ?? null,

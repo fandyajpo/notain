@@ -53,6 +53,7 @@ export class AppwriteInvoiceRepository implements InvoiceRepository {
     const queries = [
       Query.equal('ownerId', ownerId),
       ...(options.status ? [Query.equal('status', options.status)] : []),
+      ...(options.templateId ? [Query.equal('templateId', options.templateId)] : []),
       ...(serverSearch ? [serverSearchQuery(search)] : []),
       Query.orderDesc('date'),
       Query.orderDesc('$createdAt'),

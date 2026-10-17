@@ -1,5 +1,5 @@
 import type { Invoice } from '../invoice/model';
-import { INVOICE_STATUS_LABELS } from '../invoice/model';
+import { invoiceStatusLabel } from '../invoice/model';
 import { calculateTotals } from '../invoice/calculator';
 import { formatTanggal } from '../shared/dates';
 import type { SheetRow } from './csv';
@@ -38,7 +38,7 @@ export function toInvoiceRow(invoice: Invoice): SheetRow {
     invoice.invoiceNumber,
     formatTanggal(invoice.date),
     invoice.dueDate ? formatTanggal(invoice.dueDate) : '',
-    INVOICE_STATUS_LABELS[invoice.status],
+    invoiceStatusLabel(invoice.status),
     invoice.customerName,
     invoice.customerPhone ?? '',
     invoice.customerEmail ?? '',

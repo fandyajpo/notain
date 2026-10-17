@@ -28,13 +28,13 @@ function InvoicesContent() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Faktur"
+        title="Invoice"
         description="Semua invoice yang pernah kamu buat."
         actions={
           <>
             <ExportButtons
-              filename="faktur-notain"
-              sheetName="Faktur"
+              filename="invoice-notain"
+              sheetName="Invoice"
               getRows={async () => toInvoiceRows(await listAllInvoices())}
             />
             <Button onClick={() => window.location.assign('/invoice/new')} data-tour="invoices-create">

@@ -8,20 +8,29 @@ export type AdjustmentType = (typeof ADJUSTMENT_TYPES)[number];
 /**
  * Lifecycle status of an invoice, set manually by the owner.
  *
- * There is no automatic transition: an invoice is issued as `sent`, and the
- * user flips it to `paid` once the money lands or to `void` when it is
- * cancelled. `draft` is deliberately absent — the builder's autosave is the
- * draft state, and a saved invoice is always something the user meant to issue.
+ * A fresh invoice is *unset* (`null` — "Belum dikirim") and moves forward only:
+ * `null → sent → paid | void`, with `paid` and `void` terminal. The rules live
+ * in `core/invoice/status.ts`; this module only names the states. `draft` is
+ * deliberately absent — the builder's autosave is the draft state, and a saved
+ * invoice is always something the user meant to issue.
  */
 export const INVOICE_STATUSES = ['sent', 'paid', 'void'] as const;
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
 
-/** Indonesian labels for each status, shown in the table and the export. */
+/** Indonesian labels for each set status, shown in the table and the export. */
 export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
   sent: 'Terkirim',
   paid: 'Lunas',
   void: 'Batal',
 };
+
+/** Label for the unset (`null`) status — an invoice not sent yet. */
+export const UNSET_STATUS_LABEL = 'Belum dikirim';
+
+/** Display label for any status, unset included. */
+export function invoiceStatusLabel(status: InvoiceStatus | null): string {
+  return status === null ? UNSET_STATUS_LABEL : INVOICE_STATUS_LABELS[status];
+}
 
 /**
  * Hard limits shared by validation and persistence. The Appwrite columns are
@@ -41,10 +50,10 @@ export const INVOICE_LIMITS = {
   maxPercent: 100,
   richText: 20_000,
   notes: 5_000,
-  /** One business detail fact (plate number, weight…). */
-  detailValue: 255,
-  /** Cap on detail facts per invoice. */
-  maxDetails: 20,
+  /** Max characters per business detail value ('Avanza', '3', '2026-10-01'). */
+  detailValue: 128,
+  /** Max entries in the `details` record — a bound, not a requirement. */
+  maxDetails: 16,
 } as const;
 
 export type InvoiceItem = {
@@ -92,7 +101,11 @@ export type InvoiceDraft = {
    * falls back to a built-in; see `core/template/resolve`.
    */
   templateId?: string;
-  status: InvoiceStatus;
+  /**
+   * `null` until the owner sends the invoice — "Belum dikirim". Once set it
+   * only moves forward (see `core/invoice/status.ts`), never back to `null`.
+   */
+  status: InvoiceStatus | null;
   customerName: string;
   customerPhone?: string;
   /** Optional contact carried from the customer directory; never required. */
@@ -101,13 +114,15 @@ export type InvoiceDraft = {
   discount: InvoiceAdjustment;
   tax: InvoiceAdjustment;
   sections: InvoiceSections;
+  notes?: string;
   /**
-   * Business-specific facts (plate number, weight, event date…) printed under
-   * the customer block. Catalogue keys only; the current business type decides
-   * which of them the preview actually shows.
+   * Business-specific facts keyed by their catalogue key (see
+   * core/business/detail-fields): a bengkel's vehicle name and plate, a
+   * laundry's weight. Values are raw strings as typed — dates in ISO form,
+   * numbers as plain digits. Keys outside the current type's catalogue are
+   * kept, not purged: switching a template must not destroy typed values.
    */
   details: Record<string, string>;
-  notes?: string;
 };
 
 export type Invoice = InvoiceDraft & {
@@ -139,7 +154,7 @@ export function createEmptyDraft(invoiceNumber: string, date: string): InvoiceDr
   return {
     invoiceNumber,
     date,
-    status: 'sent',
+    status: null,
     customerName: '',
     items: [],
     discount: { ...EMPTY_ADJUSTMENT },
@@ -207,9 +222,9 @@ export function duplicateDraft(
     date,
     dueDate,
     templateId: source.templateId,
-    // A duplicate is a fresh invoice, so it restarts as `sent` regardless of
-    // the source's status.
-    status: 'sent',
+    // A duplicate is a fresh invoice, so it restarts unset ("Belum dikirim")
+    // regardless of the source's status.
+    status: null,
     customerName: source.customerName,
     customerPhone: source.customerPhone,
     customerEmail: source.customerEmail,
@@ -217,9 +232,7 @@ export function duplicateDraft(
     discount: { ...source.discount },
     tax: { ...source.tax },
     sections: { ...source.sections },
-    // A shallow copy on purpose: the keys are scalar strings, so only the
-    // record identity has to differ to keep the duplicate independent.
-    details: { ...source.details },
     notes: source.notes,
+    details: { ...source.details },
   };
 }

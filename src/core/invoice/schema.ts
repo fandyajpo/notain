@@ -21,18 +21,20 @@ export const invoiceItemSchema = z.object({
     .int('Jumlah harus berupa bilangan bulat.')
     .min(1, 'Jumlah minimal 1.')
     .max(INVOICE_LIMITS.maxQuantity, 'Jumlah terlalu besar.'),
-    unitPrice: z
-      .number({ error: 'Masukkan harga yang valid.' })
-      .int('Harga harus berupa bilangan bulat rupiah.')
-      .min(0, 'Harga tidak boleh negatif.')
-      .max(INVOICE_LIMITS.maxUnitPrice, 'Harga terlalu besar.'),
-    unit: z
-      .string()
-      .trim()
-      .max(INVOICE_LIMITS.unit, 'Satuan terlalu panjang.')
-      .optional()
-      .transform((value) => value || undefined),
-  });
+  unitPrice: z
+    .number({ error: 'Masukkan harga yang valid.' })
+    .int('Harga harus berupa bilangan bulat rupiah.')
+    .min(0, 'Harga tidak boleh negatif.')
+    .max(INVOICE_LIMITS.maxUnitPrice, 'Harga terlalu besar.'),
+  // Optional: an empty box means "no unit", the same as leaving it blank in
+  // the grid. Empty strings normalise away so they never reach the preview.
+  unit: z
+    .string()
+    .trim()
+    .max(INVOICE_LIMITS.unit, 'Satuan terlalu panjang.')
+    .optional()
+    .transform((value) => value || undefined),
+});
 
 export type InvoiceItemInput = z.infer<typeof invoiceItemSchema>;
 
@@ -75,6 +77,8 @@ export const invoiceItemShapeSchema = z.object({
   name: z.string().max(INVOICE_LIMITS.itemName),
   quantity: z.number().min(0).max(INVOICE_LIMITS.maxQuantity),
   unitPrice: z.number().min(0).max(INVOICE_LIMITS.maxUnitPrice),
+  // Written before the field existed, and only ever a hint: an absent or
+  // corrupt unit costs the label, not the row.
   unit: z.string().max(INVOICE_LIMITS.unit).optional().catch(undefined),
 });
 
@@ -138,10 +142,10 @@ export const invoiceDraftSchema = z
       .max(64, 'Template tidak valid.')
       .optional()
       .transform((value) => value || undefined),
-    // Defaulted rather than required so a draft from before the field existed
-    // (or one that never set it) still parses — every saved invoice is at
-    // least `sent`.
-    status: z.enum(INVOICE_STATUSES).catch('sent'),
+    // Nullable rather than defaulted: a fresh invoice ships unset ("Belum
+    // dikirim") and only becomes `sent` when the owner says so. A missing or
+    // corrupt value degrades to unset instead of silently marking it sent.
+    status: z.enum(INVOICE_STATUSES).nullable().catch(null),
     customerName: z
       .string()
       .trim()
@@ -221,7 +225,7 @@ export const invoiceDraftShapeSchema = z.object({
   // error in the form rather than discarding the whole draft.
   dueDate: z.string().max(32).optional().catch(undefined),
   templateId: z.string().max(64).optional().catch(undefined),
-  status: z.enum(INVOICE_STATUSES).catch('sent'),
+  status: z.enum(INVOICE_STATUSES).nullable().catch(null),
   customerName: z.string().max(INVOICE_LIMITS.customerName),
   customerPhone: z.string().max(INVOICE_LIMITS.customerPhone).optional().catch(undefined),
   customerEmail: z.string().max(INVOICE_LIMITS.customerEmail).optional().catch(undefined),

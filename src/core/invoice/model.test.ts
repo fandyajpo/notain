@@ -51,11 +51,11 @@ describe('duplicateDraft', () => {
     expect(copy.date).toBe('2026-11-01');
   });
 
-  it('resets the status to sent, since a duplicate is a new invoice', () => {
+  it('restarts the copy unset, since a duplicate is not sent yet', () => {
     // The source is `paid`; the copy must not inherit that lifecycle state.
     const copy = duplicateDraft(source, 'INV-2026-002', '2026-11-01');
 
-    expect(copy.status).toBe('sent');
+    expect(copy.status).toBeNull();
   });
 
   it('keeps the due-date offset, not the old calendar day', () => {

@@ -30,7 +30,7 @@ export function ExcelSection() {
             <div>
               <SectionHeading
                 title="Sudah punya daftar di Excel? Tinggal pindah."
-                description="Ekspor & impor customer dan faktur dalam format Excel (.xlsx) atau CSV. Tidak perlu input ulang satu-satu."
+                description="Ekspor & impor customer dan invoice dalam format Excel (.xlsx) atau CSV. Tidak perlu input ulang satu-satu."
               />
 
               <div className="mt-8 flex flex-col gap-5">

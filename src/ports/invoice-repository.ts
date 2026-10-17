@@ -14,6 +14,12 @@ export type ListInvoicesOptions = {
    * page — a client-side filter would only narrow the pages already loaded.
    */
   status?: InvoiceStatus;
+  /**
+   * Template filter: only invoices dressed in this template. Matched
+   * server-side for the same reason as `status` — it must reach rows beyond
+   * the first page.
+   */
+  templateId?: string;
   limit?: number;
   /** Opaque cursor from a previous page's `nextCursor`. */
   cursorAfter?: string;
@@ -30,7 +36,7 @@ export type InvoicePage = {
    * Total rows the server matched for this query, ignoring `limit`/cursor.
    *
    * Appwrite reports this on every list response, so a caller that only needs a
-   * count (the dashboard's "Total faktur" stat) can read it off a single small
+   * count (the dashboard's "Total invoice" stat) can read it off a single small
    * page instead of walking the whole set. It reflects a *server-side* filter:
    * the short-input local narrowing applied in `listByOwner` is not counted,
    * which is fine because no count consumer uses a search string.

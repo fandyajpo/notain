@@ -1,15 +1,20 @@
 #!/usr/bin/env node
 /**
- * Adds the `status` column to the `invoices` table and backfills existing rows.
+ * Adds the `status` column to the `invoices` table.
  *
- * The invoice lifecycle status (sent / paid / void) is a new string column.
+ * The invoice lifecycle status (sent / paid / void) is a string column.
  * This script:
  *   1. Creates the column if it is missing (string, size 8, default "sent").
- *   2. Walks every invoice and stamps "sent" on rows where status is empty,
- *      so invoices saved before the column existed read back cleanly.
+ *   2. Optionally backfills rows where status is empty with "sent"
+ *      (`--backfill-sent`), which was a one-shot migration for rows saved
+ *      before the column existed.
  *
- * Idempotent: re-running skips the column if present and only touches rows
- * still missing a status.
+ * The backfill is now opt-in and MUST stay that way: an empty status means
+ * "Belum dikirim" (unset) since the status became nullable, so re-running a
+ * blind backfill would silently mark every fresh, not-yet-sent invoice as
+ * sent.
+ *
+ * Idempotent: re-running skips the column if present.
  *
  * Admin-only, so it needs an API key (Settings → API keys) with:
  *   collections.read, collections.write, documents.read, documents.write
@@ -19,7 +24,8 @@
  *
  * Usage:
  *   node scripts/migrate-invoice-status.mjs            # dry-run
- *   node scripts/migrate-invoice-status.mjs --yes      # apply
+ *   node scripts/migrate-invoice-status.mjs --yes      # apply (column only)
+ *   node scripts/migrate-invoice-status.mjs --yes --backfill-sent  # + backfill
  */
 
 const databaseId = process.env.PUBLIC_APPWRITE_DATABASE_ID ?? 'notain_db';
@@ -33,6 +39,7 @@ const PAGE_LIMIT = 100;
 
 const args = process.argv.slice(2);
 const confirmed = args.includes('--yes');
+const backfillSent = args.includes('--backfill-sent');
 
 function fail(message) {
   console.error(`✖ ${message}`);
@@ -118,43 +125,46 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
 
-  // 2. Backfill rows where status is empty. We cannot filter on an empty column
-  // server-side without an index, so we walk every row and check locally.
+  // 2. Backfill — opt-in only (see the header: empty now means "unset").
   let cursorAfter;
   let backfilled = 0;
   let scanned = 0;
 
-  for (let page = 0; page < 100; page += 1) {
-    const response = await api(
-      'GET',
-      `/databases/${databaseId}/collections/${encodeURIComponent(tableId)}/documents?${documentsQuery(cursorAfter)}`,
-    );
-
-    const rows = response?.documents ?? [];
-    scanned += rows.length;
-
-    for (const row of rows) {
-      if (typeof row.status === 'string' && row.status !== '') continue;
-      if (!confirmed) {
-        backfilled += 1;
-        continue;
-      }
-      await api(
-        'PATCH',
-        `/databases/${databaseId}/collections/${encodeURIComponent(tableId)}/documents/${encodeURIComponent(row.$id)}`,
-        { data: { status: 'sent' } },
+  if (!backfillSent) {
+    console.log('\n  • backfill dilewati (jalan sekali untuk baris lama: tambah --backfill-sent)');
+  } else {
+    for (let page = 0; page < 100; page += 1) {
+      const response = await api(
+        'GET',
+        `/databases/${databaseId}/collections/${encodeURIComponent(tableId)}/documents?${documentsQuery(cursorAfter)}`,
       );
-      backfilled += 1;
+
+      const rows = response?.documents ?? [];
+      scanned += rows.length;
+
+      for (const row of rows) {
+        if (typeof row.status === 'string' && row.status !== '') continue;
+        if (!confirmed) {
+          backfilled += 1;
+          continue;
+        }
+        await api(
+          'PATCH',
+          `/databases/${databaseId}/collections/${encodeURIComponent(tableId)}/documents/${encodeURIComponent(row.$id)}`,
+          { data: { status: 'sent' } },
+        );
+        backfilled += 1;
+      }
+
+      const last = rows.at(-1);
+      if (rows.length < PAGE_LIMIT || !last) break;
+      cursorAfter = last.$id;
     }
 
-    const last = rows.at(-1);
-    if (rows.length < PAGE_LIMIT || !last) break;
-    cursorAfter = last.$id;
+    console.log(
+      `\n${scanned} baris dipindai, ${backfilled} ${confirmed ? 'di-backfill' : 'akan di-backfill'}.`,
+    );
   }
-
-  console.log(
-    `\n${scanned} baris dipindai, ${backfilled} ${confirmed ? 'di-backfill' : 'akan di-backfill'}.`,
-  );
   if (!confirmed) {
     console.log('Dry-run saja. Ulangi dengan `--yes` untuk benar-benar menerapkan.');
     process.exit(0);

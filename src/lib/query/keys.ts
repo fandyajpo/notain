@@ -5,15 +5,21 @@ export const queryKeys = {
   session: ['session'] as const,
   profile: ['profile'] as const,
   /**
-   * The invoice list. `limit` and `status` are part of the key so the
-   * dashboard's small "recent" page and the `/invoices` table's full page do
-   * not collide, and a status-filtered list is cached separately from the
+   * The invoice list. `limit`, `status` and `templateId` are part of the key so
+   * the dashboard's small "recent" page and the `/invoices` table's full page
+   * do not collide, and a filtered list is cached separately from the
    * unfiltered one — they are different queries even when the search matches.
    */
-  invoices: (search = '', limit?: number, status?: InvoiceStatus): readonly unknown[] => {
+  invoices: (
+    search = '',
+    limit?: number,
+    status?: InvoiceStatus,
+    templateId?: string,
+  ): readonly unknown[] => {
     const key: unknown[] = ['invoices', search];
     if (limit !== undefined) key.push(limit);
     if (status !== undefined) key.push(status);
+    if (templateId !== undefined) key.push(templateId);
     return key;
   },
   invoice: (id: string) => ['invoice', id] as const,

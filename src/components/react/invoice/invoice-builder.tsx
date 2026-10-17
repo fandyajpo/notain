@@ -137,8 +137,8 @@ export function InvoiceBuilder({
   // Status-only write, so flipping the lifecycle state from the edit page does
   // not have to round-trip the whole draft (rich-text sections included).
   const updateStatus = useUpdateInvoiceStatus();
-  // Files the customer away alongside the invoice. Never awaited for the
-  // redirect — a directory write is a convenience, not part of the save.
+  // Files the customer away alongside the invoice, awaited just before the
+  // redirect (see `onSubmit` — unloading the page would abort it otherwise).
   const rememberCustomer = useRememberCustomer();
   // Saved templates ride alongside the built-ins when resolving the invoice's
   // `templateId`; a miss falls back to a builtin rather than blanking the page.
@@ -209,15 +209,24 @@ export function InvoiceBuilder({
         // to /invoice/new would resurrect the invoice we just saved.
         autosave.cancel();
         clearDraft(ownerId, invoiceId);
-        // Fire-and-forget: the directory is a convenience for the next picker,
-        // so it must not delay or block the redirect.
-        rememberCustomer.mutate({
-          draft: {
-            name: value.customerName,
-            email: value.customerEmail ?? '',
-            phone: value.customerPhone ?? '',
-          },
-        });
+        // Awaited, because `window.location.assign` below unloads the page and
+        // would otherwise abort a mutation still in flight — the invoice would
+        // save but the customer silently never land in the directory. It is
+        // still non-fatal: a failed directory write must not fail the save, so
+        // it only warns.
+        try {
+          await rememberCustomer.mutateAsync({
+            draft: {
+              name: value.customerName,
+              email: value.customerEmail ?? '',
+              phone: value.customerPhone ?? '',
+            },
+          });
+        } catch {
+          toast('Invoice tersimpan, tapi customer belum masuk ke daftar. Coba lagi nanti.', {
+            variant: 'error',
+          });
+        }
         toast('Invoice berhasil disimpan.', { variant: 'success' });
         // Disarm the unsaved-changes guard so this intentional redirect is not
         // met with a "leave?" prompt.

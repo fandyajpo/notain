@@ -56,7 +56,7 @@ const KPIS: Array<{
   tone: KpiTone;
   pick: (stats: DashboardStats) => number;
 }> = [
-  { key: 'total', label: 'Total faktur', Icon: FileText, tone: 'accent', pick: (s) => s.totalInvoices },
+  { key: 'total', label: 'Total invoice', Icon: FileText, tone: 'accent', pick: (s) => s.totalInvoices },
   { key: 'sent', label: 'Terkirim', Icon: Send, tone: 'neutral', pick: (s) => s.sentCount },
   { key: 'paid', label: 'Lunas', Icon: Banknote, tone: 'success', pick: (s) => s.paidCount },
   { key: 'void', label: 'Batal', Icon: Ban, tone: 'danger', pick: (s) => s.voidCount },
@@ -66,14 +66,27 @@ const KPIS: Array<{
 
 /** Status rows of the breakdown table, with their progress-bar tint. */
 const STATUS_ROWS: Array<{
-  status: InvoiceStatus;
+  status: InvoiceStatus | null;
   pick: (stats: DashboardStats) => number;
   bar: string;
 }> = [
+  { status: null, pick: unsetCount, bar: 'bg-border' },
   { status: 'sent', pick: (s) => s.sentCount, bar: 'bg-accent' },
   { status: 'paid', pick: (s) => s.paidCount, bar: 'bg-success' },
   { status: 'void', pick: (s) => s.voidCount, bar: 'bg-danger' },
 ];
+
+/**
+ * Invoices with no status yet. Derived, not stored: `totalInvoices` already
+ * counts every row, so the three set buckets are all that is missing — and a
+ * derived figure can never drift from what the total says.
+ */
+function unsetCount(stats: DashboardStats): number {
+  return Math.max(
+    0,
+    stats.totalInvoices - stats.sentCount - stats.paidCount - stats.voidCount,
+  );
+}
 
 /** Landing content for `/dashboard`: greeting, setup checklist, live summary. */
 export function DashboardApp() {
@@ -275,7 +288,7 @@ function SummarySection({
 
       <section data-tour="dash-recent" className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-section">Faktur terbaru</h2>
+          <h2 className="text-section">Invoice terbaru</h2>
           <a
             href="/invoices"
             className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
@@ -286,11 +299,11 @@ function SummarySection({
         </div>
 
         {invoicesLoading ? (
-          <LoadingState label="Memuat faktur…" />
+          <LoadingState label="Memuat invoice…" />
         ) : invoicesError && recent.length === 0 ? (
-          // A failed fetch must not read as "Belum ada faktur" — offer a retry.
+          // A failed fetch must not read as "Belum ada invoice" — offer a retry.
           <ErrorState
-            title="Gagal memuat faktur"
+            title="Gagal memuat invoice"
             message="Periksa koneksi internet kamu, lalu coba lagi."
             action={
               <Button size="sm" onClick={onRetryInvoices}>
@@ -301,7 +314,7 @@ function SummarySection({
         ) : recent.length === 0 ? (
           <EmptyState
             icon={FileText}
-            title="Belum ada faktur"
+            title="Belum ada invoice"
             description="Buat invoice pertama kamu untuk mulai melacak."
           />
         ) : (
