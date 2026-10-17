@@ -214,11 +214,33 @@
 
 /* ---- Rich text editor (TipTap) and its read-only rendered output */
 
-.notain-rich-text .ProseMirror {
+/*
+ * The editor's attributes class lands on the ProseMirror root itself —
+ * `tiptap ProseMirror notain-rich-text` all on ONE element — so this must be
+ * the compound selector. A descendant selector (`.notain-rich-text
+ * .ProseMirror`) matched nothing and left the text flush against the frame.
+ */
+.notain-rich-text.ProseMirror {
   outline: none;
   min-height: 7rem;
+  /* 12px/16px: vertical breathing room under the toolbar, left edge on the
+     16px mark where the toolbar icons sit. */
+  padding: 0.75rem 1rem;
+  /* Editor text matches the form's text-sm fields instead of the 16px body. */
+  font-size: 0.875rem;
+  line-height: 1.6;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* TipTap's empty-node hint (`is-empty` + data-placeholder, both decoration
+   classes). float/height zero keeps it on the first line without taking one. */
+.notain-rich-text.ProseMirror .is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--color-muted);
+  pointer-events: none;
 }
 
 /**

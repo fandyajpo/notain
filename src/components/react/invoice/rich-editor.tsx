@@ -59,7 +59,7 @@ function Toolbar({ editor }: { editor: Editor | null }) {
   const disabled = !editor;
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border-b border-border px-1.5 py-1">
+    <div className="flex flex-wrap items-center gap-0.5 rounded-t-[calc(var(--radius-control)-1px)] border-b border-border bg-sunken px-2.5 py-1">
       <ToolbarButton
         label="Tebal"
         icon={<Bold size={15} />}
@@ -125,8 +125,8 @@ function ToolbarButton({ label, icon, disabled, active = false, onClick }: Toolb
       disabled={disabled}
       onClick={onClick}
       className={[
-        'rounded-control p-1.5 text-muted transition-colors hover:bg-background hover:text-foreground focus-ring',
-        active ? 'bg-background text-foreground' : '',
+        'rounded-control p-1.5 text-muted transition-colors hover:bg-card hover:text-foreground focus-ring',
+        active ? 'bg-card text-foreground' : '',
         disabled ? 'opacity-40' : '',
       ]
         .filter(Boolean)
