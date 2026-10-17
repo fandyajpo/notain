@@ -329,7 +329,11 @@ function CustomersContent() {
           </FieldShell>
         </div>
         <div className="flex-1">
-          <FieldShell label="Email" htmlFor={emailIds.id} error={createFieldErrors.email || undefined}>
+          <FieldShell
+            label="Email"
+            htmlFor={emailIds.id}
+            error={createFieldErrors.email || undefined}
+          >
             <Input
               id={emailIds.id}
               value={email}
@@ -428,52 +432,55 @@ function CustomersContent() {
           {filtered.length === 0 ? (
             <EmptyState title="Tidak ada customer yang cocok." />
           ) : (
-            <ul data-tour="cust-list" className={cardClass('none', 'flex flex-col divide-y divide-border')}>
+            <ul
+              data-tour="cust-list"
+              className={cardClass('none', 'flex flex-col divide-y divide-border')}
+            >
               {filtered.map((customer) => (
-            <li key={customer.id} className="flex items-center justify-between gap-3 px-4 py-3">
-              <div className="flex min-w-0 items-center gap-3">
-                {mergeMode && (
-                  <input
-                    type="checkbox"
-                    checked={selected.has(customer.id)}
-                    onChange={() => toggleSelected(customer.id)}
-                    className="h-4 w-4 shrink-0 accent-accent"
-                    aria-label={`Pilih ${customer.name}`}
-                  />
-                )}
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{customer.name}</p>
-                  <p className="text-sm text-muted">
-                    {[customer.email, customer.phone].filter(Boolean).join(' · ') ||
-                      'Tanpa kontak'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-1">
-                <span className="mr-2 hidden text-xs text-muted sm:inline">
-                  {customer.lastUsedAt ? formatTanggalRelatif(customer.lastUsedAt) : ''}
-                </span>
-                {!mergeMode && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openEdit(customer)}
-                    aria-label={`Edit ${customer.name}`}
-                  >
-                    <Pencil size={15} aria-hidden="true" />
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setDeleteTarget(customer)}
-                  aria-label={`Hapus ${customer.name}`}
-                >
-                  <Trash2 size={15} aria-hidden="true" />
-                </Button>
-              </div>
-            </li>
-          ))}
+                <li key={customer.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    {mergeMode && (
+                      <input
+                        type="checkbox"
+                        checked={selected.has(customer.id)}
+                        onChange={() => toggleSelected(customer.id)}
+                        className="h-4 w-4 shrink-0 accent-accent"
+                        aria-label={`Pilih ${customer.name}`}
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{customer.name}</p>
+                      <p className="text-sm text-muted">
+                        {[customer.email, customer.phone].filter(Boolean).join(' · ') ||
+                          'Tanpa kontak'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <span className="mr-2 hidden text-xs text-muted sm:inline">
+                      {customer.lastUsedAt ? formatTanggalRelatif(customer.lastUsedAt) : ''}
+                    </span>
+                    {!mergeMode && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEdit(customer)}
+                        aria-label={`Edit ${customer.name}`}
+                      >
+                        <Pencil size={15} aria-hidden="true" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDeleteTarget(customer)}
+                      aria-label={`Hapus ${customer.name}`}
+                    >
+                      <Trash2 size={15} aria-hidden="true" />
+                    </Button>
+                  </div>
+                </li>
+              ))}
             </ul>
           )}
 
@@ -507,7 +514,12 @@ function CustomersContent() {
         ]}
       >
         <div className="flex flex-col gap-4">
-          <FieldShell label="Nama" htmlFor="edit-customer-name" required error={editFieldErrors.name}>
+          <FieldShell
+            label="Nama"
+            htmlFor="edit-customer-name"
+            required
+            error={editFieldErrors.name}
+          >
             <Input
               id="edit-customer-name"
               type="text"

@@ -16,5 +16,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, Props>(function Textarea
   { invalid, className, ...rest },
   ref,
 ) {
-  return <textarea ref={ref} className={controlClass({ invalid, multiline: true, className })} {...rest} />;
+  return (
+    <textarea
+      ref={ref}
+      className={controlClass({ invalid, multiline: true, className })}
+      {...rest}
+    />
+  );
 });

@@ -107,10 +107,7 @@ export const profileSchema = z.object({
   // taxonomy has since renamed must not block a save — it reads back as null.
   businessType: businessSubtypeSlugSchema.nullable().catch(null),
   plan: z.enum(PLAN_VALUES).default('free'),
-  planExpiresAt: z.preprocess(
-    emptyToUndefined,
-    z.string().trim().max(32).nullable().optional(),
-  ),
+  planExpiresAt: z.preprocess(emptyToUndefined, z.string().trim().max(32).nullable().optional()),
 });
 
 export type ProfileInput = z.infer<typeof profileSchema>;

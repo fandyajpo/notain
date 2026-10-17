@@ -85,7 +85,11 @@ export function menuItemClass(
     return cx(BASE_ROW, 'cursor-not-allowed text-muted/60');
   }
   if (tone === 'danger') {
-    return cx(BASE_ROW, 'text-danger', active ? 'bg-danger-soft' : 'hover:bg-danger-soft focus:bg-danger-soft');
+    return cx(
+      BASE_ROW,
+      'text-danger',
+      active ? 'bg-danger-soft' : 'hover:bg-danger-soft focus:bg-danger-soft',
+    );
   }
   return cx(
     BASE_ROW,

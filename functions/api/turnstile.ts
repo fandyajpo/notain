@@ -28,9 +28,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   try {
     const body: unknown = await request.json();
     token =
-      typeof body === 'object' && body !== null && 'token' in body &&
+      typeof body === 'object' &&
+      body !== null &&
+      'token' in body &&
       typeof (body as { token: unknown }).token === 'string'
-        ? ((body as { token: string }).token)
+        ? (body as { token: string }).token
         : '';
   } catch {
     token = '';

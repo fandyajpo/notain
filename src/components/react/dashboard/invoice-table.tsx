@@ -53,7 +53,13 @@ const SEARCH_WAIT = 300;
  * back with `replaceState`, which does not stack an entry per keystroke into
  * the session's history.
  */
-const PARAMS = { keyword: 'keyword', status: 'status', template: 'template', sort: 'sort', dir: 'dir' } as const;
+const PARAMS = {
+  keyword: 'keyword',
+  status: 'status',
+  template: 'template',
+  sort: 'sort',
+  dir: 'dir',
+} as const;
 /** Sortable column ids — anything else in `?sort=` is ignored as junk. */
 const SORTABLE_IDS = new Set(['invoiceNumber', 'customerName', 'total', 'date', 'status']);
 /**
@@ -485,7 +491,12 @@ export function InvoiceTable() {
         title={<span id="delete-dialog-title">Hapus invoice ini?</span>}
         actions={[
           { label: 'Batal', variant: 'secondary', onClick: () => setPendingDelete(null) },
-          { label: 'Hapus', variant: 'danger', loading: deleteInvoice.isPending, onClick: confirmDelete },
+          {
+            label: 'Hapus',
+            variant: 'danger',
+            loading: deleteInvoice.isPending,
+            onClick: confirmDelete,
+          },
         ]}
       >
         <p className="text-sm text-muted">

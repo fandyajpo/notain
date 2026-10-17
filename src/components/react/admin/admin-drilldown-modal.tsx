@@ -48,11 +48,7 @@ export function AdminDrilldownModal({
     () => (resource === 'overview' ? null : (pages[0] as AdminDrillPage | undefined)),
     [pages, resource],
   );
-  const rows = useMemo(
-    () =>
-      pages.flatMap((page) => ('rows' in page ? page.rows : [])),
-    [pages],
-  );
+  const rows = useMemo(() => pages.flatMap((page) => ('rows' in page ? page.rows : [])), [pages]);
 
   return (
     <Modal
@@ -62,9 +58,7 @@ export function AdminDrilldownModal({
       title={
         <>
           Detail user
-          <span className="block text-sm font-normal text-muted">
-            {user?.name || user?.email}
-          </span>
+          <span className="block text-sm font-normal text-muted">{user?.name || user?.email}</span>
         </>
       }
     >
@@ -131,7 +125,9 @@ function OverviewPanel({ overview }: { overview: AdminDrillOverview }) {
         <Field label="Plan" value={user.plan} />
         <Field
           label="Berlaku sampai"
-          value={user.planExpiresAt ? new Date(user.planExpiresAt).toLocaleDateString('id-ID') : '—'}
+          value={
+            user.planExpiresAt ? new Date(user.planExpiresAt).toLocaleDateString('id-ID') : '—'
+          }
         />
         <Field label="Daftar" value={new Date(user.createdAt).toLocaleDateString('id-ID')} />
         <Field label="Nama usaha" value={user.businessName || '—'} />
@@ -166,9 +162,7 @@ function ResourceTable({
   rows: Array<Record<string, unknown> & { id: string }>;
 }) {
   if (rows.length === 0) {
-    return (
-      <p className="py-8 text-center text-sm text-muted">Belum ada data.</p>
-    );
+    return <p className="py-8 text-center text-sm text-muted">Belum ada data.</p>;
   }
 
   if (resource === 'invoices') {
@@ -188,7 +182,11 @@ function ResourceTable({
               <Td className="font-mono text-xs">{String(row.invoiceNumber ?? '—')}</Td>
               <Td>{String(row.customerName ?? '—')}</Td>
               <Td>
-                <Badge variant={row.status === 'paid' ? 'success' : row.status === 'void' ? 'danger' : 'neutral'}>
+                <Badge
+                  variant={
+                    row.status === 'paid' ? 'success' : row.status === 'void' ? 'danger' : 'neutral'
+                  }
+                >
                   {String(row.status ?? '—')}
                 </Badge>
               </Td>
@@ -220,7 +218,9 @@ function ResourceTable({
               <Td className="text-muted">{String(row.phone ?? '—')}</Td>
               <Td className="text-muted">{String(row.email ?? '—')}</Td>
               <Td className="text-muted">
-                {row.lastUsedAt ? new Date(String(row.lastUsedAt)).toLocaleDateString('id-ID') : '—'}
+                {row.lastUsedAt
+                  ? new Date(String(row.lastUsedAt)).toLocaleDateString('id-ID')
+                  : '—'}
               </Td>
             </tr>
           ))}

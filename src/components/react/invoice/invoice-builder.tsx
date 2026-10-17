@@ -2,14 +2,7 @@ import { type AnyFieldApi, useForm } from '@tanstack/react-form';
 import { useHotkeys } from '@tanstack/react-hotkeys';
 import { useDebouncer } from '@tanstack/react-pacer';
 import { useSelector } from '@tanstack/react-store';
-import {
-  Check,
-  FileDown,
-  Keyboard,
-  LayoutTemplate,
-  MessageCircle,
-  Save,
-} from 'lucide-react';
+import { Check, FileDown, Keyboard, LayoutTemplate, MessageCircle, Save } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { calculateTotals } from '../../../core/invoice/calculator';
 import {
@@ -59,7 +52,11 @@ import { Textarea } from '../ui/textarea';
 import { BuilderTabs } from './builder-tabs';
 import { ItemsGrid } from './items-grid';
 import { InvoicePreview } from './invoice-preview';
-import { listSelectableTemplates, resolveTemplate, groupTemplatesForBusiness } from '../../../core/template/resolve';
+import {
+  listSelectableTemplates,
+  resolveTemplate,
+  groupTemplatesForBusiness,
+} from '../../../core/template/resolve';
 import { applyTemplateDefaults } from '../../../core/template/apply';
 import type { InvoiceTemplate } from '../../../core/template/model';
 import type { BusinessSubtypeSlug } from '../../../core/business/taxonomy';

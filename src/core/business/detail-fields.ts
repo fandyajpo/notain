@@ -60,9 +60,7 @@ export const DETAIL_FIELD_OVERRIDES: Partial<
     { key: 'tanggal-check-in', label: 'Check-in', type: 'date' },
     { key: 'tanggal-check-out', label: 'Check-out', type: 'date' },
   ],
-  'agen-properti': [
-    { key: 'alamat-properti', label: 'Alamat properti', type: 'text' },
-  ],
+  'agen-properti': [{ key: 'alamat-properti', label: 'Alamat properti', type: 'text' }],
 };
 
 /**

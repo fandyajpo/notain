@@ -79,9 +79,7 @@ describe('defaultsForBusiness', () => {
   });
 
   it('gives each trade its own wording', () => {
-    expect(defaultsForBusiness('bengkel-mobil')).not.toEqual(
-      defaultsForBusiness('kedai-kopi'),
-    );
+    expect(defaultsForBusiness('bengkel-mobil')).not.toEqual(defaultsForBusiness('kedai-kopi'));
   });
 
   it('returns a fresh copy so form edits never reach the preset', () => {

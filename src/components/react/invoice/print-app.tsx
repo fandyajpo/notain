@@ -54,8 +54,7 @@ function PrintContent() {
   // A failed profile fetch blocks readiness too: auto-printing a blank
   // letterhead would ship a broken kop with no warning.
   const pendingTemplate = Boolean(invoice?.templateId) && templatesLoading;
-  const ready =
-    invoice !== null && !profileLoading && !profileError && !pendingTemplate;
+  const ready = invoice !== null && !profileLoading && !profileError && !pendingTemplate;
 
   // Opening the dialog straight away keeps "PDF" a single click. The short
   // delay is for layout, not data: it lets fonts and the logo settle before
@@ -77,9 +76,7 @@ function PrintContent() {
         <div className="flex w-full max-w-md flex-col items-center gap-4">
           <Notice variant="danger" className="w-full">
             <p className="font-medium">Gagal memuat data usaha</p>
-            <p className="mt-1">
-              Periksa koneksi internet kamu, lalu muat ulang sebelum mencetak.
-            </p>
+            <p className="mt-1">Periksa koneksi internet kamu, lalu muat ulang sebelum mencetak.</p>
           </Notice>
           <div className="flex justify-center gap-2">
             <Button variant="secondary" onClick={() => window.history.back()}>

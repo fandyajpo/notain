@@ -29,10 +29,12 @@ export async function listTemplates(): Promise<InvoiceTemplate[]> {
 }
 
 /** One page of the owner's templates for the `/templates` page's grid. */
-export async function listTemplatesPage(params: {
-  cursorAfter?: string;
-  limit?: number;
-} = {}): Promise<{ rows: InvoiceTemplate[]; total: number; nextCursor: string | null }> {
+export async function listTemplatesPage(
+  params: {
+    cursorAfter?: string;
+    limit?: number;
+  } = {},
+): Promise<{ rows: InvoiceTemplate[]; total: number; nextCursor: string | null }> {
   const user = await requireSession();
   const [page, total] = await Promise.all([
     container.templates.listPage(user.id, params),

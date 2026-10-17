@@ -10,11 +10,7 @@ import {
 import { passwordStrength, strengthPercent } from '../../../core/auth/password';
 import { GENERIC_ERROR_MESSAGE } from '../../../core/shared/errors';
 import { DEFAULT_REDIRECT, isSelfRedirect, resolveRedirectTarget } from '../../../lib/redirect';
-import {
-  TURNSTILE_SITE_KEY,
-  turnstileEnabled,
-  verifyTurnstile,
-} from '../../../lib/turnstile';
+import { TURNSTILE_SITE_KEY, turnstileEnabled, verifyTurnstile } from '../../../lib/turnstile';
 import {
   useCompleteRecovery,
   useCreateRecovery,

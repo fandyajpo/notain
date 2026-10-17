@@ -177,7 +177,11 @@ describe('groupTemplatesForBusiness', () => {
   });
 
   it('partitions by the viewer type and never drops a template', () => {
-    const all = [...BUILTIN_TEMPLATES, saved('row-resto', 'restoran'), saved('row-bengkel', 'bengkel-mobil')];
+    const all = [
+      ...BUILTIN_TEMPLATES,
+      saved('row-resto', 'restoran'),
+      saved('row-bengkel', 'bengkel-mobil'),
+    ];
     const { matching, others } = groupTemplatesForBusiness(all, 'restoran');
 
     expect(matching.map((template) => template.id)).toEqual(['row-resto']);

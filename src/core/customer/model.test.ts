@@ -44,9 +44,7 @@ describe('customerIdentity', () => {
   });
 
   it('falls back to folded phone when there is no email', () => {
-    expect(customerIdentity({ email: '', phone: '+62 812-3456-7890' })).toBe(
-      'phone:081234567890',
-    );
+    expect(customerIdentity({ email: '', phone: '+62 812-3456-7890' })).toBe('phone:081234567890');
   });
 
   it('returns null when there is neither email nor phone', () => {
@@ -72,7 +70,10 @@ describe('isSameCustomer', () => {
 
   it('matches on the same phone when both have no email', () => {
     expect(
-      isSameCustomer({ email: '', phone: '081234567890' }, { email: '', phone: '+62 812-3456-7890' }),
+      isSameCustomer(
+        { email: '', phone: '081234567890' },
+        { email: '', phone: '+62 812-3456-7890' },
+      ),
     ).toBe(true);
   });
 
@@ -98,10 +99,7 @@ describe('isSameCustomer', () => {
 
   it('separates the same email when only one side has a phone', () => {
     expect(
-      isSameCustomer(
-        { email: 'a@mail.com', phone: '0812' },
-        { email: 'a@mail.com', phone: '' },
-      ),
+      isSameCustomer({ email: 'a@mail.com', phone: '0812' }, { email: 'a@mail.com', phone: '' }),
     ).toBe(false);
   });
 

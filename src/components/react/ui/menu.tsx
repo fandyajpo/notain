@@ -53,9 +53,7 @@ export function Menu({ label, items, align = 'end', className, children }: Props
     setOpen(true);
     // Focus the first enabled item once the panel is in the DOM.
     requestAnimationFrame(() => {
-      panelRef.current
-        ?.querySelector<HTMLElement>('[role="menuitem"]:not([disabled])')
-        ?.focus();
+      panelRef.current?.querySelector<HTMLElement>('[role="menuitem"]:not([disabled])')?.focus();
     });
   }
 

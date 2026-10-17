@@ -38,7 +38,12 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
 
 type LinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & SharedProps;
 
-function classes({ variant, size, full, className }: Required<Pick<SharedProps, 'variant' | 'size'>> & Pick<SharedProps, 'full' | 'className'>) {
+function classes({
+  variant,
+  size,
+  full,
+  className,
+}: Required<Pick<SharedProps, 'variant' | 'size'>> & Pick<SharedProps, 'full' | 'className'>) {
   return [BASE, VARIANTS[variant], SIZES[size], full ? 'w-full' : '', className ?? '']
     .filter(Boolean)
     .join(' ');

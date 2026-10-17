@@ -52,7 +52,8 @@ export const onRequest: PagesFunction<Env> = async ({ request }) => {
   let report: CspReport | null = null;
   try {
     const parsed: unknown = JSON.parse(text);
-    const body = typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : {};
+    const body =
+      typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : {};
     const candidate = body['csp-report'] ?? body['csp-violation'] ?? body;
     if (typeof candidate === 'object' && candidate !== null) {
       report = candidate as CspReport;
@@ -69,7 +70,9 @@ export const onRequest: PagesFunction<Env> = async ({ request }) => {
   const source = report['source-file'] ?? 'unknown';
   const line = report['line-number'] ?? '?';
   const documentUri = report['document-uri'] ?? 'unknown';
-  console.log(`[csp] ${String(directive)} blocked ${String(blocked)} at ${String(source)}:${String(line)} on ${String(documentUri)}`);
+  console.log(
+    `[csp] ${String(directive)} blocked ${String(blocked)} at ${String(source)}:${String(line)} on ${String(documentUri)}`,
+  );
 
   return new Response(null, { status: 204 });
 };

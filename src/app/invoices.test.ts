@@ -31,9 +31,7 @@ const invoice = (over: Partial<Invoice> = {}): Invoice => ({
   date: '2026-10-01',
   status: null,
   customerName: 'Budi Santoso',
-  items: [
-    { id: 'item-1', name: 'Kopi', quantity: 1, unitPrice: 10000 },
-  ],
+  items: [{ id: 'item-1', name: 'Kopi', quantity: 1, unitPrice: 10000 }],
   discount: { type: 'amount', value: 0 },
   tax: { type: 'amount', value: 0 },
   sections: { header: '', content: '', footer: '' },

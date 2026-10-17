@@ -27,7 +27,11 @@ export function Notice({
   const Icon = ICONS[variant];
 
   return (
-    <div role={variant === 'danger' ? 'alert' : 'status'} className={cx(noticeClass(variant), className)} {...rest}>
+    <div
+      role={variant === 'danger' ? 'alert' : 'status'}
+      className={cx(noticeClass(variant), className)}
+      {...rest}
+    >
       <Icon size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
       <div className="flex-1">{children}</div>
     </div>

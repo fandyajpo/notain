@@ -42,14 +42,7 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div
-      className={cx(
-        cardClass('none', 'border-dashed'),
-        shell,
-        'py-12',
-        className,
-      )}
-    >
+    <div className={cx(cardClass('none', 'border-dashed'), shell, 'py-12', className)}>
       {Icon ? <Icon size={22} className="text-muted" aria-hidden="true" /> : null}
       <p className={cx('text-section text-foreground', Icon && 'mt-3')}>{title}</p>
       {description ? <p className="mt-1.5 max-w-sm text-sm text-muted">{description}</p> : null}
@@ -97,7 +90,12 @@ export function ErrorState({
   return (
     <div
       role="alert"
-      className={cx(cardClass('none', 'border-danger/25 bg-danger-soft'), shell, 'py-10', className)}
+      className={cx(
+        cardClass('none', 'border-danger/25 bg-danger-soft'),
+        shell,
+        'py-10',
+        className,
+      )}
     >
       {body}
     </div>

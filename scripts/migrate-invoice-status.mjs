@@ -98,7 +98,9 @@ function documentsQuery(cursorAfter) {
   return params.toString();
 }
 
-console.log(`Target: ${endpoint}  project=${projectId}  database=${databaseId}  table=${tableId}\n`);
+console.log(
+  `Target: ${endpoint}  project=${projectId}  database=${databaseId}  table=${tableId}\n`,
+);
 
 try {
   // 1. Ensure the column exists.

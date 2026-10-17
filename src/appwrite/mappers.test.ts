@@ -380,7 +380,9 @@ describe('customerRowToDomain', () => {
     // Appwrite hands `null` for an optional text column that was never written.
     // The name is the only field the picker needs, so a null phone must not
     // cost the whole row.
-    expect(customerRowToDomain(customerRow({ email: null, phone: null, lastUsedAt: null }))).toEqual({
+    expect(
+      customerRowToDomain(customerRow({ email: null, phone: null, lastUsedAt: null })),
+    ).toEqual({
       id: 'cus-1',
       name: 'Budi Santoso',
       email: '',

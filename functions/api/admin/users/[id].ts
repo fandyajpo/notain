@@ -22,7 +22,12 @@ type ProfileRow = {
 
 type DrillResource = 'overview' | 'invoices' | 'customers' | 'templates';
 
-const DRILL_RESOURCES: readonly DrillResource[] = ['overview', 'invoices', 'customers', 'templates'];
+const DRILL_RESOURCES: readonly DrillResource[] = [
+  'overview',
+  'invoices',
+  'customers',
+  'templates',
+];
 
 /**
  * `PATCH /api/admin/users/[id]` — suspend or unsuspend a user's Appwrite
@@ -112,7 +117,11 @@ async function drillDown(
 ): Promise<Response> {
   const resourceParam = url.searchParams.get('resource') ?? 'overview';
   if (!(DRILL_RESOURCES as readonly string[]).includes(resourceParam)) {
-    return apiError(400, 'validation', 'resource harus overview, invoices, customers, atau templates.');
+    return apiError(
+      400,
+      'validation',
+      'resource harus overview, invoices, customers, atau templates.',
+    );
   }
   const resource = resourceParam as DrillResource;
 

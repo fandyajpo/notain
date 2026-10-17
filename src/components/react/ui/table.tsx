@@ -14,18 +14,14 @@ export const TABLE = 'w-full border-collapse text-sm';
 export const THEAD_ROW = 'border-b border-border-strong';
 
 /** `relative` gives the invoice row's stretched link a positioned ancestor. */
-export const TBODY_ROW =
-  'relative border-b border-border/60 last:border-0 hover:bg-background/60';
+export const TBODY_ROW = 'relative border-b border-border/60 last:border-0 hover:bg-background/60';
 
 /**
  * Header cell: a faint wash instead of a heavy rule, on the eyebrow scale so
  * headers read as labels, not shouting caps in body size.
  */
 export function thClass(extra = ''): string {
-  return [
-    'bg-background/70 px-4 py-2.5 text-left text-eyebrow uppercase text-muted',
-    extra,
-  ]
+  return ['bg-background/70 px-4 py-2.5 text-left text-eyebrow uppercase text-muted', extra]
     .filter(Boolean)
     .join(' ');
 }

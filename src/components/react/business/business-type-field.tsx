@@ -1,8 +1,5 @@
 import { useState } from 'react';
-import {
-  businessSubtypeLabel,
-  type BusinessSubtypeSlug,
-} from '../../../core/business/taxonomy';
+import { businessSubtypeLabel, type BusinessSubtypeSlug } from '../../../core/business/taxonomy';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { Modal } from '../ui/modal';

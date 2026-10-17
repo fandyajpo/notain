@@ -31,15 +31,8 @@ export function TemplatesApp() {
 }
 
 function TemplatesContent() {
-  const {
-    data,
-    isLoading,
-    isError,
-    refetch,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-  } = useTemplatesPage();
+  const { data, isLoading, isError, refetch, hasNextPage, isFetchingNextPage, fetchNextPage } =
+    useTemplatesPage();
   const mine = useMemo(() => data?.pages.flatMap((page) => page.rows) ?? [], [data]);
   const { data: profile } = useProfile();
   const logoUrl = profile?.logoUrl ?? null;
@@ -116,9 +109,7 @@ function TemplatesContent() {
         </p>
       </Modal>
 
-      {nothingMatches && !isLoading ? (
-        <EmptyState title="Tidak ada template yang cocok." />
-      ) : null}
+      {nothingMatches && !isLoading ? <EmptyState title="Tidak ada template yang cocok." /> : null}
 
       {filteredBuiltins.length > 0 && (
         <section className="flex flex-col gap-4">
@@ -131,11 +122,7 @@ function TemplatesContent() {
                 logoUrl={logoUrl}
                 business={profile}
                 actions={
-                  <Button
-                    href={`/templates/new?from=${template.id}`}
-                    variant="secondary"
-                    size="sm"
-                  >
+                  <Button href={`/templates/new?from=${template.id}`} variant="secondary" size="sm">
                     <Copy size={13} aria-hidden="true" />
                     Duplikat
                   </Button>

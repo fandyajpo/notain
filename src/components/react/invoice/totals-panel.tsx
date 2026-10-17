@@ -87,9 +87,7 @@ function AdjustmentRow({ label, adjustment, onChange, error }: AdjustmentRowProp
               aria-describedby={error ? `${label}-value-error` : undefined}
               invalid={Boolean(error)}
               value={
-                isPercent
-                  ? String(adjustment.value || '')
-                  : formatAmountForInput(adjustment.value)
+                isPercent ? String(adjustment.value || '') : formatAmountForInput(adjustment.value)
               }
               placeholder="0"
               className="text-right tabular-nums"
@@ -104,7 +102,11 @@ function AdjustmentRow({ label, adjustment, onChange, error }: AdjustmentRowProp
       </div>
 
       {error && (
-        <p id={`${label}-value-error`} role="alert" className="text-right text-xs font-medium text-danger">
+        <p
+          id={`${label}-value-error`}
+          role="alert"
+          className="text-right text-xs font-medium text-danger"
+        >
           {error}
         </p>
       )}

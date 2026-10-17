@@ -113,13 +113,11 @@ function TemplateEditContent() {
   const persistStepPick = (finalType: BusinessSubtypeSlug | null) => {
     if (picked === undefined || picked === null || !profile) return;
     if (profile.businessType === finalType) return;
-    void saveProfile
-      .mutateAsync({ ...profile, businessType: finalType })
-      .catch(() =>
-        toast('Pilihan belum tersimpan ke profil. Bisa diatur lagi di Pengaturan.', {
-          variant: 'error',
-        }),
-      );
+    void saveProfile.mutateAsync({ ...profile, businessType: finalType }).catch(() =>
+      toast('Pilihan belum tersimpan ke profil. Bisa diatur lagi di Pengaturan.', {
+        variant: 'error',
+      }),
+    );
   };
 
   if (!existing && picked === undefined) {

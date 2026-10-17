@@ -67,10 +67,7 @@ export function SetupChecklist({ profile, hasInvoices, hidden }: Props) {
   const doneCount = steps.filter((step) => step.done).length;
 
   return (
-    <section
-      aria-labelledby="setup-checklist-title"
-      className={cardClass('md')}
-    >
+    <section aria-labelledby="setup-checklist-title" className={cardClass('md')}>
       <div className="flex items-center justify-between gap-3">
         <h2 id="setup-checklist-title" className="text-section">
           Langkah awal

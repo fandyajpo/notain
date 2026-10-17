@@ -255,7 +255,11 @@ describe('notain x appwrite', () => {
     // `rememberCustomer` is what the builder calls after every save. Running it
     // twice for the same person is the case that used to produce a duplicate
     // row per invoice.
-    const first = await rememberCustomer({ name: 'Smoke Budi', email: '', phone: '+62 812-3456-7890' });
+    const first = await rememberCustomer({
+      name: 'Smoke Budi',
+      email: '',
+      phone: '+62 812-3456-7890',
+    });
     if (!first) throw new Error('rememberCustomer did not file the customer');
 
     try {
@@ -274,7 +278,11 @@ describe('notain x appwrite', () => {
       expect(rows[0]?.phone).toBe('081234567890');
 
       // A different number under the same name is a different person.
-      const other = await rememberCustomer({ name: 'Smoke Budi', email: '', phone: '081111111111' });
+      const other = await rememberCustomer({
+        name: 'Smoke Budi',
+        email: '',
+        phone: '081111111111',
+      });
       if (!other) throw new Error('rememberCustomer did not file the second customer');
       expect(other.id).not.toBe(first.id);
       await deleteCustomer(other.id);

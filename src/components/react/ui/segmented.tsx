@@ -29,10 +29,7 @@ export function SegmentedControl<T extends string>({
     <div
       role="group"
       aria-label={ariaLabel}
-      className={cx(
-        'inline-flex rounded-control border border-border bg-sunken p-0.5',
-        className,
-      )}
+      className={cx('inline-flex rounded-control border border-border bg-sunken p-0.5', className)}
     >
       {options.map((option) => {
         const active = option.value === value;

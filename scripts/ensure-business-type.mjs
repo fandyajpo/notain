@@ -79,8 +79,7 @@ async function api(method, path, body) {
 
     if (response.status === 429 && attempt < 6) {
       const retryAfter = Number(response.headers.get('retry-after'));
-      const waitMs =
-        Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : 2000 * attempt;
+      const waitMs = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : 2000 * attempt;
       console.log(`  rate-limited, tunggu ${Math.round(waitMs / 1000)}s…`);
       await new Promise((resolve) => setTimeout(resolve, waitMs));
       continue;

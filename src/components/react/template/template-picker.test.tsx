@@ -140,9 +140,7 @@ describe('TemplatePicker', () => {
     expect(document.body.textContent).toContain('Sesuai bisnis kamu');
     expect(document.body.textContent).toContain('Jenis lain');
     // Every template is still offered, exactly once.
-    expect(container.querySelectorAll('button[data-template-id]')).toHaveLength(
-      templates.length,
-    );
+    expect(container.querySelectorAll('button[data-template-id]')).toHaveLength(templates.length);
 
     const sections = Array.from(document.querySelectorAll('section'));
     const matching = sections.find((section) =>
@@ -152,9 +150,7 @@ describe('TemplatePicker', () => {
     expect(matching?.querySelectorAll('button[data-template-id]')).toHaveLength(1);
     expect(matching?.querySelector('[data-template-id="row-resto"]')).toBeTruthy();
     expect(others?.querySelector('[data-template-id="row-resto"]')).toBeNull();
-    expect(others?.querySelectorAll('button[data-template-id]')).toHaveLength(
-      templates.length - 1,
-    );
+    expect(others?.querySelectorAll('button[data-template-id]')).toHaveLength(templates.length - 1);
   });
 
   it('drops the headers when nothing matched rather than showing empty groups', async () => {
@@ -187,7 +183,9 @@ describe('TemplatePicker', () => {
   });
 
   it('leaves the chip off a builtin, which belongs to every trade', async () => {
-    await render(<TemplatePicker templates={BUILTIN_TEMPLATES} businessType="restoran" onPick={() => {}} />);
+    await render(
+      <TemplatePicker templates={BUILTIN_TEMPLATES} businessType="restoran" onPick={() => {}} />,
+    );
 
     for (const card of container.querySelectorAll('button[data-template-id]')) {
       expect(card.querySelector('.rounded-pill')).toBeNull();

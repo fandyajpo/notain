@@ -1,9 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Check } from 'lucide-react';
-import {
-  searchBusinessSubtypes,
-  type BusinessSubtypeSlug,
-} from '../../../core/business/taxonomy';
+import { searchBusinessSubtypes, type BusinessSubtypeSlug } from '../../../core/business/taxonomy';
 import { cx, menuItemClass } from '../../../lib/ui/classes';
 import { EmptyState } from '../ui/state';
 import { SearchField } from '../ui/search-field';

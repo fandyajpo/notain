@@ -1,4 +1,13 @@
-import { ArrowRight, Banknote, Ban, FileText, LayoutTemplate, Plus, Send, Users } from 'lucide-react';
+import {
+  ArrowRight,
+  Banknote,
+  Ban,
+  FileText,
+  LayoutTemplate,
+  Plus,
+  Send,
+  Users,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
@@ -20,14 +29,7 @@ import { useDashboardStats } from '../../../lib/query/hooks/use-dashboard-stats'
 import { useInvoices } from '../../../lib/query/hooks/use-invoices';
 import { usePageTour } from '../../../lib/tour/use-tour';
 import { cx } from '../../../lib/ui/classes';
-import {
-  TABLE,
-  TABLE_SHELL,
-  TBODY_ROW,
-  THEAD_ROW,
-  tdClass,
-  thClass,
-} from '../ui/table';
+import { TABLE, TABLE_SHELL, TBODY_ROW, THEAD_ROW, tdClass, thClass } from '../ui/table';
 import type { Invoice } from '../../../core/invoice/model';
 
 /**
@@ -56,12 +58,30 @@ const KPIS: Array<{
   tone: KpiTone;
   pick: (stats: DashboardStats) => number;
 }> = [
-  { key: 'total', label: 'Total invoice', Icon: FileText, tone: 'accent', pick: (s) => s.totalInvoices },
+  {
+    key: 'total',
+    label: 'Total invoice',
+    Icon: FileText,
+    tone: 'accent',
+    pick: (s) => s.totalInvoices,
+  },
   { key: 'sent', label: 'Terkirim', Icon: Send, tone: 'neutral', pick: (s) => s.sentCount },
   { key: 'paid', label: 'Lunas', Icon: Banknote, tone: 'success', pick: (s) => s.paidCount },
   { key: 'void', label: 'Batal', Icon: Ban, tone: 'danger', pick: (s) => s.voidCount },
-  { key: 'customers', label: 'Customer', Icon: Users, tone: 'accent', pick: (s) => s.totalCustomers },
-  { key: 'templates', label: 'Template', Icon: LayoutTemplate, tone: 'accent', pick: (s) => s.totalTemplates },
+  {
+    key: 'customers',
+    label: 'Customer',
+    Icon: Users,
+    tone: 'accent',
+    pick: (s) => s.totalCustomers,
+  },
+  {
+    key: 'templates',
+    label: 'Template',
+    Icon: LayoutTemplate,
+    tone: 'accent',
+    pick: (s) => s.totalTemplates,
+  },
 ];
 
 /** Status rows of the breakdown table, with their progress-bar tint. */
@@ -82,10 +102,7 @@ const STATUS_ROWS: Array<{
  * derived figure can never drift from what the total says.
  */
 function unsetCount(stats: DashboardStats): number {
-  return Math.max(
-    0,
-    stats.totalInvoices - stats.sentCount - stats.paidCount - stats.voidCount,
-  );
+  return Math.max(0, stats.totalInvoices - stats.sentCount - stats.paidCount - stats.voidCount);
 }
 
 /** Landing content for `/dashboard`: greeting, setup checklist, live summary. */
@@ -206,11 +223,21 @@ function SummarySection({
 
   return (
     <div className="flex flex-col gap-6">
-      <section data-tour="dash-summary" aria-label="Ringkasan singkat" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <section
+        data-tour="dash-summary"
+        aria-label="Ringkasan singkat"
+        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      >
         {waiting
           ? KPIS.map((kpi) => <KpiSkeleton key={kpi.key} />)
           : KPIS.map(({ key, label, Icon, tone, pick }) => (
-              <StatCard key={key} label={label} value={pick(stats as DashboardStats)} Icon={Icon} tone={tone} />
+              <StatCard
+                key={key}
+                label={label}
+                value={pick(stats as DashboardStats)}
+                Icon={Icon}
+                tone={tone}
+              />
             ))}
       </section>
 

@@ -72,7 +72,8 @@ export const TOURS: Record<string, TourDef> = {
       {
         target: 'invoices-search',
         title: 'Cari cepat',
-        description: 'Ketik nomor, nama customer, atau barang untuk menemukan invoice dalam sekejap.',
+        description:
+          'Ketik nomor, nama customer, atau barang untuk menemukan invoice dalam sekejap.',
         side: 'bottom',
       },
       {
@@ -127,7 +128,8 @@ export const TOURS: Record<string, TourDef> = {
       {
         target: 'cust-form',
         title: 'Tambah customer',
-        description: 'Simpan nama, email, dan nomor WhatsApp supaya bisa dipakai ulang di invoice berikutnya.',
+        description:
+          'Simpan nama, email, dan nomor WhatsApp supaya bisa dipakai ulang di invoice berikutnya.',
         side: 'bottom',
       },
       {

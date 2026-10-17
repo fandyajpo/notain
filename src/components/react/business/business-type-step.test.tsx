@@ -49,9 +49,7 @@ describe('BusinessTypeStep', () => {
   });
 
   it('starts preselected from the remembered profile choice', async () => {
-    await render(
-      <BusinessTypeStep value="bengkel-mobil" onPick={() => {}} onSkip={() => {}} />,
-    );
+    await render(<BusinessTypeStep value="bengkel-mobil" onPick={() => {}} onSkip={() => {}} />);
 
     expect(button('Lanjutkan')?.disabled).toBe(false);
     expect(

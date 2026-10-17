@@ -53,8 +53,11 @@ function InvoiceNewContent() {
 
   const { data: profile, isLoading: profileLoading, isError: profileError } = profileQuery;
   const { data: numbers, isLoading: numbersLoading, isError: numbersError } = numbersQuery;
-  const { data: savedTemplates, isLoading: templatesLoading, isError: templatesError } =
-    templatesQuery;
+  const {
+    data: savedTemplates,
+    isLoading: templatesLoading,
+    isError: templatesError,
+  } = templatesQuery;
   const { data: source, isLoading: sourceLoading, isError: sourceError } = sourceQuery;
   // A failed setup query must stop here: proceeding with an empty profile or an
   // empty number list risks a blank letterhead or a duplicate invoice number.

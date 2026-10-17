@@ -34,10 +34,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       : LIST_DEFAULT_LIMIT;
   const cursor = url.searchParams.get('cursorAfter');
 
-  const queries = [
-    querySearch('orderDesc', ['createdAt']),
-    querySearch('limit', [limit]),
-  ];
+  const queries = [querySearch('orderDesc', ['createdAt']), querySearch('limit', [limit])];
   if (cursor) queries.push(querySearch('cursorAfter', [cursor]));
 
   const response = await fetch(
@@ -70,6 +67,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   return json(200, {
     rows: data.documents.map(auditRowToApi),
     total: data.total,
-    nextCursor: data.documents.length === limit && limit > 0 ? data.documents[data.documents.length - 1].$id : null,
+    nextCursor:
+      data.documents.length === limit && limit > 0
+        ? data.documents[data.documents.length - 1].$id
+        : null,
   });
 };

@@ -35,8 +35,7 @@ function readInvoiceId(): string | undefined {
 }
 
 function InvoiceEditContent({ invoiceId }: { invoiceId: string | undefined }) {
-  const { data: invoice, isLoading, isError, isFetching, refetch, error } =
-    useInvoice(invoiceId);
+  const { data: invoice, isLoading, isError, isFetching, refetch, error } = useInvoice(invoiceId);
   const { data: profile } = useProfile();
 
   if (!invoiceId) {

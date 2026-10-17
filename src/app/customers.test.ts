@@ -135,7 +135,9 @@ describe('createCustomer', () => {
   });
 
   it('rejects a blank name before it ever reaches storage', async () => {
-    await expect(createCustomer({ name: '   ', email: '', phone: '' })).rejects.toBeInstanceOf(AppError);
+    await expect(createCustomer({ name: '   ', email: '', phone: '' })).rejects.toBeInstanceOf(
+      AppError,
+    );
 
     expect(create).not.toHaveBeenCalled();
   });
@@ -220,7 +222,11 @@ describe('mergeCustomers', () => {
     getSession.mockResolvedValue(null);
 
     await expect(
-      mergeCustomers({ targetId: 'cus-1', sourceIds: [], draft: { name: 'X', email: '', phone: '' } }),
+      mergeCustomers({
+        targetId: 'cus-1',
+        sourceIds: [],
+        draft: { name: 'X', email: '', phone: '' },
+      }),
     ).rejects.toBeInstanceOf(AppError);
 
     expect(update).not.toHaveBeenCalled();
@@ -338,7 +344,9 @@ describe('rememberCustomer', () => {
   it('requires a session', async () => {
     getSession.mockResolvedValue(null);
 
-    await expect(rememberCustomer({ name: 'Budi', email: '', phone: '' })).rejects.toBeInstanceOf(AppError);
+    await expect(rememberCustomer({ name: 'Budi', email: '', phone: '' })).rejects.toBeInstanceOf(
+      AppError,
+    );
   });
 });
 
@@ -423,6 +431,8 @@ describe('importCustomers', () => {
   it('requires a session', async () => {
     getSession.mockResolvedValue(null);
 
-    await expect(importCustomers([{ name: 'Budi', email: '', phone: '' }])).rejects.toBeInstanceOf(AppError);
+    await expect(importCustomers([{ name: 'Budi', email: '', phone: '' }])).rejects.toBeInstanceOf(
+      AppError,
+    );
   });
 });

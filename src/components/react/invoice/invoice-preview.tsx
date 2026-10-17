@@ -232,7 +232,9 @@ export function InvoicePreview({
                 {detailRows.map((row) => (
                   <div key={row.key} className="flex justify-between gap-4 text-xs">
                     <dt style={muted}>{row.label}</dt>
-                    <dd className="text-right">{row.isDate ? formatTanggal(row.value) : row.value}</dd>
+                    <dd className="text-right">
+                      {row.isDate ? formatTanggal(row.value) : row.value}
+                    </dd>
                   </div>
                 ))}
               </dl>

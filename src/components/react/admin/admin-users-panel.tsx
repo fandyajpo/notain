@@ -13,7 +13,11 @@ import { TableShell, Th, Td, TBODY_ROW, THEAD_ROW } from '../ui/table';
 import { Textarea } from '../ui/textarea';
 import { FieldShell, useFieldIds } from '../ui/field';
 import { toast } from '../../../lib/ui/toast';
-import { useAdminUsers, useSetAdminUserStatus, useUpdateAdminUser } from '../../../lib/query/hooks/use-admin';
+import {
+  useAdminUsers,
+  useSetAdminUserStatus,
+  useUpdateAdminUser,
+} from '../../../lib/query/hooks/use-admin';
 import type { AdminUser, AdminUserUpdate } from '../../../app/admin';
 import { toAppError } from '../../../appwrite/errors';
 import { profileFormSchema } from '../../../core/profile/model';
@@ -68,15 +72,8 @@ function planUpdate(user: AdminUser, plan: string, planExpiresAt: string | null)
 
 /** Users tab: list, search, plan management, suspend, and drill-down. */
 export function AdminUsersPanel() {
-  const {
-    data,
-    isFetching,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-    error,
-    refetch,
-  } = useAdminUsers();
+  const { data, isFetching, hasNextPage, isFetchingNextPage, fetchNextPage, error, refetch } =
+    useAdminUsers();
   const updateAdminUser = useUpdateAdminUser();
   const setUserStatus = useSetAdminUserStatus();
 
@@ -260,7 +257,9 @@ export function AdminUsersPanel() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-muted">
-          {total > 0 ? `${users.length} dari ${total} user dimuat` : 'Kelola profil dan subscription plan user.'}
+          {total > 0
+            ? `${users.length} dari ${total} user dimuat`
+            : 'Kelola profil dan subscription plan user.'}
         </p>
         <Button
           variant="secondary"
@@ -593,7 +592,11 @@ export function AdminUsersPanel() {
               onChange={setSubPlan}
             />
           </FieldShell>
-          <FieldShell label="Berlaku sampai" htmlFor={subExpiryIds.id} hint="Kosongkan untuk lifetime.">
+          <FieldShell
+            label="Berlaku sampai"
+            htmlFor={subExpiryIds.id}
+            hint="Kosongkan untuk lifetime."
+          >
             <Input
               id={subExpiryIds.id}
               type="date"
@@ -628,7 +631,10 @@ export function AdminUsersPanel() {
           </Notice>
         )}
         <p className="text-sm text-muted">
-          Plan <span className="font-medium text-foreground">{unsubscribeTarget?.name || unsubscribeTarget?.email}</span>{' '}
+          Plan{' '}
+          <span className="font-medium text-foreground">
+            {unsubscribeTarget?.name || unsubscribeTarget?.email}
+          </span>{' '}
           akan kembali ke Free dan masa berlakunya dihapus.
         </p>
       </Modal>

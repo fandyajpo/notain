@@ -1,4 +1,9 @@
-import type { Invoice, InvoiceDraft, InvoiceHistoryEntry, InvoiceStatus } from '../core/invoice/model';
+import type {
+  Invoice,
+  InvoiceDraft,
+  InvoiceHistoryEntry,
+  InvoiceStatus,
+} from '../core/invoice/model';
 
 export type ListInvoicesOptions = {
   /**

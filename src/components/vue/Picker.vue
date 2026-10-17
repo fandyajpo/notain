@@ -168,7 +168,11 @@ function onBlur(event: FocusEvent) {
     </ul>
 
     <p v-else-if="open && query.trim()" class="text-xs text-muted" data-picker-empty>
-      {{ props.mode === 'customer' ? 'Tidak ada customer yang cocok.' : 'Tidak ada riwayat yang cocok.' }}
+      {{
+        props.mode === 'customer'
+          ? 'Tidak ada customer yang cocok.'
+          : 'Tidak ada riwayat yang cocok.'
+      }}
     </p>
   </div>
 </template>

@@ -100,7 +100,9 @@ async function parseAdminResponse<T>(response: Response): Promise<T> {
 }
 
 /** One page of the admin user list (cursor-paginated, newest first). */
-export async function listAdminUsers(params: { cursorAfter?: string } = {}): Promise<AdminUserPage> {
+export async function listAdminUsers(
+  params: { cursorAfter?: string } = {},
+): Promise<AdminUserPage> {
   const search = new URLSearchParams({ limit: '25' });
   if (params.cursorAfter) search.set('cursorAfter', params.cursorAfter);
   const response = await adminFetch(`/api/admin/users?${search.toString()}`);
@@ -128,7 +130,9 @@ export async function setAdminUserStatus(
 }
 
 /** Newest-first page of admin action logs. */
-export async function listAdminAudit(params: { cursorAfter?: string } = {}): Promise<AdminAuditPage> {
+export async function listAdminAudit(
+  params: { cursorAfter?: string } = {},
+): Promise<AdminAuditPage> {
   const search = new URLSearchParams({ limit: '25' });
   if (params.cursorAfter) search.set('cursorAfter', params.cursorAfter);
   const response = await adminFetch(`/api/admin/audit?${search.toString()}`);

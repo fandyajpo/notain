@@ -95,9 +95,7 @@ function EditorLoadError({
       <span className="text-sm font-medium text-foreground">{label}</span>
       <Notice style={{ minHeight: minHeight + 36 }}>
         <div className="flex flex-col items-start gap-3">
-          <p>
-            Editor teks gagal dimuat. Invoice kamu tidak hilang; bagian lain tetap bisa diisi.
-          </p>
+          <p>Editor teks gagal dimuat. Invoice kamu tidak hilang; bagian lain tetap bisa diisi.</p>
           <div className="flex gap-2">
             <Button size="sm" onClick={onRetry}>
               Coba lagi

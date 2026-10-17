@@ -203,8 +203,8 @@ export function PricingPlans() {
           transition={{ duration: 0.6, delay: 0.55, ease: EASE }}
           className="mx-auto mt-8 max-w-xl text-center text-sm leading-relaxed text-muted"
         >
-          Pembayaran untuk plan Pro dan Business sedang disiapkan. Daftar sekarang; fitur Free
-          tetap bisa dipakai penuh, dan kamu jadi yang pertama mencoba.
+          Pembayaran untuk plan Pro dan Business sedang disiapkan. Daftar sekarang; fitur Free tetap
+          bisa dipakai penuh, dan kamu jadi yang pertama mencoba.
         </motion.p>
       </section>
     </MotionConfig>

@@ -130,7 +130,10 @@ describe('invoiceDraftSchema', () => {
     });
     expect(result.success).toBe(true);
     if (!result.success) return;
-    expect(result.data.details).toEqual({ 'nama-kendaraan': 'Avanza', 'nomor-polisi': 'B 1234 XY' });
+    expect(result.data.details).toEqual({
+      'nama-kendaraan': 'Avanza',
+      'nomor-polisi': 'B 1234 XY',
+    });
   });
 
   it('rejects a detail value longer than the column allows', () => {

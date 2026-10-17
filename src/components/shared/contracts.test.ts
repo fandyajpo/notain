@@ -87,8 +87,7 @@ describe('itemsChangeEventSchema', () => {
 
   it('rejects a unit longer than the column allows', () => {
     expect(
-      itemsChangeEventSchema.safeParse({ items: [{ ...validItem, unit: 'x'.repeat(17) }] })
-        .success,
+      itemsChangeEventSchema.safeParse({ items: [{ ...validItem, unit: 'x'.repeat(17) }] }).success,
     ).toBe(false);
   });
 });

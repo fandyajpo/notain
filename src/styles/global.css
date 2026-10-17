@@ -610,7 +610,10 @@
   font-size: 0.8125rem;
   font-weight: 500;
   font-family: inherit;
-  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
 }
 
 .driver-popover .driver-popover-btn:hover {

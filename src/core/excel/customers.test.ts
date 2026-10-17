@@ -46,9 +46,7 @@ describe('parseCustomerImportRows', () => {
       ['Budi', 'budi@mail.com', '0812'],
     ]);
     expect(result.issues).toEqual([]);
-    expect(result.customers).toEqual([
-      { name: 'Budi', email: 'budi@mail.com', phone: '0812' },
-    ]);
+    expect(result.customers).toEqual([{ name: 'Budi', email: 'budi@mail.com', phone: '0812' }]);
   });
 
   it('allows empty email and phone', () => {
@@ -58,11 +56,7 @@ describe('parseCustomerImportRows', () => {
   });
 
   it('reports a 1-based spreadsheet row number for an invalid name', () => {
-    const result = parseCustomerImportRows([
-      HEADER,
-      ['Budi', '', '0812'],
-      ['   ', '', '0811'],
-    ]);
+    const result = parseCustomerImportRows([HEADER, ['Budi', '', '0812'], ['   ', '', '0811']]);
     expect(result.customers).toHaveLength(1);
     expect(result.issues).toEqual([{ row: 3, message: expect.stringContaining('nama') }]);
   });

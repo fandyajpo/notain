@@ -6,18 +6,16 @@ import {
   type BusinessCategorySlug,
 } from './taxonomy';
 import { BUSINESS_PRESETS, getBusinessPreset } from './presets';
-import {
-  DETAIL_FIELD_OVERRIDES,
-  getDetailFields,
-  type BusinessDetailField,
-} from './detail-fields';
+import { DETAIL_FIELD_OVERRIDES, getDetailFields, type BusinessDetailField } from './detail-fields';
 
 const DETAIL_FIELD_TYPES: readonly BusinessDetailField['type'][] = ['text', 'number', 'date'];
 
 function expectWellFormedFields(fields: readonly BusinessDetailField[], where: string) {
   const keys = new Set<string>();
   for (const field of fields) {
-    expect(field.key, `${where}: key must be kebab-case ASCII`).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+    expect(field.key, `${where}: key must be kebab-case ASCII`).toMatch(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+    );
     expect(field.key.length, `${where}: key too long`).toBeLessThanOrEqual(32);
     expect(field.label.trim(), `${where}: label must be non-empty`).not.toBe('');
     expect(field.label.length, `${where}: label too long`).toBeLessThanOrEqual(64);
@@ -49,9 +47,7 @@ describe('getDetailFields', () => {
   });
 
   it('falls back to the category default for a subtype without an override', () => {
-    expect(getDetailFields('bengkel-mobil')).toBe(
-      getBusinessPreset('bengkel-mobil').detailFields,
-    );
+    expect(getDetailFields('bengkel-mobil')).toBe(getBusinessPreset('bengkel-mobil').detailFields);
   });
 
   it('keeps the rental override distinct from the rest of Otomotif', () => {

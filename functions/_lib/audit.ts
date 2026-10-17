@@ -42,22 +42,19 @@ export async function writeAudit(env: Env, entry: AuditEntry): Promise<void> {
   };
 
   try {
-    await fetch(
-      `${endpoint}/databases/${DATABASE_ID}/collections/${AUDIT_TABLE_ID}/documents`,
-      {
-        method: 'POST',
-        headers: {
-          'X-Appwrite-Project': projectId,
-          'X-Appwrite-Key': apiKey,
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          documentId: 'unique()',
-          data,
-          permissions: ['read("team:admins")'],
-        }),
+    await fetch(`${endpoint}/databases/${DATABASE_ID}/collections/${AUDIT_TABLE_ID}/documents`, {
+      method: 'POST',
+      headers: {
+        'X-Appwrite-Project': projectId,
+        'X-Appwrite-Key': apiKey,
+        'content-type': 'application/json',
       },
-    );
+      body: JSON.stringify({
+        documentId: 'unique()',
+        data,
+        permissions: ['read("team:admins")'],
+      }),
+    });
   } catch {
     // Deliberately swallowed — see doc comment.
   }

@@ -137,7 +137,9 @@ try {
   }
 
   // 2. Attributes (re-read the table so a dry-run's "+ buat" list is real).
-  table = table ?? (await api('GET', `/databases/${databaseId}/collections/${encodeURIComponent(tableId)}`));
+  table =
+    table ??
+    (await api('GET', `/databases/${databaseId}/collections/${encodeURIComponent(tableId)}`));
   const present = new Set(fieldsOf(table).map((field) => field.key));
 
   for (const attribute of STRING_ATTRIBUTES) {
@@ -146,7 +148,9 @@ try {
       continue;
     }
     if (!confirmed) {
-      console.log(`  + buat kolom \`${tableId}.${attribute.key}\` (string, size ${attribute.size})`);
+      console.log(
+        `  + buat kolom \`${tableId}.${attribute.key}\` (string, size ${attribute.size})`,
+      );
       continue;
     }
     await api(

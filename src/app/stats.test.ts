@@ -100,14 +100,18 @@ describe('getDashboardStats', () => {
 describe('refreshDashboardStats', () => {
   it('recomputes every counter from the source tables and creates the row', async () => {
     findByOwner.mockResolvedValue(null);
-    create.mockImplementation(async ({ ownerId, counts }: { ownerId: string; counts: typeof COUNTS }) => ({
-      id: 'stats-1',
-      ownerId,
-      ...counts,
-      updatedAt: '2026-10-11T09:00:00.000Z',
-    }));
+    create.mockImplementation(
+      async ({ ownerId, counts }: { ownerId: string; counts: typeof COUNTS }) => ({
+        id: 'stats-1',
+        ownerId,
+        ...counts,
+        updatedAt: '2026-10-11T09:00:00.000Z',
+      }),
+    );
 
-    await expect(refreshDashboardStats()).resolves.toEqual(stored({ updatedAt: '2026-10-11T09:00:00.000Z' }));
+    await expect(refreshDashboardStats()).resolves.toEqual(
+      stored({ updatedAt: '2026-10-11T09:00:00.000Z' }),
+    );
 
     // One count per state plus the overall total — each a limit-1 read.
     expect(listInvoicesPage).toHaveBeenCalledWith({ status: 'sent', limit: 1 });

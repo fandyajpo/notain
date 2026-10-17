@@ -76,10 +76,12 @@ export async function listCustomers(): Promise<Customer[]> {
 }
 
 /** One page of the directory for the `/customers` page's "Muat lebih banyak" list. */
-export async function listCustomersPage(params: {
-  cursorAfter?: string;
-  limit?: number;
-} = {}): Promise<{ rows: Customer[]; total: number; nextCursor: string | null }> {
+export async function listCustomersPage(
+  params: {
+    cursorAfter?: string;
+    limit?: number;
+  } = {},
+): Promise<{ rows: Customer[]; total: number; nextCursor: string | null }> {
   const user = await requireSession();
   const [page, total] = await Promise.all([
     container.customers.listPage(user.id, params),

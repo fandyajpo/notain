@@ -121,9 +121,9 @@ const presets: Record<BusinessCategorySlug, BusinessPreset> = {
     layout: goodsLayout,
     prose: {
       header: '<p>Terima kasih sudah berbelanja di toko kami. Berikut rincian belanja kamu.</p>',
-      content:
-        '<p>Barang dapat ditukar selama 3 hari dengan nota dan kemasan masih utuh.</p>',
-      footer: '<p><strong>Pembayaran:</strong> tunai, transfer, atau QRIS saat barang diterima.</p>',
+      content: '<p>Barang dapat ditukar selama 3 hari dengan nota dan kemasan masih utuh.</p>',
+      footer:
+        '<p><strong>Pembayaran:</strong> tunai, transfer, atau QRIS saat barang diterima.</p>',
       notes: 'Barang pecah belah dicek dulu sebelum dikirim.',
     },
     sampleItems: [
@@ -164,7 +164,8 @@ const presets: Record<BusinessCategorySlug, BusinessPreset> = {
       header: '<p>Terima kasih sudah pesan di kami. Berikut rincian pesanan kamu.</p>',
       content:
         '<p>Pesanan diproses maksimal 1×24 jam. Untuk pesanan besar, mohon pesan sehari sebelumnya.</p>',
-      footer: '<p><strong>Pembayaran:</strong> tunai, transfer, atau QRIS saat pesanan diterima.</p>',
+      footer:
+        '<p><strong>Pembayaran:</strong> tunai, transfer, atau QRIS saat pesanan diterima.</p>',
       notes: 'Hubungi kami bila ada perubahan jumlah pesanan.',
     },
     sampleItems: [
@@ -199,9 +200,9 @@ const presets: Record<BusinessCategorySlug, BusinessPreset> = {
     prose: {
       header:
         '<p>Terima kasih sudah mempercayakan pekerjaan ini kepada kami. Berikut rincian layanannya.</p>',
-      content:
-        '<p>Pekerjaan dianggap selesai setelah ada persetujuan hasil akhir dari klien.</p>',
-      footer: '<p><strong>Pembayaran:</strong> termin 50% di muka dan 50% saat pekerjaan selesai.</p>',
+      content: '<p>Pekerjaan dianggap selesai setelah ada persetujuan hasil akhir dari klien.</p>',
+      footer:
+        '<p><strong>Pembayaran:</strong> termin 50% di muka dan 50% saat pekerjaan selesai.</p>',
       notes: 'Perubahan lingkup kerja dapat mengubah total biaya.',
     },
     sampleItems: [
@@ -277,7 +278,8 @@ const presets: Record<BusinessCategorySlug, BusinessPreset> = {
     categorySlug: 'pendidikan',
     layout: professionalLayout,
     prose: {
-      header: '<p>Terima kasih sudah bergabung di program belajar kami. Berikut rincian biayanya.</p>',
+      header:
+        '<p>Terima kasih sudah bergabung di program belajar kami. Berikut rincian biayanya.</p>',
       content: '<p>Materi dan akses kelas diberikan setelah pembayaran terverifikasi.</p>',
       footer: '<p><strong>Pembayaran:</strong> transfer di muka sebelum kelas dimulai.</p>',
       notes: 'Kelas yang terlewat dapat dijadwalkan ulang satu kali.',
@@ -299,7 +301,8 @@ const presets: Record<BusinessCategorySlug, BusinessPreset> = {
     prose: {
       header: '<p>Terima kasih sudah menggunakan layanan kami. Berikut rincian pelayanannya.</p>',
       content: '<p>Mohon simpan nota ini untuk keperluan kontrol berikutnya.</p>',
-      footer: '<p><strong>Pembayaran:</strong> tunai, transfer, atau asuransi sesuai ketentuan.</p>',
+      footer:
+        '<p><strong>Pembayaran:</strong> tunai, transfer, atau asuransi sesuai ketentuan.</p>',
       notes: 'Hubungi kami bila ada keluhan setelah pelayanan selesai.',
     },
     sampleItems: [
@@ -359,7 +362,8 @@ const presets: Record<BusinessCategorySlug, BusinessPreset> = {
     prose: {
       header: '<p>Terima kasih sudah memesan produksi di kami. Berikut rincian pesanannya.</p>',
       content: '<p>Masa produksi mengikuti jumlah pesanan dan ketersediaan bahan baku.</p>',
-      footer: '<p><strong>Pembayaran:</strong> DP 50% saat pesanan masuk, sisanya saat pengiriman.</p>',
+      footer:
+        '<p><strong>Pembayaran:</strong> DP 50% saat pesanan masuk, sisanya saat pengiriman.</p>',
       notes: 'Desain kemasan final harus disetujui sebelum produksi massal.',
     },
     sampleItems: [
@@ -440,11 +444,17 @@ const presets: Record<BusinessCategorySlug, BusinessPreset> = {
       header:
         '<p>Terima kasih sudah mempercayakan kebutuhan kreatif kamu kepada kami. Berikut rinciannya.</p>',
       content: '<p>Revisi desain maksimal 2 kali tanpa biaya tambahan.</p>',
-      footer: '<p><strong>Pembayaran:</strong> DP 50% di muka, pelunasan saat file final diserahkan.</p>',
+      footer:
+        '<p><strong>Pembayaran:</strong> DP 50% di muka, pelunasan saat file final diserahkan.</p>',
       notes: 'Hak penggunaan file diserahkan setelah pelunasan.',
     },
     sampleItems: [
-      { name: 'Paket desain konten media sosial', quantity: 1, unitPrice: 1_850_000, unit: 'paket' },
+      {
+        name: 'Paket desain konten media sosial',
+        quantity: 1,
+        unitPrice: 1_850_000,
+        unit: 'paket',
+      },
       { name: 'Desain logo dan brand kit', quantity: 1, unitPrice: 2_500_000, unit: 'paket' },
       { name: 'Editing video per konten', quantity: 5, unitPrice: 250_000, unit: 'konten' },
     ],

@@ -44,7 +44,9 @@ export function AdminAuditPanel() {
       <div className="flex flex-col items-center gap-2 rounded-control border border-dashed border-border py-12 text-center">
         <ScrollText size={22} className="text-muted" aria-hidden="true" />
         <p className="text-sm text-foreground">Belum ada aktivitas tercatat.</p>
-        <p className="text-xs text-muted">Aksi admin (edit profil, jeda/aktifkan user) akan muncul di sini.</p>
+        <p className="text-xs text-muted">
+          Aksi admin (edit profil, jeda/aktifkan user) akan muncul di sini.
+        </p>
       </div>
     );
   }
@@ -69,7 +71,15 @@ export function AdminAuditPanel() {
               </Td>
               <Td className="text-muted">{row.actorEmail || row.actorId || '—'}</Td>
               <Td>
-                <Badge variant={row.action.endsWith('.suspend') ? 'danger' : row.action.endsWith('.unsuspend') ? 'success' : 'neutral'}>
+                <Badge
+                  variant={
+                    row.action.endsWith('.suspend')
+                      ? 'danger'
+                      : row.action.endsWith('.unsuspend')
+                        ? 'success'
+                        : 'neutral'
+                  }
+                >
                   {ACTION_LABELS[row.action] ?? row.action}
                 </Badge>
               </Td>
