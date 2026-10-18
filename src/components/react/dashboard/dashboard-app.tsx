@@ -28,6 +28,7 @@ import { useSession } from '../../../lib/query/hooks/use-session';
 import { useDashboardStats } from '../../../lib/query/hooks/use-dashboard-stats';
 import { useInvoices } from '../../../lib/query/hooks/use-invoices';
 import { usePageTour } from '../../../lib/tour/use-tour';
+import { useCountUp } from '../../../lib/use-count-up';
 import { cx } from '../../../lib/ui/classes';
 import { TABLE, TABLE_SHELL, TBODY_ROW, THEAD_ROW, tdClass, thClass } from '../ui/table';
 import type { Invoice } from '../../../core/invoice/model';
@@ -389,6 +390,9 @@ function StatCard({
   Icon: LucideIcon;
   tone: KpiTone;
 }) {
+  // Rolls up from 0 on first data arrival so the numbers land instead of
+  // blinking in; reduced-motion users see the final value immediately.
+  const shown = useCountUp(value);
   return (
     <Card padding="sm" className="flex items-center gap-3">
       <span
@@ -401,7 +405,7 @@ function StatCard({
       </span>
       <div className="min-w-0">
         <p className="truncate text-sm text-muted">{label}</p>
-        <p className="text-2xl font-semibold tabular-nums">{value.toLocaleString('id-ID')}</p>
+        <p className="text-2xl font-semibold tabular-nums">{shown.toLocaleString('id-ID')}</p>
       </div>
     </Card>
   );

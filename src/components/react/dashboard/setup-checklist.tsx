@@ -1,6 +1,8 @@
-import { Check, Circle } from 'lucide-react';
+import { Check, Circle, PartyPopper } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
 import { cardClass } from '../ui/card';
+import { confettiBurst } from '../../../lib/ui/confetti';
 import type { BusinessProfile } from '../../../core/profile/model';
 
 type Step = {
@@ -21,13 +23,45 @@ type Props = {
 };
 
 /**
+ * Device-local flags behind the completion card. Both are best-effort: a
+ * browser in private mode throws on localStorage, and the checklist then
+ * simply behaves like the classic hide-when-done version.
+ *
+ * `incomplete-seen` records that this device ever showed the checklist with
+ * work still to do; the completion card only appears for accounts that qualify
+ * that way, so a long-time user meeting the checklist for the first time on a
+ * deploy is never congratulated for onboarding they finished long ago.
+ * `celebrated` keeps the card from reappearing on every later visit.
+ */
+const INCOMPLETE_SEEN_KEY = 'notain.setup.incomplete-seen';
+const CELEBRATED_KEY = 'notain.setup.celebrated';
+
+function readFlag(key: string): boolean {
+  try {
+    return window.localStorage.getItem(key) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeFlag(key: string): void {
+  try {
+    window.localStorage.setItem(key, '1');
+  } catch {
+    // Private mode etc. — the celebration is a nice-to-have, never an error.
+  }
+}
+
+/**
  * The onboarding quest: the handful of things that stand between a fresh
  * account and an invoice that is ready to send.
  *
- * It only appears while something is still undone, and disappears entirely once
- * every step is complete — a checklist that stays around after it is finished
- * is just noise. On a failed profile fetch it stays hidden too: "incomplete"
- * and "we could not tell" must not look the same.
+ * It only appears while something is still undone. Once every step is done it
+ * swaps — one single time, on the device that watched the work happen — for a
+ * "Semua siap!" card with a confetti burst, and after that disappears
+ * entirely: a checklist that stays around after it is finished is just noise.
+ * On a failed profile fetch it stays hidden too: "incomplete" and "we could
+ * not tell" must not look the same.
  *
  * The data arrives as props so the dashboard's single invoice query feeds both
  * this checklist and the summary above it, instead of the two firing separate
@@ -61,8 +95,63 @@ export function SetupChecklist({ profile, hasInvoices, hidden }: Props) {
     },
   ];
 
+  const allDone = steps.every((step) => step.done);
+  const [celebrated, setCelebrated] = useState(() => readFlag(CELEBRATED_KEY));
+  const [sawIncomplete, setSawIncomplete] = useState(() => readFlag(INCOMPLETE_SEEN_KEY));
+
+  // The same mount can go from incomplete to complete (a refetch landing, a
+  // saved invoice), so the "has seen work to do" flag flips in state as well
+  // as on disk — the completion card must catch that transition too.
+  useEffect(() => {
+    if (hidden || allDone) return;
+    setSawIncomplete(true);
+    writeFlag(INCOMPLETE_SEEN_KEY);
+  }, [hidden, allDone]);
+
+  const celebrate = !hidden && allDone && !celebrated && sawIncomplete;
+
+  useEffect(() => {
+    if (!celebrate) return;
+    confettiBurst({ x: window.innerWidth / 2, y: window.innerHeight * 0.3 }, { count: 50 });
+  }, [celebrate]);
+
   if (hidden) return null;
-  if (steps.every((step) => step.done)) return null;
+
+  if (celebrate) {
+    return (
+      <section aria-labelledby="setup-checklist-title" className={cardClass('md')}>
+        <div className="flex items-center justify-between gap-3">
+          <h2 id="setup-checklist-title" className="text-section">
+            Langkah awal
+          </h2>
+          <span className="text-xs text-muted tabular-nums">
+            {steps.length}/{steps.length} selesai
+          </span>
+        </div>
+        <div className="mt-4 flex flex-col items-center gap-3 py-4 text-center">
+          <span className="flex size-12 items-center justify-center rounded-full bg-success-soft text-success">
+            <PartyPopper size={22} aria-hidden="true" />
+          </span>
+          <p className="font-medium">Semua siap!</p>
+          <p className="max-w-sm text-sm text-muted">
+            Profil, logo, dan invoice pertama kamu sudah beres. Notain siap dipakai buat tagih
+            customer.
+          </p>
+          <Button
+            size="sm"
+            onClick={() => {
+              writeFlag(CELEBRATED_KEY);
+              setCelebrated(true);
+            }}
+          >
+            Oke, mantap
+          </Button>
+        </div>
+      </section>
+    );
+  }
+
+  if (allDone) return null;
 
   const doneCount = steps.filter((step) => step.done).length;
 

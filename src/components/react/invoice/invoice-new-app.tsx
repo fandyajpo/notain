@@ -157,6 +157,7 @@ function InvoiceNewContent() {
       templateId={duplicating ? source?.templateId : (pickedTemplateId ?? undefined)}
       initialDraft={draft}
       restoreAutosave={!duplicating}
+      firstInvoicePossible={!duplicating && (numbers?.length ?? 1) === 0}
       profile={profile ?? EMPTY_PROFILE}
       logoUrl={profile?.logoUrl ?? null}
     />

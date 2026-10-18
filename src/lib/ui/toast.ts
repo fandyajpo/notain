@@ -58,7 +58,7 @@ export function toast(message: string, options: ToastOptions = {}): void {
   const element = document.createElement('div');
   element.className = [
     'pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-control border bg-card px-4 py-3 shadow-popover',
-    'transition-all duration-200',
+    'animate-toast-in transition-all duration-200',
     TONE[variant],
     BORDER[variant],
   ].join(' ');

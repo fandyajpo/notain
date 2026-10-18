@@ -2,7 +2,15 @@ import { type AnyFieldApi, useForm } from '@tanstack/react-form';
 import { useHotkeys } from '@tanstack/react-hotkeys';
 import { useDebouncer } from '@tanstack/react-pacer';
 import { useSelector } from '@tanstack/react-store';
-import { Check, FileDown, Keyboard, LayoutTemplate, MessageCircle, Save } from 'lucide-react';
+import {
+  Check,
+  FileDown,
+  Keyboard,
+  LayoutTemplate,
+  MessageCircle,
+  PartyPopper,
+  Save,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { calculateTotals } from '../../../core/invoice/calculator';
 import {
@@ -21,6 +29,8 @@ import { todayIsoDate, addDaysIsoDate } from '../../../core/shared/dates';
 import { buildInvoiceWhatsAppMessage, buildWhatsAppUrl } from '../../../core/whatsapp';
 import type { BusinessProfile } from '../../../core/profile/model';
 import { toast } from '../../../lib/ui/toast';
+import { confettiBurst, confettiFromElement } from '../../../lib/ui/confetti';
+import { cx } from '../../../lib/ui/classes';
 import {
   builderUiStore,
   setBuilderSection,
@@ -90,6 +100,14 @@ type Props = {
    * whatever was last autosaved and quietly overwrite the duplicate's content.
    */
   restoreAutosave?: boolean;
+  /**
+   * Whether saving this new invoice would be the account's very first
+   * (no invoice numbers exist yet, and this is not a duplicate). Gates the
+   * first-invoice celebration: a duplicate or a second invoice must never
+   * trigger it, and a year rollover may read the list as empty — a "first of
+   * the year" celebration is close enough to keep the detection this cheap.
+   */
+  firstInvoicePossible?: boolean;
   profile: BusinessProfile;
   logoUrl?: string | null;
 };
@@ -125,6 +143,7 @@ export function InvoiceBuilder({
   initialDraft,
   templateId,
   restoreAutosave = true,
+  firstInvoicePossible = false,
   profile,
   logoUrl,
 }: Props) {
@@ -147,6 +166,11 @@ export function InvoiceBuilder({
   usePageTour('invoice-create');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
+  // The "Lunas!" bounce on the status row, and the first-invoice modal that
+  // holds the redirect until the moment has been seen.
+  const [paidPop, setPaidPop] = useState(false);
+  const [firstInvoiceSaved, setFirstInvoiceSaved] = useState(false);
+  const statusRowRef = useRef<HTMLDivElement>(null);
   const restoredRef = useRef(false);
   // Re-entry guard for submit. `form.handleSubmit()` can be triggered faster
   // than the reactive state updates, so a ref closes the window a state check
@@ -223,6 +247,14 @@ export function InvoiceBuilder({
           toast('Invoice tersimpan, tapi customer belum masuk ke daftar. Coba lagi nanti.', {
             variant: 'error',
           });
+        }
+        // The very first invoice earns a celebration instead of the usual
+        // instant redirect — the moment the whole onboarding builds up to
+        // would otherwise flash past as a toast.
+        if (!isEditing && firstInvoicePossible) {
+          disarmGuard.current();
+          setFirstInvoiceSaved(true);
+          return;
         }
         toast('Invoice berhasil disimpan.', { variant: 'success' });
         // Disarm the unsaved-changes guard so this intentional redirect is not
@@ -315,13 +347,41 @@ export function InvoiceBuilder({
       if (!invoiceId || status === values.status) return;
       const previous = values.status;
       form.setFieldValue('status', status);
-      updateStatus.mutateAsync({ id: invoiceId, status }).catch(() => {
-        form.setFieldValue('status', previous);
-        toast('Status gagal disimpan. Coba lagi.', { variant: 'error' });
-      });
+      updateStatus
+        .mutateAsync({ id: invoiceId, status })
+        .then(() => {
+          // Money in — celebrate only once the server has confirmed the flip,
+          // never on the optimistic write.
+          if (status !== 'paid') return;
+          confettiFromElement(statusRowRef.current, { count: 30, distance: 100 });
+          setPaidPop(true);
+        })
+        .catch(() => {
+          form.setFieldValue('status', previous);
+          toast('Status gagal disimpan. Coba lagi.', { variant: 'error' });
+        });
     },
     [form, invoiceId, updateStatus, values.status],
   );
+
+  // Clear the "Lunas" bounce once its animation has played out.
+  useEffect(() => {
+    if (!paidPop) return;
+    const timer = window.setTimeout(() => setPaidPop(false), 600);
+    return () => window.clearTimeout(timer);
+  }, [paidPop]);
+
+  useEffect(() => {
+    if (!firstInvoiceSaved) return;
+    confettiBurst(
+      { x: window.innerWidth / 2, y: window.innerHeight * 0.35 },
+      { count: 80, distance: 180 },
+    );
+  }, [firstInvoiceSaved]);
+
+  const goToDashboard = useCallback(() => {
+    window.location.assign('/dashboard');
+  }, []);
 
   const addItem = useCallback(() => {
     const current = form.state.values.items;
@@ -455,7 +515,10 @@ export function InvoiceBuilder({
         {saveError && <Notice variant="danger">{saveError}</Notice>}
 
         {isEditing && (
-          <div className="flex items-center gap-2.5">
+          <div
+            ref={statusRowRef}
+            className={cx('flex items-center gap-2.5', paidPop && 'animate-paid-pop')}
+          >
             <span className="text-sm text-muted">Status</span>
             <StatusSelect
               size="lg"
@@ -771,6 +834,25 @@ export function InvoiceBuilder({
         <p className="text-sm text-muted">
           Perubahanmu belum disimpan dan akan hilang kalau kamu pergi dari halaman ini.
         </p>
+      </Modal>
+
+      <Modal
+        open={firstInvoiceSaved}
+        onClose={goToDashboard}
+        dismissible={false}
+        size="md"
+        actions={[{ label: 'Lanjut ke dashboard', onClick: goToDashboard }]}
+      >
+        <div className="flex flex-col items-center gap-3 py-2 text-center">
+          <span className="flex size-14 items-center justify-center rounded-full bg-success-soft text-success">
+            <PartyPopper size={26} aria-hidden="true" />
+          </span>
+          <h2 className="text-section">Invoice pertama jadi! 🎉</h2>
+          <p className="text-sm text-muted">
+            {values.invoiceNumber} sudah tersimpan. Tinggal kirim ke customer lewat WhatsApp dari
+            halaman invoice — statusnya bisa ditandai Lunas begitu dibayar.
+          </p>
+        </div>
       </Modal>
     </div>
   );
