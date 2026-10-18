@@ -105,6 +105,53 @@ export async function uploadPaymentProof(
 }
 
 /**
+ * The owner's upload, used from the dashboard: same endpoint, same file
+ * preparation, but carried by a session JWT instead of a Turnstile token.
+ * The server skips the status gate and the one-shot rule for the owner, so
+ * this also *replaces* an existing proof (the old object is cleaned up
+ * server-side once the row points at the new key).
+ */
+export async function uploadOwnerPaymentProof(
+  invoiceId: string,
+  file: File,
+): Promise<{ key: string; uploadedAt: string; url: string }> {
+  const prepared = await prepareProofFile(file);
+  const body = new FormData();
+  body.append('file', prepared.file, prepared.file.name);
+
+  let response: Response;
+  try {
+    const { jwt } = await getAccount().createJWT();
+    response = await fetch(`/api/invoice/${encodeURIComponent(invoiceId)}/proof`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${jwt}` },
+      body,
+    });
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError(
+      ERROR_CODES.NETWORK,
+      'Tidak bisa terhubung ke server. Cek koneksi internet kamu.',
+    );
+  }
+
+  if (!response.ok) {
+    const message = await serverMessage(response);
+    throw appErrorFromStatus(response.status, message);
+  }
+
+  const result = (await response.json()) as { key?: unknown; uploadedAt?: unknown; url?: unknown };
+  if (
+    typeof result.key !== 'string' ||
+    typeof result.uploadedAt !== 'string' ||
+    typeof result.url !== 'string'
+  ) {
+    throw new AppError(ERROR_CODES.UNKNOWN, 'Respons server tidak valid.');
+  }
+  return { key: result.key, uploadedAt: result.uploadedAt, url: result.url };
+}
+
+/**
  * The owner removes a proof so the customer can upload a corrected one.
  * Session-scoped: the Function checks the object's owner against the JWT.
  */

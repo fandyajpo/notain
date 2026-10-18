@@ -193,6 +193,7 @@ function PublicPrintView({ invoiceId }: { invoiceId: string }) {
       <div className="mx-auto flex w-full max-w-[182mm] flex-col gap-4 px-4 pb-8 pt-4 sm:px-0">
         <PaymentProofCard
           proof={invoice.paymentProof ?? null}
+          status={invoice.status ?? null}
           onUpload={async (file, turnstileToken) => {
             await upload.mutateAsync({ file, turnstileToken });
           }}

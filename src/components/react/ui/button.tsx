@@ -51,7 +51,9 @@ function classes({
 
 /**
  * The one button. When `href` is present it renders an `<a>` so navigation
- * links share the exact same surface as clickable buttons.
+ * links share the exact same surface as clickable buttons. `target`/`rel` are
+ * listed explicitly: the base props describe a `<button>`, which has neither,
+ * but callers do open these links in a new tab.
  */
 export function Button({
   variant = 'primary',
@@ -63,7 +65,7 @@ export function Button({
   children,
   type = 'button',
   ...rest
-}: ButtonProps & { href?: string }) {
+}: ButtonProps & { href?: string; target?: string; rel?: string }) {
   const cls = classes({ variant, size, full, className });
 
   if ('href' in rest && rest.href !== undefined) {

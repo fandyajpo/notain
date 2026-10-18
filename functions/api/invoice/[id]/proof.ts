@@ -6,6 +6,7 @@ import {
 } from '../../../../src/core/invoice/payment-proof';
 import { ID_SEGMENT_PATTERN } from '../../../../src/lib/edit-route';
 import { checkTurnstile } from '../../../_lib/turnstile';
+import { verifySession } from '../../../_lib/appwrite';
 import { getRow, patchRow, tableAuth } from '../../../_lib/rows';
 import { apiError, json } from '../../../_lib/http';
 import type { Env, PagesFunction } from '../../../_lib/types';
@@ -23,23 +24,32 @@ const MAX_REQUEST_BYTES = PAYMENT_PROOF_MAX_BYTES + 64 * 1024;
 const RANDOM_HEX_LENGTH = 14;
 
 /**
- * `POST /api/invoice/<id>/proof` — the customer uploads a payment-proof
- * screenshot for one invoice.
+ * `POST /api/invoice/<id>/proof` — upload a payment-proof screenshot for one
+ * invoice. Two callers, two contracts:
  *
- * Unauthenticated by design (the customer has the link, not an account), so
- * three things stand in for a session:
+ * **The customer** (no session, holds the capability URL):
  *
  * 1. **Turnstile** — the one gate a public write can have; the token is
  *    verified server-side before a single byte is stored.
- * 2. **One-shot** — the invoice row's `paymentProofKey` is checked *and*
+ * 2. **Status gate** — once the invoice is Lunas or Batal the question is
+ *    settled either way, so the endpoint answers 409 and the card on the
+ *    public page stops offering the form altogether.
+ * 3. **One-shot** — the invoice row's `paymentProofKey` is checked *and*
  *    written with the API key, so once a proof exists the endpoint answers
  *    409 until the owner deletes it. The row is the source of truth, not the
  *    bucket: a stray object without a row reference cannot resurrect the
  *    upload form.
- * 3. **Re-encoding upstream** — the browser always sends jpeg/png/webp
- *    (HEIC is converted client-side before this ever runs), so the stored
- *    file is guaranteed openable and the extension → content type mapping
- *    below can trust the file name.
+ *
+ * **The owner** (session JWT, from the dashboard): no status gate and no
+ * one-shot — the owner may attach or replace a proof even on a Lunas/Batal
+ * invoice (a corrected screenshot for the books). The session must belong to
+ * the invoice's owner, and a replaced proof's old object is removed after the
+ * row points at the new key.
+ *
+ * **Re-encoding upstream** — the browser always sends jpeg/png/webp (HEIC is
+ * converted client-side before this ever runs), so the stored file is
+ * guaranteed openable and the extension → content type mapping below can
+ * trust the file name.
  */
 export const onRequest: PagesFunction<Env> = async ({ request, params, env }) => {
   if (request.method !== 'POST') {
@@ -61,6 +71,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
     return apiError(413, 'validation', 'Bukti pembayaran terlalu besar. Maksimal 5 MB.');
   }
 
+  // Owner mode is opt-in via the header the dashboard already sends; without
+  // it the request is the customer's and every public-write gate applies.
+  const owner = request.headers.has('authorization') ? await verifySession(request, env) : null;
+  if (request.headers.has('authorization') && !owner) {
+    return apiError(401, 'unauthenticated', 'Silakan masuk terlebih dahulu.');
+  }
+
   let file: File;
   let turnstileToken: string;
   try {
@@ -75,9 +92,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
     return apiError(400, 'validation', 'Berkas yang dikirim tidak bisa dibaca.');
   }
 
-  const gate = await checkTurnstile(request, env, turnstileToken);
-  if (gate.state !== 'ok') {
-    return turnstileError(gate.state);
+  if (!owner) {
+    const gate = await checkTurnstile(request, env, turnstileToken);
+    if (gate.state !== 'ok') {
+      return turnstileError(gate.state);
+    }
   }
 
   const extension = paymentProofExtension(file.name);
@@ -91,14 +110,34 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
 
   const row = await getRow(auth, 'invoices', id);
   if (!row) return apiError(404, 'not_found', 'Invoice tidak ditemukan.');
-  if (typeof row.paymentProofKey === 'string' && row.paymentProofKey !== '') {
-    return apiError(
-      409,
-      'conflict',
-      'Bukti pembayaran sudah pernah diunggah untuk invoice ini.',
-    );
+
+  if (owner) {
+    if (String(row.ownerId ?? '') !== owner.userId) {
+      return apiError(403, 'unauthenticated', 'Kamu tidak punya akses ke invoice ini.');
+    }
+  } else {
+    if (row.status === 'paid' || row.status === 'void') {
+      return apiError(
+        409,
+        'conflict',
+        row.status === 'paid'
+          ? 'Invoice ini sudah ditandai Lunas — unggah bukti pembayaran sudah ditutup.'
+          : 'Invoice ini sudah dibatalkan — unggah bukti pembayaran sudah ditutup.',
+      );
+    }
+    if (typeof row.paymentProofKey === 'string' && row.paymentProofKey !== '') {
+      return apiError(
+        409,
+        'conflict',
+        'Bukti pembayaran sudah pernah diunggah untuk invoice ini.',
+      );
+    }
   }
 
+  const previousKey =
+    typeof row.paymentProofKey === 'string' && row.paymentProofKey !== ''
+      ? row.paymentProofKey
+      : null;
   const key = `${PAYMENT_PROOF_KEY_PREFIX}${id}_${randomHex()}.${extension}`;
   const uploadedAt = new Date().toISOString();
   await env.LOGOS.put(key, file.stream(), {
@@ -116,6 +155,12 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
   if (!saved) {
     await env.LOGOS.delete(key).catch(() => undefined);
     return apiError(500, 'validation', 'Gagal menyimpan bukti pembayaran. Coba lagi.');
+  }
+
+  // Owner replace: only once the row points at the new proof does the
+  // superseded object go away, so a reader mid-flight never sees a gap.
+  if (owner && previousKey && previousKey !== key) {
+    await env.LOGOS.delete(previousKey).catch(() => undefined);
   }
 
   return json(200, { key, uploadedAt, url: proofUrl(key) });

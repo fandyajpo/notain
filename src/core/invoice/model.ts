@@ -155,13 +155,14 @@ export type Invoice = InvoiceDraft & {
 
 /**
  * Whether the owner still has to check a payment: a proof arrived but the
- * invoice is not (yet) marked Lunas. Clearing the proof or flipping the
- * status to `paid` both drop the flag — the badge is a to-do, not a record.
+ * invoice is not (yet) marked Lunas. Clearing the proof, flipping the status
+ * to `paid`, or cancelling the invoice (`void` — nothing is owed anymore)
+ * all drop the flag — the badge is a to-do, not a record.
  */
 export function needsPaymentCheck(
   invoice: Pick<Invoice, 'status' | 'paymentProof'>,
 ): boolean {
-  return invoice.paymentProof != null && invoice.status !== 'paid';
+  return invoice.paymentProof != null && invoice.status !== 'paid' && invoice.status !== 'void';
 }
 
 /**

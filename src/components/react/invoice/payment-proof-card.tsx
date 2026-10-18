@@ -5,10 +5,12 @@ import { Notice } from '../ui/notice';
 import { Turnstile } from '../auth/turnstile';
 import { TURNSTILE_SITE_KEY, turnstileEnabled } from '../../../lib/turnstile';
 import { PAYMENT_PROOF_ACCEPT, PAYMENT_PROOF_MAX_BYTES } from '../../../core/invoice/payment-proof';
-import type { InvoicePaymentProof } from '../../../core/invoice/model';
+import { INVOICE_STATUS_LABELS, type InvoicePaymentProof, type InvoiceStatus } from '../../../core/invoice/model';
 
 type Props = {
   proof: InvoicePaymentProof | null;
+  /** Lifecycle state — Lunas and Batal both close the upload window. */
+  status: InvoiceStatus | null;
   onUpload: (file: File, turnstileToken: string | null) => Promise<void>;
 };
 
@@ -20,8 +22,12 @@ type Props = {
  * screenshot is the owner's delete from the dashboard or builder. The file is
  * re-encoded in the browser before the request (see `lib/payment-proof.ts`),
  * so HEIC and huge screenshots arrive server-side as small WebP.
+ *
+ * The form also disappears once the invoice is Lunas or Batal: the money
+ * question is settled either way, so there is nothing left to upload (and the
+ * server's status gate would answer 409 regardless).
  */
-export function PaymentProofCard({ proof, onUpload }: Props) {
+export function PaymentProofCard({ proof, status, onUpload }: Props) {
   const [token, setToken] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -37,6 +43,23 @@ export function PaymentProofCard({ proof, onUpload }: Props) {
         <p className="mt-1">
           Bukti pembayaran untuk invoice ini sudah kami terima. Terima kasih! Halaman ini bisa
           ditutup.
+        </p>
+      </Notice>
+    );
+  }
+
+  if (status === 'paid' || status === 'void') {
+    return (
+      <Notice variant="accent">
+        <p className="font-medium">
+          {status === 'paid'
+            ? 'Invoice ini sudah ditandai Lunas'
+            : 'Invoice ini sudah dibatalkan'}
+        </p>
+        <p className="mt-1">
+          {status === 'paid'
+            ? 'Pembayaran sudah tercatat, jadi unggah bukti pembayaran tidak diperlukan lagi.'
+            : `Status invoice ini ${INVOICE_STATUS_LABELS[status]}, jadi unggah bukti pembayaran sudah ditutup.`}
         </p>
       </Notice>
     );

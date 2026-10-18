@@ -4,12 +4,14 @@ import { useDebouncer } from '@tanstack/react-pacer';
 import { useSelector } from '@tanstack/react-store';
 import {
   Check,
+  ExternalLink,
   FileDown,
   Keyboard,
   LayoutTemplate,
   MessageCircle,
   PartyPopper,
   Save,
+  Trash2,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { calculateTotals } from '../../../core/invoice/calculator';
@@ -46,6 +48,7 @@ import {
   useUpdateInvoiceStatus,
 } from '../../../lib/query/hooks/use-invoices';
 import { useRememberCustomer } from '../../../lib/query/hooks/use-customers';
+import { useDeletePaymentProof } from '../../../lib/query/hooks/use-public-invoice';
 import { usePageTour } from '../../../lib/tour/use-tour';
 import { useUnsavedChangesGuard } from '../../../lib/use-unsaved-changes-guard';
 import { toAppError } from '../../../appwrite/errors';
@@ -180,6 +183,10 @@ export function InvoiceBuilder({
   // holds the redirect until the moment has been seen.
   const [paidPop, setPaidPop] = useState(false);
   const [firstInvoiceSaved, setFirstInvoiceSaved] = useState(false);
+  // Owner-initiated proof removal: the confirm modal for the notice above the
+  // status row. One-shot means a corrected screenshot starts with this delete.
+  const [showProofDelete, setShowProofDelete] = useState(false);
+  const deleteProof = useDeletePaymentProof();
   const statusRowRef = useRef<HTMLDivElement>(null);
   const restoredRef = useRef(false);
   // Re-entry guard for submit. `form.handleSubmit()` can be triggered faster
@@ -551,7 +558,7 @@ export function InvoiceBuilder({
                 ) : (
                   <p>Bukti pembayaran sudah diterima untuk invoice ini.</p>
                 )}
-                <p className="mt-1">
+                <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
                   <a
                     href={`/api/proof/${encodeURIComponent(paymentProof.key)}`}
                     target="_blank"
@@ -560,6 +567,14 @@ export function InvoiceBuilder({
                   >
                     Lihat bukti pembayaran
                   </a>
+                  <button
+                    type="button"
+                    onClick={() => setShowProofDelete(true)}
+                    className="inline-flex items-center gap-1 font-medium text-danger underline underline-offset-2"
+                  >
+                    <Trash2 size={13} aria-hidden />
+                    Hapus bukti
+                  </button>
                 </p>
               </Notice>
             )}
@@ -784,8 +799,9 @@ export function InvoiceBuilder({
               Template
             </Button>
             {/* Sharing tools are for a saved invoice: an unsaved draft cannot
-                be printed or sent to anyone yet. */}
-            {isEditing && (
+                be printed or sent to anyone yet. The narrow `invoiceId` check
+                (equivalent to `isEditing`) also gives the payment link its id. */}
+            {invoiceId && (
               <>
                 <Button
                   size="sm"
@@ -795,6 +811,20 @@ export function InvoiceBuilder({
                 >
                   <FileDown size={14} className="shrink-0" aria-hidden="true" />
                   Cetak / Simpan PDF
+                </Button>
+                {/* The capability URL the customer opens: the invoice plus the
+                    one-shot payment-proof upload. New tab, so these editing
+                    tools stay right where they are. */}
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  href={`/invoice/print/${invoiceId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="min-w-0 whitespace-normal text-left leading-tight"
+                >
+                  <ExternalLink size={14} className="shrink-0" aria-hidden="true" />
+                  Halaman bayar
                 </Button>
                 <Button
                   size="sm"
@@ -824,6 +854,40 @@ export function InvoiceBuilder({
             selectedId={values.templateId}
             onPick={switchTemplate}
           />
+        </Modal>
+        <Modal
+          open={showProofDelete}
+          onClose={() => setShowProofDelete(false)}
+          role="alertdialog"
+          size="sm"
+          ariaLabelledBy="proof-delete-dialog-title"
+          title={<span id="proof-delete-dialog-title">Hapus bukti pembayaran ini?</span>}
+          actions={[
+            { label: 'Batal', variant: 'secondary', onClick: () => setShowProofDelete(false) },
+            {
+              label: 'Hapus',
+              variant: 'danger',
+              loading: deleteProof.isPending,
+              onClick: async () => {
+                if (!paymentProof) return;
+                try {
+                  await deleteProof.mutateAsync(paymentProof.key);
+                  toast('Bukti pembayaran dihapus. Customer bisa unggah ulang.', {
+                    variant: 'success',
+                  });
+                } catch {
+                  toast('Bukti pembayaran gagal dihapus. Coba lagi.', { variant: 'error' });
+                } finally {
+                  setShowProofDelete(false);
+                }
+              },
+            },
+          ]}
+        >
+          <p className="text-sm text-muted">
+            Bukti pembayaran yang diunggah customer akan dihapus dari invoice ini. Setelah dihapus,
+            customer bisa mengunggah bukti yang baru lewat halaman bayar.
+          </p>
         </Modal>
         <InvoicePreview
           business={profile}

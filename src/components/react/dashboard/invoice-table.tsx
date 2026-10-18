@@ -16,11 +16,12 @@ import {
   EllipsisVertical,
   ExternalLink,
   Image as ImageIcon,
+  ImageUp,
   Plus,
   ShieldAlert,
   Trash2,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { calculateTotals } from '../../../core/invoice/calculator';
 import {
   INVOICE_STATUSES,
@@ -30,11 +31,18 @@ import {
   type Invoice,
   type InvoiceStatus,
 } from '../../../core/invoice/model';
+import {
+  PAYMENT_PROOF_ACCEPT,
+  PAYMENT_PROOF_MAX_BYTES,
+} from '../../../core/invoice/payment-proof';
 import { BUILTIN_TEMPLATES } from '../../../core/template/builtins';
 import { formatRupiah } from '../../../core/shared/money';
-import { formatTanggalRelatif } from '../../../core/shared/dates';
+import { formatTanggal, formatTanggalRelatif } from '../../../core/shared/dates';
 import { useDeleteInvoice, useInvoices } from '../../../lib/query/hooks/use-invoices';
-import { useDeletePaymentProof } from '../../../lib/query/hooks/use-public-invoice';
+import {
+  useDeletePaymentProof,
+  useUploadOwnerPaymentProof,
+} from '../../../lib/query/hooks/use-public-invoice';
 import { useTemplates } from '../../../lib/query/hooks/use-templates';
 import { toast } from '../../../lib/ui/toast';
 import { Badge } from '../ui/badge';
@@ -134,6 +142,9 @@ export function InvoiceTable() {
   const [proofView, setProofView] = useState<Invoice | null>(null);
   /** Whose uploaded proof the owner is about to delete (one-shot reset). */
   const [proofDelete, setProofDelete] = useState<Invoice | null>(null);
+  /** Which row's hidden file input is armed for an owner-side proof upload. */
+  const proofUpload = useRef<Invoice | null>(null);
+  const proofFileRef = useRef<HTMLInputElement>(null);
 
   // Mirror the visible state into the query string. Unknown params (an auth
   // token, a tour flag) are preserved — this only owns its own five keys.
@@ -173,6 +184,7 @@ export function InvoiceTable() {
   const { data: savedTemplates } = useTemplates();
   const deleteInvoice = useDeleteInvoice();
   const deleteProof = useDeletePaymentProof();
+  const uploadProof = useUploadOwnerPaymentProof();
 
   /** Built-ins first, then the user's saved copies — same order as the picker. */
   const templateOptions = useMemo(() => {
@@ -220,6 +232,40 @@ export function InvoiceTable() {
     }
   }
 
+  /**
+   * Owner-side upload: same browser re-encoding as the customer's form (HEIC
+   * → WebP, 5 MB ceiling), but sent with the session JWT so the server skips
+   * the status gate and one-shot rule — this may replace an existing proof.
+   *
+   * The invoice to upload for lives in a ref (armed by the row's menu item),
+   * not in state: the column defs are memoised once, so per-render state
+   * would freeze inside them while the ref stays truthful at click time.
+   */
+  async function handleProofFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    // Allow re-picking the same file after a failure.
+    event.target.value = '';
+    const invoice = proofUpload.current;
+    proofUpload.current = null;
+    if (!file || !invoice) return;
+
+    if (file.size > PAYMENT_PROOF_MAX_BYTES) {
+      toast('File terlalu besar. Maksimal 5 MB — foto akan dikompres otomatis, tapi file asli harus di bawah 5 MB.', {
+        variant: 'error',
+      });
+      return;
+    }
+
+    try {
+      await uploadProof.mutateAsync({ invoiceId: invoice.id, file });
+      toast('Bukti pembayaran tersimpan.', { variant: 'success' });
+    } catch (error) {
+      toast(error instanceof Error ? error.message : 'Bukti pembayaran gagal diunggah. Coba lagi.', {
+        variant: 'error',
+      });
+    }
+  }
+
   const invoices = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
   // `statusFilter !== undefined` rather than truthiness: the unset filter is
   // `null`, which is falsy but still an active filter.
@@ -251,7 +297,18 @@ export function InvoiceTable() {
         columnHelper.accessor('customerName', {
           id: 'customerName',
           header: 'Customer',
-          cell: (info) => info.getValue() || '-',
+          // Long names stretch an auto-layout column and shove everything
+          // else off-screen; clamp per-cell instead, with the full value on
+          // hover.
+          cell: (info) => {
+            const name = info.getValue();
+            if (!name) return <span className="text-muted">-</span>;
+            return (
+              <span className="block max-w-[220px] truncate" title={name}>
+                {name}
+              </span>
+            );
+          },
         }),
         columnHelper.accessor(
           (invoice) =>
@@ -264,8 +321,12 @@ export function InvoiceTable() {
             id: 'total',
             header: 'Total',
             size: 140,
+            // Money reads as a right-aligned numeric column — and it has to
+            // match the header, which was already right-aligned.
             cell: (info) => (
-              <span className="tabular-nums font-medium">{formatRupiah(info.getValue())}</span>
+              <span className="block text-right tabular-nums font-medium">
+                {formatRupiah(info.getValue())}
+              </span>
             ),
           },
         ),
@@ -274,17 +335,22 @@ export function InvoiceTable() {
           header: 'Tanggal',
           size: 140,
           cell: (info) => (
-            <span className="text-muted">{formatTanggalRelatif(info.getValue())}</span>
+            <span className="text-muted" title={formatTanggal(info.getValue())}>
+              {formatTanggalRelatif(info.getValue())}
+            </span>
           ),
         }),
         columnHelper.accessor('status', {
           id: 'status',
           header: 'Status',
-          size: 120,
+          size: 150,
           cell: (info) => {
             const invoice = info.row.original;
             return (
-              <div className="flex flex-col items-start gap-1">
+              // One line where both fit, wrapping gracefully where they do
+              // not — a stacked second badge made every flagged row taller
+              // than its neighbours.
+              <div className="flex flex-wrap items-center gap-1.5">
                 <StatusBadge status={invoice.status} />
                 {needsPaymentCheck(invoice) && (
                   <Badge variant="warning" size="sm">
@@ -324,6 +390,17 @@ export function InvoiceTable() {
                     // The capability URL the customer uses: shows the invoice
                     // and the one-shot proof upload form.
                     href: `/invoice/print/${invoice.id}`,
+                  },
+                  {
+                    // The owner's own upload: allowed on any status (the
+                    // customer's form closes on Lunas/Batal) and replaces an
+                    // existing proof instead of requiring a delete first.
+                    label: proof ? 'Ganti bukti pembayaran' : 'Unggah bukti pembayaran',
+                    icon: <ImageUp size={15} aria-hidden="true" />,
+                    onClick: () => {
+                      proofUpload.current = invoice;
+                      proofFileRef.current?.click();
+                    },
                   },
                   ...(proof
                     ? [
@@ -501,7 +578,10 @@ export function InvoiceTable() {
                         scope="col"
                         className={thClass(
                           [
-                            header.id === 'total' || header.id === 'date' ? 'text-right' : '',
+                            // Only money right-aligns: its cell does too. The
+                            // date column reads left with its cell (relative
+                            // text like "Kemarin" hangs off the left edge).
+                            header.id === 'total' ? 'text-right' : '',
                             header.id === 'actions' ? 'w-14 text-right' : '',
                           ]
                             .filter(Boolean)
@@ -554,6 +634,18 @@ export function InvoiceTable() {
           </Button>
         </div>
       )}
+
+      {/* One shared picker for every row: the menu arms it with the target
+          invoice (a ref, so the memoised column defs stay fresh) and opens
+          it. Hidden but focusable-by-code — the file dialog needs no label. */}
+      <input
+        ref={proofFileRef}
+        type="file"
+        accept={PAYMENT_PROOF_ACCEPT}
+        className="sr-only"
+        aria-label="Pilih file bukti pembayaran"
+        onChange={(event) => void handleProofFile(event)}
+      />
 
       <Modal
         open={pendingDelete !== null}

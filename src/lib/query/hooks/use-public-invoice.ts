@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   deletePaymentProof,
   getPublicInvoice,
+  uploadOwnerPaymentProof,
   uploadPaymentProof,
 } from '../../../app/public-invoice';
 
@@ -47,8 +48,9 @@ export function useUploadPaymentProof(invoiceId: string) {
 
 /**
  * The owner's delete. Invalidates every invoice surface — the dashboard list
- * (badge + proof actions), the builder, and the customer's public page — so
- * all three agree the proof is gone and the upload form may re-open.
+ * (badge + proof actions), the builder's detail cache (so its notice drops
+ * the moment the delete lands), and the customer's public page — so all three
+ * agree the proof is gone and the upload form may re-open.
  */
 export function useDeletePaymentProof() {
   const queryClient = useQueryClient();
@@ -56,6 +58,25 @@ export function useDeletePaymentProof() {
     mutationFn: (key: string) => deletePaymentProof(key),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      void queryClient.invalidateQueries({ queryKey: ['invoice'] });
+      void queryClient.invalidateQueries({ queryKey: ['public-invoice'] });
+    },
+  });
+}
+
+/**
+ * The owner's upload/replace from the dashboard. Same invalidation set as
+ * the delete above: list badge, builder notice and the customer's page must
+ * all re-read the row after the write.
+ */
+export function useUploadOwnerPaymentProof() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ invoiceId, file }: { invoiceId: string; file: File }) =>
+      uploadOwnerPaymentProof(invoiceId, file),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      void queryClient.invalidateQueries({ queryKey: ['invoice'] });
       void queryClient.invalidateQueries({ queryKey: ['public-invoice'] });
     },
   });
