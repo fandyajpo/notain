@@ -5,6 +5,7 @@ import { WhatsAppSection } from './whatsapp-section';
 import { BenefitsBand } from './benefits-band';
 import { ExcelSection } from './excel-section';
 import { FaqSection } from './faq-section';
+import { SupportSection } from './support-section';
 import { FinaleCta } from './finale-cta';
 import { IslandBoundary } from '../ui/island-boundary';
 
@@ -29,6 +30,8 @@ export function LandingRest() {
         <ExcelSection />
 
         <FaqSection />
+
+        <SupportSection />
 
         <FinaleCta />
       </MotionConfig>

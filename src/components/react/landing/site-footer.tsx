@@ -66,6 +66,11 @@ export function SiteFooter({ anchorPrefix = '' }: Props) {
                     FAQ
                   </a>
                 </li>
+                <li>
+                  <a href="/developers" className="text-muted transition-colors hover:text-foreground">
+                    Developers
+                  </a>
+                </li>
               </ul>
             </div>
             <div>
@@ -92,6 +97,11 @@ export function SiteFooter({ anchorPrefix = '' }: Props) {
                 <li>
                   <a href="/blog" className="text-muted transition-colors hover:text-foreground">
                     Blog
+                  </a>
+                </li>
+                <li>
+                  <a href="/contact" className="text-muted transition-colors hover:text-foreground">
+                    Kontak &amp; Support
                   </a>
                 </li>
                 <li>

@@ -1,0 +1,31 @@
+---
+import ContentPage from '../layouts/ContentPage.astro';
+---
+
+<ContentPage
+  title="Halaman tidak ditemukan | Notain"
+  description="Halaman yang kamu cari tidak ada atau sudah dipindahkan."
+>
+  <div class="flex flex-col items-center py-10 text-center">
+    <p class="text-eyebrow uppercase text-muted">Error 404</p>
+    <h1 class="text-title mt-3">Halaman tidak ditemukan</h1>
+    <p class="mt-4 max-w-md text-base text-muted">
+      Halaman yang kamu tuju tidak ada, sudah dipindahkan, atau tautannya salah ketik. Coba mulai
+      dari beranda atau buka kembali daftar invoice kamu.
+    </p>
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+      <a
+        href="/"
+        class="inline-flex h-11 items-center rounded-control bg-accent px-5 text-sm font-medium text-accent-foreground shadow-accent transition-colors hover:bg-accent/90 focus-ring"
+      >
+        Ke beranda
+      </a>
+      <a
+        href="/dashboard"
+        class="inline-flex h-11 items-center rounded-control border border-border bg-card px-5 text-sm font-medium text-foreground transition-colors hover:bg-background focus-ring"
+      >
+        Buka dashboard
+      </a>
+    </div>
+  </div>
+</ContentPage>

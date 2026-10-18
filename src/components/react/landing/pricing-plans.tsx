@@ -206,6 +206,17 @@ export function PricingPlans() {
           Pembayaran untuk plan Pro dan Business sedang disiapkan. Daftar sekarang; fitur Free tetap
           bisa dipakai penuh, dan kamu jadi yang pertama mencoba.
         </motion.p>
+
+        <p className="mx-auto mt-4 max-w-xl text-center text-sm leading-relaxed text-muted">
+          Butuh akses API untuk integrasi? Intip rencana fiturnya di{' '}
+          <a
+            href="/developers"
+            className="font-medium text-foreground underline underline-offset-2 hover:text-muted"
+          >
+            halaman developers
+          </a>
+          .
+        </p>
       </section>
     </MotionConfig>
   );
