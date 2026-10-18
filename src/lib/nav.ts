@@ -1,4 +1,12 @@
-import { FileText, LayoutGrid, Palette, Settings, Users, type LucideIcon } from 'lucide-react';
+import {
+  FileText,
+  KeyRound,
+  LayoutGrid,
+  Palette,
+  Settings,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 
 export type NavItem = {
   href: string;
@@ -17,5 +25,6 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/invoices', label: 'Invoice', Icon: FileText },
   { href: '/customers', label: 'Customer', Icon: Users },
   { href: '/templates', label: 'Template', Icon: Palette },
+  { href: '/api-keys', label: 'API Keys', Icon: KeyRound },
   { href: '/settings', label: 'Pengaturan', Icon: Settings },
 ];

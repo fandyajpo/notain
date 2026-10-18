@@ -1,0 +1,11 @@
+---
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+import { ApiKeysApp } from '../components/react/api-keys/api-keys-app';
+---
+
+<DashboardLayout
+  title="API Keys | Notain"
+  description="Kunci akses API untuk integrasi kamu di Notain."
+>
+  <ApiKeysApp client:only="react" />
+</DashboardLayout>
