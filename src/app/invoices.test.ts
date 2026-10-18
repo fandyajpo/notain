@@ -4,22 +4,23 @@ import type { Invoice, InvoiceDraft } from '../core/invoice/model';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 
 const { getSession } = vi.hoisted(() => ({ getSession: vi.fn() }));
-const { getById, update, updateStatus, listByOwner, create } = vi.hoisted(() => ({
+const { getById, update, updateStatus, listByOwner, create, remove } = vi.hoisted(() => ({
   getById: vi.fn(),
   update: vi.fn(),
   updateStatus: vi.fn(),
   listByOwner: vi.fn(),
   create: vi.fn(),
+  remove: vi.fn(),
 }));
 
 vi.mock('../infra/container', () => ({
   container: {
     auth: { getSession },
-    invoices: { getById, update, updateStatus, listByOwner, create },
+    invoices: { getById, update, updateStatus, listByOwner, create, remove },
   },
 }));
 
-const { updateInvoice, updateInvoiceStatus } = await import('./invoices');
+const { deleteInvoices, updateInvoice, updateInvoiceStatus } = await import('./invoices');
 const { forgetSession } = await import('./session');
 
 const ALICE: SessionUser = { id: 'user-a', email: 'a@example.com', name: 'Alice' };
@@ -73,6 +74,7 @@ beforeEach(() => {
   updateStatus.mockReset();
   listByOwner.mockReset();
   create.mockReset();
+  remove.mockReset();
 });
 
 describe('updateInvoiceStatus lifecycle guard', () => {
@@ -174,5 +176,30 @@ describe('updateInvoice never writes the lifecycle status', () => {
       code: ERROR_CODES.NOT_FOUND,
     });
     expect(update).not.toHaveBeenCalled();
+  });
+});
+
+describe('deleteInvoices bulk removal', () => {
+  it('removes every selected id through the repository', async () => {
+    remove.mockResolvedValue(undefined);
+
+    await deleteInvoices(['inv-1', 'inv-2', 'inv-3']);
+
+    expect(remove.mock.calls.map(([id]) => id).sort()).toEqual(['inv-1', 'inv-2', 'inv-3']);
+  });
+
+  it('requires a session before touching the repository', async () => {
+    getSession.mockResolvedValue(null);
+
+    await expect(deleteInvoices(['inv-1'])).rejects.toBeInstanceOf(AppError);
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it('propagates a mid-batch failure instead of swallowing it', async () => {
+    remove.mockImplementation(async (id: string) => {
+      if (id === 'inv-2') throw new Error('boom');
+    });
+
+    await expect(deleteInvoices(['inv-1', 'inv-2', 'inv-3'])).rejects.toThrow('boom');
   });
 });

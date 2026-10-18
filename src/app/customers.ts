@@ -2,6 +2,7 @@ import { ID } from 'appwrite';
 import type { Customer, CustomerDraft } from '../core/customer/model';
 import { isSameCustomer, mergeCustomer } from '../core/customer/model';
 import { customerDraftSchema } from '../core/customer/schema';
+import { mapWithConcurrency } from '../core/shared/concurrency';
 import { AppError, ERROR_CODES, flattenIssues } from '../core/shared/errors';
 import { container } from '../infra/container';
 import { requireSession } from './session';
@@ -18,37 +19,14 @@ function parseCustomer(draft: CustomerDraft): CustomerDraft {
 }
 
 /**
- * How many customer writes are kept in flight during an import.
+ * How many customer writes (imports, bulk deletes) are kept in flight at once.
  *
  * The batch runs writes concurrently so a large file does not take one
  * round-trip per row, but a browser firing hundreds of parallel requests at
  * Appwrite will get throttled. Five is a deliberate middle ground: enough to
  * hide per-row latency, low enough to stay under the rate limiter.
  */
-const IMPORT_CONCURRENCY = 5;
-
-/**
- * Runs `task` over `items` with at most `limit` in flight at once.
- *
- * A tiny inline pool rather than a dependency: the whole app is one small
- * static bundle, and this is all an import needs.
- */
-async function mapWithConcurrency<T>(
-  items: readonly T[],
-  limit: number,
-  task: (item: T) => Promise<void>,
-): Promise<void> {
-  let cursor = 0;
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    for (;;) {
-      const index = cursor;
-      cursor += 1;
-      if (index >= items.length) return;
-      await task(items[index] as T);
-    }
-  });
-  await Promise.all(workers);
-}
+const WRITE_CONCURRENCY = 5;
 
 /**
  * How many customers the signed-in user has, without transferring them.
@@ -124,6 +102,21 @@ export async function updateCustomer(id: string, draft: CustomerDraft): Promise<
 export async function deleteCustomer(id: string): Promise<void> {
   await requireSession();
   await container.customers.remove(id);
+}
+
+/**
+ * Removes several customers in one call (the table's bulk action).
+ *
+ * The deletes run a few at a time rather than all at once so a big selection
+ * does not trip the Appwrite rate limiter. A failure mid-batch leaves the
+ * already-deleted rows gone — the caller invalidates and refetches, so the
+ * list settles on what actually survived.
+ */
+export async function deleteCustomers(ids: string[]): Promise<void> {
+  await requireSession();
+  await mapWithConcurrency(ids, WRITE_CONCURRENCY, async (id) => {
+    await container.customers.remove(id);
+  });
 }
 
 /**
@@ -264,7 +257,7 @@ export async function importCustomers(drafts: CustomerDraft[]): Promise<{ import
   const lastUsedAt = new Date().toISOString();
   let imported = 0;
 
-  await mapWithConcurrency(deduped, IMPORT_CONCURRENCY, async (customer) => {
+  await mapWithConcurrency(deduped, WRITE_CONCURRENCY, async (customer) => {
     const hit = existing.find((row) => isSameCustomer(row, customer));
     if (hit) {
       const merged = mergeCustomer(hit, customer);

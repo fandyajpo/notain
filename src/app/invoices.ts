@@ -8,6 +8,7 @@ import type {
 import { INVOICE_STATUSES } from '../core/invoice/model';
 import { invoiceDraftSchema } from '../core/invoice/schema';
 import { canChangeStatus, statusFlowMessage } from '../core/invoice/status';
+import { mapWithConcurrency } from '../core/shared/concurrency';
 import { AppError, ERROR_CODES, flattenIssues } from '../core/shared/errors';
 import { container } from '../infra/container';
 import { requireSession } from './session';
@@ -139,4 +140,22 @@ export async function updateInvoiceStatus(id: string, status: InvoiceStatus): Pr
 export async function deleteInvoice(id: string): Promise<void> {
   await requireSession();
   await container.invoices.remove(id);
+}
+
+/** How many invoice deletes are kept in flight during a bulk removal. */
+const DELETE_CONCURRENCY = 5;
+
+/**
+ * Removes several invoices in one call (the table's bulk action).
+ *
+ * Same pacing as the customer import: a handful of writes in flight, so a
+ * large selection does not trip the Appwrite rate limiter. A failure
+ * mid-batch leaves the already-deleted rows gone — the caller invalidates and
+ * refetches, so the table settles on what actually survived.
+ */
+export async function deleteInvoices(ids: string[]): Promise<void> {
+  await requireSession();
+  await mapWithConcurrency(ids, DELETE_CONCURRENCY, async (id) => {
+    await container.invoices.remove(id);
+  });
 }

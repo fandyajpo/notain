@@ -17,6 +17,7 @@ import {
   useCreateCustomer,
   useCustomersPage,
   useDeleteCustomer,
+  useDeleteCustomers,
   useMergeCustomers,
   useUpdateCustomer,
 } from '../../../lib/query/hooks/use-customers';
@@ -71,6 +72,7 @@ function CustomersContent() {
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
   const deleteCustomer = useDeleteCustomer();
+  const deleteCustomers = useDeleteCustomers();
   const mergeCustomers = useMergeCustomers();
 
   const [name, setName] = useState('');
@@ -88,9 +90,14 @@ function CustomersContent() {
 
   // Merge mode state.
   const [mergeMode, setMergeMode] = useState(false);
+  // Bulk-select mode: same checkboxes as merge, but for delete/export instead
+  // of collapsing rows. Kept apart so each mode owns its own action bar and
+  // neither ever shows the other's buttons.
+  const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [mergeOpen, setMergeOpen] = useState(false);
   const [mergeChoices, setMergeChoices] = useState<CustomerDraft>(EMPTY_DRAFT);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   // List filter.
   const [query, setQuery] = useState('');
@@ -203,6 +210,31 @@ function CustomersContent() {
     setMergeOpen(false);
   }
 
+  function exitSelectMode() {
+    setSelectMode(false);
+    setSelected(new Set());
+    setBulkDeleteOpen(false);
+  }
+
+  /** The bulk action behind the selection bar's "Hapus" button. */
+  function confirmBulkDelete() {
+    const ids = [...selected];
+    if (ids.length === 0) {
+      setBulkDeleteOpen(false);
+      return;
+    }
+    deleteCustomers.mutate(ids, {
+      onSuccess: () => {
+        exitSelectMode();
+        toast(`${ids.length} customer berhasil dihapus.`, { variant: 'success' });
+      },
+      onError: (error) => {
+        setBulkDeleteOpen(false);
+        toast(toAppError(error).message, { variant: 'error' });
+      },
+    });
+  }
+
   function openMergeDialog() {
     // Seed each field with the first non-empty value across the selection, so
     // a radio is always checked whenever any value exists. Seeding from
@@ -273,18 +305,40 @@ function CustomersContent() {
                 </Button>
               </>
             ) : (
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={customers.length < 2}
-                onClick={() => {
-                  setMergeMode(true);
-                  setSelected(new Set());
-                }}
-              >
-                <Merge size={15} aria-hidden="true" />
-                Gabungkan
-              </Button>
+              <>
+                {selectMode ? (
+                  <Button variant="secondary" size="sm" onClick={exitSelectMode}>
+                    <X size={15} aria-hidden="true" />
+                    Selesai
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={customers.length === 0}
+                    onClick={() => {
+                      setSelectMode(true);
+                      setSelected(new Set());
+                    }}
+                  >
+                    <Check size={15} aria-hidden="true" />
+                    Pilih
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={customers.length < 2}
+                  onClick={() => {
+                    setMergeMode(true);
+                    setSelectMode(false);
+                    setSelected(new Set());
+                  }}
+                >
+                  <Merge size={15} aria-hidden="true" />
+                  Gabungkan
+                </Button>
+              </>
             )}
             <ExportButtons
               filename="customer-notain"
@@ -637,6 +691,34 @@ function CustomersContent() {
       >
         <p className="text-sm text-muted">
           {deleteTarget?.name} akan dihapus permanen dari daftar customer kamu.
+        </p>
+      </Modal>
+
+      {/* Bulk delete confirmation */}
+      <Modal
+        open={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        role="alertdialog"
+        size="sm"
+        ariaLabelledBy="bulk-delete-customer-title"
+        title={
+          <span id="bulk-delete-customer-title">
+            Hapus {selectedCustomers.length} customer terpilih?
+          </span>
+        }
+        actions={[
+          { label: 'Batal', variant: 'secondary', onClick: () => setBulkDeleteOpen(false) },
+          {
+            label: 'Hapus',
+            variant: 'danger',
+            loading: deleteCustomers.isPending,
+            onClick: confirmBulkDelete,
+          },
+        ]}
+      >
+        <p className="text-sm text-muted">
+          Customer yang dipilih akan dihapus permanen dari daftar kamu dan tidak bisa
+          dikembalikan.
         </p>
       </Modal>
 

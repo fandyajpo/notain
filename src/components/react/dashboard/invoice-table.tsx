@@ -3,9 +3,11 @@ import {
   createColumnHelper,
   createSortedRowModel,
   flexRender,
+  rowSelectionFeature,
   rowSortingFeature,
   tableFeatures,
   useTable,
+  type RowSelectionState,
   type SortingState,
 } from '@tanstack/react-table';
 import { useDebouncedCallback } from '@tanstack/react-pacer';
@@ -36,9 +38,14 @@ import {
   PAYMENT_PROOF_MAX_BYTES,
 } from '../../../core/invoice/payment-proof';
 import { BUILTIN_TEMPLATES } from '../../../core/template/builtins';
+import { toInvoiceRows } from '../../../core/excel/invoices';
 import { formatRupiah } from '../../../core/shared/money';
 import { formatTanggal, formatTanggalRelatif } from '../../../core/shared/dates';
-import { useDeleteInvoice, useInvoices } from '../../../lib/query/hooks/use-invoices';
+import {
+  useDeleteInvoice,
+  useDeleteInvoices,
+  useInvoices,
+} from '../../../lib/query/hooks/use-invoices';
 import {
   useDeletePaymentProof,
   useUploadOwnerPaymentProof,
@@ -47,6 +54,7 @@ import { useTemplates } from '../../../lib/query/hooks/use-templates';
 import { toast } from '../../../lib/ui/toast';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { ExportButtons } from '../excel/export-buttons';
 import { Menu } from '../ui/menu';
 import { Modal } from '../ui/modal';
 import { Notice } from '../ui/notice';
@@ -59,6 +67,7 @@ import { useFieldIds } from '../ui/field';
 
 const features = tableFeatures({
   columnSizingFeature,
+  rowSelectionFeature,
   rowSortingFeature,
   sortedRowModel: createSortedRowModel(),
 });
@@ -138,6 +147,17 @@ export function InvoiceTable() {
   const [templateFilter, setTemplateFilter] = useState<string | undefined>(initial.template);
   const [sorting, setSorting] = useState<SortingState>(initial.sorting);
   const [pendingDelete, setPendingDelete] = useState<Invoice | null>(null);
+  /**
+   * Row checkboxes, keyed by invoice id (TanStack's `RowSelectionState`).
+   *
+   * Selection persists across "Muat lebih banyak" because the ids outlive the
+   * pages, but it is wiped whenever the *filters* change: the checked ids may
+   * refer to rows the new filter hides, and a bulk delete must never touch
+   * something the user cannot currently see.
+   */
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  /** The bulk-delete confirmation modal's open flag. */
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   /** Whose uploaded proof to show full-size in the viewer modal. */
   const [proofView, setProofView] = useState<Invoice | null>(null);
   /** Whose uploaded proof the owner is about to delete (one-shot reset). */
@@ -145,6 +165,11 @@ export function InvoiceTable() {
   /** Which row's hidden file input is armed for an owner-side proof upload. */
   const proofUpload = useRef<Invoice | null>(null);
   const proofFileRef = useRef<HTMLInputElement>(null);
+
+  // A filter change invalidates the selection — see the state's comment above.
+  useEffect(() => {
+    setRowSelection({});
+  }, [search, statusFilter, templateFilter]);
 
   // Mirror the visible state into the query string. Unknown params (an auth
   // token, a tour flag) are preserved — this only owns its own five keys.
@@ -183,6 +208,7 @@ export function InvoiceTable() {
   } = useInvoices(search, { status: statusFilter, templateId: templateFilter });
   const { data: savedTemplates } = useTemplates();
   const deleteInvoice = useDeleteInvoice();
+  const deleteInvoices = useDeleteInvoices();
   const deleteProof = useDeletePaymentProof();
   const uploadProof = useUploadOwnerPaymentProof();
 
@@ -213,6 +239,24 @@ export function InvoiceTable() {
       toast('Invoice gagal dihapus. Coba lagi.', { variant: 'error' });
     } finally {
       setPendingDelete(null);
+    }
+  }
+
+  /** The bulk action behind the selection bar's "Hapus" button. */
+  async function confirmBulkDelete() {
+    const ids = Object.keys(rowSelection);
+    if (ids.length === 0) {
+      setBulkDeleteOpen(false);
+      return;
+    }
+    try {
+      await deleteInvoices.mutateAsync(ids);
+      toast(`${ids.length} invoice berhasil dihapus.`, { variant: 'success' });
+    } catch {
+      toast('Sebagian invoice gagal dihapus. Coba lagi.', { variant: 'error' });
+    } finally {
+      setRowSelection({});
+      setBulkDeleteOpen(false);
     }
   }
 
@@ -267,6 +311,17 @@ export function InvoiceTable() {
   }
 
   const invoices = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
+  /**
+   * The currently-checked rows, in table order.
+   *
+   * Intersected with the loaded rows rather than read straight off
+   * `rowSelection`: a refetch can drop a row the user had checked, and the
+   * count, the export and the bulk delete must all agree on the same set.
+   */
+  const selectedInvoices = useMemo(
+    () => invoices.filter((invoice) => rowSelection[invoice.id]),
+    [invoices, rowSelection],
+  );
   // `statusFilter !== undefined` rather than truthiness: the unset filter is
   // `null`, which is falsy but still an active filter.
   const anyFilter = Boolean(search) || statusFilter !== undefined || Boolean(templateFilter);
@@ -278,6 +333,44 @@ export function InvoiceTable() {
   const columns = useMemo(
     () =>
       columnHelper.columns([
+        // Row checkboxes, first column so the eye lands on them and the
+        // select-all header sits above the column. The `select` id is also
+        // why sorting is skipped for it — display columns have no accessor.
+        columnHelper.display({
+          id: 'select',
+          size: 44,
+          header: ({ table }) => (
+            <input
+              type="checkbox"
+              checked={table.getIsAllPageRowsSelected()}
+              ref={(element) => {
+                // Block body (not a concise arrow): React 19 treats a
+                // returned non-function as a ref-cleanup error, and this
+                // assignment is a side effect, not a return value.
+                if (element) {
+                  element.indeterminate = table.getIsSomePageRowsSelected();
+                }
+              }}
+              onChange={table.getToggleAllPageRowsSelectedHandler()}
+              aria-label="Pilih semua invoice yang dimuat"
+              className="h-4 w-4 accent-accent"
+            />
+          ),
+          cell: ({ row }) => (
+            // The invoice-number cell's stretched link `::after` overlays the
+            // whole `tr`; a positioned wrapper with a higher z-index keeps the
+            // checkbox clickable above it.
+            <span className="relative z-10 inline-flex">
+              <input
+                type="checkbox"
+                checked={row.getIsSelected()}
+                onChange={row.getToggleSelectedHandler()}
+                aria-label={`Pilih invoice ${row.original.invoiceNumber}`}
+                className="h-4 w-4 accent-accent"
+              />
+            </span>
+          ),
+        }),
         columnHelper.accessor('invoiceNumber', {
           id: 'invoiceNumber',
           header: 'Nomor',
@@ -438,8 +531,12 @@ export function InvoiceTable() {
     features,
     data: invoices,
     columns,
-    state: { sorting },
+    state: { sorting, rowSelection },
     onSortingChange: setSorting,
+    onRowSelectionChange: setRowSelection,
+    // Stable ids so a checked row stays checked when a later page loads and
+    // the row index shifts underneath it.
+    getRowId: (invoice) => invoice.id,
     defaultColumn: { size: 140 },
   });
 
@@ -533,6 +630,41 @@ export function InvoiceTable() {
         <Notice variant="accent">
           Gagal memperbarui daftar invoice. Menampilkan data terakhir yang dimuat.
         </Notice>
+      )}
+
+      {/* Appears the moment a checkbox is ticked: the count, an export of
+          exactly that set, the bulk delete, and a way out. */}
+      {selectedInvoices.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-card px-4 py-3 shadow-card">
+          <p className="text-sm text-muted">
+            <span className="font-medium text-foreground">{selectedInvoices.length}</span> invoice
+            dipilih
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <ExportButtons
+              filename="invoice-terpilih"
+              sheetName="Invoice"
+              getRows={() => toInvoiceRows(selectedInvoices)}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setRowSelection({})}
+              disabled={deleteInvoices.isPending}
+            >
+              Batalkan pilihan
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setBulkDeleteOpen(true)}
+              disabled={deleteInvoices.isPending}
+            >
+              <Trash2 size={15} aria-hidden="true" />
+              Hapus {selectedInvoices.length}
+            </Button>
+          </div>
+        </div>
       )}
 
       {isError && invoices.length === 0 ? (
@@ -666,6 +798,32 @@ export function InvoiceTable() {
       >
         <p className="text-sm text-muted">
           {pendingDelete?.invoiceNumber} untuk {pendingDelete?.customerName} akan dihapus permanen.
+        </p>
+      </Modal>
+
+      <Modal
+        open={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        role="alertdialog"
+        size="sm"
+        ariaLabelledBy="bulk-delete-dialog-title"
+        title={
+          <span id="bulk-delete-dialog-title">
+            Hapus {selectedInvoices.length} invoice terpilih?
+          </span>
+        }
+        actions={[
+          { label: 'Batal', variant: 'secondary', onClick: () => setBulkDeleteOpen(false) },
+          {
+            label: 'Hapus',
+            variant: 'danger',
+            loading: deleteInvoices.isPending,
+            onClick: confirmBulkDelete,
+          },
+        ]}
+      >
+        <p className="text-sm text-muted">
+          Invoice yang dipilih akan dihapus permanen dan tidak bisa dikembalikan.
         </p>
       </Modal>
 

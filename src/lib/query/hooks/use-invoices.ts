@@ -8,6 +8,7 @@ import {
 import {
   createInvoice,
   deleteInvoice,
+  deleteInvoices,
   getInvoice,
   listAllInvoiceNumbers,
   listInvoicesPage,
@@ -192,6 +193,44 @@ export function useDeleteInvoice() {
       return { previousLists };
     },
     onError: (_error, _id, context) => {
+      context?.previousLists.forEach(([key, data]) => {
+        if (data) queryClient.setQueryData(key, data);
+      });
+    },
+    onSettled: () => {
+      invalidateCollections(queryClient);
+    },
+  });
+}
+
+/** The table's bulk action: same optimistic drop, for a whole selection at once. */
+export function useDeleteInvoices() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => deleteInvoices(ids),
+    onMutate: async (ids) => {
+      const dropping = new Set(ids);
+      await queryClient.cancelQueries({ queryKey: ['invoices'] });
+      const previousLists = queryClient.getQueriesData<InvoiceListData>({
+        queryKey: ['invoices'],
+      });
+
+      queryClient.setQueriesData<InvoiceListData>({ queryKey: ['invoices'] }, (current) =>
+        current
+          ? {
+              ...current,
+              pages: current.pages.map((page) => ({
+                ...page,
+                items: page.items.filter((invoice) => !dropping.has(invoice.id)),
+              })),
+            }
+          : current,
+      );
+      for (const id of ids) queryClient.removeQueries({ queryKey: queryKeys.invoice(id) });
+
+      return { previousLists };
+    },
+    onError: (_error, _ids, context) => {
       context?.previousLists.forEach(([key, data]) => {
         if (data) queryClient.setQueryData(key, data);
       });

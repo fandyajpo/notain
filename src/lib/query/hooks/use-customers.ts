@@ -3,6 +3,7 @@ import {
   countCustomers,
   createCustomer,
   deleteCustomer,
+  deleteCustomers,
   importCustomers,
   listCustomers,
   listCustomersPage,
@@ -136,6 +137,33 @@ export function useDeleteCustomer() {
       return { previous };
     },
     onError: (_error, _id, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKeys.customers, context.previous);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
+    },
+  });
+}
+
+/** The list's bulk action: same optimistic drop, for a whole selection at once. */
+export function useDeleteCustomers() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => deleteCustomers(ids),
+    onMutate: async (ids) => {
+      const dropping = new Set(ids);
+      await queryClient.cancelQueries({ queryKey: queryKeys.customers });
+      const previous = queryClient.getQueryData<Customer[]>(queryKeys.customers);
+
+      queryClient.setQueryData<Customer[]>(queryKeys.customers, (current) =>
+        current ? current.filter((customer) => !dropping.has(customer.id)) : current,
+      );
+
+      return { previous };
+    },
+    onError: (_error, _ids, context) => {
       if (context?.previous) queryClient.setQueryData(queryKeys.customers, context.previous);
     },
     onSettled: () => {
