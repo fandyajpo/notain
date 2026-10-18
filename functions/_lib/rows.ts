@@ -55,6 +55,10 @@ export async function getRow(
  * Patches only the keys present in `data`; Appwrite's update endpoint ignores
  * absent keys, which is what lets the payment-proof write touch two columns
  * without carrying (or clobbering) the rest of the row.
+ *
+ * The payload must ride under a top-level `data` key: Appwrite's update
+ * endpoint answers `document_missing_payload` for a flat body, regardless of
+ * content type.
  */
 export async function patchRow(
   auth: { endpoint: string; headers: Record<string, string> },
@@ -67,7 +71,7 @@ export async function patchRow(
     {
       method: 'PATCH',
       headers: { ...auth.headers, 'content-type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ data }),
     },
   );
   return response.ok;
