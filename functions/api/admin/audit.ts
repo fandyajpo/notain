@@ -1,6 +1,6 @@
 import { auditRowToApi } from '../../_lib/audit';
 import { requireAdmin } from '../../_lib/admin';
-import { querySearch } from '../../_lib/appwrite';
+import { querySearchAll } from '../../_lib/appwrite';
 import { apiError, json } from '../../_lib/http';
 import type { Env, PagesFunction } from '../../_lib/types';
 
@@ -34,11 +34,16 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       : LIST_DEFAULT_LIMIT;
   const cursor = url.searchParams.get('cursorAfter');
 
-  const queries = [querySearch('orderDesc', ['createdAt']), querySearch('limit', [limit])];
-  if (cursor) queries.push(querySearch('cursorAfter', [cursor]));
+  // Numbered keys — sharing `queries[0]` kept only the limit and dropped
+  // the newest-first ordering.
+  const queries: Array<{ method: string; values: unknown[] }> = [
+    { method: 'orderDesc', values: ['createdAt'] },
+    { method: 'limit', values: [limit] },
+  ];
+  if (cursor) queries.push({ method: 'cursorAfter', values: [cursor] });
 
   const response = await fetch(
-    `${endpoint}/databases/${DATABASE_ID}/collections/${AUDIT_TABLE_ID}/documents?${queries.join('&')}`,
+    `${endpoint}/databases/${DATABASE_ID}/collections/${AUDIT_TABLE_ID}/documents?${querySearchAll(queries)}`,
     { headers },
   );
   if (response.status === 404) {

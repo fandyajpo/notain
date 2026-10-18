@@ -1,6 +1,6 @@
 import { writeAudit } from '../../_lib/audit';
 import { requireAdmin } from '../../_lib/admin';
-import { querySearch } from '../../_lib/appwrite';
+import { querySearchAll } from '../../_lib/appwrite';
 import { apiError, json } from '../../_lib/http';
 import type { Env, PagesFunction } from '../../_lib/types';
 
@@ -170,11 +170,15 @@ async function listUsers(
   const cursor = url.searchParams.get('cursorAfter');
 
   // Over-fetch by one so `nextCursor` is exact: a full page means "there may
-  // be more", an over-limit fetch means "there is".
-  const queries = [querySearch('limit', [limit + 1])];
-  if (cursor) queries.push(querySearch('cursorAfter', [cursor]));
+  // be more", an over-limit fetch means "there is". Numbered keys: sharing
+  // `queries[0]` would drop the limit the moment a cursor is added, freezing
+  // pagination at Appwrite's default page size.
+  const queries: Array<{ method: string; values: unknown[] }> = [
+    { method: 'limit', values: [limit + 1] },
+  ];
+  if (cursor) queries.push({ method: 'cursorAfter', values: [cursor] });
 
-  const usersResponse = await fetch(`${endpoint}/users?${queries.join('&')}`, { headers });
+  const usersResponse = await fetch(`${endpoint}/users?${querySearchAll(queries)}`, { headers });
   if (!usersResponse.ok) {
     return apiError(500, 'validation', 'Gagal mengambil daftar user.');
   }
@@ -183,12 +187,19 @@ async function listUsers(
   const hasMore = usersData.users.length > limit;
   const page = hasMore ? usersData.users.slice(0, limit) : usersData.users;
 
-  // Join profiles for just this page (document id = userId).
+  // Join profiles for just this page (document id = userId). `equal` wants
+  // the ids as its own value array — passing `[ids]` nests them and Appwrite
+  // answers 400, which silently emptied this map and showed every user as
+  // `free` no matter what the PATCH had written. The explicit limit covers a
+  // full 50-row page (Appwrite would otherwise stop at its default 25).
   const profileMap = new Map<string, ProfileRow>();
   if (page.length > 0) {
     const ids = page.map((user) => user.$id);
     const profilesResponse = await fetch(
-      `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents?${querySearch('equal', [ids], '$id')}`,
+      `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents?${querySearchAll([
+        { method: 'equal', attribute: '$id', values: ids },
+        { method: 'limit', values: [ids.length] },
+      ])}`,
       { headers },
     );
     if (profilesResponse.ok) {

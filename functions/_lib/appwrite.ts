@@ -40,9 +40,13 @@ export async function verifySession(request: Request, env: Env): Promise<Session
 /**
  * Appwrite ≥2.4 expects each query as a JSON object (`{ method, attribute,
  * values }`) at a numeric-index key — the legacy `limit(100)` string form
- * errors with "Invalid query: Syntax error". Returns a ready-to-append
- * `queries[0]=...` search string; chain several with `&` after renumbering
- * the index (see the admin users list).
+ * errors with "Invalid query: Syntax error".
+ *
+ * Single query only: returns a ready-to-append `queries[0]=…` string. When
+ * more than one query goes on the same URL use {@link querySearchAll} —
+ * Appwrite keeps only the *last* value per index, so repeating `queries[0]`
+ * silently drops every earlier query (that bug hid the owner filter from the
+ * admin drill-down and counted every user's rows as one).
  */
 export function querySearch(
   method: string,
@@ -51,4 +55,25 @@ export function querySearch(
 ): string {
   const json = JSON.stringify({ method, attribute, values });
   return `queries[0]=${encodeURIComponent(json)}`;
+}
+
+type QuerySpec = { method: string; values: unknown[]; attribute?: string | null };
+
+/**
+ * Several queries on one URL, numbered `queries[0]…queries[n]` so Appwrite
+ * honours all of them. `values` must be the query's *own* value array
+ * (e.g. `['select']` flattened with the attribute names), never a nested
+ * array — Appwrite rejects `[["a","b"]]` with a 400.
+ */
+export function querySearchAll(queries: ReadonlyArray<QuerySpec>): string {
+  return queries
+    .map((query, index) => {
+      const json = JSON.stringify({
+        method: query.method,
+        attribute: query.attribute ?? null,
+        values: query.values,
+      });
+      return `queries[${index}]=${encodeURIComponent(json)}`;
+    })
+    .join('&');
 }

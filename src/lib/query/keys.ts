@@ -45,6 +45,8 @@ export const queryKeys = {
   adminAudit: ['admin-audit'] as const,
   /** Read-only drill-down into one admin user's data. */
   adminUserDrilldown: (userId: string): readonly unknown[] => ['admin-user-drilldown', userId],
+  /** Prefix for invalidating *every* user's drill-down cache after a mutation. */
+  adminUserDrilldownAll: ['admin-user-drilldown'] as const,
   /** Whether the current user belongs to the `admins` team (gates the nav link). */
   adminMembership: ['admin-membership'] as const,
 };

@@ -1,6 +1,6 @@
 import { writeAudit } from '../../../_lib/audit';
 import { requireAdmin } from '../../../_lib/admin';
-import { querySearch } from '../../../_lib/appwrite';
+import { querySearchAll } from '../../../_lib/appwrite';
 import { apiError, json } from '../../../_lib/http';
 import type { Env, PagesFunction } from '../../../_lib/types';
 
@@ -192,8 +192,14 @@ async function countRows(
 ): Promise<number> {
   // `total` is reported independent of `limit`, so a limit-1 read counts
   // without shipping rows.
+  // Two queries on one URL: numbered so both survive (Appwrite keeps only
+  // the last value per index — sharing `queries[0]` counted every user's
+  // rows as this one's).
   const response = await fetch(
-    `${endpoint}/databases/${DATABASE_ID}/collections/${tableId}/documents?${querySearch('equal', [ownerId], 'ownerId')}&${querySearch('limit', [1])}`,
+    `${endpoint}/databases/${DATABASE_ID}/collections/${tableId}/documents?${querySearchAll([
+      { method: 'equal', attribute: 'ownerId', values: [ownerId] },
+      { method: 'limit', values: [1] },
+    ])}`,
     { headers },
   );
   if (!response.ok) return 0;
@@ -201,8 +207,11 @@ async function countRows(
   return data.total ?? 0;
 }
 
+// Projected columns. `total` is deliberately absent: invoices have no total
+// attribute (totals are computed from `items`), and selecting an unknown
+// attribute makes Appwrite answer 400 for the whole request.
 const DRILL_SELECT: Record<'invoices' | 'customers' | 'templates', string[]> = {
-  invoices: ['invoiceNumber', 'customerName', 'status', 'total', 'date'],
+  invoices: ['invoiceNumber', 'customerName', 'status', 'date'],
   customers: ['name', 'phone', 'email', 'lastUsedAt'],
   templates: ['name'],
 };
@@ -221,15 +230,18 @@ async function listResource(
       : DRILLDOWN_LIMIT_DEFAULT;
   const cursor = url.searchParams.get('cursorAfter');
 
-  const queries = [
-    querySearch('equal', [userId], 'ownerId'),
-    querySearch('limit', [limit]),
-    querySearch('select', [DRILL_SELECT[resource], '$id']),
+  const queries: Array<{ method: string; values: unknown[]; attribute?: string | null }> = [
+    { method: 'equal', attribute: 'ownerId', values: [userId] },
+    { method: 'limit', values: [limit] },
+    // Flat: `select` takes the attribute names as its value array. Wrapping
+    // them (plus `$id`) in a nested array earns a 400 — this is what broke
+    // all three drill-down tabs.
+    { method: 'select', values: [...DRILL_SELECT[resource], '$id'] },
   ];
-  if (cursor) queries.push(querySearch('cursorAfter', [cursor]));
+  if (cursor) queries.push({ method: 'cursorAfter', values: [cursor] });
 
   const response = await fetch(
-    `${endpoint}/databases/${DATABASE_ID}/collections/${resource}/documents?${queries.join('&')}`,
+    `${endpoint}/databases/${DATABASE_ID}/collections/${resource}/documents?${querySearchAll(queries)}`,
     { headers },
   );
   if (!response.ok) {

@@ -38,6 +38,9 @@ export function useUpdateAdminUser() {
     mutationFn: (update: AdminUserUpdate) => updateAdminUser(update),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.adminUsers });
+      // The Detail modal has its own per-user cache — without this it keeps
+      // showing the plan/status from before the edit for up to a minute.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.adminUserDrilldownAll });
       void queryClient.invalidateQueries({ queryKey: queryKeys.adminAudit });
     },
   });
@@ -51,6 +54,7 @@ export function useSetAdminUserStatus() {
       setAdminUserStatus(input.userId, input.action),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.adminUsers });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.adminUserDrilldownAll });
       void queryClient.invalidateQueries({ queryKey: queryKeys.adminAudit });
     },
   });
