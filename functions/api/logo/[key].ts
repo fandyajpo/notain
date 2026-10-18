@@ -1,5 +1,5 @@
 import { verifySession } from '../../_lib/appwrite';
-import { apiError, LOGO_RESPONSE_HEADERS } from '../../_lib/http';
+import { apiError, IMAGE_RESPONSE_HEADERS } from '../../_lib/http';
 import type { Env, PagesFunction } from '../../_lib/types';
 
 /**
@@ -31,7 +31,7 @@ async function read(key: string, env: Env): Promise<Response> {
 
   return new Response(object.body, {
     headers: {
-      ...LOGO_RESPONSE_HEADERS,
+      ...IMAGE_RESPONSE_HEADERS,
       // Every upload mints a fresh key, so this URL never changes for a given
       // logo and may be cached as long as the browser likes.
       'cache-control': 'public, max-age=31536000, immutable',

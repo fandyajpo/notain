@@ -93,15 +93,30 @@ export function invoiceIdFromLocation(location: PageLocation): string | undefine
 }
 
 /**
+ * The invoice the public print/share link names: `/invoice/print/<id>`.
+ *
+ * The bare `/invoice/print` is the signed-in print view (a draft handed over
+ * through `sessionStorage`) and has no id — only the two-segment path carries
+ * a capability link the owner sends to a customer.
+ */
+export function printInvoiceIdFromLocation(location: PageLocation): string | undefined {
+  return segmentAfter(location, '/invoice/print', INVOICE_RESERVED_SEGMENTS);
+}
+
+/**
  * Whether `pathname` carries the invoice builder — `/invoice/new`,
  * `/invoice/<id>`, or the legacy `/invoice/edit` — as opposed to the list
- * (`/invoices`) or the print view (`/invoice/print`, which renders the
- * document, not the form). Drives which shortcut groups the `?` overlay
- * lists: the builder's hotkeys only exist where the builder is mounted.
+ * (`/invoices`) or the print views (`/invoice/print` and
+ * `/invoice/print/<id>`, which render the document, not the form). Drives
+ * which shortcut groups the `?` overlay lists: the builder's hotkeys only
+ * exist where the builder is mounted.
  */
 export function isInvoiceBuilderPath(pathname: string): boolean {
   if (!pathname.startsWith('/invoice/')) return false;
   const rest = pathname.slice('/invoice/'.length).replace(/\/+$/, '');
+  // `print/<id>` also starts with "print", so the prefix check runs first —
+  // without it the public print link would mount the builder's hotkeys.
+  if (rest.startsWith('print/')) return false;
   return rest.length > 0 && rest !== 'print';
 }
 

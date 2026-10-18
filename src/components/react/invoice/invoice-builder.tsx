@@ -19,8 +19,10 @@ import {
   createItemId,
   EMPTY_SECTIONS,
   INVOICE_LIMITS,
+  needsPaymentCheck,
   type AdjustmentType,
   type InvoiceDraft,
+  type InvoicePaymentProof,
   type InvoiceStatus,
 } from '../../../core/invoice/model';
 import { invoiceDraftSchema } from '../../../core/invoice/schema';
@@ -110,6 +112,13 @@ type Props = {
   firstInvoicePossible?: boolean;
   profile: BusinessProfile;
   logoUrl?: string | null;
+  /**
+   * The customer's uploaded payment proof, when editing a saved invoice.
+   * Rendered as a notice above the status row so the owner sees a proof has
+   * arrived without opening the dashboard — the upload itself happens on the
+   * public print page, never here.
+   */
+  paymentProof?: InvoicePaymentProof | null;
 };
 
 type FormValues = InvoiceDraft;
@@ -146,6 +155,7 @@ export function InvoiceBuilder({
   firstInvoicePossible = false,
   profile,
   logoUrl,
+  paymentProof = null,
 }: Props) {
   const isEditing = Boolean(invoiceId);
   const createInvoice = useCreateInvoice();
@@ -517,16 +527,42 @@ export function InvoiceBuilder({
         {isEditing && (
           <div
             ref={statusRowRef}
-            className={cx('flex items-center gap-2.5', paidPop && 'animate-paid-pop')}
+            className={cx('flex flex-col gap-2.5', paidPop && 'animate-paid-pop')}
           >
-            <span className="text-sm text-muted">Status</span>
-            <StatusSelect
-              size="lg"
-              value={values.status}
-              label={values.invoiceNumber}
-              disabled={updateStatus.isPending}
-              onChange={changeStatus}
-            />
+            <div className="flex items-center gap-2.5">
+              <span className="text-sm text-muted">Status</span>
+              <StatusSelect
+                size="lg"
+                value={values.status}
+                label={values.invoiceNumber}
+                disabled={updateStatus.isPending}
+                onChange={changeStatus}
+              />
+            </div>
+            {paymentProof && (
+              <Notice
+                variant={needsPaymentCheck({ status: values.status, paymentProof }) ? 'warning' : 'success'}
+              >
+                {needsPaymentCheck({ status: values.status, paymentProof }) ? (
+                  <p>
+                    Customer mengunggah bukti pembayaran. Periksa buktinya, lalu ubah status ke{' '}
+                    <span className="font-medium">Lunas</span> kalau sudah cocok.
+                  </p>
+                ) : (
+                  <p>Bukti pembayaran sudah diterima untuk invoice ini.</p>
+                )}
+                <p className="mt-1">
+                  <a
+                    href={`/api/proof/${encodeURIComponent(paymentProof.key)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium underline underline-offset-2"
+                  >
+                    Lihat bukti pembayaran
+                  </a>
+                </p>
+              </Notice>
+            )}
           </div>
         )}
 

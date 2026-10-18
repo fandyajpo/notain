@@ -28,8 +28,10 @@ export function openPrintView(invoice: InvoiceDraft): boolean {
   }
 
   // No `noopener`: the handle is how a blocked popup is detected, and this
-  // only ever opens our own origin.
-  const opened = window.open(`${PRINT_PATH}?auto=1`, '_blank');
+  // only ever opens our own origin. No `?auto=1` either: printing opens the
+  // dialog on the print page itself, where the user can still pick a
+  // destination or cancel.
+  const opened = window.open(PRINT_PATH, '_blank');
   if (opened) {
     opened.focus();
     return true;

@@ -21,11 +21,17 @@ import type { Env, PagesFunction } from '../_lib/types';
  * every invoice is reachable at exactly one URL; without an id it still gets
  * the shell, and the app explains that the link is incomplete.
  *
- * `/invoice/new` and `/invoice/print` are files of their own and go back to
- * the asset store untouched. The id itself is read on the client from
- * `location.pathname`, by `invoiceIdFromLocation`, which shares the pattern
- * and the reserved segments imported above: the two halves have to agree on
- * what counts as an id, so they import the same rules.
+ * `/invoice/print/<id>` is the customer-facing twin: the same static-site
+ * trick, but serving the print shell. The page fetches its payload from
+ * `GET /api/invoice/<id>` — a public capability-URL read, so no session
+ * stands between a customer and the invoice their link names.
+ *
+ * `/invoice/new` and the bare `/invoice/print` are files of their own and go
+ * back to the asset store untouched. The id itself is read on the client from
+ * `location.pathname`, by `invoiceIdFromLocation` and
+ * `printInvoiceIdFromLocation`, which share the pattern and the reserved
+ * segments imported above: the two halves have to agree on what counts as an
+ * id, so they import the same rules.
  */
 export const onRequest: PagesFunction<Env> = ({ request, params, env }) => {
   if (request.method !== 'GET' && request.method !== 'HEAD') {
@@ -37,10 +43,21 @@ export const onRequest: PagesFunction<Env> = ({ request, params, env }) => {
   // Wrangler compiles `[[id]]` to a `:id*` repeat parameter, so this arrives
   // as `['6acc…']`, not `'6acc…'` — `ID_SEGMENT_PATTERN.test` and `Set.has`
   // never noticed (both coerce or miss arrays), but a strict comparison does.
-  // A single segment is the id; anything deeper is not an edit link and stays
-  // with the asset store.
   const raw = params.id;
-  const segment = Array.isArray(raw) ? (raw.length === 1 ? raw[0] : undefined) : raw;
+  const segments = Array.isArray(raw) ? raw : raw ? [raw] : [];
+
+  // `/invoice/print/<id>` — two segments, served by the print shell.
+  if (segments.length === 2 && segments[0] === 'print') {
+    if (ID_SEGMENT_PATTERN.test(segments[1] ?? '')) {
+      return serveShell(request, env, '/invoice/print/');
+    }
+    return env.ASSETS.fetch(request);
+  }
+
+  // Anything deeper than two segments is not one of these routes.
+  if (segments.length > 1) return env.ASSETS.fetch(request);
+
+  const segment = segments[0];
 
   if (segment === 'edit') {
     const target = invoiceEditCanonicalTarget(new URL(request.url).search);

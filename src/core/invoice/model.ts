@@ -125,12 +125,44 @@ export type InvoiceDraft = {
   details: Record<string, string>;
 };
 
+/**
+ * A payment proof the customer uploaded through the public print page.
+ *
+ * Stored as two columns on the invoice row (`paymentProofKey`,
+ * `paymentProofUploadedAt`) rather than its own table: one proof per invoice,
+ * uploaded at most once until the owner deletes it — a key and a timestamp is
+ * all that state needs. The image itself lives in R2 under `key`; the print
+ * page and the owner's views load it through `GET /api/proof/:key`.
+ */
+export type InvoicePaymentProof = {
+  /** R2 object key (`proofs_<invoiceId>_<hex>.<ext>`). */
+  key: string;
+  /** ISO timestamp of the upload. */
+  uploadedAt: string;
+};
+
 export type Invoice = InvoiceDraft & {
   id: string;
   ownerId: string;
   createdAt: string;
   updatedAt: string;
+  /**
+   * The customer's uploaded payment proof, or `null` when none has arrived.
+   * Set only by the public upload endpoint — a draft save never writes it.
+   */
+  paymentProof?: InvoicePaymentProof | null;
 };
+
+/**
+ * Whether the owner still has to check a payment: a proof arrived but the
+ * invoice is not (yet) marked Lunas. Clearing the proof or flipping the
+ * status to `paid` both drop the flag — the badge is a to-do, not a record.
+ */
+export function needsPaymentCheck(
+  invoice: Pick<Invoice, 'status' | 'paymentProof'>,
+): boolean {
+  return invoice.paymentProof != null && invoice.status !== 'paid';
+}
 
 /**
  * The slice of an invoice the picker derives its customer/product suggestions

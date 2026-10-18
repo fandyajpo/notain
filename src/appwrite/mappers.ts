@@ -43,6 +43,10 @@ export type InvoiceRow = Models.Row &
     headerHtml: string | null;
     contentHtml: string | null;
     footerHtml: string | null;
+    /** R2 key of the customer's uploaded payment proof; null when none. */
+    paymentProofKey?: string | null;
+    /** ISO timestamp of the payment-proof upload; null when none. */
+    paymentProofUploadedAt?: string | null;
   };
 
 /** Row shape returned by the `profiles` table. */
@@ -186,6 +190,14 @@ export function invoiceRowToDomain(row: InvoiceRow): Invoice {
     tax: toAdjustment(row.taxType, row.taxValue),
     sections: toSections(row),
     notes: optionalString(row.notes),
+    // A half-written pair (key without timestamp, or vice versa) still reads
+    // as a proof: the key is what loads the image, the timestamp is display.
+    paymentProof: optionalString(row.paymentProofKey)
+      ? {
+          key: optionalString(row.paymentProofKey) ?? '',
+          uploadedAt: optionalString(row.paymentProofUploadedAt) ?? row.$updatedAt,
+        }
+      : null,
     createdAt: row.$createdAt,
     updatedAt: row.$updatedAt,
   };

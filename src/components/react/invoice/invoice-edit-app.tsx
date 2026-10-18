@@ -76,6 +76,7 @@ function InvoiceEditContent({ invoiceId }: { invoiceId: string | undefined }) {
     <InvoiceBuilder
       invoiceId={invoice.id}
       initialDraft={invoice}
+      paymentProof={invoice.paymentProof ?? null}
       profile={profile ?? EMPTY_PROFILE}
       logoUrl={profile?.logoUrl ?? null}
     />

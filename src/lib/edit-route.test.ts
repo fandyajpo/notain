@@ -3,6 +3,7 @@ import {
   invoiceEditCanonicalTarget,
   invoiceIdFromLocation,
   isInvoiceBuilderPath,
+  printInvoiceIdFromLocation,
   templateEditCanonicalTarget,
   templateEditorTargetFromLocation,
 } from './edit-route';
@@ -117,6 +118,31 @@ describe('templateEditCanonicalTarget', () => {
   });
 });
 
+describe('printInvoiceIdFromLocation', () => {
+  it('reads the id out of the public print link', () => {
+    expect(printInvoiceIdFromLocation(at('/invoice/print/6acc91d70002fd3e80b4'))).toBe(
+      '6acc91d70002fd3e80b4',
+    );
+    expect(printInvoiceIdFromLocation(at('/invoice/print/6acc91d70002fd3e80b4/'))).toBe(
+      '6acc91d70002fd3e80b4',
+    );
+  });
+
+  it('has no id on the signed-in print view or unrelated paths', () => {
+    expect(printInvoiceIdFromLocation(at('/invoice/print'))).toBeUndefined();
+    expect(printInvoiceIdFromLocation(at('/invoice/print/'))).toBeUndefined();
+    expect(printInvoiceIdFromLocation(at('/invoice/print/a/b'))).toBeUndefined();
+    expect(printInvoiceIdFromLocation(at('/invoice/6acc91d70002fd3e80b4'))).toBeUndefined();
+    expect(printInvoiceIdFromLocation(at('/dashboard'))).toBeUndefined();
+  });
+
+  it('never treats a route of its own as an id', () => {
+    expect(printInvoiceIdFromLocation(at('/invoice/print/new'))).toBeUndefined();
+    expect(printInvoiceIdFromLocation(at('/invoice/print/print'))).toBeUndefined();
+    expect(printInvoiceIdFromLocation(at('/invoice/print/edit'))).toBeUndefined();
+  });
+});
+
 describe('isInvoiceBuilderPath', () => {
   it('recognises every route that mounts the builder', () => {
     expect(isInvoiceBuilderPath('/invoice/new')).toBe(true);
@@ -132,6 +158,10 @@ describe('isInvoiceBuilderPath', () => {
     expect(isInvoiceBuilderPath('/invoices?status=unset')).toBe(false);
     // The print view renders the document, not the form.
     expect(isInvoiceBuilderPath('/invoice/print')).toBe(false);
+    // The public print link also starts with "print" — the prefix check is
+    // what keeps the builder's hotkeys off the customer's page.
+    expect(isInvoiceBuilderPath('/invoice/print/6acc91d70002fd3e80b4')).toBe(false);
+    expect(isInvoiceBuilderPath('/invoice/print/6acc91d70002fd3e80b4/')).toBe(false);
     expect(isInvoiceBuilderPath('/invoice')).toBe(false);
     expect(isInvoiceBuilderPath('/invoice/')).toBe(false);
     expect(isInvoiceBuilderPath('/dashboard')).toBe(false);

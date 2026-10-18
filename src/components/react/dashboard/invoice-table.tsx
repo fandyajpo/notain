@@ -9,13 +9,24 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import { useDebouncedCallback } from '@tanstack/react-pacer';
-import { ArrowUpDown, ChevronRight, Copy, EllipsisVertical, Plus, Trash2 } from 'lucide-react';
+import {
+  ArrowUpDown,
+  ChevronRight,
+  Copy,
+  EllipsisVertical,
+  ExternalLink,
+  Image as ImageIcon,
+  Plus,
+  ShieldAlert,
+  Trash2,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { calculateTotals } from '../../../core/invoice/calculator';
 import {
   INVOICE_STATUSES,
   INVOICE_STATUS_LABELS,
   UNSET_STATUS_LABEL,
+  needsPaymentCheck,
   type Invoice,
   type InvoiceStatus,
 } from '../../../core/invoice/model';
@@ -23,8 +34,10 @@ import { BUILTIN_TEMPLATES } from '../../../core/template/builtins';
 import { formatRupiah } from '../../../core/shared/money';
 import { formatTanggalRelatif } from '../../../core/shared/dates';
 import { useDeleteInvoice, useInvoices } from '../../../lib/query/hooks/use-invoices';
+import { useDeletePaymentProof } from '../../../lib/query/hooks/use-public-invoice';
 import { useTemplates } from '../../../lib/query/hooks/use-templates';
 import { toast } from '../../../lib/ui/toast';
+import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Menu } from '../ui/menu';
 import { Modal } from '../ui/modal';
@@ -117,6 +130,10 @@ export function InvoiceTable() {
   const [templateFilter, setTemplateFilter] = useState<string | undefined>(initial.template);
   const [sorting, setSorting] = useState<SortingState>(initial.sorting);
   const [pendingDelete, setPendingDelete] = useState<Invoice | null>(null);
+  /** Whose uploaded proof to show full-size in the viewer modal. */
+  const [proofView, setProofView] = useState<Invoice | null>(null);
+  /** Whose uploaded proof the owner is about to delete (one-shot reset). */
+  const [proofDelete, setProofDelete] = useState<Invoice | null>(null);
 
   // Mirror the visible state into the query string. Unknown params (an auth
   // token, a tour flag) are preserved — this only owns its own five keys.
@@ -155,6 +172,7 @@ export function InvoiceTable() {
   } = useInvoices(search, { status: statusFilter, templateId: templateFilter });
   const { data: savedTemplates } = useTemplates();
   const deleteInvoice = useDeleteInvoice();
+  const deleteProof = useDeletePaymentProof();
 
   /** Built-ins first, then the user's saved copies — same order as the picker. */
   const templateOptions = useMemo(() => {
@@ -183,6 +201,22 @@ export function InvoiceTable() {
       toast('Invoice gagal dihapus. Coba lagi.', { variant: 'error' });
     } finally {
       setPendingDelete(null);
+    }
+  }
+
+  async function confirmProofDelete() {
+    const key = proofDelete?.paymentProof?.key;
+    if (!key) {
+      setProofDelete(null);
+      return;
+    }
+    try {
+      await deleteProof.mutateAsync(key);
+      toast('Bukti pembayaran dihapus. Customer bisa unggah ulang.', { variant: 'success' });
+    } catch {
+      toast('Bukti pembayaran gagal dihapus. Coba lagi.', { variant: 'error' });
+    } finally {
+      setProofDelete(null);
     }
   }
 
@@ -247,38 +281,77 @@ export function InvoiceTable() {
           id: 'status',
           header: 'Status',
           size: 120,
-          cell: (info) => <StatusBadge status={info.row.original.status} />,
+          cell: (info) => {
+            const invoice = info.row.original;
+            return (
+              <div className="flex flex-col items-start gap-1">
+                <StatusBadge status={invoice.status} />
+                {needsPaymentCheck(invoice) && (
+                  <Badge variant="warning" size="sm">
+                    <ShieldAlert size={11} aria-hidden="true" />
+                    Perlu cek pembayaran
+                  </Badge>
+                )}
+              </div>
+            );
+          },
         }),
         columnHelper.display({
           id: 'actions',
           header: '',
           size: 56,
-          cell: (info) => (
-            <Menu
-              label={`Aksi ${info.row.original.invoiceNumber}`}
-              align="end"
-              items={[
-                {
-                  label: 'Buka & edit',
-                  icon: <ChevronRight size={15} aria-hidden="true" />,
-                  href: `/invoice/${info.row.original.id}`,
-                },
-                {
-                  label: 'Duplikat',
-                  icon: <Copy size={15} aria-hidden="true" />,
-                  href: `/invoice/new?from=${info.row.original.id}`,
-                },
-                {
-                  label: 'Hapus',
-                  icon: <Trash2 size={15} aria-hidden="true" />,
-                  variant: 'danger',
-                  onClick: () => setPendingDelete(info.row.original),
-                },
-              ]}
-            >
-              <EllipsisVertical size={16} aria-hidden="true" />
-            </Menu>
-          ),
+          cell: (info) => {
+            const invoice = info.row.original;
+            const proof = invoice.paymentProof ?? null;
+            return (
+              <Menu
+                label={`Aksi ${invoice.invoiceNumber}`}
+                align="end"
+                items={[
+                  {
+                    label: 'Buka & edit',
+                    icon: <ChevronRight size={15} aria-hidden="true" />,
+                    href: `/invoice/${invoice.id}`,
+                  },
+                  {
+                    label: 'Duplikat',
+                    icon: <Copy size={15} aria-hidden="true" />,
+                    href: `/invoice/new?from=${invoice.id}`,
+                  },
+                  {
+                    label: 'Buka halaman bayar',
+                    icon: <ExternalLink size={15} aria-hidden="true" />,
+                    // The capability URL the customer uses: shows the invoice
+                    // and the one-shot proof upload form.
+                    href: `/invoice/print/${invoice.id}`,
+                  },
+                  ...(proof
+                    ? [
+                        {
+                          label: 'Lihat bukti pembayaran',
+                          icon: <ImageIcon size={15} aria-hidden="true" />,
+                          onClick: () => setProofView(invoice),
+                        },
+                        {
+                          label: 'Hapus bukti pembayaran',
+                          icon: <Trash2 size={15} aria-hidden="true" />,
+                          variant: 'danger' as const,
+                          onClick: () => setProofDelete(invoice),
+                        },
+                      ]
+                    : []),
+                  {
+                    label: 'Hapus',
+                    icon: <Trash2 size={15} aria-hidden="true" />,
+                    variant: 'danger',
+                    onClick: () => setPendingDelete(invoice),
+                  },
+                ]}
+              >
+                <EllipsisVertical size={16} aria-hidden="true" />
+              </Menu>
+            );
+          },
         }),
       ]),
     [],
@@ -501,6 +574,57 @@ export function InvoiceTable() {
       >
         <p className="text-sm text-muted">
           {pendingDelete?.invoiceNumber} untuk {pendingDelete?.customerName} akan dihapus permanen.
+        </p>
+      </Modal>
+
+      <Modal
+        open={proofView !== null}
+        onClose={() => setProofView(null)}
+        size="md"
+        ariaLabelledBy="proof-dialog-title"
+        title={
+          <span id="proof-dialog-title">
+            Bukti pembayaran {proofView?.invoiceNumber ?? ''}
+          </span>
+        }
+        actions={[{ label: 'Tutup', variant: 'secondary', onClick: () => setProofView(null) }]}
+      >
+        {proofView?.paymentProof && (
+          <div className="flex flex-col gap-3">
+            <img
+              src={`/api/proof/${encodeURIComponent(proofView.paymentProof.key)}`}
+              alt={`Bukti pembayaran ${proofView.invoiceNumber}`}
+              className="mx-auto max-h-[60vh] rounded-control border border-border object-contain"
+            />
+            <p className="text-center text-xs text-muted">
+              Diunggah {formatTanggalRelatif(proofView.paymentProof.uploadedAt)}
+            </p>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={proofDelete !== null}
+        onClose={() => setProofDelete(null)}
+        role="alertdialog"
+        size="sm"
+        ariaLabelledBy="proof-delete-dialog-title"
+        title={
+          <span id="proof-delete-dialog-title">Hapus bukti pembayaran ini?</span>
+        }
+        actions={[
+          { label: 'Batal', variant: 'secondary', onClick: () => setProofDelete(null) },
+          {
+            label: 'Hapus',
+            variant: 'danger',
+            loading: deleteProof.isPending,
+            onClick: confirmProofDelete,
+          },
+        ]}
+      >
+        <p className="text-sm text-muted">
+          Bukti pembayaran {proofDelete?.invoiceNumber} akan dihapus. Customer bisa mengunggah
+          bukti yang baru lewat tautan invoice.
         </p>
       </Modal>
     </div>

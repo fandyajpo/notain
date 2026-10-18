@@ -87,6 +87,16 @@ function editRouteFallback() {
           const url = req.url;
           if (typeof url !== 'string') return next();
           const [path, query = ''] = url.split('?', 2);
+
+          // `/invoice/print/<id>` — the customer-facing print link. Same
+          // trick as the edit route below, but the shell is the print page
+          // and the id is read by the app from the address bar.
+          const printMatch = /^\/invoice\/print\/([^/]+)\/?$/.exec(path);
+          if (printMatch) {
+            if (ID_SEGMENT.test(printMatch[1])) req.url = '/invoice/print';
+            return next();
+          }
+
           const match = /^\/(invoice|templates)\/([^/]+)\/?$/.exec(path);
           if (!match) return next();
 

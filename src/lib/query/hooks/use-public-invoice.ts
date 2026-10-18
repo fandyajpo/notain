@@ -1,0 +1,62 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  deletePaymentProof,
+  getPublicInvoice,
+  uploadPaymentProof,
+} from '../../../app/public-invoice';
+
+/**
+ * The customer's view of one invoice, fetched through the public capability
+ * URL. No session stands behind it, so it rides its own query key — never
+ * the owner's `invoice(id)` key, which lives behind auth and would be
+ * poisoned by an anonymous read.
+ */
+export function usePublicInvoice(id: string | undefined) {
+  return useQuery({
+    queryKey: ['public-invoice', id ?? ''],
+    queryFn: () => getPublicInvoice(id as string),
+    enabled: Boolean(id),
+    retry: false,
+  });
+}
+
+/**
+ * The customer's one-shot upload. The response replaces the cached payload so
+ * the card flips to "sudah dikirim" without a refetch.
+ */
+export function useUploadPaymentProof(invoiceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ file, turnstileToken }: { file: File; turnstileToken: string | null }) =>
+      uploadPaymentProof(invoiceId, file, turnstileToken),
+    onSuccess: (proof) => {
+      queryClient.setQueryData(['public-invoice', invoiceId], (current: unknown) =>
+        current && typeof current === 'object'
+          ? {
+              ...(current as Record<string, unknown>),
+              invoice: {
+                ...((current as { invoice: Record<string, unknown> }).invoice ?? {}),
+                paymentProof: { key: proof.key, uploadedAt: proof.uploadedAt },
+              },
+            }
+          : current,
+      );
+    },
+  });
+}
+
+/**
+ * The owner's delete. Invalidates every invoice surface — the dashboard list
+ * (badge + proof actions), the builder, and the customer's public page — so
+ * all three agree the proof is gone and the upload form may re-open.
+ */
+export function useDeletePaymentProof() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (key: string) => deletePaymentProof(key),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      void queryClient.invalidateQueries({ queryKey: ['public-invoice'] });
+    },
+  });
+}

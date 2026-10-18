@@ -8,7 +8,7 @@ export function json(status: number, body: unknown, headers: HeadersInit = {}): 
 /** Uniform error body so the client can branch on `error` instead of copy. */
 export function apiError(
   status: number,
-  error: 'unauthenticated' | 'validation' | 'not_found' | 'method_not_allowed',
+  error: 'unauthenticated' | 'validation' | 'not_found' | 'method_not_allowed' | 'conflict',
   message: string,
   extra: HeadersInit = {},
 ): Response {
@@ -22,8 +22,10 @@ export function apiError(
  * own origin, so without it a script inside it would run against the user's
  * session if anyone ever opened the file URL directly. Inside `<img>` SVG
  * scripts never run at all — this only covers the direct-navigation case.
+ * Payment proofs never store SVG (the server only accepts jpeg/png/webp), but
+ * they share these headers so both file routes are covered by one rule.
  */
-export const LOGO_RESPONSE_HEADERS: Record<string, string> = {
+export const IMAGE_RESPONSE_HEADERS: Record<string, string> = {
   'x-content-type-options': 'nosniff',
   'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
   'cross-origin-resource-policy': 'same-origin',

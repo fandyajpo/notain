@@ -16,7 +16,7 @@ describe('openPrintView', () => {
     const open = vi.spyOn(window, 'open').mockReturnValue({ focus: () => {} } as Window);
 
     expect(openPrintView(draft)).toBe(true);
-    expect(open).toHaveBeenCalledWith(`${PRINT_PATH}?auto=1`, '_blank');
+    expect(open).toHaveBeenCalledWith(PRINT_PATH, '_blank');
     expect(readPrintPayload()?.invoiceNumber).toBe(draft.invoiceNumber);
     expect(readPrintPayload()?.sections.footer).toBe(draft.sections.footer);
   });
