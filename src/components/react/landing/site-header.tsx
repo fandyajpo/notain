@@ -1,28 +1,35 @@
 import { AnimatePresence, motion, useScroll, useSpring, useTransform } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Menu, X } from 'lucide-react';
 import { EASE } from './reveal';
+import { isActiveSiteLink } from '../../../lib/site-nav';
 
-const NAV_LINK =
-  'relative px-3 py-2 text-sm text-muted transition-colors hover:text-foreground focus-ring';
+const NAV_LINK_BASE = 'relative px-3 py-2 text-sm transition-colors focus-ring';
 
-const MOBILE_LINK_CLASS =
-  'block rounded-control px-3 py-2.5 text-base text-foreground transition-colors hover:bg-accent-soft focus-ring';
+const MOBILE_LINK_BASE = 'block rounded-control px-3 py-2.5 text-base transition-colors focus-ring';
 
 /** Header link whose underline wipes in from the left on hover. */
 function NavLink({
   href,
+  active = false,
   children,
   className = '',
 }: {
   href: string;
+  /** Current page — stays underlined and bolder instead of waiting for hover. */
+  active?: boolean;
   children: string;
   className?: string;
 }) {
   return (
     <motion.a
       href={href}
-      className={`${NAV_LINK} ${className}`}
+      className={[
+        NAV_LINK_BASE,
+        active ? 'font-medium text-foreground' : 'text-muted hover:text-foreground',
+        className,
+      ].join(' ')}
+      aria-current={active ? 'page' : undefined}
       initial="rest"
       animate="rest"
       whileHover="hover"
@@ -33,11 +40,21 @@ function NavLink({
         aria-hidden="true"
         className="absolute inset-x-3 -bottom-0.5 h-px bg-foreground"
         style={{ originX: 0 }}
-        variants={{ rest: { scaleX: 0 }, hover: { scaleX: 1 } }}
+        variants={{ rest: { scaleX: active ? 1 : 0 }, hover: { scaleX: 1 } }}
         transition={{ duration: 0.3, ease: EASE }}
       />
     </motion.a>
   );
+}
+
+/** Re-render on soft navigations (ClientRouter) as well as back/forward. */
+function subscribeToPathname(onChange: () => void): () => void {
+  window.addEventListener('popstate', onChange);
+  document.addEventListener('astro:page-load', onChange);
+  return () => {
+    window.removeEventListener('popstate', onChange);
+    document.removeEventListener('astro:page-load', onChange);
+  };
 }
 
 type Props = {
@@ -51,6 +68,14 @@ type Props = {
  */
 export function SiteHeader({ anchorPrefix = '' }: Props) {
   const { scrollY } = useScroll();
+  // Server snapshot is '' (no link active) so hydration matches the prerender;
+  // the client snapshot lights the current page right after, and `astro:page-load`
+  // keeps it right across soft navigations.
+  const pathname = useSyncExternalStore(
+    subscribeToPathname,
+    () => window.location.pathname,
+    () => '',
+  );
 
   // Drives the header's scrolled state as pure motion values: no React
   // re-render per scroll frame, and no backdrop-blur (which forces the
@@ -110,6 +135,21 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
     { href: '/login', label: 'Masuk' },
   ];
 
+  const desktopLinks = [
+    { href: `${anchorPrefix}#cara-kerja`, label: 'Cara kerja', show: 'sm' },
+    { href: `${anchorPrefix}#whatsapp`, label: 'WhatsApp', show: 'sm' },
+    { href: `${anchorPrefix}#kenapa`, label: 'Kenapa Notain', show: 'always' },
+    { href: `${anchorPrefix}#faq`, label: 'FAQ', show: 'md' },
+    { href: '/pricing', label: 'Harga', show: 'sm' },
+    { href: '/login', label: 'Masuk', show: 'always' },
+  ] as const;
+
+  const linkVisibility = {
+    sm: 'hidden sm:block',
+    md: 'hidden md:block',
+    always: '',
+  } as const;
+
   return (
     <>
       {/* `initial={false}`: the sticky header is part of the first paint, so
@@ -145,20 +185,16 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
           </motion.a>
 
           <nav className="hidden items-center gap-1 sm:flex sm:gap-2">
-            <NavLink href={`${anchorPrefix}#cara-kerja`} className="hidden sm:block">
-              Cara kerja
-            </NavLink>
-            <NavLink href={`${anchorPrefix}#whatsapp`} className="hidden sm:block">
-              WhatsApp
-            </NavLink>
-            <NavLink href={`${anchorPrefix}#kenapa`}>Kenapa Notain</NavLink>
-            <NavLink href={`${anchorPrefix}#faq`} className="hidden md:block">
-              FAQ
-            </NavLink>
-            <NavLink href="/pricing" className="hidden sm:block">
-              Harga
-            </NavLink>
-            <NavLink href="/login">Masuk</NavLink>
+            {desktopLinks.map((link) => (
+              <NavLink
+                key={link.href}
+                href={link.href}
+                active={isActiveSiteLink(pathname, link.href)}
+                className={linkVisibility[link.show]}
+              >
+                {link.label}
+              </NavLink>
+            ))}
 
             <motion.a
               href="/register"
@@ -196,17 +232,26 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
               className="overflow-hidden border-t border-border bg-card sm:hidden"
             >
               <div className="flex flex-col gap-0.5 px-4 py-3">
-                {mobileLinks.map((link, index) => (
-                  <a
-                    key={link.href}
-                    ref={index === 0 ? firstLinkRef : undefined}
-                    href={link.href}
-                    onClick={() => setMenuOpen(false)}
-                    className={MOBILE_LINK_CLASS}
-                  >
-                    {link.label}
-                  </a>
-                ))}
+                {mobileLinks.map((link, index) => {
+                  const active = isActiveSiteLink(pathname, link.href);
+                  return (
+                    <a
+                      key={link.href}
+                      ref={index === 0 ? firstLinkRef : undefined}
+                      href={link.href}
+                      onClick={() => setMenuOpen(false)}
+                      aria-current={active ? 'page' : undefined}
+                      className={[
+                        MOBILE_LINK_BASE,
+                        active
+                          ? 'bg-accent-soft font-medium text-accent'
+                          : 'text-foreground hover:bg-accent-soft',
+                      ].join(' ')}
+                    >
+                      {link.label}
+                    </a>
+                  );
+                })}
                 <a
                   href="/register"
                   onClick={() => setMenuOpen(false)}
