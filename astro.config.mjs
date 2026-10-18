@@ -162,6 +162,17 @@ export default defineConfig({
       // alias would also mangle `vue/server-renderer`.
       alias: [{ find: /^vue$/, replacement: 'vue/dist/vue.runtime.esm-bundler.js' }],
     },
+    optimizeDeps: {
+      // Without this the dev toolbar's entrypoint (`/@id/astro/runtime/client/
+      // dev-toolbar/entrypoint.js`) answers 504 "Outdated Optimize Dep" after
+      // every re-optimization: the optimizer replaces its metadata when it
+      // discovers new deps mid-session, and the toolbar URL carries no `?v=`
+      // hash to re-resolve against. The iframe keeps failing, every page logs
+      // a console error, and the no-console-error e2e specs go red. Serving
+      // the current bundle instead of demanding a reload fixes the toolbar
+      // and costs nothing the app relies on.
+      ignoreOutdatedRequests: true,
+    },
     server: {
       proxy: {
         // Pages Functions only exist on the deployed site; without this
@@ -172,7 +183,12 @@ export default defineConfig({
         //
         // This proxies at *production* `functions/`. To exercise local changes
         // to that directory instead, run `npx wrangler pages dev dist`.
-        '/api': { target: 'https://notain.pages.dev', changeOrigin: true },
+        //
+        // Anchored to `/api/` so the match is a path segment, not a prefix:
+        // a bare `/api` would also swallow sibling routes like `/api-keys`
+        // (they never reach the dev server, and answer with whatever the
+        // deployed site has for that path).
+        '^/api/': { target: 'https://notain.pages.dev', changeOrigin: true },
       },
     },
   },

@@ -5,6 +5,13 @@ import vue from '@vitejs/plugin-vue';
 import solid from 'vite-plugin-solid';
 
 export default defineConfig({
+  // Keep vitest's dep-optimizer cache out of the dev server's `node_modules/.vite`.
+  // Vite 8 defaults `cacheDir` to that shared path, so a `npm test` run while
+  // `astro dev` is up replaces the server's `_metadata.json` and dep bundles
+  // with its own hash — the server keeps serving `?v=<old-hash>` import URLs,
+  // those files are gone, and every island dies with 404 "Outdated Optimize
+  // Dep" fetches (blank pages across the app).
+  cacheDir: 'node_modules/.vite/vitest',
   // Each plugin is scoped to its own island directory: the root tsconfig uses
   // `jsx: "preserve"`, so without an explicit owner no JSX would be compiled
   // at all, and an unscoped Solid transform could rewrite React files.

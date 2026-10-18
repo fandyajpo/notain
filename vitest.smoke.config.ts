@@ -6,6 +6,8 @@ import { defineConfig } from 'vitest/config';
  * offline and deterministic.
  */
 export default defineConfig({
+  // Same reason as `vitest.config.ts`: never share the dev server's dep cache.
+  cacheDir: 'node_modules/.vite/vitest-smoke',
   // Vite only puts `VITE_`-prefixed variables on `import.meta.env`; the app
   // config reads `PUBLIC_`, so opt into the same prefix the site uses.
   envPrefix: 'PUBLIC_',
