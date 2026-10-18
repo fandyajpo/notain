@@ -2,6 +2,7 @@ import { Fragment, useEffect, type ReactNode } from 'react';
 import { useSelector } from '@tanstack/react-store';
 import { Keyboard } from 'lucide-react';
 import { Modal } from './modal';
+import { isInvoiceBuilderPath } from '../../../lib/edit-route';
 import { setShortcutsOpen, shortcutsStore, toggleShortcuts } from '../../../lib/store/shortcuts';
 
 /** One keyboard shortcut: `keys` are display tokens, `label` what it does. */
@@ -77,8 +78,10 @@ export function Kbd({ children }: { children: ReactNode }) {
 
 export function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const isMac = isApplePlatform();
+  // Read fresh on every render: the island persists across soft navigations,
+  // so the builder group must be re-checked when the dialog actually opens.
   const onBuilderPage =
-    typeof window !== 'undefined' && window.location.pathname.startsWith('/invoices');
+    typeof window !== 'undefined' && isInvoiceBuilderPath(window.location.pathname);
   const groups = SHORTCUT_GROUPS.filter((group) => !group.builderOnly || onBuilderPage);
 
   return (

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   invoiceEditCanonicalTarget,
   invoiceIdFromLocation,
+  isInvoiceBuilderPath,
   templateEditCanonicalTarget,
   templateEditorTargetFromLocation,
 } from './edit-route';
@@ -113,5 +114,26 @@ describe('templateEditCanonicalTarget', () => {
     expect(templateEditCanonicalTarget('')).toBe('/templates/new');
     expect(templateEditCanonicalTarget('?id=new')).toBe('/templates/new');
     expect(templateEditCanonicalTarget('?id=has%20space')).toBe('/templates/new');
+  });
+});
+
+describe('isInvoiceBuilderPath', () => {
+  it('recognises every route that mounts the builder', () => {
+    expect(isInvoiceBuilderPath('/invoice/new')).toBe(true);
+    expect(isInvoiceBuilderPath('/invoice/6acc91d70002fd3e80b4')).toBe(true);
+    expect(isInvoiceBuilderPath('/invoice/6acc91d70002fd3e80b4/')).toBe(true);
+    // The legacy query-form link serves the same edit shell.
+    expect(isInvoiceBuilderPath('/invoice/edit')).toBe(true);
+  });
+
+  it('rejects the routes that only look like the builder', () => {
+    // The list page, plural — where the shortcut overlay used to think it was.
+    expect(isInvoiceBuilderPath('/invoices')).toBe(false);
+    expect(isInvoiceBuilderPath('/invoices?status=unset')).toBe(false);
+    // The print view renders the document, not the form.
+    expect(isInvoiceBuilderPath('/invoice/print')).toBe(false);
+    expect(isInvoiceBuilderPath('/invoice')).toBe(false);
+    expect(isInvoiceBuilderPath('/invoice/')).toBe(false);
+    expect(isInvoiceBuilderPath('/dashboard')).toBe(false);
   });
 });

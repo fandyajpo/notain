@@ -92,6 +92,19 @@ export function invoiceIdFromLocation(location: PageLocation): string | undefine
   return segmentAfter(location, '/invoice', INVOICE_RESERVED_SEGMENTS);
 }
 
+/**
+ * Whether `pathname` carries the invoice builder — `/invoice/new`,
+ * `/invoice/<id>`, or the legacy `/invoice/edit` — as opposed to the list
+ * (`/invoices`) or the print view (`/invoice/print`, which renders the
+ * document, not the form). Drives which shortcut groups the `?` overlay
+ * lists: the builder's hotkeys only exist where the builder is mounted.
+ */
+export function isInvoiceBuilderPath(pathname: string): boolean {
+  if (!pathname.startsWith('/invoice/')) return false;
+  const rest = pathname.slice('/invoice/'.length).replace(/\/+$/, '');
+  return rest.length > 0 && rest !== 'print';
+}
+
 export interface TemplateEditorTarget {
   /** The template being edited, if any — absent means "a new one". */
   id?: string | undefined;
