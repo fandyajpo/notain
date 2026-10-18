@@ -484,7 +484,10 @@ export function InvoiceBuilder({
   );
 
   return (
-    <div className="flex flex-col gap-6 pb-32 lg:grid lg:grid-cols-2 lg:items-start lg:gap-10 lg:pb-0">
+    // The preview column is deliberately narrower than the form: the document
+    // scales to its column (`max-w-[182mm]`), so a slimmer preview is a
+    // shorter one — less scrolling through the same invoice.
+    <div className="flex flex-col gap-6 pb-32 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.66fr)] lg:items-start lg:gap-8 lg:pb-0">
       <form
         id="invoice-form"
         className="flex flex-col gap-6"
