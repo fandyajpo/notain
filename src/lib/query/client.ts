@@ -1,6 +1,7 @@
 import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
 import { DEFAULT_QUERY_POLICY, retryDelay, shouldRetry } from './policies';
 import { createSessionExpiryHandler } from './session-expiry';
+import { container } from '../../infra/container';
 
 /**
  * Query client tuned for a small, personal dataset backed by Appwrite.
@@ -14,7 +15,15 @@ import { createSessionExpiryHandler } from './session-expiry';
  * same moment produce a single, calm sign-out instead of scattered "gagal"s.
  */
 export function createQueryClient(): QueryClient {
-  const handleSessionExpiry = createSessionExpiryHandler();
+  // Verify against Appwrite before acting on a 401: a missing/misconfigured
+  // table answers `user_unauthorized` exactly like an expired token does, and
+  // signing out on that would bounce the user between the page and /login. A
+  // fresh probe (not the memoised `currentSession`) is what tells the two
+  // apart.
+  const handleSessionExpiry = createSessionExpiryHandler(async () => {
+    const user = await container.auth.getSession();
+    return user !== null;
+  });
 
   // The caches are handed to the constructor, which runs before the client
   // itself is available — but `onError` only fires later, by which point it
@@ -22,7 +31,7 @@ export function createQueryClient(): QueryClient {
   // `query.client`, which the public types do not expose.
   const holder: { current?: QueryClient } = {};
   const onCacheError = (error: unknown) => {
-    if (holder.current) handleSessionExpiry(holder.current, error);
+    if (holder.current) void handleSessionExpiry(holder.current, error);
   };
 
   const client = new QueryClient({

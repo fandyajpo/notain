@@ -1,7 +1,7 @@
 <svelte:options customElement={{ tag: 'notain-items-grid', shadow: 'none' }} />
 
 <script lang="ts">
-  import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-svelte';
+  import { ChevronDown, ChevronUp, PackageCheck, Plus, Trash2 } from 'lucide-svelte';
   import { cubicOut } from 'svelte/easing';
   import { calculateItemSubtotal } from '../../core/invoice/calculator';
   import {
@@ -57,6 +57,11 @@
   function patchUnit(id: string, raw: string) {
     const unit = raw.trim() ? raw.slice(0, INVOICE_LIMITS.unit) : undefined;
     patch(id, { unit });
+  }
+
+  /** Ticked means "file this row into the catalog when the invoice is saved". */
+  function toggleCatalog(id: string, saveToCatalog: boolean) {
+    patch(id, { saveToCatalog });
   }
 
   function remove(id: string) {
@@ -204,6 +209,17 @@
               </span>
             </div>
           </div>
+
+          <label class="mt-2 flex cursor-pointer items-center gap-2 text-xs text-muted">
+            <input
+              type="checkbox"
+              checked={item.saveToCatalog !== false}
+              onchange={(event) => toggleCatalog(item.id, event.currentTarget.checked)}
+              class="h-4 w-4 accent-accent"
+            />
+            <PackageCheck size={14} aria-hidden="true" />
+            Simpan ke katalog
+          </label>
         </div>
       {/each}
 
@@ -237,6 +253,12 @@
               >Harga satuan</th
             >
             <th scope="col" class="w-36 pb-2 text-right text-eyebrow uppercase text-muted">Subtotal</th>
+            <th scope="col" class="w-24 pb-2 text-center text-eyebrow uppercase text-muted">
+              <span class="inline-flex items-center justify-center gap-1">
+                <PackageCheck size={13} aria-hidden="true" />
+                Katalog
+              </span>
+            </th>
             <th scope="col" class="w-20 pb-2 text-right text-eyebrow uppercase text-muted">
               <span class="sr-only">Urutan</span>
             </th>
@@ -308,6 +330,17 @@
                 </span>
               </td>
               <td class="py-2 pr-2">
+                <div class="flex items-center justify-center">
+                  <input
+                    type="checkbox"
+                    checked={item.saveToCatalog !== false}
+                    onchange={(event) => toggleCatalog(item.id, event.currentTarget.checked)}
+                    aria-label={`Simpan ${item.name || 'barang'} ke katalog`}
+                    class="h-4 w-4 accent-accent"
+                  />
+                </div>
+              </td>
+              <td class="py-2 pr-2">
                 <div class="flex items-center justify-end gap-0.5">
                   <button
                     type="button"
@@ -346,7 +379,7 @@
 
           {#if items.length === 0}
             <tr>
-              <td colspan={7} class="py-8 text-center text-sm text-muted">
+              <td colspan={8} class="py-8 text-center text-sm text-muted">
                 Belum ada barang. Tambahkan minimal satu item.
               </td>
             </tr>
@@ -354,7 +387,7 @@
 
           {#if canAdd}
             <tr>
-              <td colspan={7} class="pt-3">
+              <td colspan={8} class="pt-3">
                 <button
                   type="button"
                   data-add-item

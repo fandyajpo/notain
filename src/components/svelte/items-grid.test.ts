@@ -131,7 +131,13 @@ describe('notain-items-grid', () => {
     host.querySelector<HTMLElement>('[data-add-item]')?.click();
     const last = capturedEvents().at(-1);
     expect(last?.items).toHaveLength(3);
-    expect(last?.items[2]).toEqual({ id: expect.any(String), name: '', quantity: 1, unitPrice: 0 });
+    expect(last?.items[2]).toEqual({
+      id: expect.any(String),
+      name: '',
+      quantity: 1,
+      unitPrice: 0,
+      saveToCatalog: true,
+    });
   });
 
   it('hides the add button once the limit is reached', async () => {

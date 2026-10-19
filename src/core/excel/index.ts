@@ -9,3 +9,4 @@ export {
   type CustomerImportResult,
 } from './customers';
 export { INVOICE_COLUMNS, toInvoiceRow, toInvoiceRows } from './invoices';
+export { CATALOG_COLUMNS, toCatalogRow, toCatalogRows } from './catalog';

@@ -37,6 +37,12 @@ export const queryKeys = {
   customersPage: ['customers-page'] as const,
   customerCount: ['customer-count'] as const,
   customer: (id: string) => ['customers', id] as const,
+  /** The owner's product/service catalog, read whole by the invoice picker. */
+  catalog: ['catalog'] as const,
+  /** Paginated `/catalog` list — separate from the full `catalog` list the picker uses. */
+  catalogPage: ['catalog-page'] as const,
+  catalogCount: ['catalog-count'] as const,
+  catalogItem: (id: string) => ['catalog', id] as const,
   /** Cached dashboard counters — one row per owner (the `stats` table). */
   stats: ['dashboard-stats'] as const,
   /** Admin panel user list. Only fetched by members of the `admins` team. */

@@ -11,6 +11,12 @@
  * dashboard visit (`refreshDashboardStats`), which also backfills any account
  * that existed before this table.
  *
+ * Document (row) security MUST stay on. The table grants only `create("users")`
+ * at the table level and the single row carries the owner's read/update — with
+ * row security off, Appwrite ignores that and answers the dashboard's lookup
+ * with `401 user_unauthorized`, so the cache never loads. This script re-asserts
+ * it on every run so a hand-created table cannot drift back.
+ *
  * Idempotent: re-running skips anything that already exists.
  *
  * Admin-only, so it needs an API key (Settings → API keys) with:
@@ -109,7 +115,7 @@ try {
     if (!confirmed) {
       // Nothing exists yet: lay out the whole plan in one go, there is no
       // attribute/index listing to compare against.
-      console.log(`  + buat tabel \`${tableId}\` (rowSecurity, create: users)`);
+      console.log(`  + buat tabel \`${tableId}\` (documentSecurity, create: users)`);
       for (const attribute of STRING_ATTRIBUTES) {
         console.log(
           `  + buat kolom \`${tableId}.${attribute.key}\` (string, size ${attribute.size})`,
@@ -130,13 +136,36 @@ try {
       // Same contract as invoices/customers/templates: create is granted at
       // the table level, read/update/delete live on each row's permissions.
       permissions: ['create("users")'],
-      rowSecurity: true,
+      // `documentSecurity` is the current field name; the older `rowSecurity`
+      // is a silent no-op, which leaves the table unreadable.
+      documentSecurity: true,
     });
     console.log(`  ✔ tabel \`${tableId}\` dibuat`);
     await new Promise((resolve) => setTimeout(resolve, 1500));
   }
 
-  // 2. Attributes (re-read the table so a dry-run's "+ buat" list is real).
+  // 2. Row security: without it the per-row permissions are ignored and the
+  // dashboard lookup answers 401, so the cached counters never load.
+  if (table && table.documentSecurity !== true) {
+    if (!confirmed) {
+      console.log(`  + aktifkan document security di \`${tableId}\` (wajib untuk baca baris)`);
+    } else {
+      table = await api(
+        'PUT',
+        `/databases/${databaseId}/collections/${encodeURIComponent(tableId)}`,
+        {
+          name: table.name ?? 'Stats',
+          permissions: ['create("users")'],
+          documentSecurity: true,
+        },
+      );
+      console.log(`  ✔ document security \`${tableId}\` diaktifkan`);
+    }
+  } else if (table) {
+    console.log(`  ✓ document security \`${tableId}\` aktif`);
+  }
+
+  // 3. Attributes (re-read the table so a dry-run's "+ buat" list is real).
   table =
     table ??
     (await api('GET', `/databases/${databaseId}/collections/${encodeURIComponent(tableId)}`));
@@ -189,7 +218,7 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 1500));
   }
 
-  // 3. The single-owner lookup index.
+  // 4. The single-owner lookup index.
   const freshTable = await api(
     'GET',
     `/databases/${databaseId}/collections/${encodeURIComponent(tableId)}`,

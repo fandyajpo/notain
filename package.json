@@ -18,6 +18,7 @@
     "migrate:customer-email": "node --env-file=.env scripts/migrate-customer-email.mjs",
     "payment-proof:ensure": "node --env-file=.env scripts/ensure-payment-proof.mjs",
     "stats:ensure": "node --env-file=.env scripts/ensure-stats.mjs",
+    "catalog:ensure": "node --env-file=.env scripts/ensure-catalog.mjs",
     "audit:ensure": "node --env-file=.env scripts/ensure-audit.mjs",
     "support:ensure": "node --env-file=.env scripts/ensure-support.mjs",
     "business-type:ensure": "node --env-file=.env scripts/ensure-business-type.mjs",

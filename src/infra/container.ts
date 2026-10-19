@@ -1,5 +1,6 @@
 import { R2AssetRepository } from './r2-asset-repository';
 import { AppwriteAuthRepository } from './appwrite-auth-repository';
+import { AppwriteCatalogRepository } from './appwrite-catalog-repository';
 import { AppwriteCustomerRepository } from './appwrite-customer-repository';
 import { AppwriteInvoiceRepository } from './appwrite-invoice-repository';
 import { AppwriteProfileRepository } from './appwrite-profile-repository';
@@ -7,6 +8,7 @@ import { AppwriteStatsRepository } from './appwrite-stats-repository';
 import { AppwriteTemplateRepository } from './appwrite-template-repository';
 import type { AssetRepository } from '../ports/asset-repository';
 import type { AuthRepository } from '../ports/auth-repository';
+import type { CatalogRepository } from '../ports/catalog-repository';
 import type { CustomerRepository } from '../ports/customer-repository';
 import type { InvoiceRepository } from '../ports/invoice-repository';
 import type { ProfileRepository } from '../ports/profile-repository';
@@ -23,6 +25,7 @@ export const container = {
   profiles: new AppwriteProfileRepository(),
   templates: new AppwriteTemplateRepository(),
   customers: new AppwriteCustomerRepository(),
+  catalog: new AppwriteCatalogRepository(),
   stats: new AppwriteStatsRepository(),
   assets: new R2AssetRepository(),
 } satisfies {
@@ -31,6 +34,7 @@ export const container = {
   profiles: ProfileRepository;
   templates: TemplateRepository;
   customers: CustomerRepository;
+  catalog: CatalogRepository;
   stats: StatsRepository;
   assets: AssetRepository;
 };

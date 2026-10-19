@@ -36,6 +36,11 @@ export const gridItemSchema = z.object({
   unitPrice: structuralCount,
   /** Empty string is a legal mid-typing state; `invoiceDraftSchema` normalises it. */
   unit: z.string().max(16).optional(),
+  /**
+   * Whether the row's "Simpan ke katalog" box is ticked. Absent means ticked
+   * (the default for a fresh row); the invoice form strips it before saving.
+   */
+  saveToCatalog: z.boolean().optional(),
 });
 
 /** Emitted as `itemschange` with `{ items: InvoiceItem[] }`. */

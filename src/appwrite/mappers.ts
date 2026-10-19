@@ -18,6 +18,8 @@ import { DEFAULT_THEME } from '../core/template/model';
 import { invoiceTemplateShapeSchema } from '../core/template/schema';
 import type { Customer } from '../core/customer/model';
 import { customerShapeSchema } from '../core/customer/schema';
+import type { CatalogItem } from '../core/catalog/model';
+import { catalogShapeSchema } from '../core/catalog/schema';
 import { toCounts, type DashboardStats, type StatsCounts } from '../core/stats/model';
 
 /** Row shape returned by the `invoices` table. */
@@ -86,6 +88,17 @@ export type CustomerRow = Models.Row &
     name: string;
     email: string | null;
     phone: string | null;
+    lastUsedAt: string | null;
+  };
+
+/** Row shape returned by the `catalog` table. */
+export type CatalogRow = Models.Row &
+  Record<string, unknown> & {
+    ownerId: string;
+    name: string;
+    kind: string | null;
+    unit: string | null;
+    unitPrice: number | null;
     lastUsedAt: string | null;
   };
 
@@ -394,6 +407,49 @@ export function customerToRowData(
     name: customer.name.trim(),
     email: customer.email.trim() || null,
     phone: customer.phone.trim() || null,
+    lastUsedAt,
+  };
+}
+
+/**
+ * Reads a catalog row back.
+ *
+ * A blank name is a row with nothing to label in the picker, so the caller
+ * skips it rather than surfacing an empty entry.
+ */
+export function catalogRowToDomain(row: CatalogRow): CatalogItem {
+  const parsed = catalogShapeSchema.safeParse({
+    name: row.name,
+    kind: row.kind,
+    unit: row.unit,
+    unitPrice: row.unitPrice,
+    lastUsedAt: row.lastUsedAt,
+  });
+
+  const shape = parsed.success
+    ? parsed.data
+    : { name: '', kind: 'barang' as const, unit: '', unitPrice: 0, lastUsedAt: '' };
+
+  return {
+    id: row.$id,
+    name: shape.name,
+    kind: shape.kind,
+    unit: shape.unit,
+    unitPrice: shape.unitPrice,
+    lastUsedAt: shape.lastUsedAt,
+  };
+}
+
+/** Serializes a catalog entry into the flat column payload expected by the table. */
+export function catalogToRowData(
+  item: { name: string; kind: string; unit: string; unitPrice: number },
+  lastUsedAt: string,
+): Record<string, unknown> {
+  return {
+    name: item.name.trim(),
+    kind: item.kind,
+    unit: item.unit.trim() || null,
+    unitPrice: item.unitPrice,
     lastUsedAt,
   };
 }

@@ -9,6 +9,7 @@ import {
   Keyboard,
   LayoutTemplate,
   MessageCircle,
+  PackageSearch,
   PartyPopper,
   Save,
   Trash2,
@@ -19,6 +20,7 @@ import {
   createEmptyDraft,
   createItem,
   createItemId,
+  createPickedItem,
   EMPTY_SECTIONS,
   INVOICE_LIMITS,
   needsPaymentCheck,
@@ -48,6 +50,7 @@ import {
   useUpdateInvoiceStatus,
 } from '../../../lib/query/hooks/use-invoices';
 import { useRememberCustomer } from '../../../lib/query/hooks/use-customers';
+import { useRememberCatalogItems } from '../../../lib/query/hooks/use-catalog';
 import { useDeletePaymentProof } from '../../../lib/query/hooks/use-public-invoice';
 import { usePageTour } from '../../../lib/tour/use-tour';
 import { useUnsavedChangesGuard } from '../../../lib/use-unsaved-changes-guard';
@@ -75,10 +78,12 @@ import {
 import { applyTemplateDefaults } from '../../../core/template/apply';
 import type { InvoiceTemplate } from '../../../core/template/model';
 import type { BusinessSubtypeSlug } from '../../../core/business/taxonomy';
+import type { CatalogItem } from '../../../core/catalog/model';
 import { getDetailFields } from '../../../core/business/detail-fields';
 import { DetailFieldsCard } from './detail-fields-card';
 import { TemplateCard } from '../template/template-picker';
 import { Picker } from './picker';
+import { CatalogPickerDialog } from './catalog-picker';
 import { LazyRichEditor } from './lazy-rich-editor';
 import { TotalsPanel } from './totals-panel';
 
@@ -169,6 +174,9 @@ export function InvoiceBuilder({
   // Files the customer away alongside the invoice, awaited just before the
   // redirect (see `onSubmit` — unloading the page would abort it otherwise).
   const rememberCustomer = useRememberCustomer();
+  // Files the invoice's ticked items into the catalog the same way: awaited so
+  // the redirect does not abort it, and non-fatal like the customer write.
+  const rememberCatalog = useRememberCatalogItems();
   // Saved templates ride alongside the built-ins when resolving the invoice's
   // `templateId`; a miss falls back to a builtin rather than blanking the page.
   const { data: savedTemplates } = useTemplates();
@@ -179,6 +187,8 @@ export function InvoiceBuilder({
   usePageTour('invoice-create');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
+  // The "Ambil dari katalog" dialog in the Barang tab.
+  const [showCatalog, setShowCatalog] = useState(false);
   // The "Lunas!" bounce on the status row, and the first-invoice modal that
   // holds the redirect until the moment has been seen.
   const [paidPop, setPaidPop] = useState(false);
@@ -262,6 +272,24 @@ export function InvoiceBuilder({
           });
         } catch {
           toast('Invoice tersimpan, tapi customer belum masuk ke daftar. Coba lagi nanti.', {
+            variant: 'error',
+          });
+        }
+        // Same best-effort treatment for the catalog: only the rows whose
+        // "Simpan ke katalog" box is ticked (absent means ticked). A failure
+        // here must never fail the save, so it only warns.
+        try {
+          const drafts = value.items
+            .filter((item) => item.saveToCatalog !== false && item.name.trim() !== '')
+            .map((item) => ({
+              name: item.name.trim(),
+              kind: 'barang' as const,
+              unit: (item.unit ?? '').trim(),
+              unitPrice: item.unitPrice,
+            }));
+          if (drafts.length > 0) await rememberCatalog.mutateAsync(drafts);
+        } catch {
+          toast('Invoice tersimpan, tapi sebagian barang belum masuk katalog. Coba lagi nanti.', {
             variant: 'error',
           });
         }
@@ -405,6 +433,24 @@ export function InvoiceBuilder({
     if (current.length >= INVOICE_LIMITS.maxItems) return;
     form.setFieldValue('items', [...current, createItem(createItemId())]);
   }, [form]);
+
+  /** Appends one catalog entry as a new pre-filled item row. */
+  const addFromCatalog = useCallback(
+    (item: CatalogItem) => {
+      const current = form.state.values.items;
+      if (current.length >= INVOICE_LIMITS.maxItems) return;
+      form.setFieldValue('items', [
+        ...current,
+        createPickedItem(createItemId(), {
+          name: item.name,
+          quantity: 1,
+          unitPrice: item.unitPrice,
+          ...(item.unit ? { unit: item.unit } : {}),
+        }),
+      ]);
+    },
+    [form],
+  );
 
   const onPick = useCallback(
     (pick: PickPayload) => {
@@ -704,7 +750,15 @@ export function InvoiceBuilder({
         </div>
 
         <div hidden={activeSection !== 'barang'} className="flex flex-col gap-6">
-          <Section title="Barang">
+          <Section
+            title="Barang"
+            action={
+              <Button size="sm" variant="secondary" onClick={() => setShowCatalog(true)}>
+                <PackageSearch size={15} aria-hidden="true" />
+                Ambil dari katalog
+              </Button>
+            }
+          >
             <ItemsGrid
               items={values.items}
               onChange={(items) => form.setFieldValue('items', items)}
@@ -719,7 +773,8 @@ export function InvoiceBuilder({
               <kbd className="rounded-control border border-border bg-sunken px-1.5 py-0.5 font-mono">
                 Enter
               </kbd>{' '}
-              untuk menambah barang.
+              untuk menambah barang. Centang "Simpan ke katalog" di tiap barang untuk memakainya
+              ulang di invoice berikutnya.
             </p>
           </Section>
         </div>
@@ -865,6 +920,11 @@ export function InvoiceBuilder({
             onPick={switchTemplate}
           />
         </Modal>
+        <CatalogPickerDialog
+          open={showCatalog}
+          onClose={() => setShowCatalog(false)}
+          onPick={addFromCatalog}
+        />
         <Modal
           open={showProofDelete}
           onClose={() => setShowProofDelete(false)}

@@ -49,6 +49,15 @@ export const QUERY_POLICIES = {
   // The `/customers` page's own paginated list; same freshness window as the
   // full directory above.
   customersPage: { staleTime: 5_000, gcTime: 5 * 60_000 },
+  // The catalog is written to on every invoice save with items ticked for
+  // filing, so it is trusted for only a few seconds — a product just saved has
+  // to appear in the next picker.
+  catalog: { staleTime: 5_000, gcTime: 5 * 60_000 },
+  // The `/catalog` page's own paginated list; same freshness window as above.
+  catalogPage: { staleTime: 5_000, gcTime: 5 * 60_000 },
+  // A bare "how many catalog entries" figure. It changes only when the catalog
+  // changes, so it is trusted as long as the invoice list.
+  catalogCount: { staleTime: 15_000, gcTime: 5 * 60_000 },
   // A bare "how many customers" figure for the dashboard. It changes only when
   // the directory changes, so it is trusted as long as the invoice list.
   customerCount: { staleTime: 15_000, gcTime: 5 * 60_000 },

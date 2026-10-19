@@ -67,6 +67,13 @@ export type InvoiceItem = {
    * the item table only shows its "Satuan" column once one item uses it.
    */
   unit?: string;
+  /**
+   * Whether this row should also be filed into the owner's catalog when the
+   * invoice is saved. Transient UI state: absent means "yes" (the box ships
+   * ticked), and it is deliberately stripped before the invoice is stored — see
+   * `invoiceItemSchema`, whose output drops the key.
+   */
+  saveToCatalog?: boolean;
 };
 
 /**
@@ -200,7 +207,7 @@ export function createEmptyDraft(invoiceNumber: string, date: string): InvoiceDr
 export function createItem(id: string): InvoiceItem {
   // No unit on a blank row: the grid's unit column stays hidden until the
   // user actually types one (or a seeded sample item brings its own).
-  return { id, name: '', quantity: 1, unitPrice: 0 };
+  return { id, name: '', quantity: 1, unitPrice: 0, saveToCatalog: true };
 }
 
 /** A pre-filled row, as applied when a product is picked from invoice history. */
@@ -214,6 +221,7 @@ export function createPickedItem(
     quantity: pick.quantity,
     unitPrice: pick.unitPrice,
     ...(pick.unit ? { unit: pick.unit } : {}),
+    saveToCatalog: true,
   };
 }
 

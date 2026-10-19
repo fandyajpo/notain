@@ -93,6 +93,18 @@ const DESIRED = [
     ],
   },
   {
+    collectionId: 'catalog',
+    indexes: [
+      // List by owner + the duplicate-name check: equal(ownerId) + equal(name).
+      {
+        key: 'owner_name',
+        type: 'key',
+        attributes: ['ownerId', 'name'],
+        orders: ['asc', 'asc'],
+      },
+    ],
+  },
+  {
     collectionId: 'stats',
     indexes: [
       // The dashboard's single-row-per-owner lookup: equal(ownerId).

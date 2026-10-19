@@ -142,6 +142,27 @@ export const TOURS: Record<string, TourDef> = {
     ],
   },
 
+  /** Per-menu tour for the catalog. */
+  catalog: {
+    id: 'catalog',
+    steps: [
+      {
+        target: 'catalog-form',
+        title: 'Simpan barang & jasa',
+        description:
+          'Catat barang atau jasa tetap kamu sekali di sini — nama, jenis, satuan, dan harga. Ambil lagi kapan saja saat bikin invoice.',
+        side: 'bottom',
+      },
+      {
+        target: 'catalog-list',
+        title: 'Katalog kamu',
+        description:
+          'Semua barang dan jasa tersimpan di sini. Cari, ubah harganya, atau hapus yang sudah tidak dipakai.',
+        side: 'top',
+      },
+    ],
+  },
+
   /** Per-menu tour for settings. */
   settings: {
     id: 'settings',
