@@ -484,10 +484,13 @@ export function InvoiceBuilder({
   );
 
   return (
-    // The preview column is deliberately narrower than the form: the document
+    // Two columns from `md` up — below that a pair leaves the form unusably
+    // narrow. Between `md` and `lg` there is no sidebar yet, so the whole
+    // viewport is available; from `lg` on, the sidebar takes its cut. The
+    // preview column stays deliberately narrower than the form: the document
     // scales to its column (`max-w-[182mm]`), so a slimmer preview is a
     // shorter one — less scrolling through the same invoice.
-    <div className="flex flex-col gap-6 pb-32 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.66fr)] lg:items-start lg:gap-8 lg:pb-0">
+    <div className="flex flex-col gap-6 pb-32 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,0.72fr)] md:items-start md:gap-6 md:pb-0 lg:gap-8">
       <form
         id="invoice-form"
         className="flex flex-col gap-6"
@@ -551,7 +554,9 @@ export function InvoiceBuilder({
             </div>
             {paymentProof && (
               <Notice
-                variant={needsPaymentCheck({ status: values.status, paymentProof }) ? 'warning' : 'success'}
+                variant={
+                  needsPaymentCheck({ status: values.status, paymentProof }) ? 'warning' : 'success'
+                }
               >
                 {needsPaymentCheck({ status: values.status, paymentProof }) ? (
                   <p>
@@ -776,7 +781,7 @@ export function InvoiceBuilder({
           </Section>
         </div>
 
-        <div className="hidden lg:block">
+        <div className="hidden md:block">
           <Button type="submit" full size="lg" loading={isSubmitting} disabled={!canSubmit}>
             <Save size={16} aria-hidden="true" />
             {isSubmitting ? 'Menyimpan…' : isEditing ? 'Simpan perubahan' : 'Simpan invoice'}
@@ -784,9 +789,11 @@ export function InvoiceBuilder({
         </div>
       </form>
 
+      {/* Sticky under the tablet header (56px) until the desktop sidebar
+          replaces it at `lg`, where the top offset can shrink. */}
       <aside
         data-tour="inv-preview"
-        className="flex flex-col gap-3 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto"
+        className="flex flex-col gap-3 md:sticky md:top-20 md:max-h-[calc(100vh-6.5rem)] md:overflow-y-auto lg:top-6 lg:max-h-[calc(100vh-3rem)]"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-eyebrow uppercase text-muted">Preview invoice</p>
@@ -901,7 +908,7 @@ export function InvoiceBuilder({
         />
       </aside>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card md:hidden">
         <div className="flex items-center justify-between gap-3 px-4 py-3">
           <div>
             <p className="text-xs text-muted">Total</p>
