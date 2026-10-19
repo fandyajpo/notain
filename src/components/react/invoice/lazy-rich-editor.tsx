@@ -51,9 +51,37 @@ export function LazyRichEditor(props: Props) {
 
 function createLazyRichEditor(): ComponentType<Props> {
   return lazy(async () => {
-    const mod = await import('./rich-editor');
+    // One transient failure — a chunk that 404s mid-deploy, a dropped
+    // connection — used to be enough to put the error panel in front of the
+    // user, with only a manual retry to climb out. Give the network a couple
+    // of tries first; the panel below stays reserved for what really is dead.
+    const mod = await withImportRetry(() => import('./rich-editor'));
     return { default: mod.RichEditor };
   });
+}
+
+/**
+ * Runs `load` until it resolves, pausing `delays[i]` after attempt `i`.
+ *
+ * The delays double as the attempt budget: `delays.length + 1` tries in total,
+ * and the last failure is rethrown untouched so the error boundary still sees
+ * the original message.
+ */
+export async function withImportRetry<T>(
+  load: () => Promise<T>,
+  delays: readonly number[] = [400, 1200],
+): Promise<T> {
+  let failure: unknown;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await load();
+    } catch (error) {
+      failure = error;
+      const delay = delays[attempt];
+      if (delay === undefined) throw failure;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
 }
 
 /** Holds the layout so the section does not jump when the editor arrives. */

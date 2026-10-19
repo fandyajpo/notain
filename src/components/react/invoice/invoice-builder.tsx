@@ -781,34 +781,43 @@ export function InvoiceBuilder({
 
         <div hidden={activeSection !== 'header'} className="flex flex-col gap-6">
           <Section title="Kop &amp; informasi invoice">
-            <LazyRichEditor
-              label="Bagian atas (di bawah kop)"
-              value={values.sections.header}
-              placeholder="Terima kasih sudah memesan…"
-              onChange={(html) => form.setFieldValue('sections.header', html)}
-            />
+            {/* Mounted only while the tab is open: the editor chunk is by far
+                the largest in the build, and hidden panels have no reason to
+                fetch it on every page load. */}
+            {activeSection === 'header' && (
+              <LazyRichEditor
+                label="Bagian atas (di bawah kop)"
+                value={values.sections.header}
+                placeholder="Terima kasih sudah memesan…"
+                onChange={(html) => form.setFieldValue('sections.header', html)}
+              />
+            )}
           </Section>
         </div>
 
         <div hidden={activeSection !== 'isi'} className="flex flex-col gap-6">
           <Section title="Bagian isi (di tengah)">
-            <LazyRichEditor
-              label="Keterangan tambahan"
-              value={values.sections.content}
-              placeholder="Ketentuan pengerjaan, estimasi waktu, dll."
-              onChange={(html) => form.setFieldValue('sections.content', html)}
-            />
+            {activeSection === 'isi' && (
+              <LazyRichEditor
+                label="Keterangan tambahan"
+                value={values.sections.content}
+                placeholder="Ketentuan pengerjaan, estimasi waktu, dll."
+                onChange={(html) => form.setFieldValue('sections.content', html)}
+              />
+            )}
           </Section>
         </div>
 
         <div hidden={activeSection !== 'footer'} className="flex flex-col gap-6">
           <Section title="Bagian bawah (footer)">
-            <LazyRichEditor
-              label="Info pembayaran &amp; tanda tangan"
-              value={values.sections.footer}
-              placeholder="Pembayaran: BCA 1234567890 a.n. …"
-              onChange={(html) => form.setFieldValue('sections.footer', html)}
-            />
+            {activeSection === 'footer' && (
+              <LazyRichEditor
+                label="Info pembayaran &amp; tanda tangan"
+                value={values.sections.footer}
+                placeholder="Pembayaran: BCA 1234567890 a.n. …"
+                onChange={(html) => form.setFieldValue('sections.footer', html)}
+              />
+            )}
           </Section>
         </div>
 
