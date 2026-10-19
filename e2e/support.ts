@@ -49,11 +49,11 @@ async function stubTurnstile(page: Page): Promise<void> {
 }
 
 /** Signs the smoke account in and waits for the app shell. */
-export async function signIn(page: Page): Promise<void> {
+export async function signIn(page: Page, base = ''): Promise<void> {
   await stubTurnstile(page);
-  await page.goto('/login');
+  await page.goto(`${base}/login`);
   await page.fill('input[type="email"]', EMAIL);
   await page.fill('input[type="password"]', PASSWORD);
   await page.click('button[type="submit"]');
-  await page.waitForURL('**/dashboard');
+  await page.waitForURL(/\/dashboard\/?$/, { waitUntil: 'domcontentloaded' });
 }

@@ -17,6 +17,7 @@ import type { AuthoredTemplate, InvoiceTemplate } from '../core/template/model';
 import { DEFAULT_THEME } from '../core/template/model';
 import { invoiceTemplateShapeSchema } from '../core/template/schema';
 import type { Customer } from '../core/customer/model';
+import type { InvoiceFinanceEntry } from '../core/stats/finance';
 import { customerShapeSchema } from '../core/customer/schema';
 import type { CatalogItem } from '../core/catalog/model';
 import { catalogShapeSchema } from '../core/catalog/schema';
@@ -462,6 +463,34 @@ export function catalogToRowData(
  * adjustments are absent by design — only the customer columns, the item lines
  * and the timestamps the recency sort uses are carried across.
  */
+/**
+ * Maps a *projected* finance row (see `listFinanceEntries`) back to the
+ * narrow slice the dashboard's money math reads. The rich-text columns were
+ * left behind server-side, so only the selected attributes — plus the system
+ * stamps Appwrite always returns — are carried across.
+ */
+export function invoiceFinanceRowToEntry(row: InvoiceRow): InvoiceFinanceEntry {
+  return {
+    id: row.$id,
+    invoiceNumber: typeof row.invoiceNumber === 'string' ? row.invoiceNumber : '',
+    customerName: typeof row.customerName === 'string' ? row.customerName : '',
+    customerPhone: optionalString(row.customerPhone),
+    status: parseInvoiceStatus(row.status),
+    date: typeof row.date === 'string' ? row.date : '',
+    dueDate: optionalString(row.dueDate),
+    items: parseInvoiceItems(row.items),
+    discount: toAdjustment(row.discountType, row.discountValue),
+    tax: toAdjustment(row.taxType, row.taxValue),
+    createdAt: row.$createdAt,
+    paymentProof: optionalString(row.paymentProofKey)
+      ? {
+          key: optionalString(row.paymentProofKey) ?? '',
+          uploadedAt: optionalString(row.paymentProofUploadedAt) ?? row.$updatedAt,
+        }
+      : null,
+  };
+}
+
 export function invoiceHistoryRowToEntry(row: InvoiceRow): InvoiceHistoryEntry {
   return {
     customerName: typeof row.customerName === 'string' ? row.customerName : '',

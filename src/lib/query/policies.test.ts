@@ -93,6 +93,7 @@ describe('QUERY_POLICIES', () => {
         'customerCount',
         'customers',
         'customersPage',
+        'dashboardFinance',
         'invoice',
         'invoiceNumbers',
         'invoices',

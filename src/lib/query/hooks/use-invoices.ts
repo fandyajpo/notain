@@ -162,6 +162,9 @@ export function useUpdateInvoiceStatus() {
     // of truth for the stored enum.
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      // A paid/void flip is exactly what the dashboard's revenue and
+      // receivable metrics turn on — recompute every cached period.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardFinanceAll });
     },
   });
 }
@@ -245,6 +248,10 @@ function invalidateCollections(queryClient: ReturnType<typeof useQueryClient>): 
   void queryClient.invalidateQueries({ queryKey: ['invoices'] });
   void queryClient.invalidateQueries({ queryKey: queryKeys.invoiceNumbers });
   void queryClient.invalidateQueries({ queryKey: queryKeys.pickerHistory });
+  // Money moved: every cached dashboard period must recompute, not just the
+  // one on screen — a create, edit, status flip or delete changes revenue,
+  // receivables and the chart for *all* of them.
+  void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardFinanceAll });
 }
 
 export type { Invoice, InvoicePage };

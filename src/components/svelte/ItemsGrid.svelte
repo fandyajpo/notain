@@ -234,7 +234,7 @@
           type="button"
           data-add-item
           onclick={add}
-          class="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-control border border-dashed border-border-strong bg-transparent px-3 text-sm font-medium text-muted transition-colors hover:border-accent hover:text-accent focus-ring"
+          class="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-control border border-dashed border-border-strong bg-transparent px-3.5 text-sm font-medium text-muted transition-colors hover:border-accent hover:text-accent focus-ring"
         >
           <Plus size={15} strokeWidth={2.5} aria-hidden="true" />
           Tambah barang
@@ -392,7 +392,7 @@
                   type="button"
                   data-add-item
                   onclick={add}
-                  class="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-control border border-dashed border-border-strong bg-transparent px-3 text-sm font-medium text-muted transition-colors hover:border-accent hover:text-accent focus-ring"
+                  class="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-control border border-dashed border-border-strong bg-transparent px-3.5 text-sm font-medium text-muted transition-colors hover:border-accent hover:text-accent focus-ring"
                 >
                   <Plus size={15} strokeWidth={2.5} aria-hidden="true" />
                   Tambah barang

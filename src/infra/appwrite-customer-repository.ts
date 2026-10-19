@@ -5,6 +5,7 @@ import { getTables } from '../appwrite/client';
 import { toAppError } from '../appwrite/errors';
 import { ownerRowPermissions } from '../appwrite/permissions';
 import { customerRowToDomain, customerToRowData, type CustomerRow } from '../appwrite/mappers';
+import type { CustomerCreation } from '../core/stats/finance';
 import type { CustomerRepository } from '../ports/customer-repository';
 
 const PAGE_LIMIT = 100;
@@ -45,6 +46,30 @@ export class AppwriteCustomerRepository implements CustomerRepository {
     // column wants an index on it, and a few dozen customers are not worth
     // another index to maintain.
     return customers.sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
+  }
+
+  async listRecentCreations(ownerId: string, limit = 10): Promise<CustomerCreation[]> {
+    try {
+      const response = await getTables().listRows<CustomerRow>({
+        databaseId: APPWRITE.databaseId,
+        tableId: APPWRITE.customersTableId,
+        queries: [
+          Query.equal('ownerId', ownerId),
+          // Name only: the activity feed labels the event and nothing else.
+          // `$createdAt` is a system attribute, always returned alongside the
+          // projection — no extra column to select or maintain.
+          Query.select(['name']),
+          Query.orderDesc('$createdAt'),
+          Query.limit(limit),
+        ],
+      });
+      return response.rows.map((row) => ({
+        name: typeof row.name === 'string' ? row.name : '',
+        createdAt: row.$createdAt,
+      }));
+    } catch (error) {
+      throw toAppError(error);
+    }
   }
 
   async countByOwner(ownerId: string): Promise<number> {

@@ -5,6 +5,7 @@ import {
   uploadOwnerPaymentProof,
   uploadPaymentProof,
 } from '../../../app/public-invoice';
+import { queryKeys } from '../keys';
 
 /**
  * The customer's view of one invoice, fetched through the public capability
@@ -50,7 +51,8 @@ export function useUploadPaymentProof(invoiceId: string) {
  * The owner's delete. Invalidates every invoice surface — the dashboard list
  * (badge + proof actions), the builder's detail cache (so its notice drops
  * the moment the delete lands), and the customer's public page — so all three
- * agree the proof is gone and the upload form may re-open.
+ * agree the proof is gone and the upload form may re-open. The dashboard's
+ * activity feed reads proof events too, so its prefix goes with them.
  */
 export function useDeletePaymentProof() {
   const queryClient = useQueryClient();
@@ -60,6 +62,7 @@ export function useDeletePaymentProof() {
       void queryClient.invalidateQueries({ queryKey: ['invoices'] });
       void queryClient.invalidateQueries({ queryKey: ['invoice'] });
       void queryClient.invalidateQueries({ queryKey: ['public-invoice'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardFinanceAll });
     },
   });
 }
@@ -67,7 +70,8 @@ export function useDeletePaymentProof() {
 /**
  * The owner's upload/replace from the dashboard. Same invalidation set as
  * the delete above: list badge, builder notice and the customer's page must
- * all re-read the row after the write.
+ * all re-read the row after the write — and the dashboard activity feed,
+ * which lists proof arrivals, must not keep yesterday's event set.
  */
 export function useUploadOwnerPaymentProof() {
   const queryClient = useQueryClient();
@@ -78,6 +82,7 @@ export function useUploadOwnerPaymentProof() {
       void queryClient.invalidateQueries({ queryKey: ['invoices'] });
       void queryClient.invalidateQueries({ queryKey: ['invoice'] });
       void queryClient.invalidateQueries({ queryKey: ['public-invoice'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardFinanceAll });
     },
   });
 }

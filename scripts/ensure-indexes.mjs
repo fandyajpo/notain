@@ -48,6 +48,15 @@ const DESIRED = [
         attributes: ['ownerId', 'templateId', 'date'],
         orders: ['asc', 'asc', 'asc'],
       },
+      // Status filter: equal(ownerId) + equal(status) + orderDesc(date). Serves
+      // the /invoices status dropdown and the dashboard stats refresh, which
+      // counts each status on every visit.
+      {
+        key: 'owner_status_date',
+        type: 'key',
+        attributes: ['ownerId', 'status', 'date'],
+        orders: ['asc', 'asc', 'asc'],
+      },
       // Number allocation: equal(ownerId) + startsWith('invoiceNumber', 'INV-YYYY-').
       {
         key: 'owner_invoiceNumber',

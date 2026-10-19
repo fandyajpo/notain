@@ -70,6 +70,8 @@ export function useCreateCustomer() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
+      // Customer events feed the dashboard's activity list.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardFinanceAll });
     },
   });
 }
@@ -101,6 +103,8 @@ export function useMergeCustomers() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
+      // Customer events feed the dashboard's activity list.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardFinanceAll });
     },
   });
 }
@@ -118,6 +122,8 @@ export function useRememberCustomer() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
+      // Customer events feed the dashboard's activity list.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardFinanceAll });
     },
   });
 }
@@ -143,6 +149,8 @@ export function useDeleteCustomer() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
+      // Customer events feed the dashboard's activity list.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardFinanceAll });
     },
   });
 }
@@ -170,6 +178,8 @@ export function useDeleteCustomers() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
+      // Customer events feed the dashboard's activity list.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardFinanceAll });
     },
   });
 }
@@ -183,6 +193,8 @@ export function useImportCustomers() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
+      // Customer events feed the dashboard's activity list.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboardFinanceAll });
     },
   });
 }

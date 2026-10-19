@@ -1,5 +1,6 @@
 import { Loader2 } from 'lucide-react';
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'react';
+import { CONTROL_HEIGHT } from '../../../lib/ui/classes';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'danger-soft';
 type Size = 'sm' | 'md' | 'lg';
@@ -17,10 +18,16 @@ const VARIANTS: Record<Variant, string> = {
     'border border-danger/25 bg-danger-soft text-danger hover:border-danger/40 hover:bg-danger/10',
 };
 
+/**
+ * Heights come from the shared `CONTROL_HEIGHT` scale so every button size
+ * lines up with the input/select of the same name — `sm` is h-10 beside a
+ * toolbar's sm inputs, `md` is h-11 beside form fields. Padding and type
+ * scale per size on top of that.
+ */
 const SIZES: Record<Size, string> = {
-  sm: 'h-9 px-3 text-sm',
-  md: 'h-11 px-4 text-sm',
-  lg: 'h-12 px-5 text-base',
+  sm: `${CONTROL_HEIGHT.sm} px-3.5 text-sm`,
+  md: `${CONTROL_HEIGHT.md} px-4 text-sm`,
+  lg: `${CONTROL_HEIGHT.lg} px-5 text-base`,
 };
 
 type SharedProps = {

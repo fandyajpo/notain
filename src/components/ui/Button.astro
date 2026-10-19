@@ -1,6 +1,7 @@
 ---
 import type { HTMLAttributes } from 'astro/types';
 import { LoaderCircle } from 'lucide-astro';
+import { CONTROL_HEIGHT } from '../../lib/ui/classes';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
@@ -39,10 +40,12 @@ const variants: Record<Variant, string> = {
   danger: 'bg-danger text-danger-foreground hover:bg-danger/90 active:bg-danger/80',
 };
 
+/** Shared `CONTROL_HEIGHT` scale, same as the React `Button`: each size lines
+ * up with the input/select of the same name (sm h-10, md h-11, lg h-12). */
 const sizes: Record<Size, string> = {
-  sm: 'h-9 px-3 text-sm',
-  md: 'h-11 px-4 text-sm',
-  lg: 'h-12 px-5 text-base',
+  sm: `${CONTROL_HEIGHT.sm} px-3.5 text-sm`,
+  md: `${CONTROL_HEIGHT.md} px-4 text-sm`,
+  lg: `${CONTROL_HEIGHT.lg} px-5 text-base`,
 };
 
 const state = [disabled || loading ? 'opacity-50' : '', full ? 'w-full' : '', className ?? '']

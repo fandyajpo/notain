@@ -1,4 +1,5 @@
 import type { Customer, CustomerDraft } from '../core/customer/model';
+import type { CustomerCreation } from '../core/stats/finance';
 
 /**
  * Persistence port for the saved-customer directory.
@@ -26,6 +27,12 @@ export interface CustomerRepository {
    * (and mapping) the whole directory.
    */
   countByOwner(ownerId: string): Promise<number>;
+  /**
+   * The most recent customer creations (name + creation stamp only) — the
+   * dashboard's activity feed. A projected read like the picker's history:
+   * the feed needs two fields per row, not the whole directory.
+   */
+  listRecentCreations(ownerId: string, limit?: number): Promise<CustomerCreation[]>;
   /** All of the owner's rows whose name matches exactly, before phone folding. */
   findByName(ownerId: string, name: string): Promise<Customer[]>;
   create(input: {

@@ -45,6 +45,14 @@ export const queryKeys = {
   catalogItem: (id: string) => ['catalog', id] as const,
   /** Cached dashboard counters — one row per owner (the `stats` table). */
   stats: ['dashboard-stats'] as const,
+  /**
+   * Dashboard finance metrics (cards + chart + attention + activity), keyed
+   * by the resolved period window so each period is cached separately while
+   * switching back to a seen one is instant.
+   */
+  dashboardFinance: (from: string, to: string) => ['dashboard-finance', from, to] as const,
+  /** Prefix for invalidating *every* cached period after an invoice change. */
+  dashboardFinanceAll: ['dashboard-finance'] as const,
   /** Admin panel user list. Only fetched by members of the `admins` team. */
   adminUsers: ['admin-users'] as const,
   /** Admin action log (`/admin` → Log aktivitas tab). */

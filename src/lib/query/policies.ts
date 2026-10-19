@@ -65,6 +65,10 @@ export const QUERY_POLICIES = {
   // mount regardless, so staleTime only decides how long a *returning* visit
   // may paint from the row before re-reading it.
   stats: { staleTime: 30_000, gcTime: 30 * 60_000 },
+  // The dashboard's money metrics. Every invoice mutation invalidates the
+  // whole prefix, so this window only absorbs back-navigation; the numbers
+  // are money, so it is kept as short as the counter cache above.
+  dashboardFinance: { staleTime: 30_000, gcTime: 30 * 60_000 },
   // Admin data is only written by another admin session, so it is safe to
   // trust for a while; the "Muat ulang" button forces a refetch when needed.
   adminUsers: { staleTime: 60_000, gcTime: 5 * 60_000 },

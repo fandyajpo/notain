@@ -1,23 +1,14 @@
-import {
-  ArrowRight,
-  Banknote,
-  Ban,
-  FileText,
-  LayoutTemplate,
-  Plus,
-  Send,
-  Users,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { ArrowRight, FileText, Plus } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
 import { Button } from '../ui/button';
-import { Card, cardClass } from '../ui/card';
+import { cardClass } from '../ui/card';
 import { PageHeader } from '../ui/page-header';
 import { StatusBadge } from '../ui/status-badge';
 import { EmptyState, ErrorState, LoadingState } from '../ui/state';
 import { SetupChecklist } from './setup-checklist';
+import { FinanceSection } from './finance-section';
 import { calculateTotals } from '../../../core/invoice/calculator';
 import { formatRupiah } from '../../../core/shared/money';
 import { formatTanggalRelatif, formatWaktuLalu } from '../../../core/shared/dates';
@@ -28,7 +19,6 @@ import { useSession } from '../../../lib/query/hooks/use-session';
 import { useDashboardStats } from '../../../lib/query/hooks/use-dashboard-stats';
 import { useInvoices } from '../../../lib/query/hooks/use-invoices';
 import { usePageTour } from '../../../lib/tour/use-tour';
-import { useCountUp } from '../../../lib/use-count-up';
 import { cx } from '../../../lib/ui/classes';
 import { TABLE, TABLE_SHELL, TBODY_ROW, THEAD_ROW, tdClass, thClass } from '../ui/table';
 import type { Invoice } from '../../../core/invoice/model';
@@ -40,50 +30,6 @@ import type { Invoice } from '../../../core/invoice/model';
  * it ships six rows instead of the table's full hundred.
  */
 const RECENT_PREVIEW = 6;
-
-type KpiTone = 'accent' | 'neutral' | 'success' | 'danger';
-
-/** Icon tints — the same semantics as the status badges below. */
-const KPI_TONE_CLASS: Record<KpiTone, string> = {
-  accent: 'bg-accent-soft text-accent',
-  neutral: 'border border-border bg-background text-muted',
-  success: 'bg-success-soft text-success',
-  danger: 'bg-danger-soft text-danger',
-};
-
-/** The six headline numbers, in the order they are shown. */
-const KPIS: Array<{
-  key: string;
-  label: string;
-  Icon: LucideIcon;
-  tone: KpiTone;
-  pick: (stats: DashboardStats) => number;
-}> = [
-  {
-    key: 'total',
-    label: 'Total invoice',
-    Icon: FileText,
-    tone: 'accent',
-    pick: (s) => s.totalInvoices,
-  },
-  { key: 'sent', label: 'Terkirim', Icon: Send, tone: 'neutral', pick: (s) => s.sentCount },
-  { key: 'paid', label: 'Lunas', Icon: Banknote, tone: 'success', pick: (s) => s.paidCount },
-  { key: 'void', label: 'Batal', Icon: Ban, tone: 'danger', pick: (s) => s.voidCount },
-  {
-    key: 'customers',
-    label: 'Customer',
-    Icon: Users,
-    tone: 'accent',
-    pick: (s) => s.totalCustomers,
-  },
-  {
-    key: 'templates',
-    label: 'Template',
-    Icon: LayoutTemplate,
-    tone: 'accent',
-    pick: (s) => s.totalTemplates,
-  },
-];
 
 /** Status rows of the breakdown table, with their progress-bar tint. */
 const STATUS_ROWS: Array<{
@@ -162,6 +108,11 @@ function DashboardContent() {
         hidden={profileFailed || invoices.isLoading}
       />
 
+      {/* Money first: the period-scoped financial cards, the six-month
+          chart, unpaid invoices worth chasing, and recent activity — all
+          from one windowed, column-projected query. */}
+      <FinanceSection businessName={usahaName} />
+
       <SummarySection
         stats={stats.data}
         statsLoading={stats.isLoading}
@@ -172,8 +123,7 @@ function DashboardContent() {
         invoicesLoading={invoices.isLoading}
         invoicesError={invoices.isError}
         onRetryInvoices={() => void invoices.refetch()}
-      />
-    </div>
+      />    </div>
   );
 }
 
@@ -224,29 +174,25 @@ function SummarySection({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Counts, not money: this table is the single home for every invoice
+          count (the customer and template tallies ride in its header), while
+          Rupiah amounts live in the finance section above. One counts block
+          instead of a card grid *and* a table saying the same numbers. */}
       <section
         data-tour="dash-summary"
         aria-label="Ringkasan singkat"
-        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        className="flex flex-col gap-4"
       >
-        {waiting
-          ? KPIS.map((kpi) => <KpiSkeleton key={kpi.key} />)
-          : KPIS.map(({ key, label, Icon, tone, pick }) => (
-              <StatCard
-                key={key}
-                label={label}
-                value={pick(stats as DashboardStats)}
-                Icon={Icon}
-                tone={tone}
-              />
-            ))}
-      </section>
-
-      <section data-tour="dash-stats" className="flex flex-col gap-4">
         <div className="flex items-end justify-between gap-3">
           <div>
             <h2 className="text-section">Ringkasan usaha</h2>
-            <p className="text-sm text-muted">{usahaName}</p>
+            <p className="text-sm text-muted">
+              {usahaName}
+              {hasStats &&
+                ` · ${(stats as DashboardStats).totalCustomers.toLocaleString('id-ID')} customer · ${(
+                  stats as DashboardStats
+                ).totalTemplates.toLocaleString('id-ID')} template`}
+            </p>
           </div>
           {/* The caption is the cache's honesty label: while a recompute is
               running it says so; afterwards it shows how old the row is. */}
@@ -267,7 +213,7 @@ function SummarySection({
                   Status
                 </th>
                 <th scope="col" className={thClass('text-right')}>
-                  Jumlah
+                  Jumlah invoice
                 </th>
                 <th scope="col" className={thClass('text-right')}>
                   Porsi
@@ -375,50 +321,6 @@ function SummarySection({
           </ul>
         )}
       </section>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  Icon,
-  tone,
-}: {
-  label: string;
-  value: number;
-  Icon: LucideIcon;
-  tone: KpiTone;
-}) {
-  // Rolls up from 0 on first data arrival so the numbers land instead of
-  // blinking in; reduced-motion users see the final value immediately.
-  const shown = useCountUp(value);
-  return (
-    <Card padding="sm" className="flex items-center gap-3">
-      <span
-        className={cx(
-          'flex h-9 w-9 shrink-0 items-center justify-center rounded-control',
-          KPI_TONE_CLASS[tone],
-        )}
-      >
-        <Icon size={18} aria-hidden="true" />
-      </span>
-      <div className="min-w-0">
-        <p className="truncate text-sm text-muted">{label}</p>
-        <p className="text-2xl font-semibold tabular-nums">{shown.toLocaleString('id-ID')}</p>
-      </div>
-    </Card>
-  );
-}
-
-function KpiSkeleton() {
-  return (
-    <div className={cardClass('sm', 'flex items-center gap-3')} aria-hidden="true">
-      <span className="h-9 w-9 shrink-0 animate-pulse rounded-control bg-border/60" />
-      <div className="flex flex-col gap-2">
-        <span className="block h-3.5 w-24 animate-pulse rounded bg-border/60" />
-        <span className="block h-6 w-12 animate-pulse rounded bg-border/60" />
-      </div>
     </div>
   );
 }

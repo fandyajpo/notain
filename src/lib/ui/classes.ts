@@ -13,6 +13,31 @@ export function cx(...parts: ClassValue[]): string {
   return parts.filter(Boolean).join(' ');
 }
 
+/**
+ * The canonical control heights, shared by every button, input and select.
+ *
+ * One record so a form row can never mix a 36px button with a 40px input
+ * again: `sm` sits next to toolbar inputs, `md` is the form default, `lg` is
+ * the standalone display size (hero CTAs) with no input counterpart.
+ */
+export const CONTROL_HEIGHT = {
+  sm: 'h-10',
+  md: 'h-11',
+  lg: 'h-12',
+} as const;
+
+/** Icon-chip tints for stat cards: soft background + semantic foreground. */
+export type SoftTone = 'accent' | 'neutral' | 'success' | 'danger';
+
+export function softToneClass(tone: SoftTone): string {
+  return {
+    accent: 'bg-accent-soft text-accent',
+    neutral: 'border border-border bg-background text-muted',
+    success: 'bg-success-soft text-success',
+    danger: 'bg-danger-soft text-danger',
+  }[tone];
+}
+
 type ControlOptions = {
   invalid?: boolean;
   /** Compact controls (toolbars, dense tables) drop to h-10; default h-11. */
@@ -39,7 +64,7 @@ export function controlClass({
     invalid ? 'border-danger' : 'border-border hover:border-border-strong',
     'disabled:cursor-not-allowed disabled:bg-background disabled:text-muted disabled:shadow-none disabled:hover:border-border',
     'read-only:cursor-default read-only:bg-background',
-    multiline ? 'min-h-24 resize-y py-2.5 leading-relaxed' : size === 'sm' ? 'h-10' : 'h-11',
+    multiline ? 'min-h-24 resize-y py-2.5 leading-relaxed' : CONTROL_HEIGHT[size],
     className,
   ]
     .filter(Boolean)

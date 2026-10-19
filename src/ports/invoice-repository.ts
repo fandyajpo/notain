@@ -4,6 +4,7 @@ import type {
   InvoiceHistoryEntry,
   InvoiceStatus,
 } from '../core/invoice/model';
+import type { InvoiceFinanceEntry } from '../core/stats/finance';
 
 export type ListInvoicesOptions = {
   /**
@@ -77,6 +78,22 @@ export interface InvoiceRepository {
    * fraction of the full-row payload the table needs.
    */
   listHistoryByOwner(ownerId: string, limit?: number): Promise<InvoiceHistoryEntry[]>;
+  /**
+   * The finance projection the dashboard's money metrics are computed from.
+   *
+   * Selects only the columns the totals math reads (customer, status, dates,
+   * items, adjustments, proof stamp) and leaves the rich-text bulk behind
+   * server-side, filtered to an inclusive `date` window. This is the one
+   * query that feeds the summary cards, the revenue chart, and the
+   * "needs attention" list at once — Appwrite exposes no SUM/GROUP
+   * aggregation and invoice totals are derived from the items JSON, so a
+   * narrow row walk is the honest way to total them without shipping whole
+   * records.
+   */
+  listFinanceEntries(
+    ownerId: string,
+    options: { from: string; to: string; limit?: number; cursorAfter?: string },
+  ): Promise<InvoiceFinanceEntry[]>;
   getById(id: string): Promise<Invoice | null>;
   create(input: { id: string; ownerId: string; draft: InvoiceDraft }): Promise<Invoice>;
   update(input: { id: string; draft: InvoiceDraft }): Promise<Invoice>;

@@ -8,11 +8,13 @@ import { invoiceNumberPrefix } from '../core/invoice/numbering';
 import {
   draftToRowData,
   draftToRowUpdateData,
+  invoiceFinanceRowToEntry,
   invoiceHistoryRowToEntry,
   invoiceRowToDomain,
   type InvoiceRow,
 } from '../appwrite/mappers';
 import type { InvoiceHistoryEntry } from '../core/invoice/model';
+import type { InvoiceFinanceEntry } from '../core/stats/finance';
 import type {
   InvoicePage,
   InvoiceRepository,
@@ -20,6 +22,28 @@ import type {
 } from '../ports/invoice-repository';
 
 const DEFAULT_LIMIT = 100;
+
+/**
+ * Columns the dashboard's finance projection reads. Everything heavy — the
+ * three rich-text sections, notes, details — is left behind server-side; the
+ * `items` JSON and the adjustment columns are the price of computing totals,
+ * which no server-side SUM can do here (totals are derived, not stored).
+ */
+const FINANCE_SELECT = [
+  'invoiceNumber',
+  'customerName',
+  'customerPhone',
+  'status',
+  'date',
+  'dueDate',
+  'items',
+  'discountType',
+  'discountValue',
+  'taxType',
+  'taxValue',
+  'paymentProofKey',
+  'paymentProofUploadedAt',
+];
 
 /**
  * How many recent invoices the picker's history projection reads.
@@ -86,6 +110,35 @@ export class AppwriteInvoiceRepository implements InvoiceRepository {
         nextCursor: rows.length === limit && last ? last.$id : null,
         total: response.total,
       };
+    } catch (error) {
+      throw toAppError(error);
+    }
+  }
+
+  async listFinanceEntries(
+    ownerId: string,
+    options: { from: string; to: string; limit?: number; cursorAfter?: string },
+  ): Promise<InvoiceFinanceEntry[]> {
+    const limit = options.limit ?? DEFAULT_LIMIT;
+    try {
+      const response = await getTables().listRows<InvoiceRow>({
+        databaseId: APPWRITE.databaseId,
+        tableId: APPWRITE.invoicesTableId,
+        queries: [
+          Query.equal('ownerId', ownerId),
+          // ISO dates compare lexicographically, so a string range *is* a
+          // date range — and it rides the existing `owner_date` index
+          // (equal ownerId + range/sort on date) instead of scanning.
+          Query.greaterThanEqual('date', options.from),
+          Query.lessThanEqual('date', options.to),
+          Query.select(FINANCE_SELECT),
+          Query.orderDesc('date'),
+          Query.orderDesc('$createdAt'),
+          Query.limit(limit),
+          ...(options.cursorAfter ? [Query.cursorAfter(options.cursorAfter)] : []),
+        ],
+      });
+      return response.rows.map(invoiceFinanceRowToEntry);
     } catch (error) {
       throw toAppError(error);
     }
