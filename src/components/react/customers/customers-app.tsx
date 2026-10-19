@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Check, Merge, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
@@ -12,6 +12,7 @@ import { FieldShell, useFieldIds } from '../ui/field';
 import { Input } from '../ui/input';
 import { SearchField } from '../ui/search-field';
 import { EmptyState, ErrorState, LoadingState } from '../ui/state';
+import { TABLE, TABLE_SHELL, TBODY_ROW, THEAD_ROW, Td, Th } from '../ui/table';
 import { usePageTour } from '../../../lib/tour/use-tour';
 import {
   useCreateCustomer,
@@ -22,7 +23,7 @@ import {
   useUpdateCustomer,
 } from '../../../lib/query/hooks/use-customers';
 import { listCustomers } from '../../../app/customers';
-import { formatTanggalRelatif } from '../../../core/shared/dates';
+import { formatTanggal, formatTanggalRelatif } from '../../../core/shared/dates';
 import { toCustomerRows } from '../../../core/excel';
 import { toAppError } from '../../../appwrite/errors';
 import { toast } from '../../../lib/ui/toast';
@@ -90,10 +91,12 @@ function CustomersContent() {
 
   // Merge mode state.
   const [mergeMode, setMergeMode] = useState(false);
-  // Bulk-select mode: same checkboxes as merge, but for delete/export instead
-  // of collapsing rows. Kept apart so each mode owns its own action bar and
-  // neither ever shows the other's buttons.
-  const [selectMode, setSelectMode] = useState(false);
+  /**
+   * Checked row ids — same contract as the invoice table's selection: it
+   * survives "Muat lebih banyak" (the ids outlive the pages) but is wiped
+   * whenever the search changes, so a bulk action can never touch a row the
+   * user can no longer see.
+   */
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [mergeOpen, setMergeOpen] = useState(false);
   const [mergeChoices, setMergeChoices] = useState<CustomerDraft>(EMPTY_DRAFT);
@@ -128,6 +131,15 @@ function CustomersContent() {
         c.phone.includes(q),
     );
   }, [customers, query]);
+
+  // A search change invalidates the selection — see the state's comment above.
+  useEffect(() => {
+    setSelected(new Set());
+  }, [query]);
+
+  /** Every currently-visible row is checked — what the select-all box reads. */
+  const allFilteredSelected = filtered.length > 0 && filtered.every((c) => selected.has(c.id));
+  const someFilteredSelected = filtered.some((c) => selected.has(c.id));
 
   function handleAdd() {
     const trimmed = name.trim();
@@ -189,6 +201,19 @@ function CustomersContent() {
     });
   }
 
+  /** Checks every visible row, or unchecks them all if they already were. */
+  function toggleSelectAll() {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allFilteredSelected) {
+        for (const customer of filtered) next.delete(customer.id);
+      } else {
+        for (const customer of filtered) next.add(customer.id);
+      }
+      return next;
+    });
+  }
+
   function confirmDelete() {
     if (!deleteTarget) return;
     const { id, name } = deleteTarget;
@@ -210,12 +235,6 @@ function CustomersContent() {
     setMergeOpen(false);
   }
 
-  function exitSelectMode() {
-    setSelectMode(false);
-    setSelected(new Set());
-    setBulkDeleteOpen(false);
-  }
-
   /** The bulk action behind the selection bar's "Hapus" button. */
   function confirmBulkDelete() {
     const ids = [...selected];
@@ -225,7 +244,8 @@ function CustomersContent() {
     }
     deleteCustomers.mutate(ids, {
       onSuccess: () => {
-        exitSelectMode();
+        setSelected(new Set());
+        setBulkDeleteOpen(false);
         toast(`${ids.length} customer berhasil dihapus.`, { variant: 'success' });
       },
       onError: (error) => {
@@ -305,40 +325,18 @@ function CustomersContent() {
                 </Button>
               </>
             ) : (
-              <>
-                {selectMode ? (
-                  <Button variant="secondary" size="sm" onClick={exitSelectMode}>
-                    <X size={15} aria-hidden="true" />
-                    Selesai
-                  </Button>
-                ) : (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    disabled={customers.length === 0}
-                    onClick={() => {
-                      setSelectMode(true);
-                      setSelected(new Set());
-                    }}
-                  >
-                    <Check size={15} aria-hidden="true" />
-                    Pilih
-                  </Button>
-                )}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={customers.length < 2}
-                  onClick={() => {
-                    setMergeMode(true);
-                    setSelectMode(false);
-                    setSelected(new Set());
-                  }}
-                >
-                  <Merge size={15} aria-hidden="true" />
-                  Gabungkan
-                </Button>
-              </>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={customers.length < 2}
+                onClick={() => {
+                  setMergeMode(true);
+                  setSelected(new Set());
+                }}
+              >
+                <Merge size={15} aria-hidden="true" />
+                Gabungkan
+              </Button>
             )}
             <ExportButtons
               filename="customer-notain"
@@ -483,59 +481,142 @@ function CustomersContent() {
             )}
           </div>
 
+          {/* Appears the moment a checkbox is ticked: the count, an export of
+              exactly that set, the bulk delete, and a way out. Merge mode has
+              its own action bar up top, so this one stays out of the way. */}
+          {!mergeMode && selectedCustomers.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-card px-4 py-3 shadow-card">
+              <p className="text-sm text-muted">
+                <span className="font-medium text-foreground">{selectedCustomers.length}</span>{' '}
+                customer dipilih
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <ExportButtons
+                  filename="customer-terpilih"
+                  sheetName="Customer"
+                  getRows={() => toCustomerRows(selectedCustomers)}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelected(new Set())}
+                  disabled={deleteCustomers.isPending}
+                >
+                  Batalkan pilihan
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => setBulkDeleteOpen(true)}
+                  disabled={deleteCustomers.isPending}
+                >
+                  <Trash2 size={15} aria-hidden="true" />
+                  Hapus {selectedCustomers.length}
+                </Button>
+              </div>
+            </div>
+          )}
+
           {filtered.length === 0 ? (
             <EmptyState title="Tidak ada customer yang cocok." />
           ) : (
-            <ul
-              data-tour="cust-list"
-              className={cardClass('none', 'flex flex-col divide-y divide-border')}
-            >
-              {filtered.map((customer) => (
-                <li key={customer.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    {mergeMode && (
+            <div data-tour="cust-list" className={TABLE_SHELL}>
+              <table className={TABLE} style={{ minWidth: '640px' }}>
+                <thead>
+                  <tr className={THEAD_ROW}>
+                    {/* Select-all sits in the header, above the column it
+                        governs — the invoice table's arrangement. */}
+                    <Th className="w-11">
                       <input
                         type="checkbox"
-                        checked={selected.has(customer.id)}
-                        onChange={() => toggleSelected(customer.id)}
-                        className="h-4 w-4 shrink-0 accent-accent"
-                        aria-label={`Pilih ${customer.name}`}
+                        checked={allFilteredSelected}
+                        ref={(element) => {
+                          // Block body (not a concise arrow): React 19 treats a
+                          // returned non-function as a ref-cleanup error, and this
+                          // assignment is a side effect, not a return value.
+                          if (element) {
+                            element.indeterminate = someFilteredSelected && !allFilteredSelected;
+                          }
+                        }}
+                        onChange={toggleSelectAll}
+                        aria-label="Pilih semua customer yang dimuat"
+                        className="h-4 w-4 accent-accent"
+                        disabled={filtered.length === 0}
                       />
-                    )}
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{customer.name}</p>
-                      <p className="text-sm text-muted">
-                        {[customer.email, customer.phone].filter(Boolean).join(' · ') ||
-                          'Tanpa kontak'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <span className="mr-2 hidden text-xs text-muted sm:inline">
-                      {customer.lastUsedAt ? formatTanggalRelatif(customer.lastUsedAt) : ''}
-                    </span>
-                    {!mergeMode && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEdit(customer)}
-                        aria-label={`Edit ${customer.name}`}
-                      >
-                        <Pencil size={15} aria-hidden="true" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleteTarget(customer)}
-                      aria-label={`Hapus ${customer.name}`}
-                    >
-                      <Trash2 size={15} aria-hidden="true" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+                    </Th>
+                    <Th>Customer</Th>
+                    <Th>Kontak</Th>
+                    <Th>Terakhir dipakai</Th>
+                    <Th align="right" className="w-14" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((customer) => {
+                    const contact =
+                      [customer.email, customer.phone].filter(Boolean).join(' · ') ||
+                      'Tanpa kontak';
+                    return (
+                      <tr key={customer.id} className={TBODY_ROW}>
+                        <Td className="w-11">
+                          <input
+                            type="checkbox"
+                            checked={selected.has(customer.id)}
+                            onChange={() => toggleSelected(customer.id)}
+                            aria-label={`Pilih ${customer.name}`}
+                            className="h-4 w-4 accent-accent"
+                          />
+                        </Td>
+                        <Td>
+                          <span
+                            className="block max-w-[220px] truncate font-medium"
+                            title={customer.name}
+                          >
+                            {customer.name}
+                          </span>
+                        </Td>
+                        <Td>
+                          <span className="block max-w-[260px] truncate text-muted" title={contact}>
+                            {contact}
+                          </span>
+                        </Td>
+                        <Td>
+                          <span
+                            className="text-muted"
+                            title={
+                              customer.lastUsedAt ? formatTanggal(customer.lastUsedAt) : undefined
+                            }
+                          >
+                            {customer.lastUsedAt ? formatTanggalRelatif(customer.lastUsedAt) : '-'}
+                          </span>
+                        </Td>
+                        <Td className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {!mergeMode && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEdit(customer)}
+                                aria-label={`Edit ${customer.name}`}
+                              >
+                                <Pencil size={15} aria-hidden="true" />
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteTarget(customer)}
+                              aria-label={`Hapus ${customer.name}`}
+                            >
+                              <Trash2 size={15} aria-hidden="true" />
+                            </Button>
+                          </div>
+                        </Td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
 
           <LoadMore
@@ -717,8 +798,7 @@ function CustomersContent() {
         ]}
       >
         <p className="text-sm text-muted">
-          Customer yang dipilih akan dihapus permanen dari daftar kamu dan tidak bisa
-          dikembalikan.
+          Customer yang dipilih akan dihapus permanen dari daftar kamu dan tidak bisa dikembalikan.
         </p>
       </Modal>
 
