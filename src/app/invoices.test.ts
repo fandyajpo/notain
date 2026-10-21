@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { SessionUser } from '../ports/auth-repository';
 import type { Invoice, InvoiceDraft } from '../core/invoice/model';
 import { AppError, ERROR_CODES } from '../core/shared/errors';

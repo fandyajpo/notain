@@ -166,9 +166,7 @@ export type Invoice = InvoiceDraft & {
  * to `paid`, or cancelling the invoice (`void` — nothing is owed anymore)
  * all drop the flag — the badge is a to-do, not a record.
  */
-export function needsPaymentCheck(
-  invoice: Pick<Invoice, 'status' | 'paymentProof'>,
-): boolean {
+export function needsPaymentCheck(invoice: Pick<Invoice, 'status' | 'paymentProof'>): boolean {
   return invoice.paymentProof != null && invoice.status !== 'paid' && invoice.status !== 'void';
 }
 

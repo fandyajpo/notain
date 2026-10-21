@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { createSampleInvoice } from './sample';
 import { invoiceDraftSchema } from './schema';
 import { calculateTotals } from './calculator';

@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from 'vite-plus';
 import react from '@vitejs/plugin-react';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import vue from '@vitejs/plugin-vue';

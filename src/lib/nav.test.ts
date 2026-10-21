@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { ADMIN_GROUP_LABEL, NAV_GROUPS, UTILITIES_GROUP_LABEL, drawerStagger } from './nav';
 
 const WORKSPACE = [

@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import type { SessionUser } from '../../ports/auth-repository';
 import { queryKeys } from './keys';
 import { adoptSession } from './session-cache';

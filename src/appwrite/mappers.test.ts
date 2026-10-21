@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { INVOICE_LIMITS } from '../core/invoice/model';
 import { DEFAULT_THEME, createDefaultLayout } from '../core/template/model';
 import {

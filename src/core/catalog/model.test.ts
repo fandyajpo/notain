@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { catalogKey, isSameCatalogItem, mergeCatalogItem, type CatalogDraft } from './model';
 
 function draft(overrides: Partial<CatalogDraft> = {}): CatalogDraft {

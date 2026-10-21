@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 
 const { createRecovery, completeRecovery, signOut } = vi.hoisted(() => ({

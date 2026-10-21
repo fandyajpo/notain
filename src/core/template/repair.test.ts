@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { getBuiltinTemplate } from './builtins';
 import { repairTemplateContent } from './repair';
 import type { AuthoredTemplate, TemplateBlock } from './model';

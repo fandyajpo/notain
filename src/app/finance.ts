@@ -91,7 +91,10 @@ export async function getDashboardFinance(input: {
 async function walkFinanceWindow(
   ownerId: string,
   window: DateRange,
-): Promise<{ rows: Awaited<ReturnType<typeof container.invoices.listFinanceEntries>>; truncated: boolean }> {
+): Promise<{
+  rows: Awaited<ReturnType<typeof container.invoices.listFinanceEntries>>;
+  truncated: boolean;
+}> {
   const rows: Awaited<ReturnType<typeof container.invoices.listFinanceEntries>> = [];
   let cursorAfter: string | undefined;
   let truncated = false;

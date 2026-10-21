@@ -33,7 +33,10 @@ test('invoice form mounts its three lazy custom elements', async ({ page }) => {
   // items grid lives behind the Barang tab.
   await expect(page.locator('notain-picker').first()).toBeVisible({ timeout: 20_000 });
   await expect(page.locator('notain-calc-inspector')).toBeVisible();
-  await page.getByRole('tab', { name: 'Barang' }).click();
+  await page
+    .getByRole('group', { name: 'Bagian invoice' })
+    .getByRole('button', { name: 'Barang' })
+    .click();
   await expect(page.locator('notain-items-grid')).toBeVisible({ timeout: 20_000 });
   await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
 

@@ -36,7 +36,7 @@ export async function prepareProofFile(input: File): Promise<PreparedProof> {
 
 /** Decodes HEIC/HEIF into a JPEG blob; `heic2any` is lazy-loaded WASM. */
 async function heicToJpeg(input: File): Promise<Blob> {
-  let convert: typeof import('heic2any')['default'];
+  let convert: (typeof import('heic2any'))['default'];
   try {
     ({ default: convert } = await import('heic2any'));
   } catch {

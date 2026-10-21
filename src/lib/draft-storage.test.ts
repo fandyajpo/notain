@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vite-plus/test';
 import { createEmptyDraft } from '../core/invoice/model';
 import { clearDraft, draftStorageKey, readDraft, writeDraft } from './draft-storage';
 

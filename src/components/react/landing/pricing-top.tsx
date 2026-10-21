@@ -26,7 +26,9 @@ export function PricingTop({ children }: { children: ReactNode }) {
 
       <SiteHeader anchorPrefix="/" />
 
-      <main id="konten" tabIndex={-1}>{children}</main>
+      <main id="konten" tabIndex={-1}>
+        {children}
+      </main>
     </MotionConfig>
   );
 }

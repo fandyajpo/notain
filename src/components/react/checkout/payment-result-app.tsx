@@ -116,8 +116,8 @@ function PaymentResultContent() {
         <Clock size={28} className="mx-auto text-muted" aria-hidden="true" />
         <h1 className="mt-4 text-title">Menunggu pembayaran</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          Selesaikan pembayaran di halaman DOKU. Statusnya diperbarui otomatis begitu DOKU
-          mengirim konfirmasi — biasanya beberapa detik setelah pembayaran.
+          Selesaikan pembayaran di halaman DOKU. Statusnya diperbarui otomatis begitu DOKU mengirim
+          konfirmasi — biasanya beberapa detik setelah pembayaran.
         </p>
         <Button
           variant="secondary"

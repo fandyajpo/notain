@@ -75,7 +75,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     return apiError(502, 'validation', 'Verifikasi keamanan gagal dihubungi.');
   }
   if (gate.state === 'rejected') {
-    return apiError(400, 'validation', 'Verifikasi keamanan gagal. Selesaikan kotak Turnstile, lalu coba lagi.');
+    return apiError(
+      400,
+      'validation',
+      'Verifikasi keamanan gagal. Selesaikan kotak Turnstile, lalu coba lagi.',
+    );
   }
 
   const auth = tableAuth(env);

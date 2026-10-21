@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import {
   buildCheckoutBody,
   DOKU_SIGNATURE_PREFIX,
@@ -234,7 +234,9 @@ describe('parseCheckoutResponse', () => {
 
   it('returns null when the URL is missing or not a URL', () => {
     expect(parseCheckoutResponse({ response: { payment: {} } })).toBeNull();
-    expect(parseCheckoutResponse({ response: { payment: { url: 'javascript:alert(1)' } } })).toBeNull();
+    expect(
+      parseCheckoutResponse({ response: { payment: { url: 'javascript:alert(1)' } } }),
+    ).toBeNull();
     expect(parseCheckoutResponse(null)).toBeNull();
   });
 });

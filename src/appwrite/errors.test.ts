@@ -1,5 +1,5 @@
 import { AppwriteException } from 'appwrite';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 import { appErrorFromStatus, isRateLimited, isUnauthenticated, toAppError } from './errors';
 

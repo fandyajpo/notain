@@ -5,7 +5,11 @@ import { Notice } from '../ui/notice';
 import { Turnstile } from '../auth/turnstile';
 import { TURNSTILE_SITE_KEY, turnstileEnabled } from '../../../lib/turnstile';
 import { PAYMENT_PROOF_ACCEPT, PAYMENT_PROOF_MAX_BYTES } from '../../../core/invoice/payment-proof';
-import { INVOICE_STATUS_LABELS, type InvoicePaymentProof, type InvoiceStatus } from '../../../core/invoice/model';
+import {
+  INVOICE_STATUS_LABELS,
+  type InvoicePaymentProof,
+  type InvoiceStatus,
+} from '../../../core/invoice/model';
 
 type Props = {
   proof: InvoicePaymentProof | null;
@@ -52,9 +56,7 @@ export function PaymentProofCard({ proof, status, onUpload }: Props) {
     return (
       <Notice variant="accent">
         <p className="font-medium">
-          {status === 'paid'
-            ? 'Invoice ini sudah ditandai Lunas'
-            : 'Invoice ini sudah dibatalkan'}
+          {status === 'paid' ? 'Invoice ini sudah ditandai Lunas' : 'Invoice ini sudah dibatalkan'}
         </p>
         <p className="mt-1">
           {status === 'paid'
@@ -73,7 +75,9 @@ export function PaymentProofCard({ proof, status, onUpload }: Props) {
 
     setError(null);
     if (file.size > PAYMENT_PROOF_MAX_BYTES) {
-      setError('File terlalu besar. Maksimal 5 MB — foto akan dikompres otomatis, tapi file asli harus di bawah 5 MB.');
+      setError(
+        'File terlalu besar. Maksimal 5 MB — foto akan dikompres otomatis, tapi file asli harus di bawah 5 MB.',
+      );
       return;
     }
     if (captcha && !token) {

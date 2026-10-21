@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { defaultsForBusiness, seedTemplateForBusiness } from './seed';
 import { getBuiltinTemplate } from './builtins';
 import { getBusinessPreset } from '../business/presets';

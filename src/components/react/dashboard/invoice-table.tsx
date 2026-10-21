@@ -36,10 +36,7 @@ import {
   type Invoice,
   type InvoiceStatus,
 } from '../../../core/invoice/model';
-import {
-  PAYMENT_PROOF_ACCEPT,
-  PAYMENT_PROOF_MAX_BYTES,
-} from '../../../core/invoice/payment-proof';
+import { PAYMENT_PROOF_ACCEPT, PAYMENT_PROOF_MAX_BYTES } from '../../../core/invoice/payment-proof';
 import { BUILTIN_TEMPLATES } from '../../../core/template/builtins';
 import { EMPTY_PROFILE, hasProAccess } from '../../../core/profile/model';
 import { toInvoiceRows } from '../../../core/excel/invoices';
@@ -305,9 +302,12 @@ export function InvoiceTable() {
     if (!file || !invoice) return;
 
     if (file.size > PAYMENT_PROOF_MAX_BYTES) {
-      toast('File terlalu besar. Maksimal 5 MB — foto akan dikompres otomatis, tapi file asli harus di bawah 5 MB.', {
-        variant: 'error',
-      });
+      toast(
+        'File terlalu besar. Maksimal 5 MB — foto akan dikompres otomatis, tapi file asli harus di bawah 5 MB.',
+        {
+          variant: 'error',
+        },
+      );
       return;
     }
 
@@ -315,9 +315,12 @@ export function InvoiceTable() {
       await uploadProof.mutateAsync({ invoiceId: invoice.id, file });
       toast('Bukti pembayaran tersimpan.', { variant: 'success' });
     } catch (error) {
-      toast(error instanceof Error ? error.message : 'Bukti pembayaran gagal diunggah. Coba lagi.', {
-        variant: 'error',
-      });
+      toast(
+        error instanceof Error ? error.message : 'Bukti pembayaran gagal diunggah. Coba lagi.',
+        {
+          variant: 'error',
+        },
+      );
     }
   }
 
@@ -865,9 +868,7 @@ export function InvoiceTable() {
         size="md"
         ariaLabelledBy="proof-dialog-title"
         title={
-          <span id="proof-dialog-title">
-            Bukti pembayaran {proofView?.invoiceNumber ?? ''}
-          </span>
+          <span id="proof-dialog-title">Bukti pembayaran {proofView?.invoiceNumber ?? ''}</span>
         }
         actions={[{ label: 'Tutup', variant: 'secondary', onClick: () => setProofView(null) }]}
       >
@@ -891,9 +892,7 @@ export function InvoiceTable() {
         role="alertdialog"
         size="sm"
         ariaLabelledBy="proof-delete-dialog-title"
-        title={
-          <span id="proof-delete-dialog-title">Hapus bukti pembayaran ini?</span>
-        }
+        title={<span id="proof-delete-dialog-title">Hapus bukti pembayaran ini?</span>}
         actions={[
           { label: 'Batal', variant: 'secondary', onClick: () => setProofDelete(null) },
           {
@@ -905,8 +904,8 @@ export function InvoiceTable() {
         ]}
       >
         <p className="text-sm text-muted">
-          Bukti pembayaran {proofDelete?.invoiceNumber} akan dihapus. Customer bisa mengunggah
-          bukti yang baru lewat tautan invoice.
+          Bukti pembayaran {proofDelete?.invoiceNumber} akan dihapus. Customer bisa mengunggah bukti
+          yang baru lewat tautan invoice.
         </p>
       </Modal>
     </div>

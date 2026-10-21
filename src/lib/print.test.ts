@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 import { createSampleInvoice } from '../core/invoice/sample';
 import { PRINT_PATH, openPrintView, readPrintPayload } from './print';
 

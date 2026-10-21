@@ -196,10 +196,12 @@ async function listUsers(
   if (page.length > 0) {
     const ids = page.map((user) => user.$id);
     const profilesResponse = await fetch(
-      `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents?${querySearchAll([
-        { method: 'equal', attribute: '$id', values: ids },
-        { method: 'limit', values: [ids.length] },
-      ])}`,
+      `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents?${querySearchAll(
+        [
+          { method: 'equal', attribute: '$id', values: ids },
+          { method: 'limit', values: [ids.length] },
+        ],
+      )}`,
       { headers },
     );
     if (profilesResponse.ok) {

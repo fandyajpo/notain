@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { calculateItemSubtotal, calculateTotals, resolveAdjustment } from './calculator';
 import { EMPTY_ADJUSTMENT } from './model';
 

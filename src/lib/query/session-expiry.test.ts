@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient } from '@tanstack/react-query';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { AppError, ERROR_CODES } from '../../core/shared/errors';
 import { queryKeys } from './keys';
 import { createSessionExpiryHandler } from './session-expiry';

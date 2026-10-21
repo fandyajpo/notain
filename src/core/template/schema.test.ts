@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { invoiceTemplateSchema, invoiceTemplateShapeSchema } from './schema';
 import { DEFAULT_THEME, TEMPLATE_LIMITS, createDefaultLayout } from './model';
 

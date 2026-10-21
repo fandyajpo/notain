@@ -29,9 +29,9 @@ test('prod smoke: layout, catalog picker, deferred editor', async ({ page }) => 
   await page.goto(`${PROD}/invoices`);
   await page.waitForTimeout(2500);
   await closeTour(page);
-  const links = await page.locator('a[href*="/invoice/"]').evaluateAll((els) =>
-    els.map((e) => (e as HTMLAnchorElement).getAttribute('href')),
-  );
+  const links = await page
+    .locator('a[href*="/invoice/"]')
+    .evaluateAll((els) => els.map((e) => (e as HTMLAnchorElement).getAttribute('href')));
   const target = links.find((h) => h && !/\/invoice\/(new|print)/.test(h));
   if (!target) throw new Error('no invoice link');
   await page.goto(`${PROD}${target}`);
@@ -44,7 +44,8 @@ test('prod smoke: layout, catalog picker, deferred editor', async ({ page }) => 
   console.log('PREVIEW_BESIDE=', !!(f && a && a.x > f.x + f.width - 5));
 
   console.log('EDITORS_ON_DETAIL=', await page.locator('.notain-rich-text').count());
-  await page.getByRole('tab', { name: 'Bagian atas' }).click();
+  const sections = page.getByRole('group', { name: 'Bagian invoice' });
+  await sections.getByRole('button', { name: 'Bagian atas' }).click();
   await page.waitForSelector('.notain-rich-text', { timeout: 20000 });
   console.log(
     'EDITOR_AFTER_TAB=',
@@ -53,7 +54,7 @@ test('prod smoke: layout, catalog picker, deferred editor', async ({ page }) => 
     await page.getByText('Editor teks gagal dimuat').count(),
   );
 
-  await page.getByRole('tab', { name: 'Barang' }).click();
+  await sections.getByRole('button', { name: 'Barang' }).click();
   await page.getByRole('button', { name: 'Ambil dari katalog' }).click();
   await page.waitForTimeout(2500);
   const dialog = page.locator('[role="dialog"]').first();

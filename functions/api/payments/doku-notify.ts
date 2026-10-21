@@ -86,9 +86,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   // $id IS the invoice_number (written before the checkout was created),
   // so this is one document read, not a query.
-  const payment = (await getRow(auth, 'payments', notification.invoiceNumber)) as
-    | PaymentRow
-    | null;
+  const payment = (await getRow(auth, 'payments', notification.invoiceNumber)) as PaymentRow | null;
 
   const outcome = await settlePayment(env, auth, payment, notification);
 

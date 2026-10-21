@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import type { Invoice } from '../../core/invoice/model';
 import { derivePickerOptions, mergeCustomerOptions, PICKER_OPTION_LIMIT } from './picker-options';
 import type { Customer } from '../../core/customer/model';

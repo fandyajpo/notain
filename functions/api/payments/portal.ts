@@ -73,7 +73,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const list = await fetch(
     `${auth.endpoint}/databases/${DATABASE_ID}/collections/${PAYMENTS_TABLE_ID}/documents?` +
       new URLSearchParams({
-        'queries[0]': JSON.stringify({ method: 'equal', attribute: 'ownerId', values: [session.userId] }),
+        'queries[0]': JSON.stringify({
+          method: 'equal',
+          attribute: 'ownerId',
+          values: [session.userId],
+        }),
         'queries[1]': JSON.stringify({ method: 'orderDesc', attribute: 'createdAt', values: [] }),
         'queries[2]': JSON.stringify({ method: 'limit', values: [HISTORY_LIMIT] }),
       }),

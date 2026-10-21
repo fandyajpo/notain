@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { createSampleInvoice } from '../../../core/invoice/sample';
 import type { InvoiceDraft } from '../../../core/invoice/model';
 import type { BusinessProfile } from '../../../core/profile/model';

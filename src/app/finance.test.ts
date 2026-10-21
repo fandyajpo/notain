@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { SessionUser } from '../ports/auth-repository';
 import { AppError } from '../core/shared/errors';
 import { EMPTY_ADJUSTMENT } from '../core/invoice/model';
@@ -59,7 +59,9 @@ describe('getDashboardFinance', () => {
       entry({ id: 'b', status: 'sent', date: '2026-10-06', dueDate: '2026-10-10' }), // overdue
       entry({ id: 'c', status: 'void', date: '2026-10-07' }), // excluded from money
     ]);
-    listRecentCreations.mockResolvedValue([{ name: 'Siti', createdAt: '2026-10-18T02:00:00.000Z' }]);
+    listRecentCreations.mockResolvedValue([
+      { name: 'Siti', createdAt: '2026-10-18T02:00:00.000Z' },
+    ]);
 
     const finance = await getDashboardFinance({
       range: { from: '2026-10-01', to: '2026-10-19' },
@@ -90,7 +92,9 @@ describe('getDashboardFinance', () => {
     const fullPage = Array.from({ length: 100 }, (_, index) =>
       entry({ id: `row-${index}`, date: '2026-10-01' }),
     );
-    listFinanceEntries.mockResolvedValueOnce(fullPage).mockResolvedValueOnce([entry({ id: 'last' })]);
+    listFinanceEntries
+      .mockResolvedValueOnce(fullPage)
+      .mockResolvedValueOnce([entry({ id: 'last' })]);
 
     const finance = await getDashboardFinance({
       range: { from: '2026-10-01', to: '2026-10-19' },

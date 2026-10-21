@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from 'vite-plus';
 
 /**
  * Live end-to-end tests against Appwrite Cloud. They are kept out of the

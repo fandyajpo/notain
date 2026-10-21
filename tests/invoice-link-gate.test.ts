@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vite-plus/test';
 import { onRequest } from '../functions/api/invoice/[id]';
 import { appwriteFake, type AppwriteFake } from './appwrite-fake';
 import type { Env } from '../functions/_lib/types';

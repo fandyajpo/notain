@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { vi } from 'vite-plus/test';
 
 /**
  * A tiny in-memory stand-in for the Appwrite REST surface the payments
@@ -164,7 +164,7 @@ function route(fake: AppwriteFake, method: string, url: string): Response {
   if (method === 'PATCH') {
     const row = fake.rows.get(key);
     if (!row) return json(404, { message: 'Document not found' });
-    const patch = (fake.calls.at(-1)?.body as { data: Record<string, unknown> }).data;
+    const patch = (fake.calls.at(-1)!.body as { data: Record<string, unknown> }).data;
     Object.assign(row, patch);
     return json(200, row);
   }

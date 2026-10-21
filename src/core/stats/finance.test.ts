@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { EMPTY_ADJUSTMENT } from '../invoice/model';
 import {
   attentionItems,
@@ -60,7 +60,10 @@ describe('ranges', () => {
   });
 
   it('customRange swaps a reversed pair and falls back on garbage', () => {
-    expect(customRange('2026-10-05', '2026-10-01')).toEqual({ from: '2026-10-01', to: '2026-10-05' });
+    expect(customRange('2026-10-05', '2026-10-01')).toEqual({
+      from: '2026-10-01',
+      to: '2026-10-05',
+    });
     expect(customRange('', '2026-10-05', '2026-10-19')).toEqual({
       from: '2026-10-01',
       to: '2026-10-19',
@@ -80,9 +83,10 @@ describe('ranges', () => {
       from: '2026-10-01',
       to: '2026-10-21',
     });
-    expect(
-      periodRange('custom', { from: '2026-09-01', to: '2026-09-30' }, '2026-10-21'),
-    ).toEqual({ from: '2026-09-01', to: '2026-09-30' });
+    expect(periodRange('custom', { from: '2026-09-01', to: '2026-09-30' }, '2026-10-21')).toEqual({
+      from: '2026-09-01',
+      to: '2026-09-30',
+    });
   });
 
   it('chartStart is the first of the month six months back (current included)', () => {

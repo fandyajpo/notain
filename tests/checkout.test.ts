@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vite-plus/test';
 import { onRequest } from '../functions/api/payments/checkout';
 import { appwriteFake, type AppwriteFake } from './appwrite-fake';
 import type { Env } from '../functions/_lib/types';
@@ -71,13 +71,21 @@ function handle(request: Request): Promise<Response> {
 /** Payment rows the handler created or patched, in order. */
 function paymentWrites(): Array<{ method: string; id?: string; data: Record<string, unknown> }> {
   return fake.calls
-    .filter((call) => (call.method === 'POST' || call.method === 'PATCH') && call.url.includes('/collections/payments/'))
+    .filter(
+      (call) =>
+        (call.method === 'POST' || call.method === 'PATCH') &&
+        call.url.includes('/collections/payments/'),
+    )
     .map((call) => {
       const match = /\/collections\/payments\/documents(?:\/([^/?]+))?/.exec(
         new URL(call.url).pathname,
       );
       const payload = call.body as { documentId?: string; data?: Record<string, unknown> };
-      return { method: call.method, id: match?.[1] ?? payload.documentId, data: payload.data ?? payload };
+      return {
+        method: call.method,
+        id: match?.[1] ?? payload.documentId,
+        data: payload.data ?? payload,
+      };
     });
 }
 
@@ -129,7 +137,9 @@ describe('POST /api/payments/checkout', () => {
     const response = await handle(post({ plan: 'pro', amount: 1, price: 'gratis' }));
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ url: 'https://sandbox.doku.com/checkout/session/abc' });
+    await expect(response.json()).resolves.toEqual({
+      url: 'https://sandbox.doku.com/checkout/session/abc',
+    });
 
     // The row and the DOKU request both carry the catalog price.
     const created = paymentWrites().find((write) => write.method === 'POST');

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { INVOICE_LIMITS } from '../invoice/model';
 import { TEMPLATE_LIMITS, hasRequiredBlocks } from '../template/model';
 import { BUSINESS_CATEGORIES } from './taxonomy';

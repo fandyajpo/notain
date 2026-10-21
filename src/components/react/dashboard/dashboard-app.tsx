@@ -99,7 +99,6 @@ function DashboardContent() {
           }
         />
       </div>
-
       {/* The checklist covers "profile incomplete" and points at what to do
           next; it hides itself once every step is done or when the profile
           fetch fails (unknown is not the same as incomplete). */}
@@ -108,7 +107,6 @@ function DashboardContent() {
         hasInvoices={hasInvoices}
         hidden={profileFailed || invoices.isLoading}
       />
-
       {/* Money first: the period-scoped financial cards, the six-month
           chart, unpaid invoices worth chasing, and recent activity — all
           from one windowed, column-projected query. Reports are a Pro
@@ -116,7 +114,6 @@ function DashboardContent() {
           fires. Unknown (still loading or failed profile) stays open so a
           paying user never sees the upsell flash. */}
       <FinanceSection businessName={usahaName} enabled={!profile || hasProAccess(profile)} />
-
       <SummarySection
         stats={stats.data}
         statsLoading={stats.isLoading}
@@ -127,7 +124,8 @@ function DashboardContent() {
         invoicesLoading={invoices.isLoading}
         invoicesError={invoices.isError}
         onRetryInvoices={() => void invoices.refetch()}
-      />    </div>
+      />{' '}
+    </div>
   );
 }
 

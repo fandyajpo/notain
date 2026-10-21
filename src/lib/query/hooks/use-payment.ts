@@ -1,9 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  fetchPaymentStatus,
-  readPortalSession,
-  startCheckout,
-} from '../../../app/payments';
+import { fetchPaymentStatus, readPortalSession, startCheckout } from '../../../app/payments';
 import type { PaidPlan } from '../../../core/billing/plans';
 import { queryKeys } from '../keys';
 import { queryPolicy } from '../policies';

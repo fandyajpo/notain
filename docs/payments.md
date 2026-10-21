@@ -43,20 +43,21 @@ ini). Dokumen resmi: <https://developers.doku.com/accept-payments/doku-checkout/
    `planExpiresAt` diperpanjang (30 hari; perpanjangan plan aktif dihitung dari
    expiry, bukan waktu bayar). Halaman result tidak pernah mengaktivasi apa
    pun — klien hanya membaca baris.
+
 5. Riwayat + status langganan dibaca lewat `GET /api/payments/portal`
    (kartu **Langganan** di `/settings`); order `pending` yang masih berlaku
    punya tombol "Bayar" yang membuka kembali halaman DOKU.
 
 Endpoint di sisi server:
 
-| Route                       | Method | Otorisasi | Fungsi                                |
-| --------------------------- | ------ | --------- | ------------------------------------- |
-| `/api/payments/checkout`    | POST   | JWT       | Mulai/lanjutkan checkout              |
-| `/api/payments/status`      | GET    | JWT       | Status milik sendiri + rekonsiliasi   |
+| Route                       | Method | Otorisasi | Fungsi                                 |
+| --------------------------- | ------ | --------- | -------------------------------------- |
+| `/api/payments/checkout`    | POST   | JWT       | Mulai/lanjutkan checkout               |
+| `/api/payments/status`      | GET    | JWT       | Status milik sendiri + rekonsiliasi    |
 |                             |        |           | Check Status (jalur aktivasi cadangan) |
-| `/api/payments/portal`      | GET    | JWT       | Plan + riwayat pembayaran             |
+| `/api/payments/portal`      | GET    | JWT       | Plan + riwayat pembayaran              |
 | `/api/payments/doku-notify` | POST   | Signature | Notifikasi DOKU (jalur aktivasi utama) |
-|                             |        | DOKU      |                                       |
+|                             |        | DOKU      |                                        |
 
 ## Environment variables
 
@@ -66,11 +67,11 @@ Environment variables, atau `wrangler pages secret put NAME`) — **bukan** di
 `.env` (hanya build Vite klien), **bukan** di `wrangler.toml` (ter-commit), dan
 jangan pernah dengan prefix `PUBLIC_`:
 
-| Nama                | Isi                                                                        |
-| ------------------- | -------------------------------------------------------------------------- |
-| `DOKU_CLIENT_ID`    | Client-Id merchant dari Back Office sandbox (format `MCH-…`).               |
-| `DOKU_SECRET_KEY`   | Back Office Secret Key — menghitung dan memverifikasi signature `HMACSHA256=`. |
-| `DOKU_API_KEY`      | Opsional untuk alur ini; dokumentasi Checkout non-SNAP hanya memakai dua di atas. |
+| Nama              | Isi                                                                               |
+| ----------------- | --------------------------------------------------------------------------------- |
+| `DOKU_CLIENT_ID`  | Client-Id merchant dari Back Office sandbox (format `MCH-…`).                     |
+| `DOKU_SECRET_KEY` | Back Office Secret Key — menghitung dan memverifikasi signature `HMACSHA256=`.    |
+| `DOKU_API_KEY`    | Opsional untuk alur ini; dokumentasi Checkout non-SNAP hanya memakai dua di atas. |
 
 Placeholder dan catatan lengkap: [`.env.example`](../.env.example).
 
@@ -84,7 +85,7 @@ Keduanya **diturunkan dari origin request** di Function (`new URL(request.url).o
   `additional_info.override_notification_url`): `{origin}/api/payments/doku-notify`
 
 **Notification URL wajib disetel di Back Office sandbox**, karena
-`override_notification_url` hanya *override* dari konfigurasi itu — menurut
+`override_notification_url` hanya _override_ dari konfigurasi itu — menurut
 dokumentasi resmi DOKU (<https://developers.doku.com/get-started-with-doku-api/notification/override-notification-url>),
 override tidak berfungsi sama sekali bila Notification URL belum dikonfigurasi,
 dan **path override harus sama persis dengan path yang terkonfigurasi**.
@@ -133,16 +134,16 @@ dengan Secret Key, di-base64, diawali literal `HMACSHA256=`.
 
 4. Uji alurnya di sandbox (tidak ada uang sungguhan):
 
-   | Skenario                       | Yang diharapkan                                          |
-   | ------------------------------ | -------------------------------------------------------- |
-   | Checkout sukses (VA sandbox)   | Notifikasi `SUCCESS` → plan aktif, `/payment/result` sukses |
-   | Notifikasi tidak sampai        | Rekonsiliasi Check Status mengaktifkan saat `/payment/result` dipoll (baris ≥ 60 detik) |
-   | Selesaikan nanti / batal       | Baris `pending`; tombol "Bayar" di `/settings` membuka lagi halaman DOKU sampai kedaluwarsa |
-   | Order kedaluwarsa              | Notifikasi `EXPIRED` → baris `expired`, plan tidak berubah |
-   | Signature salah / body diubah  | `401`, tidak ada baris yang ditulis                      |
-   | Notifikasi ganda (retry DOKU)  | Aplikasi kedua dijawab `200` tapi `applied: false` — expiry tidak dobel |
-   | Jumlah beda dengan baris       | Diabaikan + audit `payment.amount-mismatch`              |
-   | Belum login / JWT kedaluwarsa  | `401` di semua endpoint pembayaran                       |
+   | Skenario                      | Yang diharapkan                                                                             |
+   | ----------------------------- | ------------------------------------------------------------------------------------------- |
+   | Checkout sukses (VA sandbox)  | Notifikasi `SUCCESS` → plan aktif, `/payment/result` sukses                                 |
+   | Notifikasi tidak sampai       | Rekonsiliasi Check Status mengaktifkan saat `/payment/result` dipoll (baris ≥ 60 detik)     |
+   | Selesaikan nanti / batal      | Baris `pending`; tombol "Bayar" di `/settings` membuka lagi halaman DOKU sampai kedaluwarsa |
+   | Order kedaluwarsa             | Notifikasi `EXPIRED` → baris `expired`, plan tidak berubah                                  |
+   | Signature salah / body diubah | `401`, tidak ada baris yang ditulis                                                         |
+   | Notifikasi ganda (retry DOKU) | Aplikasi kedua dijawab `200` tapi `applied: false` — expiry tidak dobel                     |
+   | Jumlah beda dengan baris      | Diabaikan + audit `payment.amount-mismatch`                                                 |
+   | Belum login / JWT kedaluwarsa | `401` di semua endpoint pembayaran                                                          |
 
    Nomor invoice order berformat `NOTAIN-P-…` (Pro) / `NOTAIN-B-…` (Business) —
    bisa dicari di tabel `payments` untuk menemukan baris per uji coba.

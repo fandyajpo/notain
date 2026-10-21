@@ -50,7 +50,9 @@ export type PeriodChoice = 'week' | 'month' | 'custom';
 export const CHART_MONTHS = 6;
 
 /** Grand total of one entry, via the same calculator the invoice itself uses. */
-export function entryGrandTotal(entry: Pick<InvoiceFinanceEntry, 'items' | 'discount' | 'tax'>): Rupiah {
+export function entryGrandTotal(
+  entry: Pick<InvoiceFinanceEntry, 'items' | 'discount' | 'tax'>,
+): Rupiah {
   return calculateTotals({
     items: entry.items,
     discount: entry.discount,
@@ -298,7 +300,9 @@ export type CustomerCreation = { name: string; createdAt: string };
  * see the dashboard notes.)
  */
 export function recentActivity(
-  invoices: ReadonlyArray<Pick<InvoiceFinanceEntry, 'invoiceNumber' | 'customerName' | 'createdAt' | 'paymentProof'>>,
+  invoices: ReadonlyArray<
+    Pick<InvoiceFinanceEntry, 'invoiceNumber' | 'customerName' | 'createdAt' | 'paymentProof'>
+  >,
   customers: ReadonlyArray<CustomerCreation>,
   limit = 8,
 ): ActivityEvent[] {

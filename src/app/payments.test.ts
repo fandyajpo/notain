@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 
 const { createJWT } = vi.hoisted(() => ({ createJWT: vi.fn() }));
@@ -109,7 +109,9 @@ describe('fetchPaymentStatus', () => {
   });
 
   it('maps 404 to a typed not-found error (probing another account’s order)', async () => {
-    fetchMock.mockResolvedValue(response({ error: 'not_found', message: 'Pembayaran tidak ditemukan.' }, 404));
+    fetchMock.mockResolvedValue(
+      response({ error: 'not_found', message: 'Pembayaran tidak ditemukan.' }, 404),
+    );
 
     await expect(fetchPaymentStatus('someone-elses')).rejects.toMatchObject({
       code: ERROR_CODES.NOT_FOUND,

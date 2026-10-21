@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { AppError, ERROR_CODES } from '../src/core/shared/errors';
 import { createSampleInvoice, SAMPLE_BUSINESS } from '../src/core/invoice/sample';
 import { signIn, signOut, signUp } from '../src/app/auth';
@@ -277,15 +277,17 @@ describe('notain x appwrite', () => {
       // The stored phone is whatever was last typed, not the folded key.
       expect(rows[0]?.phone).toBe('081234567890');
 
-      // A different number under the same name is a different person.
+      // A different number under the same name is still the same person:
+      // the directory rule is one name is one person, so the row absorbs the
+      // fresh number instead of a second row being filed.
       const other = await rememberCustomer({
         name: 'Smoke Budi',
         email: '',
         phone: '081111111111',
       });
-      if (!other) throw new Error('rememberCustomer did not file the second customer');
-      expect(other.id).not.toBe(first.id);
-      await deleteCustomer(other.id);
+      if (!other) throw new Error('rememberCustomer did not file the customer');
+      expect(other.id).toBe(first.id);
+      expect((await listCustomers()).filter((c) => c.name === 'Smoke Budi')).toHaveLength(1);
     } finally {
       await deleteCustomer(first.id);
     }

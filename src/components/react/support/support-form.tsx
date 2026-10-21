@@ -56,7 +56,8 @@ export function SupportForm({ source }: { source: SupportSource }) {
     const subject = draft.subject.trim();
     const message = draft.message.trim();
     if (name === '') next.name = 'Nama wajib diisi.';
-    if (email === '' || !EMAIL_PATTERN.test(email)) next.email = 'Email wajib diisi dengan format yang benar.';
+    if (email === '' || !EMAIL_PATTERN.test(email))
+      next.email = 'Email wajib diisi dengan format yang benar.';
     if (message.length < MIN_MESSAGE) next.message = `Pesan minimal ${MIN_MESSAGE} karakter.`;
     setErrors(next);
     if (Object.keys(next).length > 0) return;
@@ -68,7 +69,14 @@ export function SupportForm({ source }: { source: SupportSource }) {
 
     setBusy(true);
     try {
-      await sendSupport({ name, email, subject, message, source, turnstileToken: captcha ? token : null });
+      await sendSupport({
+        name,
+        email,
+        subject,
+        message,
+        source,
+        turnstileToken: captcha ? token : null,
+      });
       setDone(true);
       setDraft(EMPTY);
     } catch (cause) {
@@ -160,12 +168,7 @@ export function SupportForm({ source }: { source: SupportSource }) {
       )}
 
       <div>
-        <Button
-          type="submit"
-          variant="primary"
-          loading={busy}
-          disabled={captcha && !token}
-        >
+        <Button type="submit" variant="primary" loading={busy} disabled={captcha && !token}>
           {busy ? (
             <>
               <Loader2 size={15} className="animate-spin" aria-hidden /> Mengirim…

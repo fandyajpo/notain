@@ -88,9 +88,7 @@ export async function startCheckout(plan: PaidPlan): Promise<{ url: string }> {
  * decides from DOKU's own data, not from anything the caller supplies.
  */
 export async function fetchPaymentStatus(invoice: string): Promise<PaymentStatusView> {
-  const response = await bearerFetch(
-    `/api/payments/status?invoice=${encodeURIComponent(invoice)}`,
-  );
+  const response = await bearerFetch(`/api/payments/status?invoice=${encodeURIComponent(invoice)}`);
 
   if (!response.ok) {
     const message = await serverMessage(response);
@@ -202,9 +200,7 @@ export async function readPortalSession(): Promise<PortalSession> {
     // Trust the server's verdict when it sends one; recompute from the same
     // shared rule otherwise, so the two can never disagree.
     active:
-      typeof body.active === 'boolean'
-        ? body.active
-        : isSubscriptionActive(plan, planExpiresAt),
+      typeof body.active === 'boolean' ? body.active : isSubscriptionActive(plan, planExpiresAt),
     payments,
   };
 }

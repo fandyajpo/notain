@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.0.1",
   "engines": {
-    "node": ">=22.12.0"
+    "node": "^22.18.0 || ^24.11.0 || >=26.0.0"
   },
   "scripts": {
     "dev": "astro dev --background",
@@ -26,15 +26,15 @@
     "business-type:ensure": "node --env-file=.env scripts/ensure-business-type.mjs",
     "preview": "astro preview",
     "astro": "astro",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "lint": "vp lint .",
+    "lint:fix": "vp lint . --fix",
+    "format": "vp fmt .",
+    "format:check": "vp fmt --check .",
+    "test": "vp test run",
+    "test:watch": "vp test",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "smoke": "vitest run --config vitest.smoke.config.ts",
+    "smoke": "vp test run --config vitest.smoke.config.ts",
     "typecheck": "astro check"
   },
   "dependencies": {
@@ -75,23 +75,21 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "@vitejs/plugin-vue": "^6.0.10",
-    "eslint": "^10.12.0",
     "eslint-plugin-astro": "^3.2.1",
     "globals": "^17.13.0",
     "jsdom": "^30.1.2",
-    "prettier": "^3.9.9",
-    "prettier-plugin-astro": "^1.1.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.71.1",
     "vite-plugin-solid": "^2.11.14",
-    "vitest": "^5.0.3",
-    "wrangler": "^4.149.0"
+    "wrangler": "^4.149.0",
+    "vite-plus": "1.3.0"
+  },
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0"
   }
 }

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { BUILTIN_TEMPLATES, getBuiltinTemplate, isBuiltinTemplateId } from './builtins';
 import { invoiceTemplateSchema } from './schema';
 import { REQUIRED_BLOCK_TYPES, hasRequiredBlocks, visibleBlocks } from './model';

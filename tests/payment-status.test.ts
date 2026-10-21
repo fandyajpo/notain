@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { inReconcileWindow, onRequest } from '../functions/api/payments/status';
 import { appwriteFake, type AppwriteFake, type Row } from './appwrite-fake';
 import type { Env } from '../functions/_lib/types';

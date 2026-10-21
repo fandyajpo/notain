@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { CE_EVENTS, itemsChangeEventSchema, type ItemsChangePayload } from '../shared/contracts';
 import './register';
 

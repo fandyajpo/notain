@@ -261,7 +261,11 @@ export function parseCheckoutResponse(raw: unknown): CheckoutResponse | null {
   if (typeof raw !== 'object' || raw === null) return null;
   const payment = (raw as { response?: { payment?: unknown } }).response?.payment;
   if (typeof payment !== 'object' || payment === null) return null;
-  const { url, token_id: tokenId, expired_date: expiredDate } = payment as {
+  const {
+    url,
+    token_id: tokenId,
+    expired_date: expiredDate,
+  } = payment as {
     url?: unknown;
     token_id?: unknown;
     expired_date?: unknown;
@@ -337,8 +341,7 @@ export function parseNotification(raw: unknown): DokuNotification {
     typeof body.order?.invoice_number === 'string' ? body.order.invoice_number : null;
   const rawAmount = body.order?.amount;
   const amount = typeof rawAmount === 'number' && Number.isFinite(rawAmount) ? rawAmount : null;
-  const transactionDate =
-    typeof body.transaction?.date === 'string' ? body.transaction.date : null;
+  const transactionDate = typeof body.transaction?.date === 'string' ? body.transaction.date : null;
 
   return { status, invoiceNumber, amount, transactionDate };
 }

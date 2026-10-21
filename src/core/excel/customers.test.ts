@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { CUSTOMER_TEMPLATE_ROWS, parseCustomerImportRows, toCustomerRows } from './customers';
 
 const HEADER = ['Nama', 'Email', 'WhatsApp'];

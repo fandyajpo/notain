@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { nextTick } from 'vue';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vite-plus/test';
 import { CE_EVENTS, pickEventSchema } from '../shared/contracts';
 import type { CustomerOption, ProductOption } from '../shared/picker-options';
 import './register';

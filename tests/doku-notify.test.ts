@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vite-plus/test';
 import { onRequest } from '../functions/api/payments/doku-notify';
 import { signRequest, utcTimestamp } from '../src/core/billing/doku';
 import { appwriteFake, type AppwriteFake } from './appwrite-fake';
@@ -98,7 +98,9 @@ function writes(): string[] {
   return fake.calls
     .filter((call) => call.method !== 'GET')
     .map((call) => {
-      const match = /\/collections\/([^/]+)\/documents(?:\/([^/?]+))?/.exec(new URL(call.url).pathname);
+      const match = /\/collections\/([^/]+)\/documents(?:\/([^/?]+))?/.exec(
+        new URL(call.url).pathname,
+      );
       return `${call.method} ${match?.[1]}/${match?.[2] ?? '(create)'}`;
     });
 }
@@ -178,10 +180,17 @@ describe('POST /api/payments/doku-notify', () => {
   });
 
   it('never acts on an order it did not create', async () => {
-    const response = await notify({ status: 'SUCCESS', invoiceNumber: 'NOTAIN-P-9-FORGED', amount: 29_000 });
+    const response = await notify({
+      status: 'SUCCESS',
+      invoiceNumber: 'NOTAIN-P-9-FORGED',
+      amount: 29_000,
+    });
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({ applied: false, reason: 'unknown_order' });
+    await expect(response.json()).resolves.toMatchObject({
+      applied: false,
+      reason: 'unknown_order',
+    });
     expect(fake.rows.get('profiles/user-1')?.plan).toBe('free');
   });
 
@@ -191,7 +200,10 @@ describe('POST /api/payments/doku-notify', () => {
     const response = await notify({ status: 'SUCCESS', amount: 29_000 });
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({ applied: false, reason: 'profile_missing' });
+    await expect(response.json()).resolves.toMatchObject({
+      applied: false,
+      reason: 'profile_missing',
+    });
     // The money is recorded even though the upgrade needs manual resolution.
     expect(fake.rows.get('payments/' + INVOICE)?.status).toBe('paid');
   });

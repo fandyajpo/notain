@@ -9,7 +9,12 @@ import {
   signRequest,
   utcTimestamp,
 } from '../../../src/core/billing/doku';
-import { isPaidPlan, makeInvoiceNumber, planAmount, planRank } from '../../../src/core/billing/plans';
+import {
+  isPaidPlan,
+  makeInvoiceNumber,
+  planAmount,
+  planRank,
+} from '../../../src/core/billing/plans';
 import type { Env, PagesFunction } from '../../_lib/types';
 
 const DATABASE_ID = 'notain_db';
@@ -100,8 +105,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const currentExpiresAt = profile.planExpiresAt ?? null;
   const now = Date.now();
   const currentActive =
-    currentPlan !== 'free' &&
-    (currentExpiresAt === null || Date.parse(currentExpiresAt) > now);
+    currentPlan !== 'free' && (currentExpiresAt === null || Date.parse(currentExpiresAt) > now);
   if (currentActive && planRank(currentPlan) > planRank(plan)) {
     return apiError(
       409,
@@ -114,7 +118,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const pendingList = await fetch(
     `${auth.endpoint}/databases/${DATABASE_ID}/collections/${PAYMENTS_TABLE_ID}/documents?` +
       new URLSearchParams({
-        'queries[0]': JSON.stringify({ method: 'equal', attribute: 'ownerId', values: [session.userId] }),
+        'queries[0]': JSON.stringify({
+          method: 'equal',
+          attribute: 'ownerId',
+          values: [session.userId],
+        }),
         'queries[1]': JSON.stringify({ method: 'equal', attribute: 'status', values: ['pending'] }),
         'queries[2]': JSON.stringify({ method: 'equal', attribute: 'plan', values: [plan] }),
         'queries[3]': JSON.stringify({ method: 'limit', values: [1] }),
@@ -137,7 +145,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       }
       if (!existing.checkoutUrl && now - createdAtMs < IN_FLIGHT_GRACE_MS) {
         // Another tab is creating this checkout right now.
-        return apiError(409, 'conflict', 'Pembayaran sedang diproses. Tunggu sebentar lalu coba lagi.');
+        return apiError(
+          409,
+          'conflict',
+          'Pembayaran sedang diproses. Tunggu sebentar lalu coba lagi.',
+        );
       }
       // Stranded (creation failed) or expired: retire it and start a new one.
       await patchRow(auth, 'payments', existing.$id, {
@@ -227,7 +239,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     // retire it so a retry starts cleanly instead of tripping the in-flight
     // guard, then tell the caller this is retryable.
     await patchRow(auth, 'payments', invoiceNumber, { status: 'failed' }).catch(() => false);
-    return apiError(502, 'validation', 'Gateway pembayaran tidak bisa dihubungi. Coba lagi sebentar lagi.');
+    return apiError(
+      502,
+      'validation',
+      'Gateway pembayaran tidak bisa dihubungi. Coba lagi sebentar lagi.',
+    );
   }
 
   const parsed = dokuResponse.ok
@@ -242,9 +258,17 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       action: 'payment.checkout.failed',
       targetType: 'payment',
       targetId: invoiceNumber,
-      detail: JSON.stringify({ plan, providerStatus: dokuResponse.status, detail: detail.slice(0, 500) }),
+      detail: JSON.stringify({
+        plan,
+        providerStatus: dokuResponse.status,
+        detail: detail.slice(0, 500),
+      }),
     });
-    return apiError(502, 'validation', 'Gateway pembayaran menolak permintaan. Coba lagi beberapa saat lagi.');
+    return apiError(
+      502,
+      'validation',
+      'Gateway pembayaran menolak permintaan. Coba lagi beberapa saat lagi.',
+    );
   }
 
   const updated = await patchRow(auth, 'payments', invoiceNumber, {

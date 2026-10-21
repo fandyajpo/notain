@@ -10,7 +10,8 @@ test('dashboard finance section: cards, chart, period filter', async ({ page }) 
   const bad: string[] = [];
   page.on('pageerror', (e) => bad.push(`pageerror: ${e.message}`));
   page.on('response', (r) => {
-    if (r.status() >= 400 && r.url().includes('localhost')) bad.push(`http ${r.status()} ${r.url()}`);
+    if (r.status() >= 400 && r.url().includes('localhost'))
+      bad.push(`http ${r.status()} ${r.url()}`);
   });
 
   await page.setViewportSize({ width: 1440, height: 900 });

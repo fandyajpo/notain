@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { createEmptyDraft, EMPTY_SECTIONS } from '../invoice/model';
 import { invoiceDraftSchema } from '../invoice/schema';
 import { applyTemplateDefaults } from './apply';

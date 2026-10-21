@@ -126,11 +126,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
       );
     }
     if (typeof row.paymentProofKey === 'string' && row.paymentProofKey !== '') {
-      return apiError(
-        409,
-        'conflict',
-        'Bukti pembayaran sudah pernah diunggah untuk invoice ini.',
-      );
+      return apiError(409, 'conflict', 'Bukti pembayaran sudah pernah diunggah untuk invoice ini.');
     }
   }
 

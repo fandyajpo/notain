@@ -12,10 +12,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { formatTanggal, formatWaktuLalu, todayIsoDate } from '../../../core/shared/dates';
 import { formatRupiah } from '../../../core/shared/money';
-import {
-  buildPaymentReminderMessage,
-  buildWhatsAppUrl,
-} from '../../../core/whatsapp';
+import { buildPaymentReminderMessage, buildWhatsAppUrl } from '../../../core/whatsapp';
 import type {
   ActivityEvent,
   AttentionItem,
@@ -121,10 +118,7 @@ export function FinanceSection({ businessName, enabled = true }: Props) {
         {finance.isLoading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-hidden="true">
             {[0, 1, 2, 3].map((index) => (
-              <div
-                key={index}
-                className={cardClass('sm', 'flex items-center gap-3')}
-              >
+              <div key={index} className={cardClass('sm', 'flex items-center gap-3')}>
                 <span className="h-9 w-9 shrink-0 animate-pulse rounded-control bg-border/60" />
                 <div className="flex flex-col gap-2">
                   <span className="block h-3.5 w-24 animate-pulse rounded bg-border/60" />
@@ -261,11 +255,7 @@ function RevenueChart({ points }: { points: ChartPoint[] }) {
         {/* The honesty label: bucketed by invoice date, paid invoices only. */}
         <p className="text-xs text-muted">Dihitung dari tanggal invoice yang lunas</p>
       </div>
-      <div
-        className="mt-4 flex h-40 items-end gap-2 sm:gap-3"
-        role="img"
-        aria-label={summaryLabel}
-      >
+      <div className="mt-4 flex h-40 items-end gap-2 sm:gap-3" role="img" aria-label={summaryLabel}>
         {points.map((point) => (
           <div
             key={point.month}
@@ -326,7 +316,9 @@ function AttentionList({ items, businessName }: { items: AttentionItem[]; busine
               <p className="truncate font-medium">{entry.customerName || 'Tanpa nama'}</p>
               <p className="text-sm text-muted">
                 {entry.invoiceNumber}
-                {entry.dueDate ? ` · jatuh tempo ${formatTanggal(entry.dueDate)}` : ' · tanpa jatuh tempo'}
+                {entry.dueDate
+                  ? ` · jatuh tempo ${formatTanggal(entry.dueDate)}`
+                  : ' · tanpa jatuh tempo'}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">

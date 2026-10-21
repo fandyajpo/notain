@@ -67,7 +67,10 @@ export function SiteFooter({ anchorPrefix = '' }: Props) {
                   </a>
                 </li>
                 <li>
-                  <a href="/developers" className="text-muted transition-colors hover:text-foreground">
+                  <a
+                    href="/developers"
+                    className="text-muted transition-colors hover:text-foreground"
+                  >
                     Developers
                   </a>
                 </li>

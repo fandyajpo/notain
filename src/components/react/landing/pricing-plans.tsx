@@ -75,9 +75,7 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
       </div>
 
       <p className="mt-5 flex items-baseline gap-2">
-        <span className="text-[2rem] font-semibold leading-none tracking-[-0.03em]">
-          {amount}
-        </span>
+        <span className="text-[2rem] font-semibold leading-none tracking-[-0.03em]">{amount}</span>
         <span className="text-sm text-muted">{period}</span>
       </p>
       <p className="mt-3 text-sm leading-relaxed text-muted">{tagline}</p>
@@ -181,9 +179,9 @@ export function PricingPlans() {
           transition={{ duration: 0.6, delay: 0.55, ease: EASE }}
           className="mx-auto mt-8 max-w-xl text-center text-sm leading-relaxed text-muted"
         >
-        Pembayaran plan Pro dan Business diproses lewat DOKU, dan plan aktif otomatis setelah
-        pembayaran terkonfirmasi. Tidak ada biaya di luar harga yang tertera, dan kamu bisa berhenti
-        kapan saja.
+          Pembayaran plan Pro dan Business diproses lewat DOKU, dan plan aktif otomatis setelah
+          pembayaran terkonfirmasi. Tidak ada biaya di luar harga yang tertera, dan kamu bisa
+          berhenti kapan saja.
         </motion.p>
 
         <p className="mx-auto mt-4 max-w-xl text-center text-sm leading-relaxed text-muted">
