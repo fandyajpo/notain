@@ -7,9 +7,14 @@ ini). Dokumen resmi: <https://developers.doku.com/accept-payments/doku-checkout/
 ## Alur
 
 1. Pengguna memilih plan di `/pricing` → CTA menuju `/checkout?plan=…` (plan
-   bertahan lewat `?next=` saat harus login dulu).
+   bertahan lewat `?next=` saat harus login dulu). Halaman itu berada di
+   balik `AuthGate`, jadi onboarding harus selesai dulu — aktivasi menulis
+   `profiles/<userId>`, dan tanpa baris itu uang bisa terlanjur diterima
+   sedangkan plan tidak pernah dikasih.
 2. `POST /api/payments/checkout` ([functions/api/payments/checkout.ts](../functions/api/payments/checkout.ts)):
-   verifikasi sesi JWT → harga diambil dari katalog server
+   verifikasi sesi JWT → **tolak 409 bila baris profil belum ada** (backstop
+   server untuk jalur yang menyempit di luar UI) → harga diambil dari katalog
+   server
    (`src/core/billing/plans.ts`, bukan dari request) → baris `payments` dibuat
    (id = nomor invoice, unik) → order dibuat di DOKU → URL hosted page
    dikembalikan. Satu baris pending per pemilik+plan: klik ganda atau dua tab

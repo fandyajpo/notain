@@ -92,6 +92,17 @@ describe('POST /api/payments/checkout', () => {
     expect(paymentWrites()).toEqual([]);
   });
 
+  it('refuses when the account has no profile row yet', async () => {
+    fake.rows.delete('profiles/user-1');
+
+    const response = await handle(post({ plan: 'pro' }));
+
+    expect(response.status).toBe(409);
+    // No order, no money, no DOKU call: activation could not have granted it.
+    expect(dokuCalls).toEqual([]);
+    expect(paymentWrites()).toEqual([]);
+  });
+
   it.each(['GET', 'PUT', 'DELETE'])('refuses %s', async (method) => {
     const response = await handle(
       new Request('https://notain.pages.dev' + CHECKOUT_PATH, { method }),

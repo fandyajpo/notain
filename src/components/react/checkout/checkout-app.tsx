@@ -10,6 +10,7 @@ import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { Notice } from '../ui/notice';
 import { ErrorState, LoadingState } from '../ui/state';
+import { AuthGate } from '../auth/auth-gate';
 
 /**
  * The confirmation step between the pricing CTA and DOKU's hosted page.
@@ -83,55 +84,63 @@ export function CheckoutApp() {
   const info = PAID_PLANS[plan];
 
   return (
-    <Card padding="lg" className="w-full">
-      <p className="text-eyebrow uppercase text-muted">Langganan</p>
-      <h1 className="mt-2 text-title">Notain {info.name}</h1>
+    // Not every other route sits behind this gate, and that matters here:
+    // activation writes `profiles/<userId>`, so paying before onboarding has
+    // created that row would take the money and never grant the plan. The
+    // `?plan=` query survives the detour (AuthGate's redirect keeps
+    // `pathname + search`), and the session is already confirmed above, so
+    // this only ever gates on a complete profile.
+    <AuthGate>
+      <Card padding="lg" className="w-full">
+        <p className="text-eyebrow uppercase text-muted">Langganan</p>
+        <h1 className="mt-2 text-title">Notain {info.name}</h1>
 
-      <p className="mt-5 flex items-baseline gap-2">
-        <span className="text-2xl font-semibold tracking-tight">
-          {formatRupiah(planAmount(plan))}
-        </span>
-        <span className="text-sm text-muted">/ 30 hari</span>
-      </p>
+        <p className="mt-5 flex items-baseline gap-2">
+          <span className="text-2xl font-semibold tracking-tight">
+            {formatRupiah(planAmount(plan))}
+          </span>
+          <span className="text-sm text-muted">/ 30 hari</span>
+        </p>
 
-      {checkout.isError && (
-        <Notice variant="danger" className="mt-5">
-          {checkout.error instanceof Error ? checkout.error.message : GENERIC_ERROR_MESSAGE}
-        </Notice>
-      )}
+        {checkout.isError && (
+          <Notice variant="danger" className="mt-5">
+            {checkout.error instanceof Error ? checkout.error.message : GENERIC_ERROR_MESSAGE}
+          </Notice>
+        )}
 
-      <Button
-        full
-        size="lg"
-        className="mt-6"
-        loading={checkout.isPending}
-        // `isPending` also disables the button, so a double click cannot open
-        // two DOKU sessions — the server's in-flight guard is the backstop.
-        onClick={() => {
-          checkout.mutate(plan, {
-            // Full navigation: the hosted checkout page replaces our origin.
-            onSuccess: ({ url }) => window.location.assign(url),
-          });
-        }}
-      >
-        Bayar sekarang
-      </Button>
+        <Button
+          full
+          size="lg"
+          className="mt-6"
+          loading={checkout.isPending}
+          // `isPending` also disables the button, so a double click cannot open
+          // two DOKU sessions — the server's in-flight guard is the backstop.
+          onClick={() => {
+            checkout.mutate(plan, {
+              // Full navigation: the hosted checkout page replaces our origin.
+              onSuccess: ({ url }) => window.location.assign(url),
+            });
+          }}
+        >
+          Bayar sekarang
+        </Button>
 
-      <p className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-muted">
-        <ShieldCheck size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
-        <span>
-          Kamu akan diarahkan ke halaman pembayaran resmi DOKU. Plan aktif otomatis setelah
-          pembayaran dikonfirmasi — tidak perlu kirim bukti.
-        </span>
-      </p>
+        <p className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-muted">
+          <ShieldCheck size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
+          <span>
+            Kamu akan diarahkan ke halaman pembayaran resmi DOKU. Plan aktif otomatis setelah
+            pembayaran dikonfirmasi — tidak perlu kirim bukti.
+          </span>
+        </p>
 
-      <a
-        href="/pricing"
-        className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-muted underline-offset-4 hover:text-foreground hover:underline focus-ring rounded-control"
-      >
-        <ArrowLeft size={15} aria-hidden="true" />
-        Ganti plan
-      </a>
-    </Card>
+        <a
+          href="/pricing"
+          className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-muted underline-offset-4 hover:text-foreground hover:underline focus-ring rounded-control"
+        >
+          <ArrowLeft size={15} aria-hidden="true" />
+          Ganti plan
+        </a>
+      </Card>
+    </AuthGate>
   );
 }

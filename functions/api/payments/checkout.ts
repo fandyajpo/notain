@@ -88,8 +88,16 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   // Current subscription, for downgrade protection and renewal extension.
   const profile = (await getRow(auth, 'profiles', session.userId)) as ProfileRow | null;
-  const currentPlan = profile?.plan ?? 'free';
-  const currentExpiresAt = profile?.planExpiresAt ?? null;
+  if (!profile) {
+    // Activation writes `profiles/<userId>` — without that row the money would
+    // be taken and the plan never granted (left as `payment.paid.*` audit rows
+    // for manual resolution only). Onboarding normally guarantees the row
+    // before `/checkout` can render; this is the backstop for anything that
+    // reaches the API without it.
+    return apiError(409, 'conflict', 'Lengkapi profil kamu dulu sebelum berlangganan.');
+  }
+  const currentPlan = profile.plan ?? 'free';
+  const currentExpiresAt = profile.planExpiresAt ?? null;
   const now = Date.now();
   const currentActive =
     currentPlan !== 'free' &&
@@ -184,9 +192,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     dueMinutes: 60,
     customer: {
       id: session.userId,
-      name: profile?.name ?? undefined,
+      name: profile.name ?? undefined,
       email: session.email || undefined,
-      phone: profile?.phone ?? undefined,
+      phone: profile.phone ?? undefined,
     },
   });
   const timestamp = utcTimestamp();
