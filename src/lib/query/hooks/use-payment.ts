@@ -33,13 +33,15 @@ export function useStartCheckout() {
 }
 
 /**
- * Reads back the persisted status of one of the caller's payments. Strictly a
- * read: no result of this query can activate a plan — only the verified DOKU
- * notification endpoint writes that.
+ * Reads back the persisted status of one of the caller's payments. Nothing the
+ * browser sends can activate a plan — the server only ever applies a
+ * transition derived from DOKU's own data.
  *
  * While the order is `pending` the query refetches on an interval; the moment
  * the row turns `paid`/`expired`/`failed` the interval stops, so a forgotten
- * tab does not poll forever.
+ * tab does not poll forever. (The server throttles its own DOKU probes
+ * independently, so a tab left open on an unpaid order still costs almost
+ * nothing.)
  */
 export function usePaymentStatus(invoice: string) {
   return useQuery({

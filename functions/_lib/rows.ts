@@ -16,9 +16,9 @@ const DATABASE_ID = 'notain_db';
 export type TableId = 'invoices' | 'profiles' | 'templates' | 'payments';
 
 /** API-key headers against Appwrite, or `null` when the env is incomplete. */
-export function tableAuth(
-  env: Env,
-): { endpoint: string; headers: Record<string, string> } | null {
+export type TableAuth = { endpoint: string; headers: Record<string, string> };
+
+export function tableAuth(env: Env): TableAuth | null {
   const endpoint = env.PUBLIC_APPWRITE_ENDPOINT?.replace(/\/+$/, '');
   const projectId = env.PUBLIC_APPWRITE_PROJECT_ID;
   const apiKey = env.APPWRITE_API_KEY;

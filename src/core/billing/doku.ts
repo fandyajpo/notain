@@ -3,6 +3,8 @@
  * notification verification, per the official non-SNAP docs:
  *
  * - Create:   POST https://api-sandbox.doku.com/checkout/v1/payment
+ * - Status:   GET  https://api-sandbox.doku.com/orders/v1/status/{invoice}
+ *   (no Digest — GET has no body; the response reuses the notification shape)
  * - Signature components (one label per line, no trailing newline):
  *     Client-Id:{clientId}
  *     Request-Id:{requestId}
@@ -22,8 +24,14 @@
  * https://developers.doku.com/get-started-with-doku-api/notification/best-practice
  */
 
+const DOKU_SANDBOX_ORIGIN = 'https://api-sandbox.doku.com';
+const DOKU_STATUS_PATH_PREFIX = '/orders/v1/status';
+
 /** Sandbox only. Production (`https://api.doku.com`) is deliberately absent. */
-export const DOKU_CHECKOUT_ENDPOINT = 'https://api-sandbox.doku.com/checkout/v1/payment';
+export const DOKU_CHECKOUT_ENDPOINT = `${DOKU_SANDBOX_ORIGIN}/checkout/v1/payment`;
+
+/** Sandbox only. Production (`https://api.doku.com/orders/v1/status`) is absent. */
+export const DOKU_CHECKOUT_STATUS_ENDPOINT = `${DOKU_SANDBOX_ORIGIN}${DOKU_STATUS_PATH_PREFIX}`;
 
 export const DOKU_SIGNATURE_PREFIX = 'HMACSHA256=';
 
@@ -149,6 +157,38 @@ export async function verifyNotificationSignature(input: {
     rawBody: input.rawBody,
   }).then((value) => value.slice(DOKU_SIGNATURE_PREFIX.length));
   return signatureMatches(expected, received);
+}
+
+/* ------------------------------------------------------------------ *
+ * Check Status (GET) — asking DOKU what happened to our own order
+ * ------------------------------------------------------------------ */
+
+/**
+ * `GET /orders/v1/status/{order.invoice_number}` — the non-SNAP Check Status
+ * API, used as a fallback when DOKU's HTTP notification never arrives (the
+ * Back Office Notification URL is a merchant-side setting we do not control,
+ * and notifications can also simply be delayed or lost).
+ *
+ * GET carries no body, so the signature omits `Digest` — the component string
+ * is the same one {@link signatureComponents} builds minus that line.
+ *
+ * The invoice number is percent-encoded into exactly one path segment. Our
+ * invoice numbers are `NOTAIN-{P|B}-…` (letters, digits, dashes), so for any
+ * order we actually made the target is byte-identical to the URL path.
+ *
+ * DOKU's own caution: *"Hit Check status after 60 seconds after payment
+ * completion!"* — we cannot observe completion from our side, so the caller
+ * gates on the age of the order instead (`RECONCILE_MIN_AGE_MS` in
+ * `functions/api/payments/status.ts`).
+ *
+ * https://developers.doku.com/get-started-with-doku-api/check-status-api/non-snap
+ */
+export function statusRequestTarget(invoiceNumber: string): string {
+  return `${DOKU_STATUS_PATH_PREFIX}/${encodeURIComponent(invoiceNumber)}`;
+}
+
+export function statusRequestUrl(invoiceNumber: string): string {
+  return `${DOKU_SANDBOX_ORIGIN}${statusRequestTarget(invoiceNumber)}`;
 }
 
 /* ------------------------------------------------------------------ *

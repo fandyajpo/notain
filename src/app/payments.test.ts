@@ -80,7 +80,7 @@ describe('startCheckout', () => {
 });
 
 describe('fetchPaymentStatus', () => {
-  it('normalizes the row the notification endpoint wrote', async () => {
+  it('normalizes the row the server reports', async () => {
     fetchMock.mockResolvedValue(
       response({
         invoiceNumber: 'NOTAIN-P-1-ABCD',

@@ -15,27 +15,43 @@ ini). Dokumen resmi: <https://developers.doku.com/accept-payments/doku-checkout/
    dikembalikan. Satu baris pending per pemilik+plan: klik ganda atau dua tab
    tidak membuat dua order (guard in-flight + 409).
 3. Pembayaran terjadi di halaman DOKU; `auto_redirect` mengembalikan browser ke
-   `/payment/result?invoice=…`, yang **hanya membaca** status via
-   `GET /api/payments/status` (polling 3 detik hanya selama `pending`).
-4. Aktivasi plan **hanya** terjadi di `POST /api/payments/doku-notify`
-   ([functions/api/payments/doku-notify.ts](../functions/api/payments/doku-notify.ts)):
-   signature diverifikasi atas byte mentah payload, jumlah cocok dengan baris,
-   lalu `profiles.plan` + `planExpiresAt` diperpanjang (30 hari; perpanjangan
-   plan aktif dihitung dari expiry, bukan waktu bayar). Notifikasi ulang dari
-   DOKU aman: transisi diambil dari status baris saat ini (idempoten).
+   `/payment/result?invoice=…`, yang memanggil `GET /api/payments/status`
+   (polling 3 detik hanya selama `pending`). Selama barisnya masih `pending`,
+   endpoint itu sekaligus **merekonsiliasi**: order yang usianya ≥ 60 detik
+   ditanyakan ke Check Status API DOKU (`GET /orders/v1/status/{invoice}`),
+   di-throttle maksimal dua kali per 15 detik supaya tab yang ditinggal tidak
+   membanjiri DOKU.
+4. Aktivasi plan terjadi di dua tempat — dan **dua-duanya memanggil fungsi yang
+   sama**, [`functions/_lib/payment-settle.ts`](../functions/_lib/payment-settle.ts),
+   sehingga kedua jalur tidak mungkin berbeda perilaku:
+
+   - `POST /api/payments/doku-notify`
+     ([doku-notify.ts](../functions/api/payments/doku-notify.ts)) — notifikasi
+     HTTP DOKU, signature diverifikasi atas byte mentah payload.
+   - `GET /api/payments/status`
+     ([status.ts](../functions/api/payments/status.ts)) — balasan Check Status
+     yang kita minta sendiri ke host HTTPS tetap, hanya dihormati bila
+     menyebut invoice yang sama **dan** jumlahnya cocok dengan baris.
+
+   Di kedua jalur transisi dihitung dari status baris saat ini (notifikasi
+   ulang DOKU aman, tidak ada expiry dobel), lalu `profiles.plan` +
+   `planExpiresAt` diperpanjang (30 hari; perpanjangan plan aktif dihitung dari
+   expiry, bukan waktu bayar). Halaman result tidak pernah mengaktivasi apa
+   pun — klien hanya membaca baris.
 5. Riwayat + status langganan dibaca lewat `GET /api/payments/portal`
    (kartu **Langganan** di `/settings`); order `pending` yang masih berlaku
    punya tombol "Bayar" yang membuka kembali halaman DOKU.
 
 Endpoint di sisi server:
 
-| Route                       | Method | Otorisasi | Fungsi                          |
-| --------------------------- | ------ | --------- | ------------------------------- |
-| `/api/payments/checkout`    | POST   | JWT       | Mulai/lanjutkan checkout        |
-| `/api/payments/status`      | GET    | JWT       | Status satu milik pembayaran    |
-| `/api/payments/portal`      | GET    | JWT       | Plan + riwayat pembayaran       |
-| `/api/payments/doku-notify` | POST   | Signature | Notifikasi DOKU (satu-satunya   |
-|                             |        | DOKU      | jalan aktivasi plan)            |
+| Route                       | Method | Otorisasi | Fungsi                                |
+| --------------------------- | ------ | --------- | ------------------------------------- |
+| `/api/payments/checkout`    | POST   | JWT       | Mulai/lanjutkan checkout              |
+| `/api/payments/status`      | GET    | JWT       | Status milik sendiri + rekonsiliasi   |
+|                             |        |           | Check Status (jalur aktivasi cadangan) |
+| `/api/payments/portal`      | GET    | JWT       | Plan + riwayat pembayaran             |
+| `/api/payments/doku-notify` | POST   | Signature | Notifikasi DOKU (jalur aktivasi utama) |
+|                             |        | DOKU      |                                       |
 
 ## Environment variables
 
@@ -76,9 +92,16 @@ https://notain.pages.dev/api/payments/doku-notify
 Path-nya harus `/api/payments/doku-notify`; **domain-nya boleh berbeda**
 (Back Office boleh memakai domain produksi, sementara request preview tetap
 mengirim origin-nya sendiri) — yang tidak boleh beda adalah path. URL wajib
-HTTPS dan terjangkau dari internet publik. Tanpa konfigurasi ini, notifikasi
-`SUCCESS` tidak pernah sampai: baris pembayaran tetap `pending` dan plan tidak
-pernah aktif meskipun checkout-nya sendiri berhasil.
+HTTPS dan terjangkau dari internet publik.
+
+**Tanpa konfigurasi ini notifikasi `SUCCESS` tidak pernah sampai.** Aktivasi
+kemudian jatuh ke rekonsiliasi Check Status di `GET /api/payments/status`, yang
+hanya berjalan selama pengguna membuka `/payment/result` — buka tab lain, atau
+tutup halaman segera, dan plan tidak aktif sampai baris itu dibaca lagi.
+Jadikan webhook tetap terpasang: itulah jalur paling cepat dan satu-satunya
+yang tidak bergantung pengguna menunggu di halaman tersebut. Check Status
+berdiri sebagai pengaman ketika notifikasi terlambat, hilang, atau
+konfigurasinya belum jalan.
 
 Signature (non-SNAP, dihitung di `src/core/billing/doku.ts`): komponen
 `Client-Id`, `Request-Id`, `Request-Timestamp` (UTC ISO 8601), `Request-Target`
@@ -108,6 +131,7 @@ dengan Secret Key, di-base64, diawali literal `HMACSHA256=`.
    | Skenario                       | Yang diharapkan                                          |
    | ------------------------------ | -------------------------------------------------------- |
    | Checkout sukses (VA sandbox)   | Notifikasi `SUCCESS` → plan aktif, `/payment/result` sukses |
+   | Notifikasi tidak sampai        | Rekonsiliasi Check Status mengaktifkan saat `/payment/result` dipoll (baris ≥ 60 detik) |
    | Selesaikan nanti / batal       | Baris `pending`; tombol "Bayar" di `/settings` membuka lagi halaman DOKU sampai kedaluwarsa |
    | Order kedaluwarsa              | Notifikasi `EXPIRED` → baris `expired`, plan tidak berubah |
    | Signature salah / body diubah  | `401`, tidak ada baris yang ditulis                      |
@@ -124,7 +148,7 @@ dengan Secret Key, di-base64, diawali literal `HMACSHA256=`.
 5. Unit test (offline, memakai mock Appwrite + DOKU):
 
    ```bash
-   npx vitest run tests/checkout.test.ts tests/doku-notify.test.ts tests/portal.test.ts src/core/billing
+   npx vitest run tests/checkout.test.ts tests/doku-notify.test.ts tests/payment-status.test.ts tests/portal.test.ts src/core/billing
    ```
 
 ## Migrasi ke Production
@@ -152,7 +176,10 @@ Sebelum menerima uang sungguhan:
    (ditangani manual lewat admin panel).
 
 Aturan keamanan yang berlaku, jangan dilanggar saat mengubah kode ini: harga
-hanya dari katalog server; status plan hanya dari notifikasi terverifikasi
-(halaman result tidak pernah mengaktivasi); baris `payments` ditulis dengan
-`permissions: []` sehingga tidak terbaca dari browser SDK; dan kredensial DOKU
-tidak pernah muncul di log, respons, atau kode frontend.
+hanya dari katalog server; status plan hanya dari data DOKU yang terverifikasi
+(notifikasi bertanda tangan, atau balasan Check Status atas invoice milik kita
+dengan jumlah yang cocok — halaman result tidak pernah mengaktivasi apa pun);
+setiap transisi lewat `functions/_lib/payment-settle.ts` saja, supaya kedua
+jalur tidak bisa berbeda; baris `payments` ditulis dengan `permissions: []`
+sehingga tidak terbaca dari browser SDK; dan kredensial DOKU tidak pernah
+muncul di log, respons, atau kode frontend.

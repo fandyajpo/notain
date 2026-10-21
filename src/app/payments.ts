@@ -10,9 +10,9 @@ import { PLAN_VALUES, type Plan } from '../core/profile/model';
  * The client never sends prices, never learns other people's orders, and
  * never decides subscription state: it asks the Pages Function to start a
  * checkout (which prices the plan server-side) and later *reads back* the
- * status the verified DOKU notification wrote. The redirect from DOKU
- * carries only the invoice number as a pointer — activation lives entirely
- * in `functions/api/payments/doku-notify.ts`.
+ * status of that order. The redirect from DOKU carries only the invoice number
+ * as a pointer — activation happens server-side, from DOKU's own data
+ * (`functions/_lib/payment-settle.ts`).
  */
 
 export type PaymentStatusValue = 'pending' | 'paid' | 'expired' | 'failed';
@@ -83,9 +83,9 @@ export async function startCheckout(plan: PaidPlan): Promise<{ url: string }> {
 }
 
 /**
- * Reads back the persisted status of one of the caller's payments. Strictly
- * a read: nothing here can activate a plan, whatever the page's query string
- * says.
+ * Reads back the persisted status of one of the caller's payments. Whatever
+ * the page's query string says, nothing here can activate a plan: the server
+ * decides from DOKU's own data, not from anything the caller supplies.
  */
 export async function fetchPaymentStatus(invoice: string): Promise<PaymentStatusView> {
   const response = await bearerFetch(

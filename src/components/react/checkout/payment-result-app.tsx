@@ -17,11 +17,11 @@ import { ErrorState, LoadingState } from '../ui/state';
  * Where DOKU sends the browser back after a checkout (`auto_redirect` + the
  * `callback_url` built server-side), carrying only the invoice number.
  *
- * This page is a pure readout of the row the verified notification endpoint
- * wrote. It polls `GET /api/payments/status` while the order is pending and
- * stops the moment it turns final. No query parameter here, no fetch this page
- * makes, and no click on it can activate a plan — that authority lives
- * exclusively in `functions/api/payments/doku-notify.ts`.
+ * This page is a pure readout of one `payments` row. It polls
+ * `GET /api/payments/status` while the order is pending and stops the moment it
+ * turns final. No query parameter here and no fetch this page makes can
+ * activate a plan: the server only ever applies a transition derived from
+ * DOKU's own data (the signed notification, or its Check Status reply).
  */
 export function PaymentResultApp() {
   const [invoice, setInvoice] = useState('');
