@@ -6,7 +6,7 @@ import type { Page } from '@playwright/test';
  * the price of entry everywhere.
  */
 
-const EMAIL = 'notain-smoke-a@example.com';
+const EMAIL = 'notain-smoke-a@example.test';
 const PASSWORD = 'NotainSmoke12345!';
 
 /**

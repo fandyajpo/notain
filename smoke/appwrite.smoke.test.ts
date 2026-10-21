@@ -30,12 +30,12 @@ import {
 } from '../src/core/template/model';
 
 const USER_A = {
-  email: 'notain-smoke-a@example.com',
+  email: 'notain-smoke-a@example.test',
   password: 'NotainSmoke12345!',
   name: 'Notain Smoke A',
 };
 const USER_B = {
-  email: 'notain-smoke-b@example.com',
+  email: 'notain-smoke-b@example.test',
   password: 'NotainSmoke12345!',
   name: 'Notain Smoke B',
 };
