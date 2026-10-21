@@ -14,12 +14,18 @@ pages_build_output_dir = "dist"
 [vars]
 PUBLIC_APPWRITE_ENDPOINT = "https://sgp.cloud.appwrite.io/v1"
 PUBLIC_APPWRITE_PROJECT_ID = "6aca66fb003071c0ef43"
+PUBLIC_APPWRITE_DATABASE_ID = "notain_db"
 
 # Cloudflare Turnstile's secret (`TURNSTILE_SECRET_KEY`) is deliberately NOT
 # here: this file is committed. Set it as an encrypted Pages variable instead —
 # the dashboard (Settings → Environment variables) or
 # `wrangler pages secret put TURNSTILE_SECRET_KEY`. The matching public sitekey
 # is `PUBLIC_TURNSTILE_SITE_KEY`, which the client build reads from `.env`.
+
+# DOKU sandbox credentials (`DOKU_CLIENT_ID`, `DOKU_SECRET_KEY`, `DOKU_API_KEY`)
+# are deliberately NOT here either: they are secrets, set as encrypted Pages
+# variables in the dashboard or via `wrangler pages secret put <NAME>`. They
+# are only read by the payment Functions under `functions/api/payments/`.
 
 # The logo bucket stays private. Nothing outside this app can read it; every
 # read and write goes through the Pages Function, which authorises the caller

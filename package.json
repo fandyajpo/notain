@@ -21,6 +21,7 @@
     "catalog:ensure": "node --env-file=.env scripts/ensure-catalog.mjs",
     "audit:ensure": "node --env-file=.env scripts/ensure-audit.mjs",
     "support:ensure": "node --env-file=.env scripts/ensure-support.mjs",
+    "payments:ensure": "node --env-file=.env scripts/ensure-payments.mjs",
     "business-type:ensure": "node --env-file=.env scripts/ensure-business-type.mjs",
     "preview": "astro preview",
     "astro": "astro",

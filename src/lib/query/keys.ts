@@ -63,4 +63,8 @@ export const queryKeys = {
   adminUserDrilldownAll: ['admin-user-drilldown'] as const,
   /** Whether the current user belongs to the `admins` team (gates the nav link). */
   adminMembership: ['admin-membership'] as const,
+  /** One paid-checkout order's status, polled by `/payment/result` while DOKU settles. */
+  paymentStatus: (invoice: string) => ['payment-status', invoice] as const,
+  /** The billing portal read: current subscription + the caller's payment history. */
+  portalSession: ['portal-session'] as const,
 };

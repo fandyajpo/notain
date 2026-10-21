@@ -16,6 +16,12 @@ type Plan = {
   benefits: string[];
 };
 
+/**
+ * `?plan=` drives the checkout confirmation page: the plan id survives a
+ * login detour there, and the server prices it from its own catalog — the
+ * numbers below are display copy only. Free is deliberately NOT a checkout
+ * target: free never touches payment.
+ */
 const PLANS: readonly Plan[] = [
   {
     name: 'Free',
@@ -39,9 +45,8 @@ const PLANS: readonly Plan[] = [
     price: 'Rp 29.000',
     period: '/bulan',
     tagline: 'Untuk bisnis yang makin sering kirim nota.',
-    cta: { href: '/register', label: 'Dapatkan Akses Awal' },
+    cta: { href: '/checkout?plan=pro', label: 'Berlangganan Pro' },
     primary: true,
-    badge: 'Segera hadir',
     benefits: [
       'Semua fitur di Free',
       'Template premium dengan desain nota lebih variatif',
@@ -57,8 +62,7 @@ const PLANS: readonly Plan[] = [
     price: 'Rp 99.000',
     period: '/bulan',
     tagline: 'Untuk tim dan developer yang butuh akses API.',
-    cta: { href: '/register', label: 'Dapatkan Akses Awal' },
-    badge: 'Segera hadir',
+    cta: { href: '/checkout?plan=business', label: 'Berlangganan Business' },
     benefits: [
       'Semua fitur di Pro',
       'API key untuk akses programatik',
@@ -203,8 +207,9 @@ export function PricingPlans() {
           transition={{ duration: 0.6, delay: 0.55, ease: EASE }}
           className="mx-auto mt-8 max-w-xl text-center text-sm leading-relaxed text-muted"
         >
-          Pembayaran untuk plan Pro dan Business sedang disiapkan. Daftar sekarang; fitur Free tetap
-          bisa dipakai penuh, dan kamu jadi yang pertama mencoba.
+        Pembayaran plan Pro dan Business diproses lewat DOKU, dan plan aktif otomatis setelah
+        pembayaran terkonfirmasi. Tidak ada biaya di luar harga yang tertera, dan kamu bisa berhenti
+        kapan saja.
         </motion.p>
 
         <p className="mx-auto mt-4 max-w-xl text-center text-sm leading-relaxed text-muted">

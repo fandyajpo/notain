@@ -39,6 +39,19 @@ export interface Env {
    * variable.
    */
   APPWRITE_API_KEY?: string;
+  /**
+   * DOKU sandbox checkout credentials (never the production ones — this
+   * integration is sandbox-only). `DOKU_CLIENT_ID` goes in the `Client-Id`
+   * header of every Checkout API call and must match the one DOKU signs
+   * notifications with; `DOKU_SECRET_KEY` is the Back Office Secret Key used
+   * to compute and verify the `HMACSHA256=` signatures. `DOKU_API_KEY` is
+   * kept for DOKU APIs that use it (e.g. Snap Authorization); the hosted
+   * Checkout flow documented at developers.doku.com only needs the two above.
+   * Set all three as *encrypted* Pages variables — never in `wrangler.toml`.
+   */
+  DOKU_CLIENT_ID?: string;
+  DOKU_SECRET_KEY?: string;
+  DOKU_API_KEY?: string;
 }
 
 export type PagesFunction<E> = (context: {

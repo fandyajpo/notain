@@ -97,6 +97,8 @@ describe('QUERY_POLICIES', () => {
         'invoice',
         'invoiceNumbers',
         'invoices',
+        'paymentStatus',
+        'portalSession',
         'profile',
         'session',
         'stats',

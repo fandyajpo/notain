@@ -13,7 +13,7 @@ import type { Env } from './types';
 
 const DATABASE_ID = 'notain_db';
 
-export type TableId = 'invoices' | 'profiles' | 'templates';
+export type TableId = 'invoices' | 'profiles' | 'templates' | 'payments';
 
 /** API-key headers against Appwrite, or `null` when the env is incomplete. */
 export function tableAuth(

@@ -78,6 +78,18 @@ export const QUERY_POLICIES = {
   // Team membership is fixed for the session's lifetime; a very long staleTime
   // avoids re-hitting Appwrite on every navigation.
   adminMembership: { staleTime: 10 * 60_000, gcTime: 30 * 60_000 },
+  // Payment status flips exactly once, driven by the DOKU notification. The
+  // result page re-reads on a `refetchInterval` while the order is pending
+  // (interval refetches ignore staleness), so staleTime here only decides how
+  // long a *returning* visit may paint from cache — one second, effectively
+  // "always re-read, but never twice in the same tick". The entry only needs
+  // to outlive the tab that was watching the payment.
+  paymentStatus: { staleTime: 1_000, gcTime: 5 * 60_000 },
+  // Billing state changes exactly when a checkout starts (a pending row
+  // appears) or the DOKU notification lands (plan flips) — both of which
+  // invalidate this key explicitly, so staleTime only has to absorb ordinary
+  // navigation between settings visits.
+  portalSession: { staleTime: 30_000, gcTime: 5 * 60_000 },
 } as const;
 
 export type QueryPolicyName = keyof typeof QUERY_POLICIES;

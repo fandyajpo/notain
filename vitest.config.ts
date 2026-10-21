@@ -31,7 +31,13 @@ export default defineConfig({
     solid({ include: [/components[\\/]solid[\\/]/] }),
   ],
   test: {
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    // The Pages Functions handlers are tested from `tests/`, NOT from
+    // `functions/` itself: Cloudflare compiles every `.ts` file under
+    // `functions/` into the deployed Worker, so a test file there would try
+    // to bundle `vitest` into production. They are plain `Request →
+    // Response` functions over Web APIs, so they run fine in the node
+    // environment with a stubbed `fetch`.
+    include: ['src/**/*.{test,spec}.{ts,tsx}', 'tests/**/*.{test,spec}.{ts,tsx}'],
     environment: 'node',
     passWithNoTests: true,
   },

@@ -1,0 +1,24 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { PaymentResultApp } from '../../components/react/checkout/payment-result-app';
+---
+
+<Layout
+  title="Status Pembayaran | Notain"
+  description="Status langganan Notain kamu setelah pembayaran lewat DOKU."
+>
+  <main class="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 py-12">
+    <a href="/" class="mb-8 flex items-center justify-center gap-2 font-semibold tracking-tight">
+      <img
+        src="/notain-remove-bg.png"
+        alt=""
+        width={32}
+        height={32}
+        class="size-8 rounded-control"
+      />
+      Notain
+    </a>
+
+    <PaymentResultApp client:only="react" />
+  </main>
+</Layout>
