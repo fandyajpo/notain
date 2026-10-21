@@ -17,14 +17,37 @@ const SIZE: Record<Size, string> = {
   xl: 'max-w-3xl',
 };
 
-const HEADER = 'flex items-center justify-between gap-3 px-5 py-4 sm:px-6';
+const HEADER = 'flex shrink-0 items-center justify-between gap-3 px-5 py-4 sm:px-6';
 const BODY = 'px-5 py-4 sm:px-6';
+/**
+ * The panel is height-capped (`max-h-[…]` below), so without a scroll of its
+ * own the body would simply be cut off and the footer — with the primary
+ * action — would sit outside the dialog. `flex-auto` keeps the body's natural
+ * height for short content and lets it shrink (and scroll) only when the cap
+ * bites; a `flex-1` basis of zero would collapse a short modal to its chrome.
+ */
+const BODY_SCROLL = `${BODY} min-h-0 flex-auto overflow-y-auto`;
 const FOOTER =
-  'flex flex-col gap-2 border-t border-border bg-background px-5 py-3.5 sm:flex-row sm:justify-end sm:px-6';
+  'flex shrink-0 flex-col gap-2 border-t border-border bg-background px-5 py-3.5 sm:flex-row sm:justify-end sm:px-6';
 
 /** What counts as a stop on Tab: everything the browser can put focus on. */
 const FOCUSABLE =
   'a[href], button, input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Everything that can layer above a dialog while it is open: another dialog
+ * (a nested confirm, the business-type picker) and the portalled menus that
+ * `Select` and `Menu` draw at the end of `body`.
+ */
+const OVERLAY_SURFACE = '[role="dialog"], [role="alertdialog"], [role="listbox"], [role="menu"]';
+
+/** The surface drawn above `panel`, or `null` when `panel` is the topmost one. */
+function coveringSurface(panel: HTMLElement | null): HTMLElement | null {
+  if (!panel) return null;
+  const surfaces = document.querySelectorAll<HTMLElement>(OVERLAY_SURFACE);
+  const top = surfaces[surfaces.length - 1];
+  return top && top !== panel ? top : null;
+}
 
 /** Focus stops inside `panel`, minus the ones a user could never reach. */
 function focusablesIn(panel: HTMLElement): HTMLElement[] {
@@ -103,12 +126,20 @@ export function Modal({
 }: Props) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement | null>(null);
+  // Set on the backdrop's pointerdown, read on the click that follows: see
+  // `onBackdropPointerDown` below for why the two cannot be one handler.
+  const pressCovered = useRef(false);
 
   useEffect(() => {
     if (!open || !dismissible) return;
 
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Escape') return;
+      // Escape dismisses the *topmost* surface. A nested dialog or an open
+      // menu handles this keystroke itself; passing it through would close
+      // this dialog in the same stroke, taking a half-edited form with it.
+      if (coveringSurface(panelRef.current)) return;
+      onClose();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
@@ -182,6 +213,11 @@ export function Modal({
     const panel = panelRef.current;
     if (!panel) return;
 
+    // A keystroke inside a nested dialog belongs to that dialog's own trap —
+    // letting this one act on it too makes Tab jump two stops.
+    const covering = coveringSurface(panel);
+    if (covering && event.target instanceof Node && covering.contains(event.target)) return;
+
     const items = focusablesIn(panel);
     if (items.length === 0) {
       event.preventDefault();
@@ -207,10 +243,30 @@ export function Modal({
     }
   };
 
+  /**
+   * An outside press while a portalled menu is open is aimed at the menu, not
+   * at this dialog: the menu closes itself on pointerdown, and the click that
+   * arrives a beat later would otherwise close the dialog too. React's
+   * synthetic pointerdown reaches the backdrop *before* the document-level
+   * listener that closes the menu, so this is the last moment where "a menu is
+   * still open" is knowable — the click that follows then skips one press.
+   */
+  const onBackdropPointerDown = () => {
+    pressCovered.current = Boolean(coveringSurface(panelRef.current));
+  };
+
+  const onBackdropClick = () => {
+    const covered = pressCovered.current;
+    pressCovered.current = false;
+    if (covered) return;
+    onClose();
+  };
+
   return (
     <div
       className="animate-backdrop-in fixed inset-0 z-50 flex items-center justify-center bg-foreground/45 p-4"
-      onClick={dismissible ? onClose : undefined}
+      onPointerDown={dismissible ? onBackdropPointerDown : undefined}
+      onClick={dismissible ? onBackdropClick : undefined}
     >
       <div
         ref={panelRef}
@@ -219,7 +275,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={ariaLabelledBy ?? (headerContent && !header ? titleId : undefined)}
         onKeyDown={cycleFocus}
-        className={`animate-modal-in max-h-[calc(100dvh-2rem)] w-full ${SIZE[size]} overflow-hidden rounded-card border border-border bg-card shadow-modal`}
+        className={`animate-modal-in flex max-h-[calc(100dvh-2rem)] w-full ${SIZE[size]} flex-col overflow-hidden rounded-card border border-border bg-card shadow-modal`}
         onClick={(event) => event.stopPropagation()}
       >
         {headerContent && (
@@ -227,7 +283,7 @@ export function Modal({
             {headerContent}
           </div>
         )}
-        <div className={bodyClassName ?? BODY}>{children}</div>
+        <div className={bodyClassName ?? BODY_SCROLL}>{children}</div>
         {footerContent && <div className={footerClassName ?? FOOTER}>{footerContent}</div>}
       </div>
     </div>

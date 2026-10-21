@@ -16,6 +16,8 @@ pnpm-debug.log*
 # environment variables
 .env
 .env.production
+# local secrets for `wrangler pages dev` (APPWRITE_API_KEY, TURNSTILE_SECRET_KEY, …)
+.dev.vars
 
 # macOS-specific files
 .DS_Store

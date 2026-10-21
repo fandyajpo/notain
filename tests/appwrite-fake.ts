@@ -21,6 +21,10 @@ export type AppwriteFake = {
   lists: Map<string, Row[]>;
   /** Every Appwrite request the handler made, in order. */
   calls: RecordedCall[];
+  /** Memberships the caller has in the `admins` team; `0` = not an admin. */
+  teamMemberships: number;
+  /** Accounts that exist for `GET /users/<id>`; anything else answers 404. */
+  users: Map<string, { $id: string; email: string }>;
   fetch: ReturnType<typeof vi.fn>;
 };
 
@@ -37,6 +41,10 @@ export function appwriteFake(
     endpoint?: string;
     /** When set, Appwrite writes (POST/PATCH) whose URL contains this answer 403. */
     writeFailureFor?: string;
+    /** Defaults to `1` — the caller is an admin unless a test says otherwise. */
+    teamMemberships?: number;
+    /** Accounts answering `GET /users/<id>`; defaults to one `user-1`. */
+    users?: Record<string, { $id: string; email: string }>;
   } = {},
 ): AppwriteFake {
   const fake: AppwriteFake = {
@@ -44,6 +52,10 @@ export function appwriteFake(
     rows: new Map(),
     lists: new Map(),
     calls: [],
+    teamMemberships: options.teamMemberships ?? 1,
+    users: new Map(
+      Object.entries(options.users ?? { 'user-1': { $id: 'user-1', email: 'budi@example.com' } }),
+    ),
     fetch: vi.fn(),
   };
 
@@ -102,6 +114,21 @@ function route(fake: AppwriteFake, method: string, url: string): Response {
     return json(200, fake.account);
   }
 
+  // `requireAdmin`'s team probe — `GET /teams/admins/memberships?…userId=…`.
+  // The query filter is ignored; membership is the same for every caller here.
+  if (parsed.pathname.includes('/teams/') && parsed.pathname.endsWith('/memberships')) {
+    return json(200, { total: fake.teamMemberships });
+  }
+
+  // The admin content API checks the *target* user exists before writing.
+  const userMatch = /\/users\/([^/]+)$/.exec(parsed.pathname);
+  if (userMatch) {
+    const user = fake.users.get(userMatch[1]);
+    return user
+      ? json(200, user)
+      : json(404, { message: 'User not found', type: 'user_not_found' });
+  }
+
   // /databases/<db>/collections/<table>/documents/<id?>
   const match = /\/databases\/[^/]+\/collections\/([^/]+)\/documents(?:\/([^/?]+))?/.exec(
     parsed.pathname,
@@ -111,9 +138,17 @@ function route(fake: AppwriteFake, method: string, url: string): Response {
   const id = match[2];
 
   if (id === undefined) {
-    if (method === 'GET') return json(200, { documents: fake.lists.get(table) ?? [] });
+    if (method === 'GET') {
+      const documents = fake.lists.get(table) ?? [];
+      // `total` mirrors the page, not the collection: the fake never filters,
+      // so a caller that wants fewer rows should seed fewer.
+      return json(200, { documents, total: documents.length });
+    }
     if (method === 'POST') {
-      const payload = fake.calls.at(-1)?.body as { documentId: string; data: Record<string, unknown> };
+      const payload = fake.calls.at(-1)?.body as {
+        documentId: string;
+        data: Record<string, unknown>;
+      };
       const row = { $id: payload.documentId, ...payload.data } as Row;
       fake.rows.set(`${table}/${payload.documentId}`, row);
       return json(201, row);

@@ -6,11 +6,12 @@ import { SegmentedControl } from '../ui/segmented';
 import { LoadingState } from '../ui/state';
 import { AdminUsersPanel } from './admin-users-panel';
 import { AdminAuditPanel } from './admin-audit-panel';
+import { AdminContentPanel } from './admin-content-panel';
 import { useAdminMembership } from '../../../lib/query/hooks/use-admin';
 
-type AdminTab = 'users' | 'audit';
+type AdminTab = 'users' | 'content' | 'audit';
 
-/** Admin panel: manage users, and read the action log. */
+/** Admin panel: manage users, manage one user's content, read the action log. */
 export function AdminApp() {
   return (
     <IslandBoundary>
@@ -66,12 +67,19 @@ function AdminContent() {
           ariaLabel="Tab admin"
           options={[
             { value: 'users', label: 'Pengguna' },
+            { value: 'content', label: 'Konten pengguna' },
             { value: 'audit', label: 'Log aktivitas' },
           ]}
         />
       </div>
 
-      {tab === 'users' ? <AdminUsersPanel /> : <AdminAuditPanel />}
+      {tab === 'users' ? (
+        <AdminUsersPanel />
+      ) : tab === 'content' ? (
+        <AdminContentPanel />
+      ) : (
+        <AdminAuditPanel />
+      )}
     </div>
   );
 }

@@ -63,6 +63,38 @@ export const queryKeys = {
   adminUserDrilldownAll: ['admin-user-drilldown'] as const,
   /** Whether the current user belongs to the `admins` team (gates the nav link). */
   adminMembership: ['admin-membership'] as const,
+  /**
+   * Admin "Konten pengguna" rows — one cache per selected user per resource,
+   * so switching users or templates/invoices never shows the other's rows.
+   */
+  adminContent: (userId: string, resource: string): readonly unknown[] => [
+    'admin-content',
+    userId,
+    resource,
+  ],
+  /** Prefix for invalidating every selected user's content caches. */
+  adminContentAll: ['admin-content'] as const,
+  /**
+   * One row's full content, read only while its edit dialog is open. It lives
+   * under the same `admin-content` prefix so a write still refreshes everything,
+   * but the key adds the row id so opening one editor never refetches another.
+   */
+  adminContentDetail: (userId: string, resource: string, rowId: string): readonly unknown[] => [
+    'admin-content',
+    userId,
+    resource,
+    rowId,
+  ],
+  /**
+   * The next free invoice number for one selected user, read when the create
+   * dialog opens. Under the same prefix so creating an invoice refreshes it,
+   * and suffixed so it can never collide with a row id.
+   */
+  adminContentNextNumber: (userId: string): readonly unknown[] => [
+    'admin-content',
+    userId,
+    'next-invoice-number',
+  ],
   /** One paid-checkout order's status, polled by `/payment/result` while DOKU settles. */
   paymentStatus: (invoice: string) => ['payment-status', invoice] as const,
   /** The billing portal read: current subscription + the caller's payment history. */

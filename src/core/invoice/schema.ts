@@ -5,7 +5,7 @@ import { ADJUSTMENT_TYPES, INVOICE_LIMITS, INVOICE_STATUSES } from './model';
 import { calculateItemSubtotal } from './calculator';
 
 /** Indonesian mobile numbers, local or international format. */
-const phonePattern = /^(?:\+?62|0)8\d{7,12}$/;
+export const PHONE_PATTERN = /^(?:\+?62|0)8\d{7,12}$/;
 
 const isoDate = z.string().trim().refine(isIsoDate, { message: 'Masukkan tanggal yang valid.' });
 
@@ -155,7 +155,7 @@ export const invoiceDraftSchema = z
       .string()
       .trim()
       .optional()
-      .refine((value) => !value || phonePattern.test(value), {
+      .refine((value) => !value || PHONE_PATTERN.test(value), {
         message: 'Masukkan nomor WhatsApp customer yang valid.',
       })
       .transform((value) => value || undefined),

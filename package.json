@@ -10,6 +10,7 @@
     "dev:stop": "astro dev stop",
     "dev:status": "astro dev status",
     "dev:logs": "astro dev logs",
+    "dev:pages": "npm run build && wrangler pages dev dist",
     "build": "astro build && node scripts/modulepreload.mjs && node scripts/sitemap.mjs && node scripts/csp-hashes.mjs",
     "deploy": "wrangler pages deploy dist",
     "reset:dev": "node --env-file=.env scripts/reset-dev.mjs",

@@ -12,6 +12,12 @@ const ACTION_LABELS: Record<string, string> = {
   'user.update': 'Edit profil',
   'user.suspend': 'Nonaktifkan',
   'user.unsuspend': 'Aktifkan',
+  'content.templates.create': 'Tambah template',
+  'content.templates.update': 'Edit template',
+  'content.templates.delete': 'Hapus template',
+  'content.invoices.create': 'Tambah invoice',
+  'content.invoices.update': 'Edit invoice',
+  'content.invoices.delete': 'Hapus invoice',
 };
 
 /** Log aktivitas tab: newest-first list of admin actions. */
