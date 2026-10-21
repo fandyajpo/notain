@@ -1,7 +1,7 @@
 import { AppwriteException } from 'appwrite';
 import { describe, expect, it } from 'vitest';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
-import { isRateLimited, isUnauthenticated, toAppError } from './errors';
+import { appErrorFromStatus, isRateLimited, isUnauthenticated, toAppError } from './errors';
 
 function appwriteError(status: number, type = ''): AppwriteException {
   return new AppwriteException('boom', status, type);
@@ -66,6 +66,23 @@ describe('toAppError', () => {
     const original = new AppError(ERROR_CODES.CONFLICT, 'sudah ada');
 
     expect(toAppError(original)).toBe(original);
+  });
+});
+
+describe('appErrorFromStatus', () => {
+  it('maps the invoice-link plan gate (402) to a permanent FORBIDDEN with the server copy', () => {
+    // "Invoice link is a Pro feature" — a denial the client must show as-is
+    // and never retry, unlike a transient failure.
+    const error = appErrorFromStatus(402, 'Invoice link adalah fitur plan Pro.');
+
+    expect(error.code).toBe(ERROR_CODES.FORBIDDEN);
+    expect(error.message).toBe('Invoice link adalah fitur plan Pro.');
+  });
+
+  it('never leaks 5xx detail even when the body carried a message', () => {
+    const error = appErrorFromStatus(502, 'stack trace-ish');
+
+    expect(error.message).toBe('Terjadi kesalahan. Coba lagi beberapa saat lagi.');
   });
 });
 

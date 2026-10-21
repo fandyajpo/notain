@@ -13,6 +13,7 @@ import { calculateTotals } from '../../../core/invoice/calculator';
 import { formatRupiah } from '../../../core/shared/money';
 import { formatTanggalRelatif, formatWaktuLalu } from '../../../core/shared/dates';
 import type { DashboardStats } from '../../../core/stats/model';
+import { hasProAccess } from '../../../core/profile/model';
 import type { InvoiceStatus } from '../../../core/invoice/model';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
 import { useSession } from '../../../lib/query/hooks/use-session';
@@ -110,8 +111,11 @@ function DashboardContent() {
 
       {/* Money first: the period-scoped financial cards, the six-month
           chart, unpaid invoices worth chasing, and recent activity — all
-          from one windowed, column-projected query. */}
-      <FinanceSection businessName={usahaName} />
+          from one windowed, column-projected query. Reports are a Pro
+          benefit; free accounts get the upgrade card and the query never
+          fires. Unknown (still loading or failed profile) stays open so a
+          paying user never sees the upsell flash. */}
+      <FinanceSection businessName={usahaName} enabled={!profile || hasProAccess(profile)} />
 
       <SummarySection
         stats={stats.data}

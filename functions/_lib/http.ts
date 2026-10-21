@@ -8,7 +8,14 @@ export function json(status: number, body: unknown, headers: HeadersInit = {}): 
 /** Uniform error body so the client can branch on `error` instead of copy. */
 export function apiError(
   status: number,
-  error: 'unauthenticated' | 'validation' | 'not_found' | 'method_not_allowed' | 'conflict',
+  error:
+    | 'unauthenticated'
+    | 'validation'
+    | 'not_found'
+    | 'method_not_allowed'
+    | 'conflict'
+    /** The caller's plan doesn't cover this resource (HTTP 402). */
+    | 'plan_required',
   message: string,
   extra: HeadersInit = {},
 ): Response {

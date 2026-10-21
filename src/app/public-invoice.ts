@@ -55,7 +55,19 @@ export async function getPublicInvoice(id: string): Promise<PublicInvoicePayload
   if (response.status === 404) {
     throw new AppError(ERROR_CODES.NOT_FOUND, 'Invoice tidak ditemukan.');
   }
-  if (!response.ok) throw appErrorFromStatus(response.status);
+  if (!response.ok) {
+    // The one 4xx the server answers with copy a person should read is the
+    // 402 plan gate ("invoice link is a Pro feature") — surface it verbatim
+    // instead of the generic fallback.
+    let message: string | undefined;
+    try {
+      const body = (await response.json()) as { message?: unknown };
+      if (typeof body.message === 'string') message = body.message;
+    } catch {
+      // Non-JSON error body: fall through to the generic copy.
+    }
+    throw appErrorFromStatus(response.status, message);
+  }
 
   return parsePayload(await response.json());
 }

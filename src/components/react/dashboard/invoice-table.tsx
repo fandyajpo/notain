@@ -21,6 +21,7 @@ import {
   ImageUp,
   Plus,
   ShieldAlert,
+  Sparkles,
   Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
@@ -38,6 +39,7 @@ import {
   PAYMENT_PROOF_MAX_BYTES,
 } from '../../../core/invoice/payment-proof';
 import { BUILTIN_TEMPLATES } from '../../../core/template/builtins';
+import { EMPTY_PROFILE, hasProAccess } from '../../../core/profile/model';
 import { toInvoiceRows } from '../../../core/excel/invoices';
 import { formatRupiah } from '../../../core/shared/money';
 import { formatTanggal, formatTanggalRelatif } from '../../../core/shared/dates';
@@ -50,6 +52,7 @@ import {
   useDeletePaymentProof,
   useUploadOwnerPaymentProof,
 } from '../../../lib/query/hooks/use-public-invoice';
+import { useProfile } from '../../../lib/query/hooks/use-profile';
 import { useTemplates } from '../../../lib/query/hooks/use-templates';
 import { toast } from '../../../lib/ui/toast';
 import { Badge } from '../ui/badge';
@@ -135,6 +138,11 @@ function readParams(): TableParams {
 }
 
 export function InvoiceTable() {
+  // "Invoice link" is a Pro benefit (pricing page) and the server answers
+  // the public endpoint with a 402 for free accounts — so the menu points at
+  // checkout instead of a link that would only bounce the customer.
+  const { data: profile } = useProfile();
+  const publicLinkReady = hasProAccess(profile ?? EMPTY_PROFILE);
   const initial = useMemo(readParams, []);
   const [searchInput, setSearchInput] = useState(initial.keyword);
   const [search, setSearch] = useState(initial.keyword);
@@ -477,13 +485,19 @@ export function InvoiceTable() {
                     icon: <Copy size={15} aria-hidden="true" />,
                     href: `/invoice/new?from=${invoice.id}`,
                   },
-                  {
-                    label: 'Buka halaman bayar',
-                    icon: <ExternalLink size={15} aria-hidden="true" />,
-                    // The capability URL the customer uses: shows the invoice
-                    // and the one-shot proof upload form.
-                    href: `/invoice/print/${invoice.id}`,
-                  },
+                  publicLinkReady
+                    ? {
+                        label: 'Buka halaman bayar',
+                        icon: <ExternalLink size={15} aria-hidden="true" />,
+                        // The capability URL the customer uses: shows the
+                        // invoice and the one-shot proof upload form.
+                        href: `/invoice/print/${invoice.id}`,
+                      }
+                    : {
+                        label: 'Buka halaman bayar (Pro)',
+                        icon: <Sparkles size={15} aria-hidden="true" />,
+                        href: '/checkout?plan=pro',
+                      },
                   {
                     // The owner's own upload: allowed on any status (the
                     // customer's form closes on Lunas/Batal) and replaces an

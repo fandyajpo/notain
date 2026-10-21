@@ -150,6 +150,25 @@ function PublicPrintView({ invoiceId }: { invoiceId: string }) {
 
   if (isError || !payload) {
     const notFound = isAppError(error) && error.code === ERROR_CODES.NOT_FOUND;
+    // The sender's plan does not cover invoice links (402 → FORBIDDEN). The
+    // server's copy explains it to the customer; the action is aimed at the
+    // owner who may be testing their own link.
+    const planGated = isAppError(error) && error.code === ERROR_CODES.FORBIDDEN;
+    if (planGated) {
+      return (
+        <Status>
+          <div className="w-full max-w-md">
+            <EmptyState
+              icon={FileText}
+              className="w-full"
+              title="Invoice link butuh plan Pro"
+              description={error.message}
+              action={<Button href="/checkout?plan=pro">Berlangganan Pro</Button>}
+            />
+          </div>
+        </Status>
+      );
+    }
     return (
       <Status>
         <div className="w-full max-w-md">

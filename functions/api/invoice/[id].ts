@@ -9,6 +9,7 @@ import {
 import { ID_SEGMENT_PATTERN } from '../../../src/lib/edit-route';
 import { getRow, tableAuth } from '../../_lib/rows';
 import { apiError, json } from '../../_lib/http';
+import { isSubscriptionActive } from '../../../src/core/billing/plans';
 import type { Env, PagesFunction } from '../../_lib/types';
 
 /**
@@ -44,16 +45,32 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
   if (!row) return apiError(404, 'not_found', 'Invoice tidak ditemukan.');
 
   const invoice = invoiceRowToDomain(row as InvoiceRow);
+
+  // Profile is fetched for two reasons: the Pro gate below and the letterhead.
+  const profileRow = await getRow(auth, 'profiles', invoice.ownerId);
+
+  // "Invoice link" is the headline Pro benefit on the pricing page — the
+  // customer opening the nota without a download is what the sender pays for.
+  // Free (or expired) accounts get a 402 with actionable copy; the signed-in
+  // builder and dashboard never come through this endpoint, so nothing the
+  // owner does inside the app is affected.
+  const profile = profileRow ? (profileRow as ProfileRow) : null;
+  if (!isSubscriptionActive(profile?.plan, profile?.planExpiresAt)) {
+    return apiError(
+      402,
+      'plan_required',
+      'Invoice link adalah fitur plan Pro. Minta file PDF-nya ke pengirim, atau berlangganan Pro untuk membuka tautan seperti ini.',
+    );
+  }
+
   // The customer never needs the internal owner id or the row timestamps —
   // the print view renders the document, not the audit trail.
   const publicInvoice = omitFields(invoice, ['ownerId', 'createdAt', 'updatedAt']);
 
-  // Profile and template are fetched on a best-effort basis: a missing profile
-  // still prints (the letterhead degrades to the customer's own view), and a
-  // missing template falls back to a built-in on the client — the same
+  // A missing profile cannot happen past the gate above (free is the default),
+  // and a missing template falls back to a built-in on the client — the same
   // fallback the signed-in print view has.
-  const profileRow = await getRow(auth, 'profiles', invoice.ownerId);
-  const business = profileRow ? publicBusinessFromRow(profileRow as ProfileRow) : null;
+  const business = profile ? publicBusinessFromRow(profile) : null;
 
   const templateRow = invoice.templateId
     ? await getRow(auth, 'templates', invoice.templateId)

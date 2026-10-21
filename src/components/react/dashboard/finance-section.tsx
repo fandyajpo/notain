@@ -42,6 +42,12 @@ const PERIOD_OPTIONS: ReadonlyArray<{ value: PeriodChoice; label: string }> = [
 type Props = {
   /** Used in the WhatsApp reminder copy — same fallback as the page header. */
   businessName: string;
+  /**
+   * Plan entitlement: "laporan bisnis" is the Pro headline on the pricing
+   * page, so a free account sees the upgrade card instead — and never fires
+   * the finance query (the flag reaches the hook).
+   */
+  enabled?: boolean;
 };
 
 /**
@@ -56,14 +62,16 @@ type Props = {
  * integers. Cancelled invoices are excluded from revenue and receivables by
  * the core metrics; only the activity count still includes them.
  */
-export function FinanceSection({ businessName }: Props) {
+export function FinanceSection({ businessName, enabled = true }: Props) {
   const [choice, setChoice] = useState<PeriodChoice>('month');
   // Seeded to the current month so switching to "Kustom" starts from a sane,
   // already-meaningful window instead of an empty pair of inputs.
   const [customFrom, setCustomFrom] = useState(() => monthStart());
   const [customTo, setCustomTo] = useState(() => todayIsoDate());
 
-  const finance = useDashboardFinance({ choice, customFrom, customTo });
+  const finance = useDashboardFinance({ choice, customFrom, customTo, enabled });
+
+  if (!enabled) return <FinanceUpsell />;
 
   return (
     <>
@@ -428,4 +436,41 @@ function ActivityFeed({ events }: { events: ActivityEvent[] }) {
 
 function monthStart(): string {
   return `${todayIsoDate().slice(0, 7)}-01`;
+}
+
+/**
+ * What a free account sees where the reports would be: the same heading
+ * position as the real section, selling the Pro upgrade instead of showing a
+ * chart the plan does not cover ("Laporan bisnis" is a Pro bullet on the
+ * pricing page).
+ */
+function FinanceUpsell() {
+  return (
+    <section
+      data-tour="dash-finance"
+      aria-label="Keuangan periode ini"
+      className="flex flex-col gap-4"
+    >
+      <h2 className="text-section">Keuangan</h2>
+      <Card padding="lg">
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-md">
+            <p className="font-medium">Laporan bisnis ada di plan Pro</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted">
+              Ringkasan penjualan & pendapatan periode ini, grafik enam bulan, dan daftar invoice
+              yang perlu ditagih — semuanya dalam satu layar.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button href="/checkout?plan=pro" size="sm">
+              Berlangganan Pro
+            </Button>
+            <Button href="/pricing" variant="secondary" size="sm">
+              Lihat harga
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </section>
+  );
 }

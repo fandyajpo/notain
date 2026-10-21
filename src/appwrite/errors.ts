@@ -52,6 +52,11 @@ export function toAppError(error: unknown): AppError {
 function mapStatusCode(status: number): (typeof ERROR_CODES)[keyof typeof ERROR_CODES] {
   if (status === 401) return ERROR_CODES.UNAUTHENTICATED;
   if (status === 403) return ERROR_CODES.FORBIDDEN;
+  // 402 Payment Required: the endpoint exists and the request was valid, but
+  // the caller's plan does not cover it (the public invoice link). It is a
+  // permanent denial for the current plan, so it maps to FORBIDDEN — never
+  // retried, always shown with the server's upgrade copy.
+  if (status === 402) return ERROR_CODES.FORBIDDEN;
   if (status === 404) return ERROR_CODES.NOT_FOUND;
   if (status === 409) return ERROR_CODES.CONFLICT;
   // 429 is keyed by status, not by Appwrite's `type` string, so a new rate-limit

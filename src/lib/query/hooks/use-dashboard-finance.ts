@@ -22,6 +22,12 @@ export function useDashboardFinance(input: {
   customFrom: string;
   customTo: string;
   now?: string;
+  /**
+   * Plan entitlement (Pro sells "laporan bisnis"). A free account never
+   * fires the query at all — the section renders its upgrade card instead,
+   * so gating saves the request rather than merely hiding its result.
+   */
+  enabled?: boolean;
 }) {
   const range = periodRange(
     input.choice,
@@ -32,6 +38,7 @@ export function useDashboardFinance(input: {
   return useQuery<DashboardFinance>({
     queryKey: queryKeys.dashboardFinance(range.from, range.to),
     queryFn: () => getDashboardFinance(input.now ? { range, now: input.now } : { range }),
+    enabled: input.enabled ?? true,
     ...queryPolicy('dashboardFinance'),
   });
 }
