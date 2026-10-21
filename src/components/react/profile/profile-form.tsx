@@ -1,4 +1,5 @@
 import { type AnyFieldApi, useForm } from '@tanstack/react-form';
+import { useSelector } from '@tanstack/react-store';
 import { useEffect, useState } from 'react';
 import {
   profileFormSchema,
@@ -64,6 +65,8 @@ export function ProfileForm({ profile }: Props) {
       }
     },
   });
+
+  const businessType = useSelector(form.store, (state) => state.values.businessType);
 
   const currentProfile = (): BusinessProfile => ({
     name: form.state.values.name.trim() || profile.name,
@@ -144,11 +147,7 @@ export function ProfileForm({ profile }: Props) {
       </form.Field>
 
       <BusinessTypeField
-        value={
-          isBusinessSubtypeSlug(form.state.values.businessType)
-            ? form.state.values.businessType
-            : null
-        }
+        value={isBusinessSubtypeSlug(businessType) ? businessType : null}
         description="Dipakai untuk mengelompokkan template dan mengisi contoh invoice."
         onChange={(slug) => form.setFieldValue('businessType', slug ?? '')}
       />
