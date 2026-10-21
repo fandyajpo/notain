@@ -1,0 +1,88 @@
+---
+interface Props {
+  /** Prefix for on-page anchors: `'/'` on every static content page. */
+  anchorPrefix?: string;
+}
+
+const { anchorPrefix = '/' } = Astro.props;
+
+const MUTED_LINK = 'text-muted transition-colors hover:text-foreground focus-ring';
+
+/** Each column as one list so the markup stays readable. */
+const columns: { heading: string; items: { href: string; label: string }[] }[] = [
+  {
+    heading: 'Produk',
+    items: [
+      { href: '/pricing', label: 'Harga' },
+      { href: `${anchorPrefix}#cara-kerja`, label: 'Cara kerja' },
+      { href: `${anchorPrefix}#whatsapp`, label: 'Kirim ke WhatsApp' },
+      { href: `${anchorPrefix}#kenapa`, label: 'Kenapa Notain' },
+      { href: `${anchorPrefix}#faq`, label: 'FAQ' },
+      { href: '/developers', label: 'Developers' },
+    ],
+  },
+  {
+    heading: 'Akun',
+    items: [
+      { href: '/login', label: 'Masuk' },
+      { href: '/register', label: 'Daftar gratis' },
+    ],
+  },
+  {
+    heading: 'Perusahaan',
+    items: [
+      { href: '/blog', label: 'Blog' },
+      { href: '/contact', label: 'Kontak & Support' },
+      { href: '/terms', label: 'Syarat & Ketentuan' },
+      { href: '/privacy', label: 'Kebijakan Privasi' },
+    ],
+  },
+];
+---
+
+/** * Static twin of the React `landing/site-footer.tsx`, same as SiteHeader.astro * is for the
+header: identical structure and copy, zero hydration. Used by * ContentPage on the static content
+pages; the React version stays on `/` and * `/pricing`. */
+<footer class="border-t border-border bg-card">
+  <div class="mx-auto flex w-full max-w-6xl flex-col gap-8 px-5 py-12 sm:px-8">
+    <div class="flex flex-col gap-10 sm:flex-row sm:justify-between">
+      <div class="max-w-xs">
+        <a href="/" class="flex items-center gap-2 font-semibold tracking-tight">
+          <img
+            src="/notain-remove-bg.png"
+            alt=""
+            width="28"
+            height="28"
+            class="size-7 rounded-control"
+          />
+          Notain
+        </a>
+        <p class="mt-3 text-sm text-muted">
+          Bikin invoice profesional, download PDF-nya, kirim lewat WhatsApp. Selesai.
+        </p>
+      </div>
+
+      <nav class="grid grid-cols-2 gap-x-12 gap-y-6 text-sm sm:grid-cols-3 sm:gap-x-16">
+        {columns.map((column) => (
+          <div>
+            <p class="text-eyebrow uppercase text-muted">{column.heading}</p>
+            <ul class="mt-3 space-y-2.5">
+              {column.items.map((item) => (
+                <li>
+                  <a href={item.href} class={MUTED_LINK}>
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </nav>
+    </div>
+
+    <div class="flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
+      <p>© 2026 Notain. Dibuat untuk UMKM Indonesia.</p>
+      <p>Invoice kamu tersimpan aman di akun Notain.</p>
+    </div>
+  </div>
+</footer>

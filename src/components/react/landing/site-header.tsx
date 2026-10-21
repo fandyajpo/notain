@@ -2,7 +2,7 @@ import { AnimatePresence, motion, useScroll, useSpring, useTransform } from 'mot
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Menu, X } from 'lucide-react';
 import { EASE } from './reveal';
-import { isActiveSiteLink } from '../../../lib/site-nav';
+import { isActiveSiteLink, SITE_NAV_VISIBILITY, siteNavLinks } from '../../../lib/site-nav';
 
 const NAV_LINK_BASE = 'relative px-3 py-2 text-sm transition-colors focus-ring';
 
@@ -126,29 +126,10 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
     }
   }, [menuOpen]);
 
-  const mobileLinks = [
-    { href: `${anchorPrefix}#cara-kerja`, label: 'Cara kerja' },
-    { href: `${anchorPrefix}#whatsapp`, label: 'WhatsApp' },
-    { href: `${anchorPrefix}#kenapa`, label: 'Kenapa Notain' },
-    { href: `${anchorPrefix}#faq`, label: 'FAQ' },
-    { href: '/pricing', label: 'Harga' },
-    { href: '/login', label: 'Masuk' },
-  ];
-
-  const desktopLinks = [
-    { href: `${anchorPrefix}#cara-kerja`, label: 'Cara kerja', show: 'sm' },
-    { href: `${anchorPrefix}#whatsapp`, label: 'WhatsApp', show: 'sm' },
-    { href: `${anchorPrefix}#kenapa`, label: 'Kenapa Notain', show: 'always' },
-    { href: `${anchorPrefix}#faq`, label: 'FAQ', show: 'md' },
-    { href: '/pricing', label: 'Harga', show: 'sm' },
-    { href: '/login', label: 'Masuk', show: 'always' },
-  ] as const;
-
-  const linkVisibility = {
-    sm: 'hidden sm:block',
-    md: 'hidden md:block',
-    always: '',
-  } as const;
+  // One list for both breakpoints, shared with the static Astro twin on the
+  // content pages (see components/ui/SiteHeader.astro): mobile shows every
+  // entry, desktop hides the ones below its viewport.
+  const links = siteNavLinks(anchorPrefix);
 
   return (
     <>
@@ -185,12 +166,12 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
           </motion.a>
 
           <nav className="hidden items-center gap-1 sm:flex sm:gap-2">
-            {desktopLinks.map((link) => (
+            {links.map((link) => (
               <NavLink
                 key={link.href}
                 href={link.href}
                 active={isActiveSiteLink(pathname, link.href)}
-                className={linkVisibility[link.show]}
+                className={SITE_NAV_VISIBILITY[link.show]}
               >
                 {link.label}
               </NavLink>
@@ -232,7 +213,7 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
               className="overflow-hidden border-t border-border bg-card sm:hidden"
             >
               <div className="flex flex-col gap-0.5 px-4 py-3">
-                {mobileLinks.map((link, index) => {
+                {links.map((link, index) => {
                   const active = isActiveSiteLink(pathname, link.href);
                   return (
                     <a

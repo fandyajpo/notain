@@ -1,0 +1,331 @@
+---
+import { Menu, X } from 'lucide-astro';
+import { isActiveSiteLink, SITE_NAV_VISIBILITY, siteNavLinks } from '../../lib/site-nav';
+
+interface Props {
+  /** Prefix for on-page anchors: `'/'` on every static content page. */
+  anchorPrefix?: string;
+}
+
+const { anchorPrefix = '/' } = Astro.props;
+const links = siteNavLinks(anchorPrefix);
+const current = Astro.url.pathname;
+const isCurrent = (href: string) => isActiveSiteLink(current, href);
+
+const DESKTOP_LINK = 'site-nav-link relative px-3 py-2 text-sm transition-colors focus-ring';
+const MOBILE_LINK =
+  'site-mobile-link block rounded-control px-3 py-2.5 text-base transition-colors focus-ring';
+---
+
+/** * The sticky marketing header as a static Astro component. * * Same shell, links, active state
+and drawer behaviour as the React * `landing/site-header.tsx` — but no hydration at all, which is
+what keeps the * content pages (terms, privacy, blog, developers, 404) free of the React and *
+motion runtimes. The React twin stays on `/` and `/pricing`, where the * scroll-driven backdrop and
+springy hovers are part of the design. * * Everything dynamic lives in the script at the bottom and
+is delegated from * `document`/`window`, so it survives Astro's ClientRouter swapping this markup *
+on a soft navigation. Active links are resolved from `Astro.url` at build * time; a soft navigation
+brings the next page's markup with it. */
+<header data-site-header class="site-header sticky top-0 z-40 border-b transition-colors">
+  <div class="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 sm:px-8">
+    <a
+      href="/"
+      class="site-logo flex items-center gap-2 font-semibold tracking-tight focus-ring rounded-control"
+    >
+      <img
+        src="/notain-remove-bg.png"
+        alt=""
+        width="28"
+        height="28"
+        class="size-7 rounded-control"
+      />
+      Notain
+    </a>
+
+    <nav class="hidden items-center gap-1 sm:flex sm:gap-2">
+      {links.map((link) => (
+        <a
+          href={link.href}
+          class:list={[
+            DESKTOP_LINK,
+            SITE_NAV_VISIBILITY[link.show],
+            isCurrent(link.href)
+              ? 'font-medium text-foreground'
+              : 'text-muted hover:text-foreground',
+          ]}
+          aria-current={isCurrent(link.href) ? 'page' : undefined}
+        >
+          {link.label}
+        </a>
+      ))}
+
+      <a
+        href="/register"
+        class="site-cta ml-1 inline-flex h-9 items-center rounded-control bg-accent px-3 text-sm font-medium text-accent-foreground shadow-accent focus-ring"
+      >
+        Buat Invoice Gratis
+      </a>
+    </nav>
+
+    <button
+      type="button"
+      data-nav-toggle
+      aria-expanded="false"
+      aria-controls="mobile-nav"
+      aria-label="Buka menu"
+      class="site-nav-toggle inline-flex items-center justify-center rounded-control p-2 text-foreground transition-colors hover:bg-accent-soft focus-ring sm:hidden"
+    >
+      <span class="site-nav-icon-open">
+        <Menu size={20} aria-hidden="true" />
+      </span>
+      <span class="site-nav-icon-close">
+        <X size={20} aria-hidden="true" />
+      </span>
+    </button>
+  </div>
+
+  <div
+    id="mobile-nav"
+    data-nav-drawer
+    hidden
+    class="overflow-hidden border-t border-border bg-card sm:hidden"
+  >
+    <div class="flex flex-col gap-0.5 px-4 py-3">
+      {links.map((link) => (
+        <a
+          href={link.href}
+          class:list={[
+            MOBILE_LINK,
+            isCurrent(link.href)
+              ? 'bg-accent-soft font-medium text-accent'
+              : 'text-foreground hover:bg-accent-soft',
+          ]}
+          aria-current={isCurrent(link.href) ? 'page' : undefined}
+        >
+          {link.label}
+        </a>
+      ))}
+      <a
+        href="/register"
+        class="mt-2 inline-flex h-11 items-center justify-center rounded-control bg-accent px-4 text-base font-medium text-accent-foreground focus-ring"
+      >
+        Buat Invoice Gratis
+      </a>
+    </div>
+  </div>
+</header>
+<div
+  data-nav-overlay
+  hidden
+  aria-hidden="true"
+  class="site-nav-overlay fixed inset-0 z-30 sm:hidden"
+></div>
+<style is:global>
+  /*
+   * Transparent over the top of the page, page background once scrolled past
+   * 16px — the same flip the React header drives with motion values. Tokens
+   * are used directly here (unlike motion, CSS can interpolate var()).
+   */
+  .site-header {
+    background-color: transparent;
+    border-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
+    transition:
+      background-color 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .site-header.is-scrolled {
+    background-color: var(--color-background);
+    border-color: var(--color-border);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Underline that wipes in from the left; always on for the current page. */
+  .site-nav-link::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0.75rem;
+    bottom: -0.125rem;
+    height: 1px;
+    background-color: var(--color-foreground);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .site-nav-link:hover::after,
+  .site-nav-link[aria-current='page']::after {
+    transform: scaleX(1);
+  }
+
+  .site-logo {
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .site-logo img {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .site-logo:hover {
+    transform: translateY(-1px);
+  }
+
+  .site-logo:hover img {
+    transform: rotate(-10deg) scale(1.1);
+  }
+
+  .site-cta {
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .site-cta:hover {
+    transform: translateY(-1px) scale(1.03);
+  }
+
+  .site-cta:active {
+    transform: scale(0.97);
+  }
+
+  .site-nav-toggle .site-nav-icon-close {
+    display: none;
+  }
+
+  .site-nav-toggle[aria-expanded='true'] .site-nav-icon-open {
+    display: none;
+  }
+
+  .site-nav-toggle[aria-expanded='true'] .site-nav-icon-close {
+    display: inline-flex;
+  }
+
+  .site-nav-overlay {
+    background-color: color-mix(in srgb, var(--color-background) 50%, transparent);
+    backdrop-filter: blur(8px);
+    transition: opacity 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  [data-nav-drawer] {
+    transition:
+      height 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-header,
+    .site-nav-link::after,
+    [data-nav-drawer] {
+      transition-duration: 0.01ms;
+    }
+  }
+</style>
+<script>
+  /**
+   * Delegated from `document`/`window` rather than attached to these nodes:
+   * Astro's ClientRouter replaces the markup above on a soft navigation, and
+   * listeners bound to the old nodes would die with them.
+   */
+  const HEADER = '[data-site-header]';
+  const TOGGLE = '[data-nav-toggle]';
+  const DRAWER = '[data-nav-drawer]';
+  const OVERLAY = '[data-nav-overlay]';
+
+  function setScrolled(): void {
+    const header = document.querySelector(HEADER);
+    if (header) header.classList.toggle('is-scrolled', window.scrollY > 16);
+  }
+
+  /** Animate an element between 0 and its natural height, then settle on auto. */
+  function animateHeight(panel: HTMLElement, opening: boolean, done?: () => void): void {
+    const from = opening ? 0 : panel.scrollHeight;
+    const to = opening ? panel.scrollHeight : 0;
+    panel.style.opacity = opening ? '0' : '1';
+    panel.style.height = `${from}px`;
+    // Force a frame so the browser has a start value to interpolate from.
+    requestAnimationFrame(() => {
+      panel.style.height = `${to}px`;
+      panel.style.opacity = opening ? '1' : '0';
+    });
+    const settle = () => {
+      panel.removeEventListener('transitionend', settle);
+      if (opening) panel.style.height = 'auto';
+      done?.();
+    };
+    panel.addEventListener('transitionend', settle);
+  }
+
+  function closeDrawer(): void {
+    const panel = document.querySelector<HTMLElement>(DRAWER);
+    const overlay = document.querySelector<HTMLElement>(OVERLAY);
+    const toggle = document.querySelector<HTMLButtonElement>(TOGGLE);
+    if (!panel || panel.hidden) return;
+    animateHeight(panel, false, () => {
+      panel.hidden = true;
+      panel.style.height = '';
+      panel.style.opacity = '';
+    });
+    if (overlay) overlay.hidden = true;
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.setAttribute('aria-label', 'Buka menu');
+    }
+    document.body.style.overflow = '';
+  }
+
+  function openDrawer(): void {
+    const panel = document.querySelector<HTMLElement>(DRAWER);
+    const overlay = document.querySelector<HTMLElement>(OVERLAY);
+    const toggle = document.querySelector<HTMLButtonElement>(TOGGLE);
+    if (!panel) return;
+    panel.hidden = false;
+    animateHeight(panel, true);
+    if (overlay) overlay.hidden = false;
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', 'true');
+      toggle.setAttribute('aria-label', 'Tutup menu');
+    }
+    document.body.style.overflow = 'hidden';
+    // The drawer is the focused surface: land on its first link.
+    (panel.querySelector('a') as HTMLElement | null)?.focus();
+  }
+
+  function isOpen(): boolean {
+    return document.querySelector(TOGGLE)?.getAttribute('aria-expanded') === 'true';
+  }
+
+  document.addEventListener('click', (event) => {
+    const target = event.target as Element | null;
+    if (!target) return;
+    if (target.closest(TOGGLE)) {
+      const toggle = document.querySelector<HTMLButtonElement>(TOGGLE);
+      const wasOpen = isOpen();
+      if (wasOpen) {
+        closeDrawer();
+        // Hand focus back to the hamburger, as the React header does.
+        toggle?.focus();
+      } else {
+        openDrawer();
+      }
+      return;
+    }
+    // A nav item or the veil closes the drawer before the hop happens.
+    if (target.closest(`${DRAWER} a`) || target.closest(OVERLAY)) closeDrawer();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && isOpen()) {
+      closeDrawer();
+      document.querySelector<HTMLButtonElement>(TOGGLE)?.focus();
+    }
+  });
+
+  // Soft navigation replaces the markup and must never inherit an open drawer
+  // (body scroll lock included).
+  document.addEventListener('astro:page-load', () => {
+    closeDrawer();
+    setScrolled();
+  });
+
+  window.addEventListener('scroll', setScrolled, { passive: true });
+  setScrolled();
+</script>
