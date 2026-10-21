@@ -9,8 +9,10 @@ import {
   getAdminUserDrilldown,
   listAdminAudit,
   listAdminInvoices,
+  listAdminSupport,
   listAdminTemplates,
   listAdminUsers,
+  setAdminSupportSolved,
   setAdminUserStatus,
   updateAdminInvoiceContent,
   updateAdminTemplateContent,
@@ -81,6 +83,30 @@ export function useAdminAudit() {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     ...queryPolicy('adminAudit'),
+  });
+}
+
+/** Newest-first page of public support messages (cursor-paginated). */
+export function useAdminSupport() {
+  return useInfiniteQuery({
+    queryKey: queryKeys.adminSupport,
+    queryFn: ({ pageParam }) => listAdminSupport({ cursorAfter: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    ...queryPolicy('adminSupport'),
+  });
+}
+
+/** Marks a support message solved, or reopens a solved one. */
+export function useSetAdminSupportSolved() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { id: string; solved: boolean }) =>
+      setAdminSupportSolved(input.id, input.solved),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.adminSupport });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.adminAudit });
+    },
   });
 }
 

@@ -86,6 +86,7 @@ describe('QUERY_POLICIES', () => {
       [
         'adminAudit',
         'adminMembership',
+        'adminSupport',
         'adminUsers',
         'catalog',
         'catalogCount',

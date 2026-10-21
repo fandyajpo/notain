@@ -7,9 +7,10 @@ import { LoadingState } from '../ui/state';
 import { AdminUsersPanel } from './admin-users-panel';
 import { AdminAuditPanel } from './admin-audit-panel';
 import { AdminContentPanel } from './admin-content-panel';
+import { AdminSupportPanel } from './admin-support-panel';
 import { useAdminMembership } from '../../../lib/query/hooks/use-admin';
 
-type AdminTab = 'users' | 'content' | 'audit';
+type AdminTab = 'users' | 'content' | 'support' | 'audit';
 
 /** Admin panel: manage users, manage one user's content, read the action log. */
 export function AdminApp() {
@@ -68,6 +69,7 @@ function AdminContent() {
           options={[
             { value: 'users', label: 'Pengguna' },
             { value: 'content', label: 'Konten pengguna' },
+            { value: 'support', label: 'Support' },
             { value: 'audit', label: 'Log aktivitas' },
           ]}
         />
@@ -77,6 +79,8 @@ function AdminContent() {
         <AdminUsersPanel />
       ) : tab === 'content' ? (
         <AdminContentPanel />
+      ) : tab === 'support' ? (
+        <AdminSupportPanel />
       ) : (
         <AdminAuditPanel />
       )}

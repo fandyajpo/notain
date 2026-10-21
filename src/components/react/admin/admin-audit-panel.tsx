@@ -18,6 +18,8 @@ const ACTION_LABELS: Record<string, string> = {
   'content.invoices.create': 'Tambah invoice',
   'content.invoices.update': 'Edit invoice',
   'content.invoices.delete': 'Hapus invoice',
+  'support.solve': 'Selesaikan support',
+  'support.reopen': 'Buka ulang support',
 };
 
 /** Log aktivitas tab: newest-first list of admin actions. */

@@ -57,6 +57,8 @@ export const queryKeys = {
   adminUsers: ['admin-users'] as const,
   /** Admin action log (`/admin` → Log aktivitas tab). */
   adminAudit: ['admin-audit'] as const,
+  /** Public support/contact messages (`/admin` → Support tab). */
+  adminSupport: ['admin-support'] as const,
   /** Read-only drill-down into one admin user's data. */
   adminUserDrilldown: (userId: string): readonly unknown[] => ['admin-user-drilldown', userId],
   /** Prefix for invalidating *every* user's drill-down cache after a mutation. */

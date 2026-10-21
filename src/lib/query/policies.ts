@@ -75,6 +75,9 @@ export const QUERY_POLICIES = {
   // The action log is append-only and read-only in the UI; a short window
   // absorbs tab switches without re-reading Appwrite.
   adminAudit: { staleTime: 30_000, gcTime: 5 * 60_000 },
+  // Support messages arrive from users at any moment; mutations invalidate
+  // the key, and the short window keeps new messages prompt on tab switches.
+  adminSupport: { staleTime: 30_000, gcTime: 5 * 60_000 },
   // Team membership is fixed for the session's lifetime; a very long staleTime
   // avoids re-hitting Appwrite on every navigation.
   adminMembership: { staleTime: 10 * 60_000, gcTime: 30 * 60_000 },

@@ -57,6 +57,26 @@ export type AdminAuditPage = {
   nextCursor: string | null;
 };
 
+export type AdminSupportRow = {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  source: string;
+  createdAt: string;
+  /** ISO timestamp the admin solved it; `null` while still open. */
+  solvedAt: string | null;
+  /** Email of the admin who solved it. */
+  solvedBy: string | null;
+};
+
+export type AdminSupportPage = {
+  rows: AdminSupportRow[];
+  total: number;
+  nextCursor: string | null;
+};
+
 export type AdminDrillResource = 'overview' | 'invoices' | 'customers' | 'templates';
 
 export type AdminDrillOverview = {
@@ -144,6 +164,28 @@ export async function listAdminAudit(
   if (params.cursorAfter) search.set('cursorAfter', params.cursorAfter);
   const response = await adminFetch(`/api/admin/audit?${search.toString()}`);
   return parseAdminResponse<AdminAuditPage>(response);
+}
+
+/** Newest-first page of public support/contact messages. */
+export async function listAdminSupport(
+  params: { cursorAfter?: string } = {},
+): Promise<AdminSupportPage> {
+  const search = new URLSearchParams({ limit: '25' });
+  if (params.cursorAfter) search.set('cursorAfter', params.cursorAfter);
+  const response = await adminFetch(`/api/admin/support?${search.toString()}`);
+  return parseAdminResponse<AdminSupportPage>(response);
+}
+
+/** Marks a support message as solved, or reopens a solved one. */
+export async function setAdminSupportSolved(
+  id: string,
+  solved: boolean,
+): Promise<{ success: boolean; solvedAt: string | null; solvedBy: string | null }> {
+  const response = await adminFetch(`/api/admin/support/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ solved }),
+  });
+  return parseAdminResponse(response);
 }
 
 /** Read-only drill-down into one user's data. */

@@ -5,11 +5,14 @@
  * One row per submitted message:
  *   name (string 128), email (string 128), subject (string 128),
  *   message (string 4000), createdAt (string 32, ISO-8601),
- *   source (string 16 — 'landing' | 'contact').
+ *   source (string 16 — 'landing' | 'contact'),
+ *   solvedAt (string 32, ISO-8601 — set when an admin marks it solved),
+ *   solvedBy (string 128 — the solving admin's email).
  *
- * Row permissions stay empty like `audit_logs`: only the Pages Function
- * writes via the API key (which bypasses rowSecurity), gated by Turnstile
- * server-side, and no client ever lists these rows.
+ * Row permissions stay empty like `audit_logs`: only the Pages Functions
+ * write via the API key (which bypasses rowSecurity), gated by Turnstile
+ * server-side and the `admins` team for the admin routes; no client ever
+ * lists these rows directly.
  *
  * Idempotent: re-running skips anything that already exists.
  *
@@ -39,6 +42,8 @@ const STRING_ATTRIBUTES = [
   { key: 'message', size: 4000 },
   { key: 'createdAt', size: 32 },
   { key: 'source', size: 16 },
+  { key: 'solvedAt', size: 32 },
+  { key: 'solvedBy', size: 128 },
 ];
 
 const INDEX = { key: 'byCreatedAt', type: 'key', attributes: ['createdAt'], orders: ['desc'] };
