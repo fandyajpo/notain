@@ -11,6 +11,8 @@ import { Card } from '../ui/card';
 import { Notice } from '../ui/notice';
 import { ErrorState, LoadingState } from '../ui/state';
 import { AuthGate } from '../auth/auth-gate';
+import { AppProviders } from '../providers';
+import { IslandBoundary } from '../ui/island-boundary';
 
 /**
  * The confirmation step between the pricing CTA and DOKU's hosted page.
@@ -28,6 +30,19 @@ import { AuthGate } from '../auth/auth-gate';
  * reaches the payment API — same rule the server enforces.
  */
 export function CheckoutApp() {
+  // A `client:only` island is the root of its own React tree: nothing above
+  // it can supply the QueryClient, so without this the first hook throws
+  // "No QueryClient set" and the page stays blank.
+  return (
+    <IslandBoundary>
+      <AppProviders>
+        <CheckoutContent />
+      </AppProviders>
+    </IslandBoundary>
+  );
+}
+
+function CheckoutContent() {
   // The page is statically prerendered, so the query string only exists in
   // the browser — read it after mount, exactly like the auth pages read
   // `?next=`.

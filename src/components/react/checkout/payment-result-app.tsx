@@ -12,6 +12,8 @@ import { isAppError } from '../../../core/shared/errors';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { ErrorState, LoadingState } from '../ui/state';
+import { AppProviders } from '../providers';
+import { IslandBoundary } from '../ui/island-boundary';
 
 /**
  * Where DOKU sends the browser back after a checkout (`auto_redirect` + the
@@ -24,6 +26,19 @@ import { ErrorState, LoadingState } from '../ui/state';
  * DOKU's own data (the signed notification, or its Check Status reply).
  */
 export function PaymentResultApp() {
+  // Root of its own React tree (a `client:only` island), so it owns the
+  // QueryClient: without one the status poll throws "No QueryClient set" on
+  // the very page that is supposed to report the payment.
+  return (
+    <IslandBoundary>
+      <AppProviders>
+        <PaymentResultContent />
+      </AppProviders>
+    </IslandBoundary>
+  );
+}
+
+function PaymentResultContent() {
   const [invoice, setInvoice] = useState('');
   useEffect(() => {
     setInvoice(new URLSearchParams(window.location.search).get('invoice')?.trim() ?? '');
