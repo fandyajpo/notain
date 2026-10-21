@@ -12,8 +12,9 @@ export function ApiKeysPanel() {
   return (
     <div className="flex flex-col gap-6">
       <Notice variant="accent">
-        API Keys akan tersedia di plan <span className="font-medium">Business</span>. Kalau kamu
-        butuh akses API untuk integrasi sendiri, intip dulu detailnya di halaman harga.
+        Halaman Integration akan menampung API Keys, dan fitur itu akan tersedia di plan{' '}
+        <span className="font-medium">Business</span>. Kalau kamu butuh akses API untuk integrasi
+        sendiri, intip dulu detailnya di halaman harga.
       </Notice>
       <EmptyState
         icon={KeyRound}

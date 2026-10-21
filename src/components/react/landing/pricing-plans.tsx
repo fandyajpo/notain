@@ -3,79 +3,53 @@ import { ArrowRight, Check, Sparkles } from 'lucide-react';
 import { EASE } from './reveal';
 import { MagneticButton } from './interactive';
 import { Aurora } from './aurora';
+import {
+  PLAN_BENEFITS,
+  PLAN_PRICES,
+  PLAN_TAGLINES,
+  type PlanTier,
+} from '../../../core/billing/plan-benefits';
 
 type Plan = {
+  id: PlanTier;
   name: string;
-  price: string;
-  period: string;
-  tagline: string;
   cta: { href: string; label: string };
   /** Highlighted card with the accent border and primary button. */
   primary?: boolean;
   badge?: string;
-  benefits: string[];
 };
 
 /**
  * `?plan=` drives the checkout confirmation page: the plan id survives a
  * login detour there, and the server prices it from its own catalog — the
- * numbers below are display copy only. Free is deliberately NOT a checkout
- * target: free never touches payment.
+ * price, tagline and benefit strings are display copy, shared with the
+ * billing page from `core/billing/plan-benefits`. Free is deliberately NOT a
+ * checkout target: free never touches payment.
  */
 const PLANS: readonly Plan[] = [
   {
+    id: 'free',
     name: 'Free',
-    price: 'Rp 0',
-    period: 'selamanya',
-    tagline: 'Semua fitur inti untuk bikin dan kirim nota.',
     cta: { href: '/register', label: 'Buat Invoice Gratis' },
-    benefits: [
-      'Invoice tanpa batas',
-      'Kalkulator otomatis: diskon, pajak, pembulatan',
-      'PDF A4 rapi, siap cetak',
-      'Kirim ke WhatsApp dalam satu ketukan',
-      'Kelola data pelanggan',
-      'Template bawaan & upload logo bisnis',
-      'Export riwayat invoice ke Excel',
-      'Data tersimpan di akun, aman ganti perangkat',
-    ],
   },
   {
+    id: 'pro',
     name: 'Pro',
-    price: 'Rp 29.000',
-    period: '/bulan',
-    tagline: 'Untuk bisnis yang makin sering kirim nota.',
     cta: { href: '/checkout?plan=pro', label: 'Berlangganan Pro' },
     primary: true,
-    benefits: [
-      'Semua fitur di Free',
-      'Template premium dengan desain nota lebih variatif',
-      'Warna & branding sendiri di setiap nota',
-      'Invoice link: customer buka nota tanpa download',
-      'Laporan bisnis: ringkasan penjualan & pendapatan',
-      'Penyimpanan cloud lebih besar',
-      'Dukungan prioritas',
-    ],
   },
   {
+    id: 'business',
     name: 'Business',
-    price: 'Rp 99.000',
-    period: '/bulan',
-    tagline: 'Untuk tim dan developer yang butuh akses API.',
     cta: { href: '/checkout?plan=business', label: 'Berlangganan Business' },
-    benefits: [
-      'Semua fitur di Pro',
-      'API key untuk akses programatik',
-      'Multi API key untuk tim & integrasi',
-      'Webhook event invoice (created, paid, dll)',
-      'Rate limit lebih tinggi',
-      'Dukungan prioritas',
-    ],
   },
 ];
 
 function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
   const primary = plan.primary ?? false;
+  const { amount, period } = PLAN_PRICES[plan.id];
+  const tagline = PLAN_TAGLINES[plan.id];
+  const benefits = PLAN_BENEFITS[plan.id];
 
   return (
     <motion.article
@@ -102,11 +76,11 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
 
       <p className="mt-5 flex items-baseline gap-2">
         <span className="text-[2rem] font-semibold leading-none tracking-[-0.03em]">
-          {plan.price}
+          {amount}
         </span>
-        <span className="text-sm text-muted">{plan.period}</span>
+        <span className="text-sm text-muted">{period}</span>
       </p>
-      <p className="mt-3 text-sm leading-relaxed text-muted">{plan.tagline}</p>
+      <p className="mt-3 text-sm leading-relaxed text-muted">{tagline}</p>
 
       <div className="mt-6">
         {primary ? (
@@ -138,7 +112,7 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
         Yang kamu dapat
       </p>
       <ul className="mt-4 space-y-3">
-        {plan.benefits.map((benefit) => (
+        {benefits.map((benefit) => (
           <li key={benefit} className="flex items-start gap-3 text-sm leading-relaxed">
             <Check
               size={15}

@@ -11,7 +11,7 @@ export function ApiKeysApp() {
         <AuthGate>
           <div className="flex flex-col gap-6">
             <PageHeader
-              title="API Keys"
+              title="Integration"
               description="Buat dan atur kunci akses API untuk integrasi kamu."
             />
             <ApiKeysPanel />

@@ -6,7 +6,6 @@ import { PageHeader } from '../ui/page-header';
 import { IslandBoundary } from '../ui/island-boundary';
 import { ErrorState, LoadingState } from '../ui/state';
 import { ProfileForm } from '../profile/profile-form';
-import { BillingCard } from './billing-card';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
 import { useSession } from '../../../lib/query/hooks/use-session';
 import { usePageTour } from '../../../lib/tour/use-tour';
@@ -58,8 +57,6 @@ function SettingsContent() {
           </Card>
         )}
       </div>
-
-      <BillingCard />
 
       <Card data-tour="settings-tour">
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">

@@ -1,0 +1,8 @@
+---
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+import { BillingApp } from '../components/react/billing/billing-app';
+---
+
+<DashboardLayout title="Billing | Notain" description="Plan dan riwayat pembayaran kamu di Notain.">
+  <BillingApp client:only="react" />
+</DashboardLayout>

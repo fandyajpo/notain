@@ -73,6 +73,14 @@ describe('formatTanggal', () => {
     expect(formatTanggal('2026-10-11')).toBe('11 Oktober 2026');
   });
 
+  it('formats an ISO timestamp without mangling it', () => {
+    // `planExpiresAt` and the payment columns are stored as ISO stamps — the
+    // date-only path used to append a second time suffix and print nothing.
+    expect(formatTanggal('2026-11-11T00:00:00.000+00:00')).toBe('11 November 2026');
+    expect(formatTanggal('2026-11-11T13:45:02.000+07:00')).toBe('11 November 2026');
+    expect(formatTanggal(new Date(Date.UTC(2026, 10, 11)))).toBe('11 November 2026');
+  });
+
   it('returns an empty string for an invalid date', () => {
     expect(formatTanggal('not-a-date')).toBe('');
   });

@@ -88,6 +88,6 @@ describe('BusinessTypeStep', () => {
     await render(<BusinessTypeStep onPick={() => {}} onSkip={() => {}} />);
 
     expect(document.body.textContent).toContain('Jenis usaha kamu');
-    expect(document.body.textContent).toContain('bisa diubah kapan saja di Pengaturan');
+    expect(document.body.textContent).toContain('bisa diubah kapan saja di Settings');
   });
 });

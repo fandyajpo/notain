@@ -114,7 +114,7 @@ function TemplateEditContent() {
     if (picked === undefined || picked === null || !profile) return;
     if (profile.businessType === finalType) return;
     void saveProfile.mutateAsync({ ...profile, businessType: finalType }).catch(() =>
-      toast('Pilihan belum tersimpan ke profil. Bisa diatur lagi di Pengaturan.', {
+      toast('Pilihan belum tersimpan ke profil. Bisa diatur lagi di Settings.', {
         variant: 'error',
       }),
     );

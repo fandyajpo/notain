@@ -34,7 +34,7 @@ export function BusinessTypeStep({ value, onPick, onSkip }: Props) {
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <PageHeader
         title="Jenis usaha kamu"
-        description="Biar template, teks, dan contoh invoice-nya langsung cocok dengan usahamu. Pilihan ini bisa diubah kapan saja di Pengaturan."
+        description="Biar template, teks, dan contoh invoice-nya langsung cocok dengan usahamu. Pilihan ini bisa diubah kapan saja di Settings."
       />
 
       <Card>

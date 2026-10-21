@@ -1,9 +1,9 @@
 ---
 import { Menu, PanelLeft, X } from 'lucide-react';
 import { SignOutIsland } from '../components/react/auth/sign-out-island';
-import { AdminNavLink } from '../components/react/auth/admin-nav-link';
+import { AdminNavGroup } from '../components/react/auth/admin-nav-link';
 import { ShortcutsIsland, ShortcutsTrigger } from '../components/react/ui/shortcuts';
-import { NAV_ITEMS } from '../lib/nav';
+import { NAV_GROUPS, UTILITIES_GROUP_LABEL, drawerStagger } from '../lib/nav';
 import { navLinkClass } from '../lib/ui/classes';
 import Layout from './Layout.astro';
 
@@ -16,6 +16,13 @@ interface Props {
 const { title, description, wide = false } = Astro.props;
 const path = Astro.url.pathname;
 const is_active = (href: string) => path === href || path.startsWith(`${href}/`);
+
+// Section labels sit above each group in both surfaces; `sidebar-label` is the
+// same class the brand and the item text use, so collapsing the rail to its
+// icon column drops them too.
+const GROUP_LABEL =
+  'sidebar-label px-3 pb-1 pt-1 text-[11px] font-medium uppercase tracking-wider text-muted';
+const stagger = drawerStagger();
 ---
 
 <Layout title={title} description={description}>
@@ -72,23 +79,44 @@ const is_active = (href: string) => path === href || path.startsWith(`${href}/`)
             class="flex flex-col gap-0.5 border-t border-border px-2 py-2"
             aria-label="Navigasi utama"
           >
-            {NAV_ITEMS.map(({ href, label, Icon }) => (
-              <a
-                href={href}
-                data-astro-prefetch
-                data-nav-link
-                aria-label={label}
-                class:list={[
-                  'flex items-center gap-2.5 rounded-control px-3 py-2.5 text-sm transition-colors',
-                  navLinkClass(is_active(href)),
-                ]}
-              >
-                <Icon size={16} aria-hidden="true" />
-                {label}
-              </a>
+            {NAV_GROUPS.map((group, groupIndex) => (
+              <div class:list={['flex flex-col gap-0.5', groupIndex > 0 && 'mt-2']}>
+                <p class={GROUP_LABEL}>{group.label}</p>
+                {group.items.map(({ href, label, Icon }) => (
+                  <a
+                    href={href}
+                    data-astro-prefetch
+                    data-nav-link
+                    aria-label={label}
+                    title={label}
+                    style={`--nav-i:${stagger.get(href) ?? 0}`}
+                    class:list={[
+                      'flex items-center gap-2.5 rounded-control px-3 py-2.5 text-sm transition-colors',
+                      navLinkClass(is_active(href)),
+                    ]}
+                  >
+                    <Icon size={16} aria-hidden="true" />
+                    {label}
+                  </a>
+                ))}
+              </div>
             ))}
-            <AdminNavLink client:only="react" />
-            <ShortcutsTrigger client:only="react" variant="drawer" />
+            {/* The three islands sit in their own wrappers so each inherits the
+                `--nav-i` its position in the drawer asks for. */}
+            <div style={`--nav-i:${stagger.get('admin') ?? 0}`}>
+              <AdminNavGroup client:only="react" />
+            </div>
+            <div class="mt-2">
+              <p class={GROUP_LABEL}>{UTILITIES_GROUP_LABEL}</p>
+              <div class="flex flex-col gap-0.5">
+                <div style={`--nav-i:${stagger.get('shortcuts') ?? 0}`}>
+                  <ShortcutsTrigger client:only="react" variant="drawer" />
+                </div>
+                <div style={`--nav-i:${stagger.get('sign-out') ?? 0}`}>
+                  <SignOutIsland client:only="react" />
+                </div>
+              </div>
+            </div>
           </nav>
         </div>
       </div>
@@ -133,28 +161,38 @@ const is_active = (href: string) => path === href || path.startsWith(`${href}/`)
             </button>
           </div>
           <nav class="mt-8 flex flex-col gap-1" aria-label="Navigasi utama">
-            {NAV_ITEMS.map(({ href, label, Icon }) => (
-              <a
-                href={href}
-                data-astro-prefetch
-                data-nav-link
-                aria-label={label}
-                class:list={[
-                  'sidebar-link flex items-center gap-2 rounded-control px-3 py-2 text-sm transition-colors',
-                  navLinkClass(is_active(href)),
-                ]}
-              >
-                <Icon size={16} aria-hidden="true" />
-                <span class="sidebar-label">{label}</span>
-              </a>
+            {NAV_GROUPS.map((group, groupIndex) => (
+              <div class:list={['flex flex-col gap-1', groupIndex > 0 && 'mt-2']}>
+                <p class={GROUP_LABEL}>{group.label}</p>
+                {group.items.map(({ href, label, Icon }) => (
+                  <a
+                    href={href}
+                    data-astro-prefetch
+                    data-nav-link
+                    aria-label={label}
+                    title={label}
+                    class:list={[
+                      'sidebar-link flex items-center gap-2 rounded-control px-3 py-2 text-sm transition-colors',
+                      navLinkClass(is_active(href)),
+                    ]}
+                  >
+                    <Icon size={16} aria-hidden="true" />
+                    <span class="sidebar-label">{label}</span>
+                  </a>
+                ))}
+              </div>
             ))}
-            <AdminNavLink client:only="react" />
-            <ShortcutsTrigger client:only="react" variant="sidebar" />
+            <AdminNavGroup client:only="react" />
           </nav>
-          {/* Sign-out sits at the foot of the column so it is reachable without
-              scrolling and never competes with the nav for attention. */}
+          {/* Utilities sits at the foot of the column: Pintasan and Keluar stay
+              reachable without scrolling and never compete with the nav for
+              attention, and the whole block collapses to icons with the rail. */}
           <div class="sidebar-foot mt-auto pt-4">
-            <SignOutIsland client:only="react" />
+            <p class={GROUP_LABEL}>{UTILITIES_GROUP_LABEL}</p>
+            <div class="flex flex-col gap-1">
+              <ShortcutsTrigger client:only="react" variant="sidebar" />
+              <SignOutIsland client:only="react" />
+            </div>
           </div>
         </div>
       </aside>
@@ -298,24 +336,12 @@ const is_active = (href: string) => path === href || path.startsWith(`${href}/`)
     opacity: 0;
     transform: translateY(-4px);
   }
-  /* Staggered entrance so the list cascades in instead of popping as a block. */
-  #mobile-nav-drawer[data-open='true'] a:nth-child(1) {
-    transition-delay: 0.04s;
-  }
-  #mobile-nav-drawer[data-open='true'] a:nth-child(2) {
-    transition-delay: 0.08s;
-  }
-  #mobile-nav-drawer[data-open='true'] a:nth-child(3) {
-    transition-delay: 0.12s;
-  }
-  #mobile-nav-drawer[data-open='true'] a:nth-child(4) {
-    transition-delay: 0.16s;
-  }
-  #mobile-nav-drawer[data-open='true'] a:nth-child(5) {
-    transition-delay: 0.2s;
-  }
-  #mobile-nav-drawer[data-open='true'] a:nth-child(6) {
-    transition-delay: 0.24s;
+  /* Staggered entrance so the list cascades in instead of popping as a block.
+     The index rides on each row as `--nav-i`, set in the markup from the
+     drawer's flat order — a plain `nth-child` chain cannot count across the
+     section wrappers the grouped menu is built from. */
+  #mobile-nav-drawer[data-open='true'] a {
+    transition-delay: calc(var(--nav-i, 0) * 0.04s);
   }
   #mobile-nav-toggle .nav-icon-menu,
   #mobile-nav-toggle .nav-icon-x {

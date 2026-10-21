@@ -38,8 +38,19 @@ function toUtcMidnight(value: string | Date): number {
   return Date.UTC(year, month - 1, day);
 }
 
+/**
+ * `11 Oktober 2026` for a date-only `YYYY-MM-DD` column or a full ISO
+ * timestamp.
+ *
+ * The date-only columns are treated as UTC so the formatted day never shifts
+ * with the reader's timezone. ISO timestamps (how `planExpiresAt` and the
+ * payment columns are stored) are parsed as-is: appending the midnight suffix
+ * to an already-complete stamp would produce an invalid date and print
+ * nothing at all.
+ */
 export function formatTanggal(value: string | Date, locale = 'id-ID'): string {
-  const date = typeof value === 'string' ? new Date(`${value}T00:00:00Z`) : value;
+  const raw = value instanceof Date ? value : value.includes('T') ? value : `${value}T00:00:00Z`;
+  const date = new Date(raw);
   if (Number.isNaN(date.getTime())) return '';
   return new Intl.DateTimeFormat(locale, {
     day: 'numeric',
