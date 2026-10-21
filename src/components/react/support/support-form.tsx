@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type SyntheticEvent } from 'react';
 import { Loader2, Mail, Send, ShieldCheck } from 'lucide-react';
 import { Button } from '../ui/button';
 import { FieldShell, useFieldIds } from '../ui/field';
@@ -46,7 +46,7 @@ export function SupportForm({ source }: { source: SupportSource }) {
     setErrors((prev) => ({ ...prev, [key]: undefined }));
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     setServerError(null);
 

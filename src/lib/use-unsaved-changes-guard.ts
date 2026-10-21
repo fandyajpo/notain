@@ -36,7 +36,10 @@ export function useUnsavedChangesGuard(when: boolean): UnsavedChangesGuard {
       if (!whenRef.current) return;
       event.preventDefault();
       // Legacy Chrome/Safari need `returnValue` set to actually show the prompt.
-      event.returnValue = '';
+      // `lib.dom` marks the property deprecated, so it is written through a
+      // plain structural view of the event rather than dropped — the behaviour
+      // is still required by those browsers.
+      (event as unknown as { returnValue: string }).returnValue = '';
     }
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
