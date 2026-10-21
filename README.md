@@ -7,6 +7,7 @@ lewat UI di `/templates`, dan PDF dihasilkan lewat print-to-PDF browser.
 Spesifikasi lengkap: [`NOTAIN_MVP.md`](./NOTAIN_MVP.md).
 Arsitektur, keputusan desain (ADR), bundle, dan caching:
 [`docs/architecture/`](./docs/architecture/README.md).
+Pembayaran langganan (DOKU Checkout sandbox): [`docs/payments.md`](./docs/payments.md).
 
 ## Stack
 
