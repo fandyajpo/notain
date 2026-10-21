@@ -169,8 +169,12 @@ export type CheckoutOrder = {
   /**
    * Where DOKU must POST HTTP notifications for this order. Set per-request
    * via the documented `additional_info.override_notification_url` so the
-   * webhook target lives with the code that verifies it — no dashboard
-   * setting to forget when promoting an environment.
+   * webhook target follows the origin that created the order.
+   *
+   * NB: DOKU only honours this override when a Notification URL is *also*
+   * configured in the Back Office, and that configured path must equal this
+   * one (`/api/payments/doku-notify`) — the domain may differ. See
+   * docs/payments.md.
    */
   notificationUrl: string;
   customer: CheckoutCustomer;

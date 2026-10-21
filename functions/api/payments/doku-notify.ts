@@ -45,8 +45,10 @@ function normalizeStatus(value: unknown): 'pending' | 'paid' | 'expired' {
  * so a repeat of an already-final row is acknowledged without re-activating —
  * expiry math can never run twice for one payment. If profile activation ever
  * fails after the row flipped to `paid`, the row stays `paid` (money is
- * real), the failure is audited, and an admin retry path exists via the
- * admin panel; we never roll a paid row back to pending.
+ * real), the failure is audited as `payment.paid.activation-failed` for manual
+ * resolution — there is no automated retry and no admin-panel retry for this
+ * case, so that audit row is the only signal; we never roll a paid row back to
+ * pending.
  *
  * Always answers 2xx once the signature is valid and the payload parsed —
  * DOKU's best practice is to acknowledge fast and not to treat business

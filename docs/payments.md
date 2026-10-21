@@ -62,9 +62,23 @@ Keduanya **diturunkan dari origin request** di Function (`new URL(request.url).o
 - **Notification** (server DOKU → server kita, via
   `additional_info.override_notification_url`): `{origin}/api/payments/doku-notify`
 
-Karena notification URL dikirim per-order, tidak wajib mengaturnya di Back
-Office — tetapi mengaturnya juga berfungsi sebagai cadangan. URL wajib HTTPS dan
-terjangkau dari internet publik.
+**Notification URL wajib disetel di Back Office sandbox**, karena
+`override_notification_url` hanya *override* dari konfigurasi itu — menurut
+dokumentasi resmi DOKU (<https://developers.doku.com/get-started-with-doku-api/notification/override-notification-url>),
+override tidak berfungsi sama sekali bila Notification URL belum dikonfigurasi,
+dan **path override harus sama persis dengan path yang terkonfigurasi**.
+Jadi di Back Office isi:
+
+```
+https://notain.pages.dev/api/payments/doku-notify
+```
+
+Path-nya harus `/api/payments/doku-notify`; **domain-nya boleh berbeda**
+(Back Office boleh memakai domain produksi, sementara request preview tetap
+mengirim origin-nya sendiri) — yang tidak boleh beda adalah path. URL wajib
+HTTPS dan terjangkau dari internet publik. Tanpa konfigurasi ini, notifikasi
+`SUCCESS` tidak pernah sampai: baris pembayaran tetap `pending` dan plan tidak
+pernah aktif meskipun checkout-nya sendiri berhasil.
 
 Signature (non-SNAP, dihitung di `src/core/billing/doku.ts`): komponen
 `Client-Id`, `Request-Id`, `Request-Timestamp` (UTC ISO 8601), `Request-Target`
