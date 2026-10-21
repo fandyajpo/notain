@@ -1,12 +1,30 @@
 import type { ReactNode } from 'react';
 import { cx } from '../../../lib/ui/classes';
 
+/** Chip footprint per size; `icon` is the square pad used by glyph-only chips. */
+const PADDING = {
+  sm: 'px-2 py-1 text-xs',
+  md: 'px-3 py-1.5 text-sm',
+  icon: 'p-1.5',
+} as const;
+
+type Option<T extends string> = {
+  value: T;
+  label: ReactNode;
+  title?: string;
+  /** Overrides the button's accessible name — needed when the chip shows an
+   *  icon, or when several tracks of the same chips sit on one page. */
+  ariaLabel?: string;
+};
+
 /**
  * The shared segmented toggle: icon/label chips in one recessed track.
  *
- * Replaces four hand-rolled copies (line-item unit toggle, template align /
- * width groups, theme wallpaper kind, builder tabs). Two tones:
- * `accent` for navigation-like state (tabs), neutral for value toggles.
+ * One component owns the track (`border` + `bg-sunken` + `p-0.5`), the chip
+ * rhythm and the pressed styling, so every toggle in the app is built from the
+ * same pieces instead of retyping them. Two tones: `accent` for
+ * navigation-like state (builder section tabs), neutral for value toggles
+ * (align, width, template, unit).
  */
 export function SegmentedControl<T extends string>({
   value,
@@ -19,10 +37,10 @@ export function SegmentedControl<T extends string>({
 }: {
   value: T;
   onChange: (next: T) => void;
-  options: ReadonlyArray<{ value: T; label: ReactNode; title?: string }>;
+  options: ReadonlyArray<Option<T>>;
   variant?: 'neutral' | 'accent';
   ariaLabel?: string;
-  size?: 'sm' | 'md';
+  size?: keyof typeof PADDING;
   className?: string;
 }) {
   return (
@@ -38,11 +56,14 @@ export function SegmentedControl<T extends string>({
             key={option.value}
             type="button"
             aria-pressed={active}
+            aria-label={option.ariaLabel}
             title={option.title}
             onClick={() => onChange(option.value)}
             className={cx(
-              'inline-flex items-center justify-center gap-1.5 rounded-item font-medium transition-colors focus-ring',
-              size === 'sm' ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-sm',
+              // `shrink-0` matters in the builder's scrollable tab strip, where
+              // a flex child would otherwise compress below its label.
+              'inline-flex shrink-0 items-center justify-center gap-1.5 rounded-item font-medium transition-colors focus-ring',
+              PADDING[size],
               active
                 ? variant === 'accent'
                   ? 'bg-accent text-accent-foreground shadow-card'

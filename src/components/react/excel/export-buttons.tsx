@@ -2,7 +2,7 @@ import { FileDown, FileSpreadsheet } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '../ui/button';
 import { downloadCsv, downloadXlsx } from '../../../lib/excel';
-import { toAppError } from '../../../appwrite/errors';
+import { toAppError } from '../../../app/errors';
 import { toast } from '../../../lib/ui/toast';
 import type { SheetRow } from '../../../core/excel';
 

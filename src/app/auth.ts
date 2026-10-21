@@ -1,5 +1,5 @@
 import { container } from '../infra/container';
-import { toAppError } from '../appwrite/errors';
+import { toAppError } from '../app/errors';
 import { ERROR_CODES } from '../core/shared/errors';
 import type {
   CredentialsWithEmail,

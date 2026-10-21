@@ -1,6 +1,7 @@
 import { LifeBuoy } from 'lucide-react';
 import { Reveal } from './reveal';
 import { SupportForm } from '../support/support-form';
+import { cardClass } from '../ui/card';
 
 /**
  * Support/contact section on the landing page — the form itself, not a link
@@ -24,7 +25,7 @@ export function SupportSection() {
         </Reveal>
 
         <Reveal y={24} className="mt-10">
-          <div className="rounded-card border border-border bg-card p-5 shadow-card sm:p-6">
+          <div className={cardClass('md')}>
             <div className="mb-5 flex items-start gap-3">
               <LifeBuoy size={18} className="mt-0.5 shrink-0 text-accent" aria-hidden="true" />
               <div>

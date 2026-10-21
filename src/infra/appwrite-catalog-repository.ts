@@ -104,7 +104,7 @@ export class AppwriteCatalogRepository implements CatalogRepository {
   }
 
   async create(input: {
-    id: string;
+    id?: string;
     ownerId: string;
     item: CatalogDraft;
     lastUsedAt: string;

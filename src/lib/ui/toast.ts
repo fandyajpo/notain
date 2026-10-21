@@ -37,7 +37,7 @@ function ensureContainer(): HTMLElement {
   container.id = CONTAINER_ID;
   // Above modals (z-50): a toast often *explains* a failed modal submit.
   container.className =
-    'pointer-events-none fixed inset-x-0 bottom-0 z-[100] flex flex-col items-center gap-2 p-4 sm:items-end';
+    'pointer-events-none fixed inset-x-0 bottom-0 z-portal flex flex-col items-center gap-2 p-4 sm:items-end';
   container.setAttribute('role', 'status');
   container.setAttribute('aria-live', 'polite');
   document.body.appendChild(container);

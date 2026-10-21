@@ -11,7 +11,7 @@ import { SetupChecklist } from './setup-checklist';
 import { FinanceSection } from './finance-section';
 import { calculateTotals } from '../../../core/invoice/calculator';
 import { formatRupiah } from '../../../core/shared/money';
-import { formatTanggalRelatif, formatWaktuLalu } from '../../../core/shared/dates';
+import { formatSalam, formatTanggalRelatif, formatWaktuLalu } from '../../../core/shared/dates';
 import type { DashboardStats } from '../../../core/stats/model';
 import { hasProAccess } from '../../../core/profile/model';
 import type { InvoiceStatus } from '../../../core/invoice/model';
@@ -76,7 +76,7 @@ function DashboardContent() {
   const invoices = useInvoices('', { limit: RECENT_PREVIEW });
   const stats = useDashboardStats();
 
-  const greeting = getGreeting();
+  const greeting = formatSalam();
   const businessName = profile?.name?.trim() || 'Usaha kamu';
   const usahaName = profile?.businessName?.trim() || 'Usaha kamu';
 
@@ -363,12 +363,4 @@ function Porsi({ value, total, bar }: { value: number; total: number; bar: strin
       <span className="w-9 text-right tabular-nums text-muted">{pct}%</span>
     </span>
   );
-}
-
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 11) return 'Selamat pagi 👋';
-  if (hour < 15) return 'Selamat siang 👋';
-  if (hour < 18) return 'Selamat sore 👋';
-  return 'Selamat malam 👋';
 }

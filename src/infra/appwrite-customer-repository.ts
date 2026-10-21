@@ -133,7 +133,7 @@ export class AppwriteCustomerRepository implements CustomerRepository {
   }
 
   async create(input: {
-    id: string;
+    id?: string;
     ownerId: string;
     customer: CustomerDraft;
     lastUsedAt: string;

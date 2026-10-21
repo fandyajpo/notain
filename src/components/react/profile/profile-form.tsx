@@ -6,7 +6,7 @@ import {
   type ProfileFormValues,
 } from '../../../core/profile/model';
 import { isBusinessSubtypeSlug } from '../../../core/business/taxonomy';
-import { toAppError } from '../../../appwrite/errors';
+import { toAppError } from '../../../app/errors';
 import { useSaveProfile, useUploadLogo, useRemoveLogo } from '../../../lib/query/hooks/use-profile';
 import { toast } from '../../../lib/ui/toast';
 import { Button } from '../ui/button';

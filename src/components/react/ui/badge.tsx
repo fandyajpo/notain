@@ -32,7 +32,7 @@ type Props = HTMLAttributes<HTMLSpanElement> & {
   children?: ReactNode;
 };
 
-/** React twin of the Astro `Badge.astro`. */
+/** Compact status chip: the semantic colour roles, used as text on a soft fill. */
 export function Badge({ variant = 'neutral', size = 'md', className, children, ...rest }: Props) {
   return (
     <span

@@ -1,4 +1,3 @@
-import { ID } from 'appwrite';
 import type { AuthoredTemplate, InvoiceTemplate } from '../core/template/model';
 import { invoiceTemplateSchema } from '../core/template/schema';
 import { AppError, ERROR_CODES, flattenIssues } from '../core/shared/errors';
@@ -55,7 +54,6 @@ export async function getTemplate(id: string): Promise<InvoiceTemplate> {
 export async function createTemplate(input: AuthoredTemplate): Promise<InvoiceTemplate> {
   const user = await requireSession();
   return container.templates.create({
-    id: ID.unique(),
     ownerId: user.id,
     template: parseTemplate(input),
   });

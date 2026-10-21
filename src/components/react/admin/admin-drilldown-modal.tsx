@@ -15,7 +15,7 @@ import {
   type AdminDrillResource,
   type AdminUser,
 } from '../../../app/admin';
-import { toAppError } from '../../../appwrite/errors';
+import { toAppError } from '../../../app/errors';
 
 const RESOURCE_OPTIONS: ReadonlyArray<{ value: AdminDrillResource; label: string }> = [
   { value: 'overview', label: 'Ringkasan' },

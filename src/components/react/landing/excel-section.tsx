@@ -1,6 +1,7 @@
 import { motion, MotionConfig } from 'motion/react';
 import { Download, FileSpreadsheet, Upload } from 'lucide-react';
 import { EASE, SectionHeading } from './reveal';
+import { cardClass } from '../ui/card';
 
 const STEPS = [
   {
@@ -60,7 +61,7 @@ export function ExcelSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.6, ease: EASE }}
-              className="rounded-card border border-border bg-card p-4 shadow-card"
+              className={cardClass('sm')}
             >
               <div className="flex items-center gap-2 border-b border-border pb-3">
                 <FileSpreadsheet size={16} className="shrink-0 text-accent" aria-hidden="true" />
@@ -69,8 +70,12 @@ export function ExcelSection() {
               <table className="mt-3 w-full text-sm">
                 <thead>
                   <tr className="text-left text-muted">
-                    <th className="py-2 font-medium">Nama</th>
-                    <th className="py-2 font-medium">WhatsApp</th>
+                    <th scope="col" className="py-2 font-medium">
+                      Nama
+                    </th>
+                    <th scope="col" className="py-2 font-medium">
+                      WhatsApp
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">

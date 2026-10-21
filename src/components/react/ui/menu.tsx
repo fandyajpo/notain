@@ -170,7 +170,7 @@ export function Menu({ label, items, align = 'end', className, children }: Props
             // First pass is invisible at the origin so we can measure the
             // height, then re-place it anchored to the trigger.
             style={pos ?? { top: 0, left: 0, visibility: 'hidden' }}
-            className={cx('fixed z-[100] min-w-44', popoverClass())}
+            className={cx('fixed z-portal min-w-44', popoverClass())}
           >
             {items.map((item) => {
               const danger = item.variant === 'danger';

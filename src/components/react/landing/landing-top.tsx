@@ -37,7 +37,7 @@ export function LandingTop({ children }: Props) {
 
         <SiteHeader />
 
-        <main>
+        <main id="konten" tabIndex={-1}>
           <section className="mx-auto w-full max-w-6xl px-5 sm:px-8">
             <Hero
               ctaHref="/register"

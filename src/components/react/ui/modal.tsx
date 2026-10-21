@@ -1,5 +1,11 @@
 import { X } from 'lucide-react';
-import { useEffect, useId, type ReactNode } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from 'react';
 import { Button } from './button';
 
 type Size = 'sm' | 'md' | 'lg' | 'xl';
@@ -15,6 +21,17 @@ const HEADER = 'flex items-center justify-between gap-3 px-5 py-4 sm:px-6';
 const BODY = 'px-5 py-4 sm:px-6';
 const FOOTER =
   'flex flex-col gap-2 border-t border-border bg-background px-5 py-3.5 sm:flex-row sm:justify-end sm:px-6';
+
+/** What counts as a stop on Tab: everything the browser can put focus on. */
+const FOCUSABLE =
+  'a[href], button, input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])';
+
+/** Focus stops inside `panel`, minus the ones a user could never reach. */
+function focusablesIn(panel: HTMLElement): HTMLElement[] {
+  return Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+    (element) => !element.hasAttribute('disabled') && element.getClientRects().length > 0,
+  );
+}
 
 /** One button in the standard footer row. */
 export type ModalAction = {
@@ -85,6 +102,7 @@ export function Modal({
   footer,
 }: Props) {
   const titleId = useId();
+  const panelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!open || !dismissible) return;
@@ -103,6 +121,26 @@ export function Modal({
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = previous;
+    };
+  }, [open]);
+
+  // Keyboard containment: focus walks into the dialog when it opens, Tab and
+  // Shift+Tab cycle only inside it (`aria-modal` says the rest is inert — but
+  // inert has to actually hold), and focus returns to the control that opened
+  // it on close. Without this the first Tab leaves the page behind a backdrop
+  // the user cannot see or reach.
+  useEffect(() => {
+    if (!open) return;
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    const opener = document.activeElement as HTMLElement | null;
+    panel.focus({ preventScroll: true });
+
+    return () => {
+      if (opener && opener !== document.body && opener.isConnected) {
+        opener.focus({ preventScroll: true });
+      }
     };
   }, [open]);
 
@@ -138,15 +176,49 @@ export function Modal({
     : null;
   const footerContent = footer ?? actionFooter;
 
+  /** Handled on the panel, so it fires for focus arriving from anywhere inside. */
+  const cycleFocus = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Tab') return;
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    const items = focusablesIn(panel);
+    if (items.length === 0) {
+      event.preventDefault();
+      panel.focus({ preventScroll: true });
+      return;
+    }
+
+    const first = items[0];
+    const last = items[items.length - 1];
+    const active = document.activeElement;
+    const inside = active instanceof Node && panel.contains(active);
+
+    if (event.shiftKey) {
+      // Wrapping backwards from the panel itself or from the first stop lands
+      // on the last one; the backdrop is not a candidate.
+      if (!inside || active === first) {
+        event.preventDefault();
+        last?.focus();
+      }
+    } else if (!inside || active === last) {
+      event.preventDefault();
+      first?.focus();
+    }
+  };
+
   return (
     <div
       className="animate-backdrop-in fixed inset-0 z-50 flex items-center justify-center bg-foreground/45 p-4"
       onClick={dismissible ? onClose : undefined}
     >
       <div
+        ref={panelRef}
         role={role}
+        tabIndex={-1}
         aria-modal="true"
         aria-labelledby={ariaLabelledBy ?? (headerContent && !header ? titleId : undefined)}
+        onKeyDown={cycleFocus}
         className={`animate-modal-in max-h-[calc(100dvh-2rem)] w-full ${SIZE[size]} overflow-hidden rounded-card border border-border bg-card shadow-modal`}
         onClick={(event) => event.stopPropagation()}
       >

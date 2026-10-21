@@ -12,6 +12,8 @@ import {
 } from '@tanstack/react-table';
 import { useDebouncedCallback } from '@tanstack/react-pacer';
 import {
+  ArrowDown,
+  ArrowUp,
   ArrowUpDown,
   ChevronRight,
   Copy,
@@ -57,6 +59,7 @@ import { useTemplates } from '../../../lib/query/hooks/use-templates';
 import { toast } from '../../../lib/ui/toast';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { CARD_ROW } from '../ui/card';
 import { ExportButtons } from '../excel/export-buttons';
 import { Menu } from '../ui/menu';
 import { Modal } from '../ui/modal';
@@ -649,7 +652,7 @@ export function InvoiceTable() {
       {/* Appears the moment a checkbox is ticked: the count, an export of
           exactly that set, the bulk delete, and a way out. */}
       {selectedInvoices.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-card px-4 py-3 shadow-card">
+        <div className={CARD_ROW}>
           <p className="text-sm text-muted">
             <span className="font-medium text-foreground">{selectedInvoices.length}</span> invoice
             dipilih
@@ -718,10 +721,25 @@ export function InvoiceTable() {
                 <tr key={headerGroup.id} className={THEAD_ROW}>
                   {headerGroup.headers.map((header) => {
                     const sortable = header.column.getCanSort();
+                    const sorted = header.column.getIsSorted();
+                    const SortIcon =
+                      sorted === 'asc' ? ArrowUp : sorted === 'desc' ? ArrowDown : ArrowUpDown;
                     return (
                       <th
                         key={header.id}
                         scope="col"
+                        // Assistive tech reads this off the column header, so
+                        // the sort state has to live here rather than on the
+                        // button inside it.
+                        aria-sort={
+                          sortable
+                            ? sorted === 'asc'
+                              ? 'ascending'
+                              : sorted === 'desc'
+                                ? 'descending'
+                                : 'none'
+                            : undefined
+                        }
                         className={thClass(
                           [
                             // Only money right-aligns: its cell does too. The
@@ -742,7 +760,7 @@ export function InvoiceTable() {
                             className="inline-flex items-center gap-1 rounded-control transition-colors hover:text-foreground focus-ring"
                           >
                             {flexRender(header.column.columnDef.header, header.getContext())}
-                            <ArrowUpDown size={12} aria-hidden="true" />
+                            <SortIcon size={12} aria-hidden="true" />
                           </button>
                         ) : (
                           flexRender(header.column.columnDef.header, header.getContext())

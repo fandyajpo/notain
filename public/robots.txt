@@ -1,0 +1,9 @@
+# Public pages are crawlable; every app route behind a session is excluded
+# from the index by <meta name="robots" content="noindex"> in the page itself
+# (see src/lib/seo.ts) rather than by a Disallow rule here. Disallowing them
+# would stop a crawler from ever reaching the page that carries the noindex
+# directive, which is the opposite of what we want.
+User-agent: *
+Allow: /
+
+Sitemap: https://notain.pages.dev/sitemap.xml

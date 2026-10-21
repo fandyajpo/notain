@@ -229,7 +229,7 @@ export class AppwriteInvoiceRepository implements InvoiceRepository {
     }
   }
 
-  async create(input: { id: string; ownerId: string; draft: InvoiceDraft }): Promise<Invoice> {
+  async create(input: { id?: string; ownerId: string; draft: InvoiceDraft }): Promise<Invoice> {
     try {
       const row = await getTables().createRow<InvoiceRow>({
         databaseId: APPWRITE.databaseId,

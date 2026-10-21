@@ -82,3 +82,15 @@ export function formatWaktuLalu(value: string | Date, now: Date = new Date()): s
 
   return formatTanggalRelatif(then, now);
 }
+
+/**
+ * Time-of-day greeting for a screen's headline: "Selamat pagi" up to 10.59,
+ * then siang, sore, and malam from 18.00. The hour decides, not the date.
+ */
+export function formatSalam(now: Date = new Date()): string {
+  const hour = now.getHours();
+  if (hour < 11) return 'Selamat pagi 👋';
+  if (hour < 15) return 'Selamat siang 👋';
+  if (hour < 18) return 'Selamat sore 👋';
+  return 'Selamat malam 👋';
+}

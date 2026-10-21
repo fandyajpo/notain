@@ -3,7 +3,7 @@ import { invoiceDraftShapeSchema } from '../core/invoice/schema';
 import { invoiceTemplateShapeSchema } from '../core/template/schema';
 import { businessSubtypeSlugSchema } from '../core/business/schema';
 import { prepareProofFile } from '../lib/payment-proof';
-import { appErrorFromStatus, toAppError } from '../appwrite/errors';
+import { appErrorFromStatus, toAppError } from '../app/errors';
 import { getAccount } from '../appwrite/client';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 import type { InvoiceDraft, InvoicePaymentProof } from '../core/invoice/model';

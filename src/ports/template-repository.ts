@@ -27,7 +27,7 @@ export interface TemplateRepository {
   countByOwner(ownerId: string): Promise<number>;
   getById(id: string): Promise<InvoiceTemplate | null>;
   create(input: {
-    id: string;
+    id?: string;
     ownerId: string;
     template: AuthoredTemplate;
   }): Promise<InvoiceTemplate>;

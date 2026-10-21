@@ -28,7 +28,7 @@ export interface CatalogRepository {
   /** All of the owner's rows whose name matches exactly, before key folding. */
   findByName(ownerId: string, name: string): Promise<CatalogItem[]>;
   create(input: {
-    id: string;
+    id?: string;
     ownerId: string;
     item: CatalogDraft;
     lastUsedAt: string;

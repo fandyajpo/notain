@@ -1,5 +1,5 @@
 import { getAccount } from '../appwrite/client';
-import { appErrorFromStatus } from '../appwrite/errors';
+import { appErrorFromStatus } from '../app/errors';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 import { isSubscriptionActive, type PaidPlan } from '../core/billing/plans';
 import { PLAN_VALUES, type Plan } from '../core/profile/model';

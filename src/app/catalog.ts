@@ -1,4 +1,3 @@
-import { ID } from 'appwrite';
 import type { CatalogDraft, CatalogItem } from '../core/catalog/model';
 import { catalogKey, isSameCatalogItem, mergeCatalogItem } from '../core/catalog/model';
 import { catalogDraftSchema } from '../core/catalog/schema';
@@ -74,7 +73,6 @@ export async function createCatalogItem(draft: CatalogDraft): Promise<CatalogIte
   }
 
   return container.catalog.create({
-    id: ID.unique(),
     ownerId: user.id,
     item: parsed,
     lastUsedAt: new Date().toISOString(),
@@ -164,7 +162,6 @@ export async function rememberCatalogItems(drafts: CatalogDraft[]): Promise<{ im
       await container.catalog.update({ id: hit.id, item: merged, lastUsedAt });
     } else {
       await container.catalog.create({
-        id: ID.unique(),
         ownerId: user.id,
         item,
         lastUsedAt,

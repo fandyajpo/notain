@@ -1,4 +1,4 @@
-import { isRateLimited, isUnauthenticated } from '../../appwrite/errors';
+import { isRateLimited, isUnauthenticated } from '../../app/errors';
 import { ERROR_CODES, isAppError } from '../../core/shared/errors';
 
 /**

@@ -19,7 +19,7 @@ import {
   useUpdateAdminUser,
 } from '../../../lib/query/hooks/use-admin';
 import type { AdminUser, AdminUserUpdate } from '../../../app/admin';
-import { toAppError } from '../../../appwrite/errors';
+import { toAppError } from '../../../app/errors';
 import { profileFormSchema } from '../../../core/profile/model';
 import { AdminDrilldownModal } from './admin-drilldown-modal';
 

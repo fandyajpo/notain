@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
-import { isUnauthenticated } from '../../appwrite/errors';
+import { isUnauthenticated } from '../../app/errors';
 import { forgetSession } from '../../app/session';
 import { queryKeys } from './keys';
 import { toast } from '../ui/toast';

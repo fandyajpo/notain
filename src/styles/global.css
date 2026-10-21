@@ -13,7 +13,11 @@
   --color-card: #ffffff;
   --color-sunken: #f1f1ef;
   --color-foreground: #171717;
-  --color-muted: #737373;
+  /* #6d6d6d rather than #737373: the lighter grey measured 4.46:1 on the
+     background and 4.19:1 on sunken — both under AA 4.5:1. This clears every
+     muted-on-soft pairing (background, sunken, accent-soft, danger-soft) while
+     staying the same neutral grey. */
+  --color-muted: #6d6d6d;
   --color-border: #e5e5e5;
   --color-border-strong: #d4d4d4;
 
@@ -29,7 +33,10 @@
   --color-warning: #b45309;
   --color-warning-foreground: #ffffff;
   --color-warning-soft: #fffbeb;
-  --color-danger: #dc2626;
+  /* #d42525 rather than #dc2626: danger is also set as text on danger-soft,
+     where #dc2626 measured 4.41:1. The darker red clears AA on white,
+     background and danger-soft alike. */
+  --color-danger: #d42525;
   --color-danger-foreground: #ffffff;
   --color-danger-soft: #fef2f2;
 
@@ -82,8 +89,24 @@
   --shadow-modal: 0 4px 8px -2px rgb(23 23 23 / 0.06), 0 28px 56px -16px rgb(23 23 23 / 0.22);
   --shadow-accent: 0 8px 24px -10px rgb(37 99 235 / 0.5);
 
-  /* One easing for every surface: matches the landing reveal and modals. */
+  /*
+   * Layering. Tailwind's built-in scale (z-10 … z-50) covers page chrome; these
+   * two are the only values above it, so nothing has to invent z-[100].
+   * `portal` = anything portalled into <body> (menus, selects, toasts).
+   */
+  --z-portal: 100;
+  --z-celebration: 120;
+
+  /*
+   * Motion. One easing for every surface — it matches the landing reveal and
+   * the modals — plus a single overshoot curve for the springy hover accents
+   * and a three-step duration scale.
+   */
   --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast: 150ms;
+  --duration-base: 300ms;
+  --duration-slow: 500ms;
 }
 
 @utility focus-ring {
@@ -103,6 +126,20 @@
 }
 
 @layer base {
+  /*
+   * Keyboard focus is visible on every interactive element, once, here.
+   * `:where()` keeps the specificity at zero so a component rule can still
+   * win — the rich-text editors below keep their deliberate `outline: none`,
+   * and Tailwind's `outline-none` still beats it from the utilities layer.
+   * `focus-ring` stays as the explicit marker on components, and covers
+   * anything outside this selector list. Pointer and touch focus never shows,
+   * because `:focus-visible` is the trigger.
+   */
+  :where(a, button, input, select, textarea, summary, [role='button'], [tabindex]):focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -188,22 +225,6 @@
   textarea[aria-invalid='true'],
   select[aria-invalid='true'] {
     border-color: var(--color-danger);
-  }
-
-  dialog::backdrop {
-    background-color: rgb(23 23 23 / 0.45);
-  }
-
-  dialog[data-notain-modal] {
-    position: fixed;
-    inset: 0;
-    margin: auto;
-    width: calc(100% - 2rem);
-    overflow: hidden;
-  }
-
-  dialog[data-notain-modal]:not([open]) {
-    display: none;
   }
 
   input[type='radio'],

@@ -1,4 +1,3 @@
-import { ID } from 'appwrite';
 import type { Customer, CustomerDraft } from '../core/customer/model';
 import { isSameCustomer, mergeCustomer } from '../core/customer/model';
 import { customerDraftSchema } from '../core/customer/schema';
@@ -83,7 +82,6 @@ export async function createCustomer(draft: CustomerDraft): Promise<Customer> {
   }
 
   return container.customers.create({
-    id: ID.unique(),
     ownerId: user.id,
     customer: parsed,
     lastUsedAt: new Date().toISOString(),
@@ -205,7 +203,6 @@ export async function rememberCustomer(
   }
 
   return container.customers.create({
-    id: ID.unique(),
     ownerId: user.id,
     customer,
     lastUsedAt,
@@ -264,7 +261,6 @@ export async function importCustomers(drafts: CustomerDraft[]): Promise<{ import
       await container.customers.update({ id: hit.id, customer: merged, lastUsedAt });
     } else {
       await container.customers.create({
-        id: ID.unique(),
         ownerId: user.id,
         customer,
         lastUsedAt,

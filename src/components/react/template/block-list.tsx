@@ -41,6 +41,7 @@ import {
 import { cx, iconButtonClass } from '../../../lib/ui/classes';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { SegmentedControl } from '../ui/segmented';
 
 type Props = {
   layout: TemplateBlock[];
@@ -154,55 +155,31 @@ export function BlockList({ layout, onChange }: Props) {
               </span>
             </span>
 
-            <span
-              role="group"
-              aria-label={`Perataan ${BLOCK_LABELS[block.type]}`}
-              className="inline-flex rounded-control border border-border bg-sunken p-0.5"
-            >
-              {ALIGN_OPTIONS.map(({ align, label, Icon }) => (
-                <button
-                  key={align}
-                  type="button"
-                  title={label}
-                  aria-label={`${label}: ${BLOCK_LABELS[block.type]}`}
-                  aria-pressed={block.align === align}
-                  onClick={() => onChange(setBlockAlign(layout, block.id, align))}
-                  className={cx(
-                    'inline-flex items-center justify-center rounded-item p-1.5 font-medium transition-colors focus-ring',
-                    block.align === align
-                      ? 'bg-card text-foreground shadow-card'
-                      : 'text-muted hover:text-foreground',
-                  )}
-                >
-                  <Icon size={14} aria-hidden="true" />
-                </button>
-              ))}
-            </span>
+            <SegmentedControl<BlockAlign>
+              value={block.align}
+              onChange={(align) => onChange(setBlockAlign(layout, block.id, align))}
+              ariaLabel={`Perataan ${BLOCK_LABELS[block.type]}`}
+              size="icon"
+              options={ALIGN_OPTIONS.map(({ align, label, Icon }) => ({
+                value: align,
+                label: <Icon size={14} aria-hidden="true" />,
+                title: label,
+                ariaLabel: `${label}: ${BLOCK_LABELS[block.type]}`,
+              }))}
+            />
 
-            <span
-              role="group"
-              aria-label={`Lebar ${BLOCK_LABELS[block.type]}`}
-              className="inline-flex rounded-control border border-border bg-sunken p-0.5"
-            >
-              {WIDTH_OPTIONS.map(({ width, label }) => (
-                <button
-                  key={width}
-                  type="button"
-                  title={`Lebar ${label.toLowerCase()}`}
-                  aria-label={`Lebar ${label}: ${BLOCK_LABELS[block.type]}`}
-                  aria-pressed={block.width === width}
-                  onClick={() => onChange(setBlockWidth(layout, block.id, width))}
-                  className={cx(
-                    'inline-flex items-center justify-center rounded-item px-2 py-1.5 text-xs font-medium transition-colors focus-ring',
-                    block.width === width
-                      ? 'bg-card text-foreground shadow-card'
-                      : 'text-muted hover:text-foreground',
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </span>
+            <SegmentedControl<BlockWidth>
+              value={block.width}
+              onChange={(width) => onChange(setBlockWidth(layout, block.id, width))}
+              ariaLabel={`Lebar ${BLOCK_LABELS[block.type]}`}
+              size="sm"
+              options={WIDTH_OPTIONS.map(({ width, label }) => ({
+                value: width,
+                label,
+                title: `Lebar ${label.toLowerCase()}`,
+                ariaLabel: `Lebar ${label}: ${BLOCK_LABELS[block.type]}`,
+              }))}
+            />
 
             <span className="flex items-center gap-0.5">
               <IconButton

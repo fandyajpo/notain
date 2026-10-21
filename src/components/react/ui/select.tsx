@@ -339,7 +339,7 @@ export function Select({
             // height, then re-place it anchored to the trigger.
             style={pos ?? { top: 0, left: 0, visibility: 'hidden' }}
             className={cx(
-              'fixed z-[100] min-w-40 overflow-y-auto',
+              'fixed z-portal min-w-40 overflow-y-auto',
               MAX_LIST_HEIGHT,
               popoverClass(),
             )}

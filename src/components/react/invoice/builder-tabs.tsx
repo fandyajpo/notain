@@ -4,6 +4,7 @@ import {
   setBuilderSection,
   type BuilderSection,
 } from '../../../lib/store/builder-ui';
+import { SegmentedControl } from '../ui/segmented';
 
 const SECTIONS: Array<{ id: BuilderSection; label: string }> = [
   { id: 'detail', label: 'Detail' },
@@ -19,31 +20,13 @@ export function BuilderTabs() {
   const active = useSelector(builderUiStore, (state) => state.activeSection);
 
   return (
-    <div
-      role="tablist"
-      aria-label="Bagian invoice"
-      className="inline-flex max-w-full overflow-x-auto rounded-control border border-border bg-sunken p-0.5"
-    >
-      {SECTIONS.map((section) => {
-        const selected = section.id === active;
-        return (
-          <button
-            key={section.id}
-            type="button"
-            role="tab"
-            aria-selected={selected}
-            onClick={() => setBuilderSection(section.id)}
-            className={[
-              'shrink-0 rounded-item px-3 py-1.5 text-sm font-medium transition-colors focus-ring',
-              selected
-                ? 'bg-accent text-accent-foreground shadow-card'
-                : 'text-muted hover:text-foreground',
-            ].join(' ')}
-          >
-            {section.label}
-          </button>
-        );
-      })}
-    </div>
+    <SegmentedControl<BuilderSection>
+      value={active}
+      onChange={setBuilderSection}
+      options={SECTIONS.map((section) => ({ value: section.id, label: section.label }))}
+      variant="accent"
+      ariaLabel="Bagian invoice"
+      className="max-w-full overflow-x-auto"
+    />
   );
 }

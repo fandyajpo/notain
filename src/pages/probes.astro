@@ -4,5 +4,8 @@ import { ProbeHost } from '../components/react/probe-host';
 ---
 
 <Layout title="Probes | Notain">
-  <ProbeHost client:only="react" />
+  <main id="konten" tabindex="-1">
+    <h1 class="sr-only">Probes</h1>
+    <ProbeHost client:only="react" />
+  </main>
 </Layout>

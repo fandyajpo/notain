@@ -4,7 +4,7 @@ import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
 import { Button } from '../ui/button';
-import { cardClass } from '../ui/card';
+import { CARD_ROW, cardClass } from '../ui/card';
 import { LoadMore } from '../ui/load-more';
 import { Modal } from '../ui/modal';
 import { PageHeader } from '../ui/page-header';
@@ -25,23 +25,13 @@ import {
 import { listCustomers } from '../../../app/customers';
 import { formatTanggal, formatTanggalRelatif } from '../../../core/shared/dates';
 import { toCustomerRows } from '../../../core/excel';
-import { toAppError } from '../../../appwrite/errors';
+import { takeFieldErrors, toAppError } from '../../../app/errors';
 import { toast } from '../../../lib/ui/toast';
 import type { Customer, CustomerDraft } from '../../../core/customer/model';
 import { ExportButtons } from '../excel/export-buttons';
 import { CustomerImportPanel } from './customer-import';
 
 const EMPTY_DRAFT: CustomerDraft = { name: '', email: '', phone: '' };
-
-/**
- * Field-keyed validation messages on an `AppError`, or `null` when the failure
- * was not a validation one (duplicate, network, storage) and so has no field
- * to attach a message to.
- */
-function takeFieldErrors(error: unknown): Record<string, string> | null {
-  const fields = toAppError(error).fieldErrors;
-  return Object.keys(fields).length > 0 ? { ...fields } : null;
-}
 
 /** The `/customers` island: the saved-customer directory, editable in place. */
 export function CustomersApp() {
@@ -485,7 +475,7 @@ function CustomersContent() {
               exactly that set, the bulk delete, and a way out. Merge mode has
               its own action bar up top, so this one stays out of the way. */}
           {!mergeMode && selectedCustomers.length > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-card px-4 py-3 shadow-card">
+            <div className={CARD_ROW}>
               <p className="text-sm text-muted">
                 <span className="font-medium text-foreground">{selectedCustomers.length}</span>{' '}
                 customer dipilih

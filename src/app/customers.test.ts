@@ -242,7 +242,6 @@ describe('rememberCustomer', () => {
 
     expect(listByOwner).toHaveBeenCalledWith('user-a');
     expect(create).toHaveBeenCalledWith({
-      id: expect.any(String),
       ownerId: 'user-a',
       customer: { name: 'Budi Santoso', email: '', phone: '081234567890' },
       lastUsedAt: expect.any(String),

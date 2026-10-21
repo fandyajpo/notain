@@ -7,7 +7,7 @@ import { queryKeys } from '../../../lib/query/keys';
 import { formatTanggal } from '../../../core/shared/dates';
 import { formatRupiah } from '../../../core/shared/money';
 import { isPaidPlan } from '../../../core/billing/plans';
-import { isUnauthenticated } from '../../../appwrite/errors';
+import { isUnauthenticated } from '../../../app/errors';
 import { isAppError } from '../../../core/shared/errors';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';

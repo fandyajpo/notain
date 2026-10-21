@@ -106,7 +106,7 @@ export class AppwriteTemplateRepository implements TemplateRepository {
   }
 
   async create(input: {
-    id: string;
+    id?: string;
     ownerId: string;
     template: AuthoredTemplate;
   }): Promise<InvoiceTemplate> {

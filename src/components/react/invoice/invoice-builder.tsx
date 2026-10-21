@@ -54,7 +54,7 @@ import { useRememberCatalogItems } from '../../../lib/query/hooks/use-catalog';
 import { useDeletePaymentProof } from '../../../lib/query/hooks/use-public-invoice';
 import { usePageTour } from '../../../lib/tour/use-tour';
 import { useUnsavedChangesGuard } from '../../../lib/use-unsaved-changes-guard';
-import { toAppError } from '../../../appwrite/errors';
+import { toAppError } from '../../../app/errors';
 import { useTemplates } from '../../../lib/query/hooks/use-templates';
 import { useSession } from '../../../lib/query/hooks/use-session';
 import type { PickPayload } from '../../shared/contracts';

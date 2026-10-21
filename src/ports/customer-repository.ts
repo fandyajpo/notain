@@ -36,7 +36,7 @@ export interface CustomerRepository {
   /** All of the owner's rows whose name matches exactly, before phone folding. */
   findByName(ownerId: string, name: string): Promise<Customer[]>;
   create(input: {
-    id: string;
+    id?: string;
     ownerId: string;
     customer: CustomerDraft;
     lastUsedAt: string;

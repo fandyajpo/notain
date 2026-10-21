@@ -130,9 +130,9 @@ brings the next page's markup with it. */
     border-color: transparent;
     box-shadow: 0 0 0 0 transparent;
     transition:
-      background-color 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-      border-color 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      background-color 0.35s var(--ease-smooth),
+      border-color 0.35s var(--ease-smooth),
+      box-shadow 0.35s var(--ease-smooth);
   }
 
   .site-header.is-scrolled {
@@ -151,7 +151,7 @@ brings the next page's markup with it. */
     background-color: var(--color-foreground);
     transform: scaleX(0);
     transform-origin: left;
-    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform var(--duration-base) var(--ease-smooth);
   }
 
   .site-nav-link:hover::after,
@@ -160,11 +160,11 @@ brings the next page's markup with it. */
   }
 
   .site-logo {
-    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.25s var(--ease-spring);
   }
 
   .site-logo img {
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform var(--duration-base) var(--ease-spring);
   }
 
   .site-logo:hover {
@@ -176,7 +176,7 @@ brings the next page's markup with it. */
   }
 
   .site-cta {
-    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.25s var(--ease-spring);
   }
 
   .site-cta:hover {
@@ -202,13 +202,13 @@ brings the next page's markup with it. */
   .site-nav-overlay {
     background-color: color-mix(in srgb, var(--color-background) 50%, transparent);
     backdrop-filter: blur(8px);
-    transition: opacity 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: opacity 0.25s var(--ease-smooth);
   }
 
   [data-nav-drawer] {
     transition:
-      height 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-      opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+      height 0.28s var(--ease-smooth),
+      opacity 0.28s var(--ease-smooth);
   }
 
   @media (prefers-reduced-motion: reduce) {

@@ -6,7 +6,7 @@ import { LoadMore } from '../ui/load-more';
 import { ErrorState, LoadingState } from '../ui/state';
 import { TableShell, Th, Td, TBODY_ROW, THEAD_ROW } from '../ui/table';
 import { useAdminAudit } from '../../../lib/query/hooks/use-admin';
-import { toAppError } from '../../../appwrite/errors';
+import { toAppError } from '../../../app/errors';
 
 const ACTION_LABELS: Record<string, string> = {
   'user.update': 'Edit profil',

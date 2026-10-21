@@ -1,11 +1,29 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { PricingApp } from '../components/react/landing/pricing-app';
+import { PricingTop } from '../components/react/landing/pricing-top';
+import { PricingPlans } from '../components/react/landing/pricing-plans';
+import { FinaleCta } from '../components/react/landing/finale-cta';
+import { SiteFooter } from '../components/react/landing/site-footer';
 ---
 
 <Layout
   title="Harga Notain | Plan Free, Pro & Business"
   description="Notain gratis selamanya untuk fitur inti. Lihat plan Free, Pro, dan Business: template premium, laporan bisnis, akses API, dan lainnya."
 >
-  <PricingApp client:load />
+  <!-- Three islands, not one — the same split the landing page uses. The wrapper
+       and the dot texture are plain HTML so they paint before any JS runs. -->
+  <div class="min-h-screen overflow-x-clip">
+    <!-- Page-wide dot texture; fixed so content slides over it. -->
+    <div
+      aria-hidden="true"
+      class="pointer-events-none fixed inset-0 -z-10 texture-dots [mask-image:linear-gradient(to_bottom,transparent,black_8%,black_92%,transparent)]"
+    ></div>
+
+    <PricingTop client:load>
+      <PricingPlans client:visible />
+      <FinaleCta client:visible />
+    </PricingTop>
+
+    <SiteFooter anchorPrefix="/" client:visible />
+  </div>
 </Layout>

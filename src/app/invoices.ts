@@ -1,4 +1,3 @@
-import { ID } from 'appwrite';
 import type {
   Invoice,
   InvoiceDraft,
@@ -90,7 +89,6 @@ export async function getInvoice(id: string): Promise<Invoice> {
 export async function createInvoice(draft: InvoiceDraft): Promise<Invoice> {
   const user = await requireSession();
   return container.invoices.create({
-    id: ID.unique(),
     ownerId: user.id,
     draft: parseDraft(draft),
   });

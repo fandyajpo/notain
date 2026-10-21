@@ -2,16 +2,24 @@
 import '../styles/global.css';
 import { ClientRouter } from 'astro:transitions';
 import Toast from '../components/ui/Toast.astro';
+import { pageMeta, SITE_URL, SITE_NAME, SOCIAL_IMAGE } from '../lib/seo';
 
 interface Props {
   title?: string;
   description?: string;
 }
 
-const {
-  title = 'Notain | Bikin nota. Kirim. Selesai.',
-  description = 'Notain membantu UMKM membuat nota dan invoice dalam hitungan detik.',
-} = Astro.props;
+const { title, description } = Astro.props;
+
+// One decision point for every tag below: canonical, robots, Open Graph and
+// Twitter all come out of `lib/seo.ts`, so no route can disagree with another.
+const meta = pageMeta({
+  pathname: Astro.url.pathname,
+  title,
+  description,
+});
+
+const isIndexable = meta.indexable;
 ---
 
 <!doctype html>
@@ -22,9 +30,36 @@ const {
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="generator" content={Astro.generator} />
-    <meta name="description" content={description} />
-    <meta name="theme-color" content="#F8F8F6" />
-    <title>{title}</title>
+    <title>{meta.title}</title>
+    <meta name="description" content={meta.description} />
+    <meta name="robots" content={meta.robots} />
+    {isIndexable && meta.canonical && (
+      <>
+        <link rel="canonical" href={meta.canonical} />
+        <meta property="og:url" content={meta.canonical} />
+      </>
+    )}
+    <!-- Warm brand canvas; mirrors --color-background in global.css. -->
+    <meta name="theme-color" content="#f8f8f6" />
+
+    <meta property="og:type" content={meta.ogType} />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:locale" content="id_ID" />
+    <meta property="og:title" content={meta.title} />
+    <meta property="og:description" content={meta.description} />
+    <meta property="og:image" content={`${SITE_URL}${SOCIAL_IMAGE}`} />
+    <meta property="og:image:alt" content="Logo Notain" />
+    <meta property="og:image:width" content="500" />
+    <meta property="og:image:height" content="500" />
+
+    <!-- `summary`, not `summary_large_image`: the social card is the square
+         logo, and a 500×500 would crop badly in a 2:1 slot. -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={meta.title} />
+    <meta name="twitter:description" content={meta.description} />
+    <meta name="twitter:image" content={`${SITE_URL}${SOCIAL_IMAGE}`} />
+    <meta name="twitter:image:alt" content="Logo Notain" />
+
     <ClientRouter />
     <!-- Applies the persisted sidebar state before first paint so a collapsed
          preference never flashes open. The interactive half (toggle wiring)
@@ -83,6 +118,15 @@ const {
     </script>
   </head>
   <body class="min-h-screen bg-background text-foreground">
+    <!-- First thing in the tab order: keyboard users skip the header, nav and
+         any marketing chrome and land on `#konten` (the <main> every layout
+         and page marks). Invisible until focused. -->
+    <a
+      href="#konten"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-portal focus:rounded-control focus:border focus:border-border focus:bg-card focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-modal"
+    >
+      Lewati ke konten utama
+    </a>
     <slot />
     <Toast transition:persist="toasts" />
   </body>

@@ -4,7 +4,7 @@ import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
 import { Button } from '../ui/button';
-import { cardClass } from '../ui/card';
+import { CARD_ROW, cardClass } from '../ui/card';
 import { LoadMore } from '../ui/load-more';
 import { Modal } from '../ui/modal';
 import { PageHeader } from '../ui/page-header';
@@ -26,7 +26,7 @@ import { listCatalog } from '../../../app/catalog';
 import { formatTanggal, formatTanggalRelatif } from '../../../core/shared/dates';
 import { formatRupiah, parseRupiah } from '../../../core/shared/money';
 import { toCatalogRows } from '../../../core/excel';
-import { toAppError } from '../../../appwrite/errors';
+import { takeFieldErrors, toAppError } from '../../../app/errors';
 import { toast } from '../../../lib/ui/toast';
 import {
   CATALOG_KIND_LABELS,
@@ -58,15 +58,6 @@ function toDraft(form: FormState): CatalogDraft {
     unit: form.unit.trim(),
     unitPrice: toPrice(form.price),
   };
-}
-
-/**
- * Field-keyed validation messages on an `AppError`, or `null` when the failure
- * was not a validation one (duplicate, network, storage).
- */
-function takeFieldErrors(error: unknown): Record<string, string> | null {
-  const fields = toAppError(error).fieldErrors;
-  return Object.keys(fields).length > 0 ? { ...fields } : null;
 }
 
 /** The `/catalog` island: the owner's saved barang/jasa, editable in place. */
@@ -398,7 +389,7 @@ function CatalogContent() {
           </div>
 
           {selectedItems.length > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-card px-4 py-3 shadow-card">
+            <div className={CARD_ROW}>
               <p className="text-sm text-muted">
                 <span className="font-medium text-foreground">{selectedItems.length}</span> entri
                 dipilih

@@ -25,7 +25,7 @@ export type ConfettiOptions = {
 };
 
 const OVERLAY_ID = 'notain-confetti';
-const OVERLAY_CLASS = 'pointer-events-none fixed inset-0 z-[120]';
+const OVERLAY_CLASS = 'pointer-events-none fixed inset-0 z-celebration';
 const DEFAULT_COLORS = ['var(--color-accent)', 'var(--color-success)', 'var(--color-warning)'];
 
 export function prefersReducedMotion(): boolean {

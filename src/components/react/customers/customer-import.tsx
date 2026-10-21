@@ -10,7 +10,7 @@ import {
 } from '../../../core/excel';
 import { useImportCustomers } from '../../../lib/query/hooks/use-customers';
 import { toast } from '../../../lib/ui/toast';
-import { toAppError } from '../../../appwrite/errors';
+import { toAppError } from '../../../app/errors';
 
 /** How many row-level problems are listed before the rest are collapsed. */
 const MAX_SHOWN_ISSUES = 5;

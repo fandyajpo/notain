@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addDaysIsoDate,
   diffDaysIsoDate,
+  formatSalam,
   formatTanggal,
   formatTanggalRelatif,
   formatWaktuLalu,
@@ -127,5 +128,20 @@ describe('formatWaktuLalu', () => {
 
   it('treats a future timestamp as baru saja', () => {
     expect(formatWaktuLalu(new Date(now.getTime() + 30_000).toISOString(), now)).toBe('Baru saja');
+  });
+});
+
+describe('formatSalam', () => {
+  const at = (hour: number) => new Date(2026, 9, 21, hour, 30);
+
+  it('greets by time of day', () => {
+    expect(formatSalam(at(6))).toBe('Selamat pagi 👋');
+    expect(formatSalam(at(10))).toBe('Selamat pagi 👋');
+    expect(formatSalam(at(11))).toBe('Selamat siang 👋');
+    expect(formatSalam(at(14))).toBe('Selamat siang 👋');
+    expect(formatSalam(at(15))).toBe('Selamat sore 👋');
+    expect(formatSalam(at(17))).toBe('Selamat sore 👋');
+    expect(formatSalam(at(18))).toBe('Selamat malam 👋');
+    expect(formatSalam(at(23))).toBe('Selamat malam 👋');
   });
 });

@@ -160,6 +160,8 @@ const is_active = (href: string) => path === href || path.startsWith(`${href}/`)
       </aside>
 
       <main
+        id="konten"
+        tabindex="-1"
         class:list={['app-main mx-auto w-full px-4 py-8 sm:px-6', wide ? 'max-w-6xl' : 'max-w-5xl']}
       >
         <slot />

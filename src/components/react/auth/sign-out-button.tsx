@@ -1,5 +1,5 @@
 import { LogOut } from 'lucide-react';
-import { toAppError } from '../../../appwrite/errors';
+import { toAppError } from '../../../app/errors';
 import { useSignOut } from '../../../lib/query/hooks/use-session';
 import { toast } from '../../../lib/ui/toast';
 import { Button } from '../ui/button';

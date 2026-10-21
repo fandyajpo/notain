@@ -95,7 +95,7 @@ export interface InvoiceRepository {
     options: { from: string; to: string; limit?: number; cursorAfter?: string },
   ): Promise<InvoiceFinanceEntry[]>;
   getById(id: string): Promise<Invoice | null>;
-  create(input: { id: string; ownerId: string; draft: InvoiceDraft }): Promise<Invoice>;
+  create(input: { id?: string; ownerId: string; draft: InvoiceDraft }): Promise<Invoice>;
   update(input: { id: string; draft: InvoiceDraft }): Promise<Invoice>;
   /**
    * Flips only the lifecycle status, leaving every other column untouched.
