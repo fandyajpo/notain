@@ -1,0 +1,8 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { AdminUsersApp } from '../../components/react/admin/admin-app';
+---
+
+<DashboardLayout title="Pengguna | Admin | Notain" description="Kelola akun pengguna." wide>
+  <AdminUsersApp client:only="react" />
+</DashboardLayout>

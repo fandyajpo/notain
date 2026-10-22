@@ -139,6 +139,11 @@ export default defineConfig({
   // tidak menunggu rtt pertama. Hanya berlaku untuk link yang memasang
   // `data-astro-prefetch`.
   prefetch: true,
+  // `/admin` is the tabs page the admin section used to be; it folds into the
+  // first tab's page. Static build turns this into a meta-refresh stub.
+  redirects: {
+    '/admin': '/admin/users',
+  },
   integrations: [
     // Every JSX file in the app lives under src/components/react/**, so React
     // claims that subtree and nothing else. Solid claims its own directory

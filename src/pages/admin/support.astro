@@ -1,0 +1,8 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { AdminSupportApp } from '../../components/react/admin/admin-app';
+---
+
+<DashboardLayout title="Support | Admin | Notain" description="Pesan dari pengguna." wide>
+  <AdminSupportApp client:only="react" />
+</DashboardLayout>
