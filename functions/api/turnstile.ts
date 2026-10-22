@@ -1,5 +1,6 @@
 import { checkTurnstile } from '../_lib/turnstile';
 import { apiError, json } from '../_lib/http';
+import { enforceLimit, requestKey } from '../_lib/quota';
 import type { Env, PagesFunction } from '../_lib/types';
 
 /**
@@ -14,6 +15,12 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method !== 'POST') {
     return apiError(405, 'method_not_allowed', 'Metode ini tidak didukung.', { allow: 'POST' });
   }
+
+  // Turnstile verification itself is unmetered on Free, but each call here
+  // still costs a Worker invocation and a subrequest — cap the per-IP rate so
+  // a script cannot spend Cloudflare request quota through this endpoint.
+  const limited = enforceLimit('turnstile', requestKey(request), env);
+  if (limited) return limited;
 
   let token: string;
   try {

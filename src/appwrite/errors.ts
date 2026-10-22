@@ -62,6 +62,11 @@ function mapStatusCode(status: number): (typeof ERROR_CODES)[keyof typeof ERROR_
   // 429 is keyed by status, not by Appwrite's `type` string, so a new rate-limit
   // type never silently degrades into a retriable UNKNOWN.
   if (status === 429) return ERROR_CODES.RATE_LIMITED;
+  // 503 is our own controlled "temporarily unavailable, retry after N"
+  // answer (the quota circuit breaker / a provider outage). It is transient
+  // by definition, so it classifies as a connection-style failure that a
+  // query may retry — mutations are never replayed regardless.
+  if (status === 503) return ERROR_CODES.NETWORK;
   if (status === 400 || status === 413 || status === 422) return ERROR_CODES.VALIDATION;
   return ERROR_CODES.UNKNOWN;
 }
@@ -76,7 +81,12 @@ function mapStatusCode(status: number): (typeof ERROR_CODES)[keyof typeof ERROR_
  */
 export function appErrorFromStatus(status: number, message?: string): AppError {
   const code = mapStatusCode(status);
-  return new AppError(code, status < 500 && message ? message : fallbackFor(code));
+  // Other 5xx deliberately fall back to generic copy — a server or upstream
+  // stack message is never something to put in front of a person. 503 is the
+  // exception: its body is our own curated "try again in N" guidance, which
+  // is exactly what the reader needs in order to know when retrying helps.
+  const showMessage = (status < 500 || status === 503) && message;
+  return new AppError(code, showMessage ? message : fallbackFor(code));
 }
 
 /** Copy for codes whose Appwrite `type` string is not one we recognise. */

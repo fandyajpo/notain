@@ -9,6 +9,7 @@ import { checkTurnstile } from '../../../_lib/turnstile';
 import { verifySession } from '../../../_lib/appwrite';
 import { getRow, patchRow, tableAuth } from '../../../_lib/rows';
 import { apiError, json } from '../../../_lib/http';
+import { enforceLimit, requestKey } from '../../../_lib/quota';
 import type { Env, PagesFunction } from '../../../_lib/types';
 
 /**
@@ -77,6 +78,18 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
   if (request.headers.has('authorization') && !owner) {
     return apiError(401, 'unauthenticated', 'Silakan masuk terlebih dahulu.');
   }
+
+  // Rate fence before any provider work: each upload that gets through costs
+  // a Turnstile siteverify subrequest, an Appwrite read + write and an R2
+  // Class A/B pair (R2 overage is the one billable risk on this stack).
+  // Owners get a roomier bucket keyed by user id; anonymous callers share an
+  // IP bucket. Turnstile remains the real bot gate — this only bounds cost.
+  const limited = enforceLimit(
+    owner ? 'proof-upload-owner' : 'proof-upload',
+    owner ? owner.userId : requestKey(request),
+    env,
+  );
+  if (limited) return limited;
 
   let file: File;
   let turnstileToken: string;

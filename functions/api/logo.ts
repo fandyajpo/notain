@@ -5,6 +5,7 @@ import {
 } from '../../src/core/profile/logo';
 import { verifySession } from '../_lib/appwrite';
 import { apiError, json } from '../_lib/http';
+import { enforceLimit } from '../_lib/quota';
 import type { Env, PagesFunction } from '../_lib/types';
 
 /**
@@ -38,6 +39,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (!session) {
     return apiError(401, 'unauthenticated', 'Silakan masuk terlebih dahulu.');
   }
+
+  // One logo upload is a real R2 Class A/B pair; replacements are rare in
+  // practice, so a small per-user per-hour bucket keeps a scripted flood from
+  // eating the R2 free allowance (1M Class A / 10M Class B per month — the
+  // only metered-and-billed overage in this stack).
+  const limited = enforceLimit('logo-upload', session.userId, env);
+  if (limited) return limited;
 
   const declaredLength = request.headers.get('content-length');
   if (declaredLength !== null && Number(declaredLength) > MAX_REQUEST_BYTES) {

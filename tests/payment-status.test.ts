@@ -125,6 +125,15 @@ function writes(): string[] {
     });
 }
 
+/** Reads of the payment row itself — the second one only after a settle attempt. */
+function paymentReads(): number {
+  return fake.calls.filter(
+    (call) =>
+      call.method === 'GET' &&
+      call.url.includes(`/collections/payments/documents/${encodeURIComponent(INVOICE)}`),
+  ).length;
+}
+
 describe('GET /api/payments/status', () => {
   it('refuses an unauthenticated caller without touching DOKU', async () => {
     fake.account = null;
@@ -167,6 +176,8 @@ describe('GET /api/payments/status', () => {
     await expect(response.json()).resolves.toMatchObject({ status: 'pending' });
     expect(dokuCalls).toEqual([]);
     expect(writes()).toEqual([]);
+    // Nothing settled, so the first read already holds the whole answer.
+    expect(paymentReads()).toBe(1);
   });
 
   it('stays quiet outside the reconcile window even once the order is old', async () => {
@@ -182,6 +193,8 @@ describe('GET /api/payments/status', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ status: 'pending' });
     expect(dokuCalls).toEqual([]);
+    // The throttle shut, so there was nothing to re-read for.
+    expect(paymentReads()).toBe(1);
   });
 
   it('asks DOKU about an old pending order with a signed GET and no Digest', async () => {
@@ -212,6 +225,8 @@ describe('GET /api/payments/status', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ status: 'paid' });
+    // The settle moved the row, so it is read back exactly once more.
+    expect(paymentReads()).toBe(2);
 
     const stored = fake.rows.get('payments/' + INVOICE);
     expect(stored?.status).toBe('paid');

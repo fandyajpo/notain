@@ -38,6 +38,9 @@ export default defineConfig({
     // Response` functions over Web APIs, so they run fine in the node
     // environment with a stubbed `fetch`.
     include: ['src/**/*.{test,spec}.{ts,tsx}', 'tests/**/*.{test,spec}.{ts,tsx}'],
+    // Isolate-local quota state (session cache, rate windows, breakers) must
+    // start empty for every test — see the file's doc comment.
+    setupFiles: ['tests/quota-reset.ts'],
     environment: 'node',
     passWithNoTests: true,
   },

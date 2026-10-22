@@ -76,11 +76,12 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     if (!(await patchRow(auth, 'profiles', session.userId, data))) {
       return apiError(500, 'validation', 'Gagal menyimpan profil.');
     }
-    const row = await getRow(auth, 'profiles', session.userId);
-    if (!row) {
-      return apiError(500, 'validation', 'Gagal menyimpan profil.');
-    }
-    return json(200, row);
+    // `existing` is every column the row holds and `data` is exactly the set
+    // the patch just wrote, so their merge *is* the saved row — a third
+    // Appwrite round trip would only fetch those same columns back. (A write
+    // landing in between changes nothing: both snapshots are equally current,
+    // and the next read corrects either.)
+    return json(200, { ...existing, ...data });
   }
 
   const created = await createRow(

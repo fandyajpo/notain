@@ -78,8 +78,8 @@ function storedProfile(overrides: Record<string, unknown> = {}): Row {
 }
 
 /**
- * The body of a recorded Appwrite PATCH. The Function re-reads the row after
- * patching, so the PATCH is never the last call — find it by method instead.
+ * The body of a recorded Appwrite PATCH. Looked up by method rather than by
+ * position: a create's POST, or nothing at all, may sit after it.
  */
 function patchBody(): { data: Record<string, unknown> } {
   const call = [...fake.calls].reverse().find((c) => c.method === 'PATCH');
@@ -98,6 +98,14 @@ function writes(): string[] {
       );
       return `${call.method} ${match?.[1]}/${match?.[2] ?? '(create)'}`;
     });
+}
+
+/** Reads of the profile row. One on an update (the existence probe), never two. */
+function profileReads(): number {
+  return fake.calls.filter(
+    (call) =>
+      call.method === 'GET' && call.url.includes(`/collections/profiles/documents/${OWNER}`),
+  ).length;
 }
 
 describe('PUT /api/profile — gate', () => {
@@ -178,6 +186,14 @@ describe('PUT /api/profile — update', () => {
 
     expect(response.status).toBe(200);
     expect(writes()).toEqual([`PATCH profiles/${OWNER}`]);
+    // One existence probe, and no read-back: the saved row is built from what
+    // was already known plus what was just written.
+    expect(profileReads()).toBe(1);
+
+    const body = (await response.json()) as { name: string; plan: string; planExpiresAt: string };
+    expect(body.name).toBe('Budi');
+    expect(body.plan).toBe('business');
+    expect(body.planExpiresAt).toBe('2030-01-01');
 
     const patch = patchBody();
     expect(patch.data).not.toHaveProperty('plan');

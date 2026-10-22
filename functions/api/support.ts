@@ -1,6 +1,7 @@
 import { checkTurnstile } from '../_lib/turnstile';
 import { apiError, json } from '../_lib/http';
 import { tableAuth } from '../_lib/rows';
+import { enforceLimit, requestKey } from '../_lib/quota';
 import type { Env, PagesFunction } from '../_lib/types';
 
 const DATABASE_ID = 'notain_db';
@@ -29,6 +30,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method !== 'POST') {
     return apiError(405, 'method_not_allowed', 'Metode ini tidak didukung.', { allow: 'POST' });
   }
+
+  // Before the Turnstile round trip and the Appwrite write: a flood of
+  // submissions would otherwise spend one Worker invocation, one siteverify
+  // subrequest and one database write each. `cf-connecting-ip` is assigned by
+  // Cloudflare's edge, so it cannot be forged from inside its own network.
+  const limited = enforceLimit('support', requestKey(request), env);
+  if (limited) return limited;
 
   let body: Record<string, unknown> | null = null;
   try {

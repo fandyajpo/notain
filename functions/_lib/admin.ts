@@ -1,5 +1,6 @@
 import { querySearch, verifySession, type Session } from './appwrite';
 import { apiError } from './http';
+import { cacheGet, cacheSet, count, quotaPolicy } from './quota';
 import type { Env } from './types';
 
 const ADMIN_TEAM_ID = 'admins';
@@ -47,7 +48,7 @@ export async function requireAdmin(
     'X-Appwrite-Key': apiKey,
   };
 
-  const isAdmin = await checkAdmin(endpoint, headers, session.userId);
+  const isAdmin = await checkAdmin(endpoint, headers, session.userId, env);
   if (!isAdmin) {
     return { ok: false, response: apiError(403, 'unauthenticated', 'Kamu bukan admin.') };
   }
@@ -55,11 +56,31 @@ export async function requireAdmin(
   return { ok: true, admin: { session, endpoint, headers } };
 }
 
+/**
+ * Team membership, cached per isolate for a short TTL (default 60 s,
+ * `QUOTA_ADMIN_CACHE_TTL_MS`). Every admin endpoint used to pay one `GET
+ * /teams/admins/memberships` round trip for a fact that changes rarely; both
+ * answers are cached (a denial too, so a non-admin's page loads don't hammer
+ * the endpoint either). The client mirrors this with its own 10-minute
+ * `adminMembership` staleTime, so a 60 s server-side lag is within the app's
+ * existing freshness contract. Membership changes apply at most one minute
+ * late on this isolate — removal is not a security emergency because every
+ * row also carries `read("team:admins")` permissions Appwrite re-checks with
+ * the API key's own authority.
+ */
 async function checkAdmin(
   endpoint: string,
   headers: Record<string, string>,
   userId: string,
+  env: Env,
 ): Promise<boolean> {
+  const policy = quotaPolicy(env);
+  const cacheKey = `admin:${userId}`;
+  if (policy.adminCacheTtlMs > 0) {
+    const cached = cacheGet<boolean>(cacheKey);
+    if (typeof cached === 'boolean') return cached;
+  }
+
   try {
     const response = await fetch(
       `${endpoint}/teams/${ADMIN_TEAM_ID}/memberships?${querySearch('equal', [userId], 'userId')}`,
@@ -67,8 +88,15 @@ async function checkAdmin(
     );
     if (!response.ok) return false;
     const data = (await response.json()) as { total?: number };
-    return (data.total ?? 0) > 0;
+    const result = (data.total ?? 0) > 0;
+    if (policy.adminCacheTtlMs > 0) {
+      cacheSet(cacheKey, result, policy.adminCacheTtlMs);
+      count('admin.membership.checked');
+    }
+    return result;
   } catch {
+    // Unreachable or unparseable: fail closed, and cache nothing — a
+    // transient blip must not lock the admin out for a whole TTL window.
     return false;
   }
 }

@@ -2,6 +2,14 @@ import { getRow, tableAuth, type TableAuth } from '../../_lib/rows';
 import { verifySession } from '../../_lib/appwrite';
 import { apiError, json } from '../../_lib/http';
 import {
+  breakerAllows,
+  breakerFailure,
+  breakerSuccess,
+  count,
+  quotaPolicy,
+  singleFlight,
+} from '../../_lib/quota';
+import {
   parseNotification,
   signRequest,
   statusRequestTarget,
@@ -95,10 +103,14 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   if (payment.status === 'pending') {
-    await reconcile(env, auth, payment);
-    // Re-read: settlement just now may have flipped this row (or the webhook
-    // may have landed between the two reads).
-    payment = ((await getRow(auth, 'payments', invoice)) as StatusRow | null) ?? payment;
+    const settled = await reconcile(env, auth, payment);
+    // Re-read only when this request itself may have moved the row. Every
+    // other pending poll (throttle shut, DOKU failed, nothing to apply) leaves
+    // the row exactly as read above, so the second document read — one per
+    // 3 s poll, per watching tab — would only fetch the same bytes back.
+    if (settled) {
+      payment = ((await getRow(auth, 'payments', invoice)) as StatusRow | null) ?? payment;
+    }
   }
 
   return json(
@@ -122,13 +134,40 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
  * Best-effort Check Status probe. Never throws — every failure mode (no
  * credentials, a too-fresh order, a DOKU timeout or error, an unparseable
  * body) leaves the row untouched for the next poll to retry.
+ *
+ * Answers whether the row may now hold different bytes than the caller read.
+ * Only `settlePayment` writing can do that, so a throttle miss, a DOKU failure
+ * or a `noop`/`unknown_order` transition all answer `false` and the caller
+ * skips its re-read.
  */
-async function reconcile(env: Env, auth: TableAuth, payment: StatusRow): Promise<void> {
+async function reconcile(env: Env, auth: TableAuth, payment: StatusRow): Promise<boolean> {
   const clientId = env.DOKU_CLIENT_ID?.trim() ?? '';
   const secretKey = env.DOKU_SECRET_KEY?.trim() ?? '';
-  if (!clientId || !secretKey) return;
-  if (!inReconcileWindow(Date.now() - Date.parse(payment.createdAt ?? ''))) return;
+  if (!clientId || !secretKey) return false;
+  if (!inReconcileWindow(Date.now() - Date.parse(payment.createdAt ?? ''))) return false;
 
+  // Circuit breaker: while DOKU is failing, stop spending Worker quota and
+  // DOKU quota on probes that are known to fail — the poller keeps painting
+  // the row as it stands and the breaker lets one probe through per cooldown.
+  const policy = quotaPolicy(env);
+  if (!breakerAllows('doku', policy)) {
+    count('doku.probe.breaker-skip');
+    return false;
+  }
+
+  // Concurrent polls for the same order (several tabs, a 3 s interval that
+  // overlaps a slow probe) share one DOKU call instead of stacking probes.
+  return singleFlight(`doku-probe:${payment.$id}`, () => probeAndSettle(env, auth, payment, clientId, secretKey));
+}
+
+async function probeAndSettle(
+  env: Env,
+  auth: TableAuth,
+  payment: StatusRow,
+  clientId: string,
+  secretKey: string,
+): Promise<boolean> {
+  count('doku.probe');
   const timestamp = utcTimestamp();
   const requestId = crypto.randomUUID();
   const target = statusRequestTarget(payment.$id);
@@ -142,23 +181,34 @@ async function reconcile(env: Env, auth: TableAuth, payment: StatusRow): Promise
         'Client-Id': clientId,
         'Request-Id': requestId,
         'Request-Timestamp': timestamp,
-        Signature: signature,
+        'Signature': signature,
       },
       signal: AbortSignal.timeout(10_000),
     });
   } catch {
-    return;
+    breakerFailure('doku', quotaPolicy(env));
+    return false;
   }
-  // 404 = DOKU never saw this invoice (a row whose order failed to create):
-  // leave it alone rather than probing it on every window.
-  if (!response.ok) return;
+  // 5xx is DOKU struggling: count it toward the breaker. 404 is a definitive
+  // "never saw this invoice" (a row whose order failed to create) — leave the
+  // row alone rather than probing it on every window, but it is not a fault.
+  if (response.status >= 500) {
+    breakerFailure('doku', quotaPolicy(env));
+    return false;
+  }
+  if (!response.ok) return false;
+  breakerSuccess('doku');
 
   const notification = parseNotification(await response.json().catch(() => null));
   // Only a reply about *this* order may move it.
-  if (notification.invoiceNumber !== payment.$id) return;
+  if (notification.invoiceNumber !== payment.$id) return false;
 
   const outcome = await settlePayment(env, auth, payment, notification);
   if (outcome.kind === 'error') {
     console.error('payments/status: settle failed for', payment.$id, outcome.message);
   }
+  // `noop` never writes the payment row (an amount-mismatch audit row is not
+  // this response's business), and `unknown_order` cannot happen for a row we
+  // just read — every other outcome flipped `status`, so the caller re-reads.
+  return outcome.kind !== 'noop' && outcome.kind !== 'unknown_order';
 }

@@ -13,9 +13,13 @@ export function apiError(
     | 'validation'
     | 'not_found'
     | 'method_not_allowed'
-    | 'conflict'
-    /** The caller's plan doesn't cover this resource (HTTP 402). */
-    | 'plan_required',
+  | 'conflict'
+  /** The caller's plan doesn't cover this resource (HTTP 402). */
+  | 'plan_required'
+  /** A local quota guard refused the request (HTTP 429 + `retry-after`). */
+  | 'rate_limited'
+  /** A downstream provider is unavailable or its breaker is open (HTTP 5xx). */
+  | 'unavailable',
   message: string,
   extra: HeadersInit = {},
 ): Response {

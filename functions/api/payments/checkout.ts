@@ -3,6 +3,14 @@ import { verifySession } from '../../_lib/appwrite';
 import { apiError, json } from '../../_lib/http';
 import { writeAudit } from '../../_lib/audit';
 import {
+  breakerAllows,
+  breakerFailure,
+  breakerSuccess,
+  count,
+  quotaPolicy,
+  rateLimit,
+} from '../../_lib/quota';
+import {
   buildCheckoutBody,
   DOKU_CHECKOUT_ENDPOINT,
   parseCheckoutResponse,
@@ -90,6 +98,29 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   const amount = planAmount(plan);
+
+  // Cost fences first — both purely local, before a single provider call:
+  // a flood of checkout attempts would otherwise burn Worker invocations,
+  // Appwrite reads and DOKU orders in lockstep. 429 carries `retry-after`;
+  // the breaker answers 503 while DOKU is failing so a user's click fails
+  // fast and cleanly instead of creating rows against a dead gateway.
+  const policy = quotaPolicy(env);
+  const limited = rateLimit('checkout', session.userId, policy);
+  if (!limited.allowed) {
+    count('checkout.rate-limited');
+    return apiError(429, 'rate_limited', 'Terlalu banyak percobaan pembayaran. Coba lagi beberapa menit lagi.', {
+      'retry-after': String(limited.retryAfterSeconds),
+    });
+  }
+  if (!breakerAllows('doku', policy)) {
+    count('checkout.breaker-rejected');
+    return apiError(
+      503,
+      'unavailable',
+      'Gateway pembayaran sedang tidak tersedia. Coba lagi dalam beberapa menit.',
+      { 'retry-after': String(Math.ceil(policy.dokuBreakerCooldownMs / 1000)) },
+    );
+  }
 
   // Current subscription, for downgrade protection and renewal extension.
   const profile = (await getRow(auth, 'profiles', session.userId)) as ProfileRow | null;
@@ -238,6 +269,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     // Network failure talking to DOKU: the row exists but has no order —
     // retire it so a retry starts cleanly instead of tripping the in-flight
     // guard, then tell the caller this is retryable.
+    breakerFailure('doku', policy);
     await patchRow(auth, 'payments', invoiceNumber, { status: 'failed' }).catch(() => false);
     return apiError(
       502,
@@ -250,6 +282,10 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     ? parseCheckoutResponse(await dokuResponse.json().catch(() => null))
     : null;
   if (!dokuResponse.ok || !parsed) {
+    // A 5xx is DOKU struggling — feed the breaker; a 4xx is a definitive
+    // rejection of THIS order (bad request, wrong credentials) and is not.
+    if (dokuResponse.status >= 500) breakerFailure('doku', policy);
+    else breakerSuccess('doku');
     const detail = (await dokuResponse.text().catch(() => '')).slice(0, 300).replace(/\s+/g, ' ');
     await patchRow(auth, 'payments', invoiceNumber, { status: 'failed' }).catch(() => false);
     await writeAudit(env, {
@@ -275,6 +311,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     checkoutUrl: parsed.url,
     dokuExpiredAt: parsed.expiredAt,
   });
+  breakerSuccess('doku');
+  count('checkout.doku.created');
   if (!updated) {
     // The order exists at DOKU but we couldn't store its page URL; returning
     // it anyway keeps the user unblocked — the row remains pending and the

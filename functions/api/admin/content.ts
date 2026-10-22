@@ -3,6 +3,7 @@ import { writeAudit } from '../../_lib/audit';
 import { requireAdmin } from '../../_lib/admin';
 import { querySearchAll } from '../../_lib/appwrite';
 import { apiError, json } from '../../_lib/http';
+import { cacheDelete, cacheGet, cacheSet, count, quotaPolicy } from '../../_lib/quota';
 import { getRow, patchRow, type TableId } from '../../_lib/rows';
 import type { Env, PagesFunction } from '../../_lib/types';
 import {
@@ -92,7 +93,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   const auth = { endpoint, headers };
 
   if (request.method === 'GET') {
-    return read(auth, new URL(request.url));
+    return read(auth, new URL(request.url), env);
   }
   return mutate(auth, request, env, session.userId, session.email);
 };
@@ -120,6 +121,7 @@ const INVOICE_SELECT = [
 async function read(
   auth: { endpoint: string; headers: Record<string, string> },
   url: URL,
+  env: Env,
 ): Promise<Response> {
   const userId = url.searchParams.get('userId');
   if (!userId) return apiError(400, 'validation', 'userId wajib diisi.');
@@ -131,7 +133,7 @@ async function read(
   if (rowId) return readDetail(auth, userId, resource, rowId);
 
   if (url.searchParams.get('nextNumber') === '1' && resource === 'invoices') {
-    return nextInvoiceNumberResponse(auth, userId);
+    return nextInvoiceNumberResponse(auth, userId, env);
   }
 
   return listContent(auth, url, userId, resource);
@@ -141,17 +143,52 @@ async function read(
  * `GET …&nextNumber=1` — the next free invoice number for this user, derived
  * from the numbers they already own. The create dialog reads it so an admin
  * never has to invent a sequence number and then collide with one.
+ *
+ * This is the single most expensive read in the admin API (one Appwrite read
+ * per row of the owner's invoice history), so it is guarded three ways:
+ *
+ * 1. **Cache** — the suggestion for an owner+year is reused for a short TTL
+ *    (default 30 s, `QUOTA_NEXT_NUMBER_CACHE_TTL_MS`) and invalidated
+ *    eagerly on every invoice create in this isolate, so a create → dialog →
+ *    create loop re-derives only when something actually changed.
+ * 2. **Projection** — only `$id` + `invoiceNumber` are requested.
+ * 3. **Bound** — the cursor scan stops after `QUOTA_NEXT_NUMBER_MAX_PAGES`
+ *    pages (default 10 × 100 = 1 000 rows, the historical behaviour) and says
+ *    `partial: true` instead of silently pretending a truncated scan is the
+ *    real maximum; the client may then show a suggested number that turns out
+ *    to be taken, and the create path's `invoiceNumberTaken` check still
+ *    refuses the collision (correctness never depends on the cache or the
+ *    bound — only the suggestion's freshness does).
  */
 async function nextInvoiceNumberResponse(
   auth: { endpoint: string; headers: Record<string, string> },
   userId: string,
+  env: Env,
 ): Promise<Response> {
+  const policy = quotaPolicy(env);
+  const year = new Date().getFullYear();
+  const cacheKey = `next-number:${userId}:${year}`;
+  const cached = cacheGet<string>(cacheKey);
+  if (cached) {
+    count('admin.next-number.cache-hit');
+    return json(200, { invoiceNumber: cached, cached: true });
+  }
+
+  const maxPages = Math.max(
+    1,
+    Number.isFinite(Number(env.QUOTA_NEXT_NUMBER_MAX_PAGES))
+      ? Math.floor(Number(env.QUOTA_NEXT_NUMBER_MAX_PAGES))
+      : 10,
+  );
+
   const numbers: string[] = [];
   let cursor: string | null = null;
-  // Ten pages of a hundred covers two thousand rows — far past what the
-  // numbering scheme is meant for — and a failed page simply ends the scan
-  // with the numbers gathered so far rather than failing the request.
-  for (let page = 0; page < 10; page += 1) {
+  let partial = false;
+  // `total` is independent of `limit`, so one cheap first-page meta-read
+  // would not help: rows must still be scanned to find the max sequence.
+  // A failed page ends the scan with what was gathered rather than failing
+  // the request.
+  for (let page = 0; page < maxPages; page += 1) {
     const queries: Array<{ method: string; values: unknown[]; attribute?: string | null }> = [
       { method: 'equal', attribute: 'ownerId', values: [userId] },
       { method: 'select', values: ['$id', 'invoiceNumber'] },
@@ -172,8 +209,23 @@ async function nextInvoiceNumberResponse(
     if (data.documents.length < 100) break;
     cursor = data.documents[data.documents.length - 1]?.$id ?? null;
     if (!cursor) break;
+    // Out of pages but the last page was full: there may be more rows, so
+    // the max below is a lower bound — flag it rather than overstate it.
+    if (page === maxPages - 1) partial = true;
   }
-  return json(200, { invoiceNumber: nextInvoiceNumber(numbers) });
+
+  const suggestion = nextInvoiceNumber(numbers);
+  // A partial scan must not be pinned as truth: only cache complete answers.
+  if (!partial) cacheSet(cacheKey, suggestion, policy.nextNumberCacheTtlMs);
+  count('admin.next-number.derived');
+  return partial
+    ? json(200, { invoiceNumber: suggestion, partial: true })
+    : json(200, { invoiceNumber: suggestion });
+}
+
+/** Drops a cached suggestion after a write that may have consumed the number. */
+function invalidateNextNumber(ownerId: string): void {
+  cacheDelete(`next-number:${ownerId}:${new Date().getFullYear()}`);
 }
 
 /**
@@ -626,6 +678,10 @@ async function createInvoice(
     ...draftToRowData(parsed.data as InvoiceDraft),
   });
   if (!created.ok) return created.response;
+
+  // The number is consumed: drop any cached suggestion so the next dialog
+  // opens on the one after it.
+  invalidateNextNumber(userId);
 
   await writeAudit(env, {
     actorId: actor.actorId,

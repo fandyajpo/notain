@@ -1,4 +1,5 @@
 import { apiError } from '../_lib/http';
+import { enforceLimit, requestKey } from '../_lib/quota';
 import type { Env, PagesFunction } from '../_lib/types';
 
 /**
@@ -29,12 +30,19 @@ interface CspReport {
  * It always answers 204 on a readable report — a report endpoint that errors
  * makes browsers drop reporting. Reports arrive without credentials from any
  * visitor, so the only real concern is log spam: the body is size-capped and
- * logged as one compact line, and Cloudflare's own log limits apply.
+ * logged as one compact line, and a per-IP cap keeps a forged flood from
+ * burning Worker invocations (Cloudflare's log limits apply on top).
  */
-export const onRequest: PagesFunction<Env> = async ({ request }) => {
+export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method !== 'POST') {
     return apiError(405, 'method_not_allowed', 'Metode ini tidak didukung.', { allow: 'POST' });
   }
+
+  // Free the invocation early for repeat offenders: dropped reports cost
+  // nothing to lose (they are diagnostics), so this gate sits before the body
+  // is even read.
+  const limited = enforceLimit('csp-report', requestKey(request), env);
+  if (limited) return limited;
 
   let text: string;
   try {

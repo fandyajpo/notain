@@ -136,7 +136,22 @@ async function overview(
   headers: Record<string, string>,
   userId: string,
 ): Promise<Response> {
-  const userResponse = await fetch(`${endpoint}/users/${userId}`, { headers });
+  // Five independent reads — account, profile, and three limit-1 row counts.
+  // Run them together: the read count (and therefore the Appwrite quota cost)
+  // is identical either way, but the admin's drill-down no longer waits for
+  // five round trips in series.
+  const [userResponse, profileResponse, invoiceCount, customerCount, templateCount] =
+    await Promise.all([
+      fetch(`${endpoint}/users/${userId}`, { headers }),
+      fetch(
+        `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents/${userId}`,
+        { headers },
+      ),
+      countRows(endpoint, headers, 'invoices', userId),
+      countRows(endpoint, headers, 'customers', userId),
+      countRows(endpoint, headers, 'templates', userId),
+    ]);
+
   if (userResponse.status === 404) {
     return apiError(404, 'not_found', 'User tidak ditemukan.');
   }
@@ -151,18 +166,14 @@ async function overview(
     status: boolean;
   };
 
-  const profileResponse = await fetch(
-    `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents/${userId}`,
-    { headers },
-  );
   const profile: ProfileRow | null = profileResponse.ok
     ? ((await profileResponse.json()) as ProfileRow)
     : null;
 
   const counts = {
-    invoices: await countRows(endpoint, headers, 'invoices', userId),
-    customers: await countRows(endpoint, headers, 'customers', userId),
-    templates: await countRows(endpoint, headers, 'templates', userId),
+    invoices: invoiceCount,
+    customers: customerCount,
+    templates: templateCount,
   };
 
   return json(200, {

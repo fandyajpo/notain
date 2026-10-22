@@ -1,5 +1,6 @@
 import { getRow, tableAuth } from '../../_lib/rows';
 import { apiError, json } from '../../_lib/http';
+import { count, singleFlight } from '../../_lib/quota';
 import { parseNotification, verifyNotificationSignature } from '../../../src/core/billing/doku';
 import { settlePayment, type PaymentRow } from '../../_lib/payment-settle';
 import type { Env, PagesFunction } from '../../_lib/types';
@@ -73,7 +74,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   }
   const notification = parseNotification(jsonBody);
 
-  if (!notification.invoiceNumber) {
+  const invoiceNumber = notification.invoiceNumber;
+  if (!invoiceNumber) {
     // Verified but unusable (no order id): acknowledge so DOKU stops
     // retrying, change nothing.
     return json(200, { received: true, applied: false, reason: 'no_invoice_number' });
@@ -85,10 +87,16 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   // $id IS the invoice_number (written before the checkout was created),
-  // so this is one document read, not a query.
-  const payment = (await getRow(auth, 'payments', notification.invoiceNumber)) as PaymentRow | null;
-
-  const outcome = await settlePayment(env, auth, payment, notification);
+  // so this is one document read, not a query. Two deliveries of the same
+  // event racing inside one isolate coalesce onto a single read+settle; the
+  // state-based transition in `settlePayment` already makes the second one a
+  // no-op even when they land on different isolates or in sequence.
+  const settled = await singleFlight(`settle:${invoiceNumber}`, async () => {
+    count('doku.notify');
+    const payment = (await getRow(auth, 'payments', invoiceNumber)) as PaymentRow | null;
+    return settlePayment(env, auth, payment, notification);
+  });
+  const outcome = settled;
 
   switch (outcome.kind) {
     case 'unknown_order':

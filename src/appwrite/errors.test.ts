@@ -84,6 +84,16 @@ describe('appErrorFromStatus', () => {
 
     expect(error.message).toBe('Terjadi kesalahan. Coba lagi beberapa saat lagi.');
   });
+
+  it('treats 503 as a transient, retryable outage AND shows our retry copy', () => {
+    // The quota breaker's controlled answer: classified like a connection
+    // failure (queries may retry) but its curated "try again later" guidance
+    // is ours to show — unlike a raw 5xx body from upstream.
+    const error = appErrorFromStatus(503, 'Gateway pembayaran sedang tidak tersedia. Coba lagi dalam beberapa menit.');
+
+    expect(error.code).toBe(ERROR_CODES.NETWORK);
+    expect(error.message).toContain('Coba lagi dalam beberapa menit');
+  });
 });
 
 describe('isRateLimited', () => {

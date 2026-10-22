@@ -52,6 +52,18 @@ export interface Env {
   DOKU_CLIENT_ID?: string;
   DOKU_SECRET_KEY?: string;
   DOKU_API_KEY?: string;
+  /**
+   * Optional quota-policy overrides, read by `functions/_lib/quota.ts`. Every
+   * one is optional — the defaults live in that module and are safe for the
+   * Cloudflare Free and Appwrite Free plans. Set only when tuning, as
+   * ordinary (unencrypted) Pages variables; none of them are secrets.
+   * Names: QUOTA_SESSION_CACHE_TTL_MS, QUOTA_ADMIN_CACHE_TTL_MS,
+   * QUOTA_NEXT_NUMBER_CACHE_TTL_MS, QUOTA_APPWRITE_READ_RETRIES,
+   * QUOTA_APPWRITE_RETRY_BASE_MS, QUOTA_DOKU_FAILURE_THRESHOLD,
+   * QUOTA_DOKU_BREAKER_COOLDOWN_MS, and the QUOTA_LIMIT_* family
+   * (see quota.ts for the full list).
+   */
+  [key: `QUOTA_${string}`]: string | undefined;
 }
 
 export type PagesFunction<E> = (context: {
