@@ -9,7 +9,7 @@
  * All invoice/dashboard islands are `client:only`, so none of this executes
  * during SSR — the guards inside each registration module are belt and braces.
  */
-export {};
+
 import './svelte/register';
 import './vue/register';
 import './solid/register';

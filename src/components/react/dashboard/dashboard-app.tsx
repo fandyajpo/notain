@@ -118,7 +118,7 @@ function DashboardContent() {
         stats={stats.data}
         statsLoading={stats.isLoading}
         statsRevalidating={stats.revalidating}
-        onRetryStats={() => void stats.refresh()}
+        onRetryStats={() => stats.refresh()}
         usahaName={usahaName}
         recent={recent}
         invoicesLoading={invoices.isLoading}

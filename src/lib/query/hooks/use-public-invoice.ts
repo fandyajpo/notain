@@ -37,7 +37,7 @@ export function useUploadPaymentProof(invoiceId: string) {
           ? {
               ...(current as Record<string, unknown>),
               invoice: {
-                ...((current as { invoice: Record<string, unknown> }).invoice ?? {}),
+                ...(current as { invoice: Record<string, unknown> }).invoice,
                 paymentProof: { key: proof.key, uploadedAt: proof.uploadedAt },
               },
             }

@@ -99,7 +99,7 @@ function payment(overrides: Record<string, unknown> = {}): Row {
 function get(invoice = INVOICE, authorization = 'Bearer jwt-token'): Request {
   return new Request(
     `https://notain.pages.dev${STATUS_PATH}?invoice=${encodeURIComponent(invoice)}`,
-    { headers: { ...(authorization ? { authorization } : {}) } },
+    { headers: authorization ? { authorization } : {} },
   );
 }
 
