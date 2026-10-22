@@ -21,13 +21,20 @@ export async function saveProfile(input: BusinessProfile): Promise<BusinessProfi
       ),
     });
   }
+  // `plan` / `planExpiresAt` are owned by billing (payment settle) and the
+  // admin API — never by a profile save. Taking them from the input would let
+  // any signed-in client upgrade its own plan, and it let a caller holding a
+  // stale copy (the smoke test's sample profile) silently downgrade a paid
+  // account. The stored row wins; a brand-new row starts on free.
+  const stored = await container.profiles.getByOwner(user.id);
   const saved = await container.profiles.save({
     ownerId: user.id,
     profile: {
       ...parsed.data,
       businessName: parsed.data.businessName ?? '',
       phone: parsed.data.phone ?? '',
-      planExpiresAt: parsed.data.planExpiresAt ?? null,
+      plan: stored?.plan ?? 'free',
+      planExpiresAt: stored?.planExpiresAt ?? null,
     },
   });
   return { ...saved, logoUrl: container.assets.viewUrl(saved.logoFileId) ?? undefined };

@@ -52,6 +52,35 @@ export async function getRow(
 }
 
 /**
+ * Creates a row with an explicit id and permissions. Returns the created row,
+ * or `null` when Appwrite refuses (duplicate id, missing required column, …) —
+ * the same shape contract as {@link getRow}, so a caller can treat `null` as
+ * "did not happen".
+ */
+export async function createRow(
+  auth: { endpoint: string; headers: Record<string, string> },
+  table: TableId,
+  rowId: string,
+  data: Record<string, unknown>,
+  permissions: string[],
+): Promise<(Record<string, unknown> & { $id: string }) | null> {
+  const response = await fetch(
+    `${auth.endpoint}/databases/${DATABASE_ID}/collections/${table}/documents`,
+    {
+      method: 'POST',
+      headers: { ...auth.headers, 'content-type': 'application/json' },
+      body: JSON.stringify({ documentId: rowId, data, permissions }),
+    },
+  );
+  if (!response.ok) return null;
+  try {
+    return (await response.json()) as Record<string, unknown> & { $id: string };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Patches only the keys present in `data`; Appwrite's update endpoint ignores
  * absent keys, which is what lets the payment-proof write touch two columns
  * without carrying (or clobbering) the rest of the row.

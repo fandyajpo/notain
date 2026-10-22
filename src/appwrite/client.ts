@@ -35,3 +35,13 @@ export function getTeams(): Teams {
   teams ??= new Teams(ensureClient());
   return teams;
 }
+
+/**
+ * Short-lived session token for the first-party `/api/*` Functions. Appwrite
+ * expires it in ~15 min, so it is minted per call, never stored — the
+ * Functions verify it with `GET /account` and never see a long-lived secret.
+ */
+export async function mintJwt(): Promise<string> {
+  const { jwt } = await getAccount().createJWT();
+  return jwt;
+}

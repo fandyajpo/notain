@@ -19,7 +19,7 @@ vi.mock('../infra/container', () => ({
   },
 }));
 
-const { removeLogo, uploadLogo } = await import('./profile');
+const { removeLogo, saveProfile, uploadLogo } = await import('./profile');
 const { forgetSession } = await import('./session');
 
 const ALICE: SessionUser = { id: 'user-a', email: 'a@example.com', name: 'Alice' };
@@ -119,6 +119,42 @@ describe('uploadLogo', () => {
     expect(uploadAsset).not.toHaveBeenCalled();
     expect(save).not.toHaveBeenCalled();
     expect(removeAsset).not.toHaveBeenCalled();
+  });
+});
+
+describe('saveProfile', () => {
+  it('keeps the stored plan even when the input carries a different one', async () => {
+    const stored: BusinessProfile = {
+      ...profile(),
+      plan: 'business',
+      planExpiresAt: '2026-11-21T00:00:00.000Z',
+    };
+    getByOwner.mockResolvedValue(stored);
+    save.mockImplementation(async ({ profile: next }: { profile: BusinessProfile }) => next);
+
+    const saved = await saveProfile({ ...profile(), plan: 'free', planExpiresAt: null });
+
+    expect(save).toHaveBeenCalledWith({
+      ownerId: ALICE.id,
+      profile: expect.objectContaining({
+        plan: 'business',
+        planExpiresAt: '2026-11-21T00:00:00.000Z',
+      }),
+    });
+    expect(saved.plan).toBe('business');
+  });
+
+  it('starts a brand-new profile on the free plan', async () => {
+    getByOwner.mockResolvedValue(null);
+    save.mockImplementation(async ({ profile: next }: { profile: BusinessProfile }) => next);
+
+    const saved = await saveProfile({ ...profile(), plan: 'business' });
+
+    expect(save).toHaveBeenCalledWith({
+      ownerId: ALICE.id,
+      profile: expect.objectContaining({ plan: 'free', planExpiresAt: null }),
+    });
+    expect(saved.plan).toBe('free');
   });
 });
 

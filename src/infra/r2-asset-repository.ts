@@ -1,4 +1,4 @@
-import { getAccount } from '../appwrite/client';
+import { mintJwt } from '../appwrite/client';
 import { appErrorFromStatus, toAppError } from '../appwrite/errors';
 import { AppError, ERROR_CODES, GENERIC_ERROR_MESSAGE } from '../core/shared/errors';
 import type { AssetRepository, UploadedAsset, UploadAssetInput } from '../ports/asset-repository';
@@ -78,12 +78,6 @@ export class R2AssetRepository implements AssetRepository {
     if (!fileId) return null;
     return `${logoApiBase()}/${encodeURIComponent(fileId)}`;
   }
-}
-
-/** Short-lived token for the current session; Appwrite expires it in 15 min. */
-async function mintJwt(): Promise<string> {
-  const { jwt } = await getAccount().createJWT();
-  return jwt;
 }
 
 type LogoApiResponse = { fileId?: string; message?: string };

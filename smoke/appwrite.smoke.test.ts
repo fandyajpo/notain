@@ -86,9 +86,16 @@ describe('notain x appwrite', () => {
   });
 
   it('round-trips the business profile', async () => {
+    const before = await getProfile();
     await saveProfile(SAMPLE_BUSINESS);
     const profile = await getProfile();
-    expect(profile).toMatchObject(SAMPLE_BUSINESS);
+    // The sample carries `plan: 'free'`, but a profile save must never write
+    // the plan — otherwise this very test downgrades whatever plan the live
+    // account is on (billing and the admin panel own that field).
+    const { plan: _plan, planExpiresAt: _planExpiresAt, ...business } = SAMPLE_BUSINESS;
+    expect(profile).toMatchObject(business);
+    expect(profile?.plan).toBe(before?.plan ?? 'free');
+    expect(profile?.planExpiresAt).toBe(before?.planExpiresAt ?? null);
   });
 
   it('stores a publicly viewable logo, replaces it, and removes it again', async () => {
