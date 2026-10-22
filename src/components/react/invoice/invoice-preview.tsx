@@ -128,9 +128,17 @@ export function InvoicePreview({
   function renderBlock(block: TemplateBlock): ReactNode {
     switch (block.type) {
       case 'letterhead':
+        // Side-by-side only when there is room for it: on a narrow card the
+        // meta column would otherwise force the business block down to an
+        // ellipsis (`War…`) while long unbreakable lines (an email) spill
+        // right into it. Stacking puts each on its own line at full width, so
+        // nothing truncates and nothing overlaps.
         return (
-          <header className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
+          <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+            {/* `min-w-0` is what lets the business block shrink below its
+                content width; without it the flex item floors at min-content
+                and a nowrap sibling has nowhere to go. */}
+            <div className="flex min-w-0 items-start gap-3">
               {logoUrl ? (
                 /* The box is always 48px (`size-12`): the attributes give the
                    browser an intrinsic size so nothing shifts while the file
@@ -155,23 +163,27 @@ export function InvoicePreview({
                   {businessInitials(issuer)}
                 </span>
               )}
-              <div>
+              <div className="min-w-0">
                 <h2 className="text-lg font-semibold tracking-tight">{issuer || 'Nama usaha'}</h2>
                 {business.address && (
-                  <p className="mt-0.5 text-xs" style={muted}>
+                  <p className="mt-0.5 text-xs break-words" style={muted}>
                     {business.address}
                   </p>
                 )}
                 <p className="mt-0.5 text-xs" style={muted}>
                   {business.phone}
                 </p>
-                <p className="mt-0.5 text-xs" style={muted}>
+                <p className="mt-0.5 text-xs break-words" style={muted}>
                   {business.email}
                 </p>
               </div>
             </div>
 
-            <div className="text-right">
+            {/* The meta column must never squeeze: on a narrow card the
+                business block would otherwise push the number and dates into
+                one-word-per-line wraps. It keeps its width and the left side
+                truncates instead. */}
+            <div className="shrink-0 text-left whitespace-nowrap sm:text-right">
               <p
                 data-preview-part="title"
                 className="text-lg font-semibold tracking-tight transition-colors duration-300"
@@ -254,21 +266,21 @@ export function InvoicePreview({
                 className="text-left text-xs"
                 style={{ borderBottom: `1px solid ${theme.border}`, color: theme.muted }}
               >
-                <th scope="col" className="pb-2 font-medium">
+                <th scope="col" className="pb-2 pr-3 font-medium">
                   Barang
                 </th>
-                <th scope="col" className="pb-2 text-right font-medium">
+                <th scope="col" className="pb-2 pl-2 text-right font-medium">
                   Jumlah
                 </th>
                 {showUnit && (
-                  <th scope="col" className="pb-2 text-left font-medium">
+                  <th scope="col" className="pb-2 pl-2 text-left font-medium">
                     Satuan
                   </th>
                 )}
-                <th scope="col" className="pb-2 text-right font-medium">
+                <th scope="col" className="pb-2 pl-2 text-right font-medium">
                   Harga
                 </th>
-                <th scope="col" className="pb-2 text-right font-medium">
+                <th scope="col" className="pb-2 pl-2 text-right font-medium">
                   Subtotal
                 </th>
               </tr>
@@ -283,15 +295,19 @@ export function InvoicePreview({
               )}
               {invoice.items.map((item) => (
                 <tr key={item.id} style={{ borderBottom: `1px solid ${theme.border}` }}>
+                  {/* On a narrow preview the numeric columns would otherwise
+                      touch and read as one number (`2Rp25.000Rp50.000`), so
+                      every one carries its own left padding rather than
+                      relying on the name column to absorb it. */}
                   <td className="py-2 pr-3">{item.name || <span style={muted}>-</span>}</td>
-                  <td className="py-2 text-right tabular-nums">{item.quantity}</td>
+                  <td className="py-2 pl-2 text-right tabular-nums">{item.quantity}</td>
                   {showUnit && (
-                    <td className="py-2 pl-3 text-left tabular-nums">
+                    <td className="py-2 pl-2 text-left tabular-nums">
                       {item.unit ?? <span style={muted}>-</span>}
                     </td>
                   )}
-                  <td className="py-2 text-right tabular-nums">{formatRupiah(item.unitPrice)}</td>
-                  <td className="py-2 text-right font-medium tabular-nums">
+                  <td className="py-2 pl-2 text-right tabular-nums">{formatRupiah(item.unitPrice)}</td>
+                  <td className="py-2 pl-2 text-right font-medium tabular-nums">
                     {formatRupiah(totals.itemSubtotals[invoice.items.indexOf(item)] ?? 0)}
                   </td>
                 </tr>
