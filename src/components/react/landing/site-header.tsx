@@ -16,7 +16,7 @@ function NavLink({
   className = '',
 }: {
   href: string;
-  /** Current page — stays underlined and bolder instead of waiting for hover. */
+  /** Current page: stays underlined and bolder instead of waiting for hover. */
   active?: boolean;
   children: string;
   className?: string;
@@ -113,7 +113,7 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
   }, [menuOpen]);
 
   // The open drawer is the focused surface: land on its first link, and hand
-  // focus back to the hamburger when it closes. (`wasOpen` — never steal
+  // focus back to the hamburger when it closes. (`wasOpen` never steals
   // focus on the initial page mount.)
   const wasOpen = useRef(false);
   useEffect(() => {

@@ -30,6 +30,14 @@ export function SiteFooter({ anchorPrefix = '' }: Props) {
               <p className="text-eyebrow uppercase text-muted">Produk</p>
               <ul className="mt-3 space-y-2.5">
                 <li>
+                  <a
+                    href={`${anchorPrefix}#fitur`}
+                    className="text-muted transition-colors hover:text-foreground"
+                  >
+                    Fitur
+                  </a>
+                </li>
+                <li>
                   <a href="/pricing" className="text-muted transition-colors hover:text-foreground">
                     Harga
                   </a>
@@ -56,6 +64,14 @@ export function SiteFooter({ anchorPrefix = '' }: Props) {
                     className="text-muted transition-colors hover:text-foreground"
                   >
                     Kenapa Notain
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={`${anchorPrefix}#untuk-siapa`}
+                    className="text-muted transition-colors hover:text-foreground"
+                  >
+                    Untuk siapa
                   </a>
                 </li>
                 <li>

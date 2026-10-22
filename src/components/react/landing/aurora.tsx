@@ -7,7 +7,7 @@ const BLOBS = [
 ];
 
 /**
- * Soft drifting color blobs behind a hero section — the landing page's gradient
+ * Soft drifting color blobs behind a hero section: the landing page's gradient
  * identity. Shared by the homepage hero and the pricing hero so both read as
  * one brand. The graph-paper texture lives on the page, not here.
  */

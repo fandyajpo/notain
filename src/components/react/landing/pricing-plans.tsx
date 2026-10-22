@@ -21,7 +21,7 @@ type Plan = {
 
 /**
  * `?plan=` drives the checkout confirmation page: the plan id survives a
- * login detour there, and the server prices it from its own catalog — the
+ * login detour there, and the server prices it from its own catalog: the
  * price, tagline and benefit strings are display copy, shared with the
  * billing page from `core/billing/plan-benefits`. Free is deliberately NOT a
  * checkout target: free never touches payment.
@@ -126,7 +126,7 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
   );
 }
 
-/** Pricing section: three plan cards — Free forever, Pro for growing businesses, Business for API access. */
+/** Pricing section: three plan cards (Free forever, Pro for growing businesses, Business for API access). */
 export function PricingPlans() {
   return (
     <MotionConfig reducedMotion="user">

@@ -1,31 +1,32 @@
 import { motion, MotionConfig } from 'motion/react';
-import { Calculator, FileText, MessageCircle, ShieldCheck } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { EASE } from './reveal';
 
-const BENEFITS = [
+/**
+ * Everyday problems → Notain's answer, as paired rows rather than a grid of
+ * feature cards: each row names a pain this product's users actually have and
+ * the verified capability that removes it.
+ */
+const PAIRS = [
   {
-    title: 'Diskon & pajak otomatis',
-    description: 'Persen atau nominal, total dihitung sendiri. Tanpa kalkulator.',
-    icon: Calculator,
+    problem: 'Hitungan diskon & pajak yang meleset bikin rugi.',
+    solution: 'Kalkulator otomatis: persen atau nominal, total selalu pas.',
   },
   {
-    title: 'PDF profesional',
-    description: 'Invoice rapi dan siap cetak, lengkap dengan kop dan footer kamu.',
-    icon: FileText,
+    problem: 'File invoice berserakan di galeri dan chat.',
+    solution: 'Semua tersimpan di akun, dibuka dari HP maupun laptop.',
   },
   {
-    title: 'Langsung ke WhatsApp',
-    description: 'Pesan invoice sudah disiapkan, tinggal kirim ke customer.',
-    icon: MessageCircle,
+    problem: 'Kirim nota satu-satu, ribet salin tempel.',
+    solution: 'PDF A4 siap kirim, pesan WhatsApp-nya sudah disiapkan.',
   },
   {
-    title: 'Tersimpan di akun kamu',
-    description: 'Invoice aman di cloud, bisa dibuka dari HP maupun laptop.',
-    icon: ShieldCheck,
+    problem: 'Lupa siapa yang sudah bayar dan siapa yang belum.',
+    solution: 'Status Lunas & Terkirim jelas, bukti bayar menempel di invoicenya.',
   },
-];
+] as const;
 
-/** Dark full-bleed band — the page's contrast beat, between two light sections. */
+/** Dark full-bleed band, the page's contrast beat, between two light sections. */
 export function BenefitsBand() {
   return (
     <MotionConfig reducedMotion="user">
@@ -41,8 +42,8 @@ export function BenefitsBand() {
           className="pointer-events-none absolute -top-32 left-1/2 size-[36rem] -translate-x-1/2 rounded-full bg-accent/20 blur-3xl"
         />
 
-        <div className="relative mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
-          <div className="max-w-xl">
+        <div className="relative mx-auto grid w-full max-w-6xl gap-12 px-5 py-20 sm:px-8 sm:py-28 lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-20">
+          <div>
             <motion.p
               initial={{ opacity: 0, y: 14 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -59,44 +60,42 @@ export function BenefitsBand() {
               transition={{ duration: 0.7, delay: 0.08, ease: EASE }}
               className="mt-3 text-title text-white"
             >
-              Hanya fitur yang bikin invoice kamu lebih cepat sampai ke customer.
+              Masalah sehari-hari yang langsung teratasi.
             </motion.h2>
+            <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true, amount: 0.5 }}
+              transition={{ duration: 0.6, delay: 0.2, ease: EASE }}
+              className="mt-4 max-w-sm text-sm leading-relaxed text-white/55"
+            >
+              Bukan fitur demi fitur, tapi jawaban untuk hal yang selama ini bikin pusing
+              tiap mau tagih pembayaran.
+            </motion.p>
           </div>
 
-          <div className="mt-14 grid gap-px overflow-hidden rounded-card border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
-            {BENEFITS.map(({ title, description, icon: Icon }, index) => (
-              <motion.article
-                key={title}
-                initial={{ opacity: 0, y: 24 }}
+          <ul className="divide-y divide-white/10 border-y border-white/10">
+            {PAIRS.map(({ problem, solution }, index) => (
+              <motion.li
+                key={problem}
+                initial={{ opacity: 0, y: 22 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
+                viewport={{ once: true, amount: 0.4 }}
                 transition={{ duration: 0.55, delay: index * 0.08, ease: EASE }}
-                className="group relative bg-foreground p-6 transition-colors hover:bg-foreground/90"
+                className="py-5 sm:py-6"
               >
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-y-0 -left-full w-full bg-gradient-to-r from-transparent via-white/8 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[200%]"
-                />
-                <span className="relative flex size-10 items-center justify-center rounded-control bg-accent/15 text-accent">
-                  <Icon size={18} aria-hidden="true" />
-                </span>
-                <h3 className="relative mt-5 text-base font-semibold text-white">{title}</h3>
-                <p className="relative mt-1.5 text-sm leading-relaxed text-white/60">
-                  {description}
+                <p className="flex items-start gap-3 text-sm leading-relaxed text-white/45">
+                  <span aria-hidden="true" className="mt-0.5 shrink-0 text-accent/70">
+                    <ArrowRight size={15} />
+                  </span>
+                  {problem}
                 </p>
-              </motion.article>
+                <p className="mt-1.5 pl-[1.6rem] text-base font-medium leading-snug text-white">
+                  {solution}
+                </p>
+              </motion.li>
             ))}
-          </div>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true, amount: 0.6 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="mt-10 text-sm text-white/45"
-          >
-            Data invoice disimpan di akun kamu, bukan di browser ini.
-          </motion.p>
+          </ul>
         </div>
       </section>
     </MotionConfig>

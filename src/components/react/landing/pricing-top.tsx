@@ -7,7 +7,7 @@ import { SiteHeader } from './site-header';
  * holds the page.
  *
  * Mirrors `landing-top.tsx`. The progress bar and the backdrop have to respond
- * to scroll from the first frame, so this island mounts on load — while the
+ * to scroll from the first frame, so this island mounts on load, while the
  * plans and the closing CTA arrive as `client:visible` children and the footer
  * stays a sibling island, keeping the content out of the initial hydration.
  * The dot texture and the page wrapper are plain HTML in `pricing.astro`.

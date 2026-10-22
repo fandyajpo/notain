@@ -5,7 +5,7 @@ export const EASE = [0.22, 1, 0.36, 1] as const;
 
 /**
  * Kept low so tall blocks still trigger. `amount` is the fraction of the
- * element that must be visible — a generous value would strand anything taller
+ * element that must be visible: a generous value would strand anything taller
  * than the viewport at `opacity: 0` forever.
  */
 const VIEWPORT = { once: true, amount: 0.1 } as const;
@@ -18,7 +18,7 @@ type RevealProps = {
   y?: number;
   /**
    * Adds a subtle scale to the fade. Scale and opacity are compositor-only,
-   * so they stay smooth while the page scrolls — unlike `filter: blur()`,
+   * so they stay smooth while the page scrolls, unlike `filter: blur()`,
    * which repaints every frame mid-scroll and causes visible stutter.
    */
   scale?: boolean;

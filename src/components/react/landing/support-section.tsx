@@ -4,7 +4,7 @@ import { SupportForm } from '../support/support-form';
 import { cardClass } from '../ui/card';
 
 /**
- * Support/contact section on the landing page — the form itself, not a link
+ * Support/contact section on the landing page: the form itself, not a link
  * to one, so a reader with a question at the bottom of the page never has to
  * leave it. `/contact` hosts the same component (`source` distinguishes the
  * two in the stored rows).
@@ -19,7 +19,7 @@ export function SupportSection() {
           </p>
           <h2 className="mt-3 text-center text-title">Ada yang bisa kami bantu?</h2>
           <p className="mx-auto mt-4 max-w-xl text-center text-lead text-muted">
-            Pertanyaan soal fitur, plan, atau kendala pemakaian — tulis di sini, kami balas lewat
+            Pertanyaan soal fitur, plan, atau kendala pemakaian: tulis di sini, kami balas lewat
             email.
           </p>
         </Reveal>
@@ -31,7 +31,7 @@ export function SupportSection() {
               <div>
                 <p className="text-sm font-semibold">Kirim pesan ke tim Notain</p>
                 <p className="mt-0.5 text-xs text-muted">
-                  Isi form di bawah — cukup nama, email, dan pesanmu.
+                  Isi form di bawah, cukup nama, email, dan pesanmu.
                 </p>
               </div>
             </div>

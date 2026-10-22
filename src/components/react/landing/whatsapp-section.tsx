@@ -48,7 +48,7 @@ function PhoneChat({ businessName, message, fileName }: PhoneChatProps) {
           transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
         />
 
-        {/* Device mockup: the frame/screen radii mimic a phone body — deliberate
+        {/* Device mockup: the frame/screen radii mimic a phone body, deliberate
             hardware chrome, not app-card radii (rounded-card/control/item). */}
         <div className="rounded-[2.5rem] border border-border bg-foreground p-2 shadow-modal">
           <div className="relative overflow-hidden rounded-[2rem] bg-background">
@@ -72,7 +72,7 @@ function PhoneChat({ businessName, message, fileName }: PhoneChatProps) {
               <Phone size={15} aria-hidden="true" className="ml-auto shrink-0 text-muted" />
             </div>
 
-            {/* Chat wallpaper: 14px radial dot grid, foreground-tinted —
+            {/* Chat wallpaper: 14px radial dot grid, foreground-tinted,
                 part of the messaging mockup, not the app texture. */}
             <motion.div
               initial="hidden"

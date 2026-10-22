@@ -18,7 +18,7 @@ type Props = {
  * header, and the hero. Hydrates immediately (`client:load`) because the
  * header's scrolled state and the progress bar react from the first frame.
  *
- * The page-wide dot texture stays in `index.astro` — it is pure HTML and
+ * The page-wide dot texture stays in `index.astro`, since it is pure HTML and
  * belongs to the wrapper both islands share.
  */
 export function LandingTop({ children }: Props) {
@@ -42,8 +42,8 @@ export function LandingTop({ children }: Props) {
             <Hero
               ctaHref="/register"
               ctaLabel="Buat Invoice Gratis"
-              secondaryHref="#cara-kerja"
-              secondaryLabel="Lihat cara kerjanya"
+              secondaryHref="#fitur"
+              secondaryLabel="Lihat fiturnya"
             />
           </section>
 

@@ -19,7 +19,9 @@ test('landing page renders and hydrates without errors', async ({ page }) => {
   await expect(page.getByRole('banner').getByRole('link', { name: 'Masuk' })).toBeVisible({
     timeout: 15_000,
   });
-  await expect(page.getByRole('heading', { name: 'Bikin invoice. Kirim. Selesai.' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Urus invoice lebih rapi. Fokus kembangkan usaha.' }),
+  ).toBeVisible();
   await expect(page.locator('[data-rich-output]').first()).toBeVisible();
   await expect(page.getByRole('link', { name: 'Buat Invoice Gratis' }).first()).toBeVisible();
 

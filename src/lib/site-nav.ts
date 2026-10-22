@@ -37,11 +37,10 @@ export type SiteNavLink = {
  */
 export function siteNavLinks(anchorPrefix: string): SiteNavLink[] {
   return [
-    { href: `${anchorPrefix}#cara-kerja`, label: 'Cara kerja', show: 'sm' },
-    { href: `${anchorPrefix}#whatsapp`, label: 'WhatsApp', show: 'sm' },
-    { href: `${anchorPrefix}#kenapa`, label: 'Kenapa Notain', show: 'always' },
-    { href: `${anchorPrefix}#faq`, label: 'FAQ', show: 'md' },
+    { href: `${anchorPrefix}#fitur`, label: 'Fitur', show: 'always' },
+    { href: `${anchorPrefix}#cara-kerja`, label: 'Cara kerja', show: 'always' },
     { href: '/pricing', label: 'Harga', show: 'sm' },
+    { href: `${anchorPrefix}#faq`, label: 'FAQ', show: 'md' },
     { href: '/login', label: 'Masuk', show: 'always' },
   ];
 }

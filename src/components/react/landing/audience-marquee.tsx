@@ -20,7 +20,7 @@ const AUDIENCES = [
   { label: 'Developer', icon: Cpu },
 ];
 
-/** Infinite marquee of who Notain is for — the page's "this is you" moment. */
+/** Infinite marquee of who Notain is for: the page's "this is you" moment. */
 export function AudienceMarquee() {
   const loop = [...AUDIENCES, ...AUDIENCES];
 

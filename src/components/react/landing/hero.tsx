@@ -38,7 +38,7 @@ function Eyebrow({ delay }: { delay: number }) {
         />
         <span className="relative size-1.5 rounded-full bg-accent" />
       </span>
-      Untuk UMKM Indonesia
+      Untuk UMKM & freelancer Indonesia
     </motion.span>
   );
 }
@@ -54,7 +54,7 @@ function PreviewStage() {
 
   return (
     <div className="relative mx-auto w-full max-w-lg">
-      {/* Glow pulse behind the preview — brand identity. The 2.5rem radius
+      {/* Glow pulse behind the preview, the brand identity. The 2.5rem radius
           echoes the invoice card silhouette under the 3xl blur. */}
       <motion.div
         aria-hidden="true"
@@ -166,7 +166,7 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
         {/* Everything in the first viewport uses `initial={false}` /
             `immediate`, so the server HTML already shows it at full size.
             The staged entrance that used to run here delayed the page's
-            largest paint until the island hydrated — the sections below the
+            largest paint until the island hydrated, so the sections below the
             fold keep theirs (they animate through `Reveal`). Ambient loops
             (aurora, pulse, float) are untouched: they never start hidden. */}
         <div className="flex justify-center">
@@ -184,10 +184,10 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
         <div className="text-center">
           <Eyebrow delay={0.05} />
 
-          <h1 className="mx-auto mt-6 max-w-3xl text-[clamp(2.75rem,7vw,4.25rem)] font-semibold leading-[1.03] tracking-[-0.035em]">
-            <SplitWords text="Bikin invoice." className="block" delay={0.16} immediate />
+          <h1 className="mx-auto mt-6 max-w-3xl text-[clamp(2.5rem,6.5vw,4.25rem)] font-semibold leading-[1.03] tracking-[-0.035em]">
+            <SplitWords text="Urus invoice lebih rapi." className="block" delay={0.16} immediate />
             <SplitWords
-              text="Kirim. Selesai."
+              text="Fokus kembangkan usaha."
               className="block text-accent"
               delay={0.34}
               immediate
@@ -200,8 +200,9 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
             transition={{ duration: 0.6, delay: 0.6, ease: EASE }}
             className="mx-auto mt-6 max-w-xl text-lead text-muted"
           >
-            Buat invoice profesional untuk bisnis kamu, atur diskon dan pajaknya, download PDF-nya,
-            lalu kirim ke customer langsung lewat WhatsApp.
+            Buat invoice profesional, kelola pelanggan, dan simpan dokumen tagihan dalam satu
+            platform yang praktis, lebih mudah mengatur pekerjaan, lebih siap melayani
+            pelanggan.
           </motion.p>
 
           <motion.div
