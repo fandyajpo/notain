@@ -1,0 +1,197 @@
+---
+import Layout from '../layouts/Layout.astro';
+import SiteHeader from '../components/ui/SiteHeader.astro';
+import SiteFooter from '../components/ui/SiteFooter.astro';
+import { INDUSTRY_PAGES, type SeoIndustryPage } from '../core/seo/industries';
+
+/**
+ * The eight industry SEO pages: `/katering`, `/desainer`, `/developer`,
+ * `/warung`, `/online-shop`, `/freelancer`, `/jasa-servis`, `/salon`.
+ *
+ * One dynamic route instead of eight files — the copy lives as data in
+ * `core/seo/industries.ts`, so every page gets its own content while the
+ * markup, sections and structured data stay identical (no copy drift between
+ * siblings). Static routes (`/login`, `/pricing`, …) outrank `[slug]` in
+ * Astro, and anything unmatched is simply not generated — it 404s like today.
+ *
+ * These pages are indexable by design: each slug is on the
+ * `INDEXABLE_ROUTES` allowlist in `lib/seo.ts` (checked by
+ * `core/seo/industries.test.ts`), which is what gives them a canonical, an
+ * `index` directive, and — via the post-build sitemap pass — a sitemap entry.
+ * The per-business pages at `/site/<ownerId>` stay `noindex`; that contract
+ * is untouched here.
+ */
+
+export function getStaticPaths() {
+  return INDUSTRY_PAGES.map((page) => ({ params: { slug: page.slug }, props: { page } }));
+}
+
+interface Props {
+  page: SeoIndustryPage;
+}
+
+const { page } = Astro.props;
+
+/** FAQPage structured data — mirrors the visible FAQ exactly (schema.org rule). */
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: page.faq.map((item) => ({
+    '@type': 'Question',
+    name: item.question,
+    acceptedAnswer: { '@type': 'Answer', text: item.answer },
+  })),
+};
+
+const others = INDUSTRY_PAGES.filter((candidate) => candidate.slug !== page.slug);
+
+const H2 = 'text-section mt-14';
+const CARD = 'rounded-card border border-border bg-card p-5 shadow-card';
+const MUTED_LINK = 'font-medium text-foreground underline underline-offset-2 hover:text-muted';
+---
+
+<Layout title={page.title} description={page.description}>
+  <!-- Same static shell as ContentPage (dot texture, marketing header, shared
+       footer) but a wider column: this page carries card grids, not prose. -->
+  <div class="min-h-screen overflow-x-clip">
+    <div
+      aria-hidden="true"
+      class="pointer-events-none fixed inset-0 -z-10 texture-dots [mask-image:linear-gradient(to_bottom,transparent,black_8%,black_92%,transparent)]"
+    ></div>
+
+    <SiteHeader anchorPrefix="/" />
+
+    <main id="konten" tabindex="-1" class="mx-auto w-full max-w-5xl px-5 py-16 sm:px-8">
+      <!-- Hero -->
+      <p class="text-eyebrow uppercase text-muted">Untuk {page.label}</p>
+      <h1 class="text-display mt-2">{page.h1}</h1>
+      <p class="text-lead mt-4 max-w-2xl text-muted">{page.heroLead}</p>
+      <div class="mt-7 flex flex-wrap gap-3">
+        <a
+          href="/register"
+          class="inline-flex items-center gap-2 rounded-control bg-accent px-5 py-3 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-ring"
+        >
+          Daftar gratis
+        </a>
+        <a
+          href="/pricing"
+          class="inline-flex items-center gap-2 rounded-control border border-border bg-card px-5 py-3 text-sm font-medium shadow-card transition-colors hover:bg-background focus-ring"
+        >
+          Lihat harga
+        </a>
+      </div>
+
+      <!-- Features -->
+      <h2 class="text-section mt-12">Fitur yang paling kepakai</h2>
+      <ul class="mt-4 grid gap-4 sm:grid-cols-3">
+        {
+          page.features.map((feature) => (
+            <li class={CARD}>
+              <p class="font-semibold">{feature.title}</p>
+              <p class="mt-2 text-sm leading-relaxed text-muted">{feature.body}</p>
+            </li>
+          ))
+        }
+      </ul>
+
+      <!-- Workflow -->
+      <h2 class={H2}>Cara kerjanya</h2>
+      <ol class="mt-4 grid gap-4 sm:grid-cols-3">
+        {
+          page.workflow.map((step, index) => (
+            <li class={CARD}>
+              <span class="inline-flex size-7 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">
+                {index + 1}
+              </span>
+              <p class="mt-3 text-sm leading-relaxed">{step}</p>
+            </li>
+          ))
+        }
+      </ol>
+
+      <!-- Example nota — illustrative lines, labelled as such -->
+      <h2 class={H2}>Contoh nota yang jadi</h2>
+      <div class="mt-4 max-w-xl rounded-card border border-border bg-card p-5 shadow-card">
+        <div class="flex items-baseline justify-between border-b border-border pb-3">
+          <span class="font-semibold">Nota — contoh</span>
+          <span class="text-xs text-muted">Rupiah</span>
+        </div>
+        <ul class="mt-3 space-y-2 text-sm text-muted">
+          {page.exampleLines.map((line) => <li>{line}</li>)}
+        </ul>
+        <p class="mt-4 border-t border-border pt-3 text-xs text-muted">{page.exampleNote}</p>
+      </div>
+
+      <!-- Pain -->
+      <h2 class={H2}>Masalah yang sering terjadi</h2>
+      <p class="mt-3 max-w-2xl text-sm leading-relaxed text-muted">{page.pain}</p>
+
+      <!-- FAQ (rendered identically into FAQPage JSON-LD below) -->
+      <h2 class={H2}>Pertanyaan yang sering muncul</h2>
+      <dl class="mt-4 max-w-2xl space-y-5">
+        {
+          page.faq.map((item) => (
+            <div>
+              <dt class="font-semibold">{item.question}</dt>
+              <dd class="mt-1.5 text-sm leading-relaxed text-muted">{item.answer}</dd>
+            </div>
+          ))
+        }
+      </dl>
+
+      <!-- Closing CTA -->
+      <div class="mt-14 rounded-card border border-border bg-card p-8 text-center shadow-card">
+        <h2 class="text-section">Mulai gratis, nota pertama hari ini</h2>
+        <p class="mx-auto mt-2 max-w-xl text-sm text-muted">
+          Tidak perlu kartu kredit dan tidak perlu install — Notain dibuka langsung dari browser,
+          di HP maupun desktop.
+        </p>
+        <div class="mt-5 flex flex-wrap justify-center gap-3">
+          <a
+            href="/register"
+            class="inline-flex items-center gap-2 rounded-control bg-accent px-5 py-3 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-ring"
+          >
+            Buat akun gratis
+          </a>
+          <a
+            href="/pricing"
+            class="inline-flex items-center gap-2 rounded-control border border-border bg-card px-5 py-3 text-sm font-medium shadow-card transition-colors hover:bg-background focus-ring"
+          >
+            Bandingkan plan
+          </a>
+        </div>
+      </div>
+
+      <!-- Cross-links: the eight pages link each other, keeping every one of
+           them discoverable from the rest of the cluster. -->
+      <nav aria-label="Industri lain" class="mt-10">
+        <p class="text-eyebrow uppercase text-muted">Industri lain</p>
+        <ul class="mt-3 flex flex-wrap gap-2">
+          {
+            others.map((other) => (
+              <li>
+                <a
+                  href={`/${other.slug}/`}
+                  class="inline-flex rounded-control border border-border bg-card px-3.5 py-1.5 text-sm shadow-card transition-colors hover:bg-background focus-ring"
+                >
+                  {other.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      <p class="mt-10 text-sm text-muted">
+        Sudah punya usaha lain? Lihat juga <a href="/pricing" class={MUTED_LINK}>harga Notain</a> dan
+        <a href="/" class={MUTED_LINK}>kenapa Notain</a>.
+      </p>
+
+      <script
+        type="application/ld+json"
+        set:html={JSON.stringify(jsonLd).replace(/</g, '\u003c')} />
+    </main>
+
+    <SiteFooter anchorPrefix="/" />
+  </div>
+</Layout>

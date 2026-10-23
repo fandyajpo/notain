@@ -42,6 +42,18 @@ const INDEXABLE_ROUTES = new Set([
   '/pricing/',
   '/privacy/',
   '/terms/',
+  // The eight industry pages (`src/core/seo/industries.ts`, rendered by
+  // `src/pages/[slug].astro`) — the one cluster someone deliberately puts in
+  // front of search engines. Its slugs are checked against this list by
+  // `src/core/seo/industries.test.ts`, so a page cannot ship unlisted.
+  '/katering/',
+  '/desainer/',
+  '/developer/',
+  '/warung/',
+  '/online-shop/',
+  '/freelancer/',
+  '/jasa-servis/',
+  '/salon/',
 ]);
 
 /**
