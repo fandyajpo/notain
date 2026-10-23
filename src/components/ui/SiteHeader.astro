@@ -15,16 +15,24 @@ const isCurrent = (href: string) => isActiveSiteLink(current, href);
 const DESKTOP_LINK = 'site-nav-link relative px-3 py-2 text-sm transition-colors focus-ring';
 const MOBILE_LINK =
   'site-mobile-link block rounded-control px-3 py-2.5 text-base transition-colors focus-ring';
+
+/**
+ * The sticky marketing header as a static Astro component.
+ *
+ * Same shell, links, active state and drawer behaviour as the React
+ * `landing/site-header.tsx` — but no hydration at all, which is what keeps the
+ * content pages (terms, privacy, blog, developers, 404, and the eight industry
+ * SEO pages) free of the React and motion runtimes. The React twin stays on
+ * `/` and `/pricing`, where the scroll-driven backdrop and springy hovers are
+ * part of the design.
+ *
+ * Everything dynamic lives in the script at the bottom and is delegated from
+ * `document`/`window`, so it survives Astro's ClientRouter swapping this markup
+ * on a soft navigation. Active links are resolved from `Astro.url` at build
+ * time; a soft navigation brings the next page's markup with it.
+ */
 ---
 
-/** * The sticky marketing header as a static Astro component. * * Same shell, links, active state
-and drawer behaviour as the React * `landing/site-header.tsx` — but no hydration at all, which is
-what keeps the * content pages (terms, privacy, blog, developers, 404) free of the React and *
-motion runtimes. The React twin stays on `/` and `/pricing`, where the * scroll-driven backdrop and
-springy hovers are part of the design. * * Everything dynamic lives in the script at the bottom and
-is delegated from * `document`/`window`, so it survives Astro's ClientRouter swapping this markup *
-on a soft navigation. Active links are resolved from `Astro.url` at build * time; a soft navigation
-brings the next page's markup with it. */
 <header data-site-header class="site-header sticky top-0 z-40 border-b transition-colors">
   <div class="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 sm:px-8">
     <a

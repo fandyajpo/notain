@@ -40,11 +40,15 @@ const columns: { heading: string; items: { href: string; label: string }[] }[] =
     ],
   },
 ];
+
+/**
+ * Static twin of the React `landing/site-footer.tsx`, same as SiteHeader.astro
+ * is for the header: identical structure and copy, zero hydration. Used by
+ * ContentPage on the static content pages; the React version stays on `/` and
+ * `/pricing`.
+ */
 ---
 
-/** * Static twin of the React `landing/site-footer.tsx`, same as SiteHeader.astro * is for the
-header: identical structure and copy, zero hydration. Used by * ContentPage on the static content
-pages; the React version stays on `/` and * `/pricing`. */
 <footer class="border-t border-border bg-card">
   <div class="mx-auto flex w-full max-w-6xl flex-col gap-8 px-5 py-12 sm:px-8">
     <div class="flex flex-col gap-10 sm:flex-row sm:justify-between">
