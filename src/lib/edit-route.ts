@@ -24,6 +24,12 @@ export const INVOICE_RESERVED_SEGMENTS: ReadonlySet<string> = new Set(['new', 'p
 export const TEMPLATE_RESERVED_SEGMENTS: ReadonlySet<string> = new Set(['new', 'edit']);
 
 /**
+ * `/site/` has no reserved segments: every valid segment under it is an
+ * owner id, and the bare `/site` shell is served without one.
+ */
+const SITE_RESERVED_SEGMENTS: ReadonlySet<string> = new Set();
+
+/**
  * A query-string id that could name a real resource, i.e. one the app would
  * treat as an id rather than a reserved segment. Used both to read the address
  * bar and to fold the older `?id=` links onto the canonical route.
@@ -77,6 +83,17 @@ function segmentAfter(location: PageLocation, prefix: string, reserved: Readonly
   const rest = location.pathname.slice(prefix.length + 1).replace(/\/+$/, '');
   if (!rest || rest.includes('/') || reserved.has(rest)) return undefined;
   return ID_SEGMENT_PATTERN.test(rest) ? rest : undefined;
+}
+
+/**
+ * The owner whose public business page this is: `/site/<ownerId>`.
+ *
+ * The owner id doubles as the capability credential (see
+ * `functions/api/site/[id].ts`), so unlike the editor routes there is no
+ * `?id=` fallback — the path is the only address the page has.
+ */
+export function siteIdFromLocation(location: PageLocation): string | undefined {
+  return segmentAfter(location, '/site', SITE_RESERVED_SEGMENTS);
 }
 
 /** The invoice being edited, from `/invoice/<id>` or the older `?id=` form. */

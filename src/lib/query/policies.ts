@@ -81,6 +81,11 @@ export const QUERY_POLICIES = {
   // Team membership is fixed for the session's lifetime; a very long staleTime
   // avoids re-hitting Appwrite on every navigation.
   adminMembership: { staleTime: 10 * 60_000, gcTime: 30 * 60_000 },
+  // The public business page (`/site/<ownerId>`) changes exactly when the
+  // owner edits their profile — and a previewing owner reloads, which refetches
+  // regardless of staleness — so this window only decides how long a returning
+  // visitor's tab may paint from cache before re-reading.
+  publicSite: { staleTime: 30_000, gcTime: 30 * 60_000 },
   // Payment status flips exactly once, driven by the DOKU notification. The
   // result page re-reads on a `refetchInterval` while the order is pending
   // (interval refetches ignore staleness), so staleTime here only decides how

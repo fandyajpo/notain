@@ -58,7 +58,8 @@ export type LimitName =
   | 'proof-upload'
   | 'proof-upload-owner'
   | 'logo-upload'
-  | 'checkout';
+  | 'checkout'
+  | 'site';
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -79,6 +80,11 @@ const DEFAULT_LIMITS: Record<LimitName, { limit: number; windowMs: number }> = {
   'proof-upload-owner': { limit: 30, windowMs: HOUR },
   'logo-upload': { limit: 10, windowMs: HOUR },
   checkout: { limit: 10, windowMs: HOUR },
+  // The public business page is a *read*, but an expensive one: every hit is
+  // a profile row plus a catalog list (up to a hundred rows counted per row
+  // against the Appwrite read quota). The fence stops a flood from burning
+  // read quota; 60/min is far above what one real visitor's page load costs.
+  site: { limit: 60, windowMs: MINUTE },
 };
 
 const LIMIT_ENV_OVERRIDES: Record<LimitName, string> = {
@@ -89,6 +95,7 @@ const LIMIT_ENV_OVERRIDES: Record<LimitName, string> = {
   'proof-upload-owner': 'QUOTA_LIMIT_PROOF_OWNER_PER_HOUR',
   'logo-upload': 'QUOTA_LIMIT_LOGO_PER_HOUR',
   checkout: 'QUOTA_LIMIT_CHECKOUT_PER_HOUR',
+  site: 'QUOTA_LIMIT_SITE_PER_MINUTE',
 };
 
 /** Reads `env[name]` as a positive integer, else `fallback`. */

@@ -4,6 +4,7 @@ import {
   invoiceIdFromLocation,
   isInvoiceBuilderPath,
   printInvoiceIdFromLocation,
+  siteIdFromLocation,
   templateEditCanonicalTarget,
   templateEditorTargetFromLocation,
 } from './edit-route';
@@ -45,6 +46,25 @@ describe('invoiceIdFromLocation', () => {
     expect(invoiceIdFromLocation(at('/invoice/has space'))).toBeUndefined();
     expect(invoiceIdFromLocation(at('/dashboard'))).toBeUndefined();
     expect(invoiceIdFromLocation(at('/invoices'))).toBeUndefined();
+  });
+});
+
+describe('siteIdFromLocation', () => {
+  it('reads the owner id out of the public page path', () => {
+    expect(siteIdFromLocation(at('/site/user_abc-123'))).toBe('user_abc-123');
+    expect(siteIdFromLocation(at('/site/user_abc-123/'))).toBe('user_abc-123');
+    expect(siteIdFromLocation(at('/site/user_abc-123?x=1'))).toBe('user_abc-123');
+  });
+
+  it('leaves the bare shell and any deeper path without an id', () => {
+    // The bare `/site` shell still answers — the app explains the incomplete
+    // link instead of inventing a page.
+    expect(siteIdFromLocation(at('/site'))).toBeUndefined();
+    expect(siteIdFromLocation(at('/site/'))).toBeUndefined();
+    expect(siteIdFromLocation(at('/site/a/b'))).toBeUndefined();
+    expect(siteIdFromLocation(at('/site/has space'))).toBeUndefined();
+    expect(siteIdFromLocation(at('/sites/abc'))).toBeUndefined();
+    expect(siteIdFromLocation(at('/dashboard'))).toBeUndefined();
   });
 });
 

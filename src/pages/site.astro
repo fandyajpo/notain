@@ -1,0 +1,16 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { SiteApp } from '../components/react/site/site-app';
+---
+
+<Layout title="Halaman Usaha | Notain">
+  <main id="konten" tabindex="-1">
+    <!-- The island is `client:only`, so it ships no HTML of its own: the
+         heading has to live in the shell for the document to have one before
+         (and regardless of) hydration. Every per-business section below is
+         rendered from the owner's payload, so there is nothing static to SSR —
+         the same contract as `/invoice/print`. -->
+    <h1 class="sr-only">Halaman usaha</h1>
+    <SiteApp client:only="react" />
+  </main>
+</Layout>

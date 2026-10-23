@@ -8,19 +8,20 @@ import vue from '@astrojs/vue';
 import tailwindcss from '@tailwindcss/vite';
 
 /**
- * `/invoice/<id>` and `/templates/<id>` are served by Pages Functions in
- * production; `astro dev` never reads `functions/`, so locally they would 404.
- * This is their dev twin: the request is rewritten to the same shell the
- * function would have served, the address bar is left alone, and every other
- * path — including `/invoice/new`, `/invoice/print` and `/templates/new` — goes
- * to the dev server untouched. The older `…/edit` links get the same real
- * redirect the functions send in production.
+ * `/invoice/<id>`, `/templates/<id>` and `/site/<ownerId>` are served by Pages
+ * Functions in production; `astro dev` never reads `functions/`, so locally
+ * they would 404. This is their dev twin: the request is rewritten to the same
+ * shell the function would have served, the address bar is left alone, and
+ * every other path — including `/invoice/new`, `/invoice/print` and
+ * `/templates/new` — goes to the dev server untouched. The older `…/edit`
+ * links get the same real redirect the functions send in production.
  *
  * The rules below are duplicated on purpose: `astro.config.mjs` is Node ESM
  * and cannot import the TypeScript shared by the functions and the app. Keep
  * the segment sets, the id pattern and the redirect targets in step with
- * `functions/invoice/[[id]].ts`, `functions/templates/[[id]].ts` and
- * `src/lib/edit-route.ts`; `e2e/edit-routes.spec.ts` covers both halves.
+ * `functions/invoice/[[id]].ts`, `functions/templates/[[id]].ts`,
+ * `functions/site/[[id]].ts` and `src/lib/edit-route.ts`;
+ * `e2e/edit-routes.spec.ts` covers both halves.
  */
 const ID_SEGMENT = /^[A-Za-z0-9_-]{1,64}$/;
 
@@ -94,6 +95,15 @@ function editRouteFallback() {
           const printMatch = /^\/invoice\/print\/([^/]+)\/?$/.exec(path);
           if (printMatch) {
             if (ID_SEGMENT.test(printMatch[1])) req.url = '/invoice/print';
+            return next();
+          }
+
+          // `/site/<ownerId>` — the public business page. Same shell trick:
+          // only a valid id segment rewrites (to the site shell), and the bare
+          // `/site/` or any deeper path goes to the dev server untouched.
+          const siteMatch = /^\/site\/([^/]+)\/?$/.exec(path);
+          if (siteMatch) {
+            if (ID_SEGMENT.test(siteMatch[1])) req.url = '/site';
             return next();
           }
 

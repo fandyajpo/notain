@@ -148,7 +148,7 @@ export function ProfileForm({ profile }: Props) {
 
       <BusinessTypeField
         value={isBusinessSubtypeSlug(businessType) ? businessType : null}
-        description="Dipakai untuk mengelompokkan template dan mengisi contoh invoice."
+        description="Dipakai untuk mengelompokkan template, mengisi contoh invoice, dan menentukan tampilan halaman usaha publik."
         onChange={(slug) => form.setFieldValue('businessType', slug ?? '')}
       />
 

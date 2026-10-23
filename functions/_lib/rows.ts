@@ -1,4 +1,5 @@
 import { count, quotaPolicy } from './quota';
+import { querySearchAll } from './appwrite';
 import type { Env } from './types';
 
 /**
@@ -14,7 +15,7 @@ import type { Env } from './types';
 
 const DATABASE_ID = 'notain_db';
 
-export type TableId = 'invoices' | 'profiles' | 'templates' | 'payments';
+export type TableId = 'invoices' | 'profiles' | 'templates' | 'payments' | 'catalog';
 
 /** API-key headers against Appwrite, or `null` when the env is incomplete. */
 export type TableAuth = { endpoint: string; headers: Record<string, string> };
@@ -78,6 +79,57 @@ export async function getRow(
 /** Wall-clock sleep — I/O wait, which does not count against the 10 ms CPU budget. */
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** One Appwrite query, ready for {@link listRows}. */
+export type ListQuery = { method: string; values: unknown[]; attribute?: string | null };
+
+/**
+ * Lists rows through `queries` (same JSON-object form as {@link querySearchAll}'s
+ * callers), honouring Appwrite's pagination shape.
+ *
+ * Returns `null` when Appwrite refuses or the request dies — deliberately
+ * *not* merged into `[]`: "the provider failed" and "there are no rows" are
+ * different answers, and a caller that renders an empty list on an outage
+ * lies to its users. On success an empty `documents` array comes back as `[]`.
+ *
+ * Retries follow {@link getRow}'s contract: reads are idempotent, so network
+ * errors and 5xx get a bounded exponential backoff while 4xx never retry.
+ */
+export async function listRows(
+  auth: { endpoint: string; headers: Record<string, string> },
+  table: TableId,
+  queries: readonly ListQuery[],
+  env?: Env,
+): Promise<Array<Record<string, unknown> & { $id: string }> | null> {
+  const policy = quotaPolicy(env);
+  const url = `${auth.endpoint}/databases/${DATABASE_ID}/collections/${table}/documents?${querySearchAll(queries)}`;
+
+  for (let attempt = 0; ; attempt += 1) {
+    let response: Response;
+    try {
+      response = await fetch(url, { headers: auth.headers });
+    } catch {
+      if (attempt >= policy.appwriteReadRetries) return null;
+      count('appwrite.read.retry');
+      await sleep(policy.appwriteRetryBaseDelayMs * 2 ** attempt);
+      continue;
+    }
+    if (!response.ok && response.status >= 500 && attempt < policy.appwriteReadRetries) {
+      count('appwrite.read.retry');
+      await sleep(policy.appwriteRetryBaseDelayMs * 2 ** attempt);
+      continue;
+    }
+    if (!response.ok) return null;
+    try {
+      const data = (await response.json()) as {
+        documents?: Array<Record<string, unknown> & { $id: string }>;
+      };
+      return Array.isArray(data.documents) ? data.documents : [];
+    } catch {
+      return null;
+    }
+  }
 }
 
 /**

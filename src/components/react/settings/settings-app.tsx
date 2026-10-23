@@ -58,6 +58,30 @@ function SettingsContent() {
         )}
       </div>
 
+      {profile?.businessName && session?.id && (
+        <Card>
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-medium">Halaman usaha publik</p>
+              <p className="text-sm text-muted">
+                Tampilannya mengikuti tipe usaha yang dipilih di atas. Bagikan tautan ini ke
+                pelanggan untuk membuka halamannya.
+              </p>
+              <p className="mt-1 font-mono text-xs text-muted">/site/{session.id}</p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              href={`/site/${session.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Buka halaman
+            </Button>
+          </div>
+        </Card>
+      )}
+
       <Card data-tour="settings-tour">
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>

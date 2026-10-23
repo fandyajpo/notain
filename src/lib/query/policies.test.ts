@@ -101,6 +101,7 @@ describe('QUERY_POLICIES', () => {
         'paymentStatus',
         'portalSession',
         'profile',
+        'publicSite',
         'session',
         'stats',
         'templates',
