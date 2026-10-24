@@ -213,6 +213,7 @@ export function InvoiceTable() {
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
+    isPlaceholderData,
   } = useInvoices(search, { status: statusFilter, templateId: templateFilter });
   const { data: savedTemplates } = useTemplates();
   const deleteInvoice = useDeleteInvoice();
@@ -717,7 +718,7 @@ export function InvoiceTable() {
           }
         />
       ) : (
-        <div data-tour="invoices-table" className={TABLE_SHELL}>
+        <div data-tour="invoices-table" className={TABLE_SHELL} aria-busy={isFetching}>
           <table className={TABLE} style={{ minWidth: '640px' }}>
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -789,7 +790,7 @@ export function InvoiceTable() {
         </div>
       )}
 
-      {invoices.length > 0 && hasNextPage && (
+      {invoices.length > 0 && hasNextPage && !isPlaceholderData && (
         <div className="flex justify-center">
           <Button
             variant="secondary"

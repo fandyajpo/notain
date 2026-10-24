@@ -1,4 +1,5 @@
 import {
+  keepPreviousData,
   useInfiniteQuery,
   useMutation,
   useQuery,
@@ -50,6 +51,13 @@ export function useInvoices(
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     ...queryPolicy('invoices'),
+    // A search or filter change is a *new* key; without this the table drops
+    // to a full-card spinner on every debounced keystroke. Previous results
+    // stay on screen until the new ones land (`isPlaceholderData` in
+    // invoice-table hides "Muat lebih banyak" meanwhile, so the old query can
+    // never be paged under the new key), and a first-ever visit still shows
+    // the normal loading state — there is nothing to fall back to.
+    placeholderData: keepPreviousData,
   });
 }
 
