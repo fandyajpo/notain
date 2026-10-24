@@ -61,7 +61,10 @@ export default function SalonTemplate({ site, items }: SiteTemplateProps) {
       </header>
 
       <section className="mx-auto max-w-4xl px-5 py-16 text-center sm:py-20">
-        <span aria-hidden="true" className="mx-auto block h-10 w-px bg-[color:var(--site-accent)]" />
+        <span
+          aria-hidden="true"
+          className="mx-auto block h-10 w-px bg-[color:var(--site-accent)]"
+        />
         <p className="mt-4 text-xs font-semibold tracking-[0.3em] text-[color:var(--site-accent)] uppercase">
           {INDUSTRY_LABELS.salon}
         </p>
@@ -102,7 +105,10 @@ export default function SalonTemplate({ site, items }: SiteTemplateProps) {
                     className="flex items-baseline gap-2 border-b border-dotted border-[color:var(--site-line)] py-3.5"
                   >
                     <span className="font-serif">{item.name}</span>
-                    <span aria-hidden="true" className="min-w-4 flex-1 self-center border-b border-dotted border-[color:var(--site-line)]" />
+                    <span
+                      aria-hidden="true"
+                      className="min-w-4 flex-1 self-center border-b border-dotted border-[color:var(--site-line)]"
+                    />
                     <span className="shrink-0 text-sm font-semibold whitespace-nowrap">
                       {price?.price ?? CONTACT_FOR_PRICE}
                     </span>
@@ -158,14 +164,23 @@ export default function SalonTemplate({ site, items }: SiteTemplateProps) {
                 const Icon = row.icon;
                 const body = (
                   <span className="flex gap-3">
-                    <Icon size={16} className="mt-0.5 shrink-0 text-[color:var(--site-accent)]" aria-hidden="true" />
+                    <Icon
+                      size={16}
+                      className="mt-0.5 shrink-0 text-[color:var(--site-accent)]"
+                      aria-hidden="true"
+                    />
                     <span className="break-words">{row.text}</span>
                   </span>
                 );
                 return (
                   <li key={row.text}>
                     {row.href ? (
-                      <a href={row.href} target="_blank" rel="noopener noreferrer" className="hover:text-[color:var(--site-accent)] hover:underline">
+                      <a
+                        href={row.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-[color:var(--site-accent)] hover:underline"
+                      >
                         {body}
                       </a>
                     ) : (
@@ -175,7 +190,9 @@ export default function SalonTemplate({ site, items }: SiteTemplateProps) {
                 );
               })}
               {rows.length === 0 && (
-                <li className="text-[color:var(--site-muted)]">Belum ada kontak yang dipublikasikan.</li>
+                <li className="text-[color:var(--site-muted)]">
+                  Belum ada kontak yang dipublikasikan.
+                </li>
               )}
             </ul>
           </div>

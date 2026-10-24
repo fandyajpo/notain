@@ -40,7 +40,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       provider: PROVIDER_LIMITS,
       dashboards: {
         cloudflare: 'Workers & Pages → notain (requests, CPU, R2 usage) and Analytics for trends.',
-        appwrite: 'Appwrite Console → organization Usage tab (reads, writes, bandwidth, function executions).',
+        appwrite:
+          'Appwrite Console → organization Usage tab (reads, writes, bandwidth, function executions).',
       },
     },
     // Operational data, never a shared cache — counters move per request.

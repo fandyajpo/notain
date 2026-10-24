@@ -53,10 +53,7 @@ export const INDUSTRY_LABELS: Record<IndustryId, string> = {
  * Every subtype NOT listed here falls through to `general` — that is the
  * contract, not an oversight.
  */
-const INDUSTRY_SUBTYPES: Record<
-  Exclude<IndustryId, 'general'>,
-  readonly BusinessSubtypeSlug[]
-> = {
+const INDUSTRY_SUBTYPES: Record<Exclude<IndustryId, 'general'>, readonly BusinessSubtypeSlug[]> = {
   catering: ['katering'],
   designer: [
     'desain-grafis',
@@ -89,13 +86,7 @@ const INDUSTRY_SUBTYPES: Record<
     'perdagangan-umum',
     'retail',
   ],
-  'online-shop': [
-    'e-commerce',
-    'marketplace-seller',
-    'toko-online',
-    'reseller',
-    'dropshipper',
-  ],
+  'online-shop': ['e-commerce', 'marketplace-seller', 'toko-online', 'reseller', 'dropshipper'],
   freelancer: [
     'freelancer',
     'konsultan',
@@ -136,8 +127,9 @@ const INDUSTRY_SUBTYPES: Record<
 
 /** Subtype slug → industry, built once from the explicit lists above. */
 const SUBTYPE_TO_INDUSTRY: ReadonlyMap<string, IndustryId> = new Map(
-  (Object.entries(INDUSTRY_SUBTYPES) as Array<[Exclude<IndustryId, 'general'>, readonly string[]]>)
-    .flatMap(([industry, subtypes]) => subtypes.map((slug) => [slug, industry] as const)),
+  (
+    Object.entries(INDUSTRY_SUBTYPES) as Array<[Exclude<IndustryId, 'general'>, readonly string[]]>
+  ).flatMap(([industry, subtypes]) => subtypes.map((slug) => [slug, industry] as const)),
 );
 
 /**

@@ -83,19 +83,23 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     faq: [
       {
         question: 'Apakah Notain gratis dipakai katering kecil?',
-        answer: 'Ya. Plan gratis mencakup pembuatan nota, katalog, dan kirim lewat WhatsApp. Link invoice dan laporan keuangan ada di plan Pro mulai Rp29.000 per 30 hari — detailnya di halaman Harga.',
+        answer:
+          'Ya. Plan gratis mencakup pembuatan nota, katalog, dan kirim lewat WhatsApp. Link invoice dan laporan keuangan ada di plan Pro mulai Rp29.000 per 30 hari — detailnya di halaman Harga.',
       },
       {
         question: 'Bisakah paket dan harganya dicatat sekali saja?',
-        answer: 'Bisa. Semua paket disimpan di katalog; saat membuat nota tinggal pilih, nama, satuan, dan harganya terisi otomatis.',
+        answer:
+          'Bisa. Semua paket disimpan di katalog; saat membuat nota tinggal pilih, nama, satuan, dan harganya terisi otomatis.',
       },
       {
         question: 'Bagaimana klien menerima notanya?',
-        answer: 'Unduh PDF lalu kirim lewat WhatsApp, atau bagikan link invoice-nya (fitur Pro) supaya klien bisa membuka notanya langsung dari HP.',
+        answer:
+          'Unduh PDF lalu kirim lewat WhatsApp, atau bagikan link invoice-nya (fitur Pro) supaya klien bisa membuka notanya langsung dari HP.',
       },
       {
         question: 'Apakah total dan diskon dihitung otomatis?',
-        answer: 'Ya. Diskon, persentase pajak, dan total dihitung otomatis setiap baris ditambah atau diubah, termasuk pembulatan rupiah.',
+        answer:
+          'Ya. Diskon, persentase pajak, dan total dihitung otomatis setiap baris ditambah atau diubah, termasuk pembulatan rupiah.',
       },
     ],
   },
@@ -137,19 +141,23 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     faq: [
       {
         question: 'Apakah Notain gratis untuk desainer freelance?',
-        answer: 'Ya. Plan gratis mencakup pembuatan invoice, katalog jasa, dan pengiriman via WhatsApp. Link invoice dan laporan ada di plan Pro mulai Rp29.000 per 30 hari.',
+        answer:
+          'Ya. Plan gratis mencakup pembuatan invoice, katalog jasa, dan pengiriman via WhatsApp. Link invoice dan laporan ada di plan Pro mulai Rp29.000 per 30 hari.',
       },
       {
         question: 'Bisakah satu klien punya beberapa invoice?',
-        answer: 'Bisa. Setiap proyek atau tahap pembayaran dibuat sebagai invoice terpisah, dan semuanya tercatat atas nama klien yang sama di direktori pelanggan.',
+        answer:
+          'Bisa. Setiap proyek atau tahap pembayaran dibuat sebagai invoice terpisah, dan semuanya tercatat atas nama klien yang sama di direktori pelanggan.',
       },
       {
         question: 'Bagaimana kalau klien telat membayar?',
-        answer: 'Invoice yang terkirim bisa dikirim ulang dengan pesan pengingat lewat WhatsApp dari dasbor, tanpa menulis ulang chat dari nol.',
+        answer:
+          'Invoice yang terkirim bisa dikirim ulang dengan pesan pengingat lewat WhatsApp dari dasbor, tanpa menulis ulang chat dari nol.',
       },
       {
         question: 'Apakah saya perlu install aplikasi?',
-        answer: 'Tidak. Notain jalan di browser HP maupun desktop, dan klien sama sekali tidak perlu akun untuk membuka serta mengunduh invoice-nya.',
+        answer:
+          'Tidak. Notain jalan di browser HP maupun desktop, dan klien sama sekali tidak perlu akun untuk membuka serta mengunduh invoice-nya.',
       },
     ],
   },
@@ -191,19 +199,23 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     faq: [
       {
         question: 'Apakah Notain gratis dipakai developer?',
-        answer: 'Ya. Plan gratis mencakup pembuatan invoice, katalog layanan, dan kirim via WhatsApp. Link invoice dan laporan keuangan ada di plan Pro mulai Rp29.000 per 30 hari.',
+        answer:
+          'Ya. Plan gratis mencakup pembuatan invoice, katalog layanan, dan kirim via WhatsApp. Link invoice dan laporan keuangan ada di plan Pro mulai Rp29.000 per 30 hari.',
       },
       {
         question: 'Bisakah satu proyek punya beberapa invoice?',
-        answer: 'Bisa. Umumnya tiap tahap pembayaran dibuat invoice terpisah; semuanya tercatat atas nama klien yang sama dan bisa difilter dari daftar invoice.',
+        answer:
+          'Bisa. Umumnya tiap tahap pembayaran dibuat invoice terpisah; semuanya tercatat atas nama klien yang sama dan bisa difilter dari daftar invoice.',
       },
       {
         question: 'Apakah klien bisa membuka invoice dari HP?',
-        answer: 'Bisa. Selain PDF, fitur Pro menghasilkan link invoice yang klien tinggal buka di browser — tanpa login dan tanpa instalasi apa pun.',
+        answer:
+          'Bisa. Selain PDF, fitur Pro menghasilkan link invoice yang klien tinggal buka di browser — tanpa login dan tanpa instalasi apa pun.',
       },
       {
         question: 'Apakah datanya aman di awan?',
-        answer: 'Invoice disimpan di akun Notain dan hanya bisa dibuka olehmu, selain tautan invoice yang kamu kirimkan sendiri ke klien.',
+        answer:
+          'Invoice disimpan di akun Notain dan hanya bisa dibuka olehmu, selain tautan invoice yang kamu kirimkan sendiri ke klien.',
       },
     ],
   },
@@ -245,19 +257,23 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     faq: [
       {
         question: 'Apakah Notain benar-benar gratis untuk warung kecil?',
-        answer: 'Ya, plan gratis berlaku selamanya untuk pembuatan nota, katalog menu, dan kirim via WhatsApp. Plan Pro (Rp29.000 per 30 hari) menambahkan link invoice dan laporan keuangan.',
+        answer:
+          'Ya, plan gratis berlaku selamanya untuk pembuatan nota, katalog menu, dan kirim via WhatsApp. Plan Pro (Rp29.000 per 30 hari) menambahkan link invoice dan laporan keuangan.',
       },
       {
         question: 'Apakah harus punya komputer atau printer?',
-        answer: 'Tidak. Notain jalan di browser HP; notanya berupa PDF yang bisa dikirim lewat WhatsApp, dan dicetak hanya kalau memang diperlukan.',
+        answer:
+          'Tidak. Notain jalan di browser HP; notanya berupa PDF yang bisa dikirim lewat WhatsApp, dan dicetak hanya kalau memang diperlukan.',
       },
       {
         question: 'Bisakah mencatat pembeli langganan?',
-        answer: 'Bisa. Nama pembeli tersimpan sendiri di direktori pelanggan setiap kali dipakai, sehingga pembelian berikutnya tinggal dipilih.',
+        answer:
+          'Bisa. Nama pembeli tersimpan sendiri di direktori pelanggan setiap kali dipakai, sehingga pembelian berikutnya tinggal dipilih.',
       },
       {
         question: 'Bagaimana kalau harga menu berubah?',
-        answer: 'Ubah harga di katalog; nota yang sudah dibuat tidak berubah — harga baru dipakai oleh nota berikutnya.',
+        answer:
+          'Ubah harga di katalog; nota yang sudah dibuat tidak berubah — harga baru dipakai oleh nota berikutnya.',
       },
     ],
   },
@@ -299,19 +315,23 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     faq: [
       {
         question: 'Apakah Notain gratis untuk online shop kecil?',
-        answer: 'Ya, plan gratis berlaku selamanya untuk katalog produk, pembuatan invoice, dan kirim via WhatsApp. Link invoice dan laporan ada di plan Pro mulai Rp29.000 per 30 hari.',
+        answer:
+          'Ya, plan gratis berlaku selamanya untuk katalog produk, pembuatan invoice, dan kirim via WhatsApp. Link invoice dan laporan ada di plan Pro mulai Rp29.000 per 30 hari.',
       },
       {
         question: 'Bisakah invoice dikirim langsung dari HP?',
-        answer: 'Bisa. Notain dibuka di browser HP; setelah invoice jadi, tombol kirim membuka WhatsApp dengan pesan dan PDF yang sudah siap.',
+        answer:
+          'Bisa. Notain dibuka di browser HP; setelah invoice jadi, tombol kirim membuka WhatsApp dengan pesan dan PDF yang sudah siap.',
       },
       {
         question: 'Bagaimana pembeli tahu invoice sudah dibayar?',
-        answer: 'Kamu memperbarui status invoice menjadi lunas; riwayatnya tercatat di daftar invoice dan terlihat di dasbor penjualan.',
+        answer:
+          'Kamu memperbarui status invoice menjadi lunas; riwayatnya tercatat di daftar invoice dan terlihat di dasbor penjualan.',
       },
       {
         question: 'Apakah cocok untuk penjualan pre-order?',
-        answer: 'Cocok. Invoice dibuat saat pesanan masuk, dan statusnya tetap terpantau sampai pembayaran benar-benar diterima.',
+        answer:
+          'Cocok. Invoice dibuat saat pesanan masuk, dan statusnya tetap terpantau sampai pembayaran benar-benar diterima.',
       },
     ],
   },
@@ -353,19 +373,23 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     faq: [
       {
         question: 'Apakah Notain gratis untuk freelancer?',
-        answer: 'Ya, plan gratis berlaku selamanya untuk katalog jasa, invoice, dan kirim via WhatsApp. Link invoice dan laporan keuangan tersedia di plan Pro mulai Rp29.000 per 30 hari.',
+        answer:
+          'Ya, plan gratis berlaku selamanya untuk katalog jasa, invoice, dan kirim via WhatsApp. Link invoice dan laporan keuangan tersedia di plan Pro mulai Rp29.000 per 30 hari.',
       },
       {
         question: 'Bagaimana kalau klien telat membayar?',
-        answer: 'Invoice yang terkirim bisa dikirim ulang dengan pesan pengingat dari dasbor, sehingga kamu tidak perlu menulis chat penagihan sendiri.',
+        answer:
+          'Invoice yang terkirim bisa dikirim ulang dengan pesan pengingat dari dasbor, sehingga kamu tidak perlu menulis chat penagihan sendiri.',
       },
       {
         question: 'Apakah klien perlu akun untuk membuka invoice?',
-        answer: 'Tidak. Klien cukup membuka tautan atau PDF yang kamu kirim, langsung dari browser — tanpa registrasi apa pun.',
+        answer:
+          'Tidak. Klien cukup membuka tautan atau PDF yang kamu kirim, langsung dari browser — tanpa registrasi apa pun.',
       },
       {
         question: 'Bisakah saya memantau semua proyek di satu tempat?',
-        answer: 'Bisa. Semua invoice tercatat di daftar invoice lengkap dengan statusnya, dan rekap pemasukannya terlihat di dasbor.',
+        answer:
+          'Bisa. Semua invoice tercatat di daftar invoice lengkap dengan statusnya, dan rekap pemasukannya terlihat di dasbor.',
       },
     ],
   },
@@ -407,19 +431,23 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     faq: [
       {
         question: 'Apakah Notain gratis untuk bengkel kecil?',
-        answer: 'Ya, plan gratis berlaku selamanya untuk pembuatan nota, katalog pekerjaan, dan kirim via WhatsApp. Plan Pro (Rp29.000 per 30 hari) menambahkan link invoice dan laporan keuangan.',
+        answer:
+          'Ya, plan gratis berlaku selamanya untuk pembuatan nota, katalog pekerjaan, dan kirim via WhatsApp. Plan Pro (Rp29.000 per 30 hari) menambahkan link invoice dan laporan keuangan.',
       },
       {
         question: 'Bisakah mencatat nomor polisi atau tipe kendaraan?',
-        answer: 'Bisa. Tiap nota punya ruang rincian untuk data khusus seperti nomor polisi atau tipe unit, jadi riwayat per kendaraan mudah dicari.',
+        answer:
+          'Bisa. Tiap nota punya ruang rincian untuk data khusus seperti nomor polisi atau tipe unit, jadi riwayat per kendaraan mudah dicari.',
       },
       {
         question: 'Bagaimana pelanggan menerima notanya?',
-        answer: 'Unduh PDF lalu kirim lewat WhatsApp saat unit selesai diambil — pelanggan punya bukti rincian pekerjaan dan biayanya.',
+        answer:
+          'Unduh PDF lalu kirim lewat WhatsApp saat unit selesai diambil — pelanggan punya bukti rincian pekerjaan dan biayanya.',
       },
       {
         question: 'Apakah catatan servis lama masih bisa dilihat?',
-        answer: 'Bisa. Semua nota tersimpan di akunmu beserta nama pelanggannya; gunakan pencarian di daftar invoice untuk menemukan riwayatnya.',
+        answer:
+          'Bisa. Semua nota tersimpan di akunmu beserta nama pelanggannya; gunakan pencarian di daftar invoice untuk menemukan riwayatnya.',
       },
     ],
   },
@@ -461,19 +489,23 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     faq: [
       {
         question: 'Apakah Notain gratis dipakai salon kecil?',
-        answer: 'Ya, plan gratis berlaku selamanya untuk katalog treatment, pembuatan nota, dan kirim via WhatsApp. Plan Pro (Rp29.000 per 30 hari) menambahkan link invoice dan laporan keuangan.',
+        answer:
+          'Ya, plan gratis berlaku selamanya untuk katalog treatment, pembuatan nota, dan kirim via WhatsApp. Plan Pro (Rp29.000 per 30 hari) menambahkan link invoice dan laporan keuangan.',
       },
       {
         question: 'Bisakah daftar harga dibagikan ke pelanggan?',
-        answer: 'Bisa. Selain nota, setiap akun punya halaman usaha publik yang menampilkan daftar layanan dan harganya — satu tautan untuk dibagikan.',
+        answer:
+          'Bisa. Selain nota, setiap akun punya halaman usaha publik yang menampilkan daftar layanan dan harganya — satu tautan untuk dibagikan.',
       },
       {
         question: 'Bagaimana kalau ada promo atau diskon?',
-        answer: 'Setiap nota bisa diberi diskon nominal atau persentase; totalnya dihitung otomatis dan tetap tercatat di riwayat penjualan.',
+        answer:
+          'Setiap nota bisa diberi diskon nominal atau persentase; totalnya dihitung otomatis dan tetap tercatat di riwayat penjualan.',
       },
       {
         question: 'Apakah bisa dipakai dari HP?',
-        answer: 'Bisa. Notain berjalan di browser HP maupun desktop, dan semua data tersimpan di akunmu sehingga bisa dibuka dari perangkat mana pun.',
+        answer:
+          'Bisa. Notain berjalan di browser HP maupun desktop, dan semua data tersimpan di akunmu sehingga bisa dibuka dari perangkat mana pun.',
       },
     ],
   },

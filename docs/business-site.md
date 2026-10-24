@@ -30,17 +30,17 @@ Tidak ada preferensi baru untuk disimpan. Halaman membaca `profiles.businessType
 (subtipe dari taksonomi 175 entri, sudah diedit di settings) lalu memetakannya ke
 industri di `src/core/site/industries.ts`:
 
-| Industri | Subtipe representatif |
-| --- | --- |
-| `catering` | `katering` |
-| `designer` | `desain-grafis`, `fotografi`, `periklanan`, … |
-| `developer` | `web-development`, `software-development`, `it-services`, … |
-| `warung` | `warung-makan`, `restoran`, `kafe`, `perdagangan-umum`, … |
-| `online-shop` | `e-commerce`, `marketplace-seller`, `reseller`, … |
-| `freelancer` | `freelancer`, `konsultan`, `jasa-profesional`, … |
-| `repair` | `bengkel-motor`, `servis-elektronik`, `laundry`, … |
-| `salon` | `salon`, `barbershop`, `klinik-kecantikan`, … |
-| `general` | fallback: subtipe di luar delapan industri, atau belum memilih |
+| Industri      | Subtipe representatif                                          |
+| ------------- | -------------------------------------------------------------- |
+| `catering`    | `katering`                                                     |
+| `designer`    | `desain-grafis`, `fotografi`, `periklanan`, …                  |
+| `developer`   | `web-development`, `software-development`, `it-services`, …    |
+| `warung`      | `warung-makan`, `restoran`, `kafe`, `perdagangan-umum`, …      |
+| `online-shop` | `e-commerce`, `marketplace-seller`, `reseller`, …              |
+| `freelancer`  | `freelancer`, `konsultan`, `jasa-profesional`, …               |
+| `repair`      | `bengkel-motor`, `servis-elektronik`, `laundry`, …             |
+| `salon`       | `salon`, `barbershop`, `klinik-kecantikan`, …                  |
+| `general`     | fallback: subtipe di luar delapan industri, atau belum memilih |
 
 Subtipe yang tidak terdaftar sengaja jatuh ke `general` — kontraknya, bukan
 kelalaian. Simpan tipe usaha di settings, halaman publik ikut; tidak ada UI pilihan
@@ -71,14 +71,14 @@ hanyalah: nama usaha, nama orang, telepon, alamat, email, logo, tipe usaha, dan
 katalog (nama/jenis/satuan/harga). Bagian landing yang datanya **belum ada**
 ditampilkan hanya jika tersedia, dan tidak pernah diisi placeholder:
 
-| Bagian yang diminta | Field sekarang | Perilaku halaman |
-| --- | --- | --- |
-| Deskripsi / tagline | tidak ada | tidak dirender; hero hanya memakai nama + label industri |
-| Jam operasional | tidak ada | bagian jam disembunyikan di semua template |
-| Media sosial | tidak ada | baris sosial disembunyikan |
-| Galeri / portofolio | tidak ada (selain logo) | bagian galeri disembunyikan; logo jadi satu-satunya visual |
-| Testimoni | tidak ada | tidak pernah dirender (aturan lama: tanpa data, tanpa testimoni) |
-| Harga per item | `catalog.unitPrice` | `0` = "belum diisi" → tampil "Hubungi", bukan Rp0 |
+| Bagian yang diminta | Field sekarang          | Perilaku halaman                                                 |
+| ------------------- | ----------------------- | ---------------------------------------------------------------- |
+| Deskripsi / tagline | tidak ada               | tidak dirender; hero hanya memakai nama + label industri         |
+| Jam operasional     | tidak ada               | bagian jam disembunyikan di semua template                       |
+| Media sosial        | tidak ada               | baris sosial disembunyikan                                       |
+| Galeri / portofolio | tidak ada (selain logo) | bagian galeri disembunyikan; logo jadi satu-satunya visual       |
+| Testimoni           | tidak ada               | tidak pernah dirender (aturan lama: tanpa data, tanpa testimoni) |
+| Harga per item      | `catalog.unitPrice`     | `0` = "belum diisi" → tampil "Hubungi", bukan Rp0                |
 
 ### Perpanjangan terkecil yang diusulkan
 

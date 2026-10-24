@@ -73,7 +73,7 @@ describe('POST /api/support rate fence', () => {
 describe('POST /api/csp-report rate fence', () => {
   it('drops a forged flood after the per-IP cap instead of logging it', async () => {
     const env = { ...APPWRITE_ENV, QUOTA_LIMIT_CSP_PER_MINUTE: '3' } as Env;
-    const report = JSON.stringify({ 'csp-report': { 'effective-directive': "script-src" } });
+    const report = JSON.stringify({ 'csp-report': { 'effective-directive': 'script-src' } });
     const post = () =>
       handle(
         cspOnRequest as (ctx: unknown) => Promise<Response>,
@@ -359,7 +359,10 @@ describe('GET /api/admin/content nextNumber — cache and invalidation', () => {
   /** Derives the next number performed (queries with the scan's page size). */
   function derives(): number {
     return (fake as AppwriteFake).calls.filter(
-      (call) => call.method === 'GET' && call.url.includes('/collections/invoices/documents') && call.url.includes('%5B100%5D'),
+      (call) =>
+        call.method === 'GET' &&
+        call.url.includes('/collections/invoices/documents') &&
+        call.url.includes('%5B100%5D'),
     ).length;
   }
 

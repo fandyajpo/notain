@@ -13,41 +13,41 @@ its admin snapshot endpoint is `GET /api/admin/quota`; its tests are
 
 ## 1. Why this shape (service selection)
 
-| Service | Used for | Why and not something else |
-| --- | --- | --- |
-| **Cloudflare Pages Functions** (`functions/**`) | Every HTTP server-side operation: admin API, payments, webhooks, file serving, CSP/Turnstile | The Astro build is fully **static** (no adapter), so Astro API routes and Astro Actions do not exist in this deployment. Pages Functions give platform routing, the R2 binding and secret vars. |
-| **Astro static assets** | All pages/UI | Static requests are free and unlimited on Pages — the entire page surface sits outside the Workers quota. |
-| **Appwrite SDK from the browser** | Auth, owner-scoped CRUD (invoices, templates, customers, catalog), storage metadata | Row permissions (`read("user:<id>")`…) make owner-scoped CRUD safe directly; routing it through Functions would double-quota every list. |
-| **Appwrite REST from Functions (API key)** | Admin operations, private tables (`payments`, `support`, `audit_logs`), public invoice capability reads, profile writes | Row permissions must be bypassed deliberately, server-side, behind `requireAdmin`/ownership checks. |
-| **Appwrite Functions** | **Not used** | No genuinely async/scheduled/isolated work exists yet; an unused execution quota cannot be assumed available later. |
+| Service                                         | Used for                                                                                                                | Why and not something else                                                                                                                                                                      |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Cloudflare Pages Functions** (`functions/**`) | Every HTTP server-side operation: admin API, payments, webhooks, file serving, CSP/Turnstile                            | The Astro build is fully **static** (no adapter), so Astro API routes and Astro Actions do not exist in this deployment. Pages Functions give platform routing, the R2 binding and secret vars. |
+| **Astro static assets**                         | All pages/UI                                                                                                            | Static requests are free and unlimited on Pages — the entire page surface sits outside the Workers quota.                                                                                       |
+| **Appwrite SDK from the browser**               | Auth, owner-scoped CRUD (invoices, templates, customers, catalog), storage metadata                                     | Row permissions (`read("user:<id>")`…) make owner-scoped CRUD safe directly; routing it through Functions would double-quota every list.                                                        |
+| **Appwrite REST from Functions (API key)**      | Admin operations, private tables (`payments`, `support`, `audit_logs`), public invoice capability reads, profile writes | Row permissions must be bypassed deliberately, server-side, behind `requireAdmin`/ownership checks.                                                                                             |
+| **Appwrite Functions**                          | **Not used**                                                                                                            | No genuinely async/scheduled/isolated work exists yet; an unused execution quota cannot be assumed available later.                                                                             |
 
 **Shared quota rule:** every `/api/*` route and shell route here is a Pages
-Function on the *same* Cloudflare account and therefore consumes the *same*
+Function on the _same_ Cloudflare account and therefore consumes the _same_
 Workers Free request quota (100,000 requests/day). There is no independent
 "Pages Functions quota". Appwrite Functions (unused) would have their own
 separate execution quota — also never treated as spare capacity.
 
 ## 2. Endpoint classification
 
-| Endpoint | Class (per service rules) | Server-side because |
-| --- | --- | --- |
-| `GET/PATCH /api/admin/users`, `PATCH/GET /api/admin/users/[id]` | Privileged admin (Pages Function) | Team-membership gate, API-key reads/writes, suspend capability, audit writes |
-| `GET/POST /api/admin/content` | Privileged admin | Ownership-enforced writes as another user, zod validation, audit |
-| `GET /api/admin/audit`, `GET /api/admin/support`, `PATCH /api/admin/support/[id]` | Privileged admin | API-key reads of permission-less rows; audit trail |
-| **`GET /api/admin/quota`** (new) | Privileged admin | Quota counters/policy snapshot |
-| `POST /api/payments/checkout` | Secret-dependent billing mutation | DOKU credentials, server-side pricing, duplicate-order guard |
-| `POST /api/payments/doku-notify` | Webhook verification | HMAC signature over raw body; settlement state machine |
-| `GET /api/payments/status` | Secret-dependent reconciliation | Signed DOKU Check Status probe; throttled + breaker-protected |
-| `GET /api/payments/portal` | Server read of private data | `payments` rows have empty permissions; only the API key can read them |
-| `GET /api/invoice/[id]` | Server read with business gate | Pro-plan 402 gate + owner-scoped row reads by API key |
-| `POST /api/invoice/[id]/proof` | File write (R2 binding) | Turnstile verification, one-shot guard, R2 only exists in Functions |
-| `POST /api/logo`, `GET/DELETE /api/logo/[key]` | File read/write (R2 binding) | Session + ownership checks; private bucket |
-| `GET/DELETE /api/proof/[key]` | File read/write (R2 binding) | Capability URL + owner check; clears row reference |
-| `POST /api/support` | Public write | Turnstile + validation + rate fence; permission-less row |
-| `POST /api/turnstile` | Public verification | Secret lives only in Functions |
-| `POST /api/csp-report` | Public diagnostics | Rate-fenced log sink |
-| `/invoice/[id]`, `/templates/[id]` shells | Platform routing | Serve built shells under dynamic URLs; no redirects |
-| Invoice/template/customer/catalog CRUD | **Direct Appwrite SDK (client)** | Auth + owner row permissions + client ownership checks; kept as-is |
+| Endpoint                                                                          | Class (per service rules)         | Server-side because                                                          |
+| --------------------------------------------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------- |
+| `GET/PATCH /api/admin/users`, `PATCH/GET /api/admin/users/[id]`                   | Privileged admin (Pages Function) | Team-membership gate, API-key reads/writes, suspend capability, audit writes |
+| `GET/POST /api/admin/content`                                                     | Privileged admin                  | Ownership-enforced writes as another user, zod validation, audit             |
+| `GET /api/admin/audit`, `GET /api/admin/support`, `PATCH /api/admin/support/[id]` | Privileged admin                  | API-key reads of permission-less rows; audit trail                           |
+| **`GET /api/admin/quota`** (new)                                                  | Privileged admin                  | Quota counters/policy snapshot                                               |
+| `POST /api/payments/checkout`                                                     | Secret-dependent billing mutation | DOKU credentials, server-side pricing, duplicate-order guard                 |
+| `POST /api/payments/doku-notify`                                                  | Webhook verification              | HMAC signature over raw body; settlement state machine                       |
+| `GET /api/payments/status`                                                        | Secret-dependent reconciliation   | Signed DOKU Check Status probe; throttled + breaker-protected                |
+| `GET /api/payments/portal`                                                        | Server read of private data       | `payments` rows have empty permissions; only the API key can read them       |
+| `GET /api/invoice/[id]`                                                           | Server read with business gate    | Pro-plan 402 gate + owner-scoped row reads by API key                        |
+| `POST /api/invoice/[id]/proof`                                                    | File write (R2 binding)           | Turnstile verification, one-shot guard, R2 only exists in Functions          |
+| `POST /api/logo`, `GET/DELETE /api/logo/[key]`                                    | File read/write (R2 binding)      | Session + ownership checks; private bucket                                   |
+| `GET/DELETE /api/proof/[key]`                                                     | File read/write (R2 binding)      | Capability URL + owner check; clears row reference                           |
+| `POST /api/support`                                                               | Public write                      | Turnstile + validation + rate fence; permission-less row                     |
+| `POST /api/turnstile`                                                             | Public verification               | Secret lives only in Functions                                               |
+| `POST /api/csp-report`                                                            | Public diagnostics                | Rate-fenced log sink                                                         |
+| `/invoice/[id]`, `/templates/[id]` shells                                         | Platform routing                  | Serve built shells under dynamic URLs; no redirects                          |
+| Invoice/template/customer/catalog CRUD                                            | **Direct Appwrite SDK (client)**  | Auth + owner row permissions + client ownership checks; kept as-is           |
 
 Nothing is duplicated across services: each operation has exactly one
 implementation, and no handler was moved off its current runtime.
@@ -56,36 +56,36 @@ implementation, and no handler was moved off its current runtime.
 
 ### Cloudflare
 
-| Item | Free limit | Behavior at the limit |
-| --- | --- | --- |
-| Workers / Pages Functions requests | **100,000/day** (shared quota; resets 00:00 UTC) | Requests fail (Error 1027); **never converted to paid usage on Free** |
-| CPU per invocation | **10 ms** (wall-clock network wait excluded) | Worker terminated (Error 1102) |
-| Pages builds | **500/month**, 1 concurrent, 20 min timeout | Builds fail |
-| R2 storage | **10 GB-month** | ⚠️ **Overage above the free allowance is metered and billed automatically** |
-| R2 Class A ops | **1 million/month** | ⚠️ billed at $4.50/million beyond |
-| R2 Class B ops | **10 million/month** | ⚠️ billed at $0.36/million beyond |
-| R2 egress | free | — |
-| Turnstile | **unlimited challenges** (20 widgets, 10 hostnames each) | — |
-| Workers KV / Durable Objects | not used by this project | Operations fail at quota, not billed on Free |
+| Item                               | Free limit                                               | Behavior at the limit                                                       |
+| ---------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Workers / Pages Functions requests | **100,000/day** (shared quota; resets 00:00 UTC)         | Requests fail (Error 1027); **never converted to paid usage on Free**       |
+| CPU per invocation                 | **10 ms** (wall-clock network wait excluded)             | Worker terminated (Error 1102)                                              |
+| Pages builds                       | **500/month**, 1 concurrent, 20 min timeout              | Builds fail                                                                 |
+| R2 storage                         | **10 GB-month**                                          | ⚠️ **Overage above the free allowance is metered and billed automatically** |
+| R2 Class A ops                     | **1 million/month**                                      | ⚠️ billed at $4.50/million beyond                                           |
+| R2 Class B ops                     | **10 million/month**                                     | ⚠️ billed at $0.36/million beyond                                           |
+| R2 egress                          | free                                                     | —                                                                           |
+| Turnstile                          | **unlimited challenges** (20 widgets, 10 hostnames each) | —                                                                           |
+| Workers KV / Durable Objects       | not used by this project                                 | Operations fail at quota, not billed on Free                                |
 
 Sources: [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), [Workers limits](https://developers.cloudflare.com/workers/platform/limits/), [Pages limits](https://developers.cloudflare.com/pages/platform/limits/), [R2 pricing](https://developers.cloudflare.com/r2/pricing/), [Turnstile plans](https://developers.cloudflare.com/turnstile/plans/).
 
 ### Appwrite Cloud (Free organization)
 
-| Item | Free limit | Behavior at the limit |
-| --- | --- | --- |
-| Database reads | **500,000/month** (counted **per row returned**, not per call) | Throttled; no auto-charge |
-| Database writes | **250,000/month** (per row written) | Throttled |
-| Storage | **2 GB**, **3 buckets** | Uploads refused |
-| Bandwidth | **5 GB/month** | API access denied until next cycle/upgrade |
-| Realtime | **2M messages/month, 250 connections** (enforcement since 2026-04-30) | Subscriptions disabled |
-| Function executions | **750,000/month** + 100 GB-hours compute (unused here) | Executions disabled |
-| Plan changes | **Free never auto-upgrades or charges**; Free orgs cannot buy add-ons | — |
+| Item                | Free limit                                                            | Behavior at the limit                      |
+| ------------------- | --------------------------------------------------------------------- | ------------------------------------------ |
+| Database reads      | **500,000/month** (counted **per row returned**, not per call)        | Throttled; no auto-charge                  |
+| Database writes     | **250,000/month** (per row written)                                   | Throttled                                  |
+| Storage             | **2 GB**, **3 buckets**                                               | Uploads refused                            |
+| Bandwidth           | **5 GB/month**                                                        | API access denied until next cycle/upgrade |
+| Realtime            | **2M messages/month, 250 connections** (enforcement since 2026-04-30) | Subscriptions disabled                     |
+| Function executions | **750,000/month** + 100 GB-hours compute (unused here)                | Executions disabled                        |
+| Plan changes        | **Free never auto-upgrades or charges**; Free orgs cannot buy add-ons | —                                          |
 
 Sources: [Free plan](https://appwrite.io/docs/advanced/billing/free), [database reads/writes](https://appwrite.io/docs/advanced/billing/database-reads-and-writes), [pricing](https://appwrite.io/pricing).
 
 **Usage measurement reality:** Appwrite Free exposes **no usage API** — the
-Console's organization *Usage* tab is the source of truth. Cloudflare exposes
+Console's organization _Usage_ tab is the source of truth. Cloudflare exposes
 Workers metrics and a GraphQL Analytics API, but Cloudflare states analytics
 must not be used as a measure of billable usage. Therefore:
 
@@ -103,7 +103,7 @@ must not be used as a measure of billable usage. Therefore:
    scope (deploy token = Pages Edit + R2 Edit), no plan-upgrade API is called,
    and Cloudflare/Appwrite do not auto-upgrade Free when quotas are hit —
    documented above and enforced by the providers.
-2. **R2 is the one metered-overage risk** (free tiers are *included amounts*,
+2. **R2 is the one metered-overage risk** (free tiers are _included amounts_,
    not hard caps). Mitigations in code: 2 MB logo / 5 MB proof hard caps with
    early 413s, per-user upload rate fences (`logo-upload` 10/hour,
    `proof-upload` 6/hour anonymous, 30/hour owner), client-side delete of the
@@ -111,7 +111,7 @@ must not be used as a measure of billable usage. Therefore:
    both object and row, immutable caching on reads. **Residual risk + manual
    step:** see §6.
 3. **Cost fences before provider calls.** `enforceLimit()` (sliding window,
-   per-IP or per-user, `QUOTA_LIMIT_*` overrides) runs *before* Turnstile
+   per-IP or per-user, `QUOTA_LIMIT_*` overrides) runs _before_ Turnstile
    siteverify, Appwrite reads/writes and R2 writes on: `support`, `turnstile`,
    `csp-report`, `proof` upload, `logo` upload, `checkout`. Over-budget callers
    get `429` + `retry-after` (client maps 429 to a non-retriable
@@ -148,37 +148,37 @@ must not be used as a measure of billable usage. Therefore:
 
 ## 5. Failure behavior at quota exhaustion
 
-| Limit reached | What users see | What the code does |
-| --- | --- | --- |
-| Cloudflare Workers 100k req/day | Cloudflare's own Error 1027 on `/api/*` + dynamic shells (static pages keep working) | Nothing to do in-code; cost safety beats availability. Rate fences make a legitimate day unlikely to reach it |
-| Cloudflare CPU 10 ms/invocation | Error 1102 on that request | Backoff sleeps are I/O wait (not CPU); work was kept light; retries bounded at 1 by default |
-| R2 overage threshold (storage/ops) | Requests keep succeeding — **and start incurring charges** | Code cannot see this; manual dashboard monitoring + alert is required (§6) |
-| Appwrite reads/writes exhausted | Requests throttled by Appwrite → 429/5xx to the client | Queries stop retrying on 429; reads retry 5xx once; mutations are not replayed; user sees the rate-limited copy |
-| Appwrite bandwidth exhausted | API denied until next cycle | Failures surface as generic connection errors; no auto-retry loops |
-| DOKU unreachable/failing | Polls keep showing the order as it stands; checkout answers 503 "try again in N minutes" | Breaker stops probe spend; row state and webhook reconciliation resume when DOKU recovers; paid rows never roll back |
-| Turnstile siteverify unreachable | Upload/support answer 502, nothing stored | Fail closed (gate cannot be bypassed by unreachability) |
+| Limit reached                      | What users see                                                                           | What the code does                                                                                                   |
+| ---------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Cloudflare Workers 100k req/day    | Cloudflare's own Error 1027 on `/api/*` + dynamic shells (static pages keep working)     | Nothing to do in-code; cost safety beats availability. Rate fences make a legitimate day unlikely to reach it        |
+| Cloudflare CPU 10 ms/invocation    | Error 1102 on that request                                                               | Backoff sleeps are I/O wait (not CPU); work was kept light; retries bounded at 1 by default                          |
+| R2 overage threshold (storage/ops) | Requests keep succeeding — **and start incurring charges**                               | Code cannot see this; manual dashboard monitoring + alert is required (§6)                                           |
+| Appwrite reads/writes exhausted    | Requests throttled by Appwrite → 429/5xx to the client                                   | Queries stop retrying on 429; reads retry 5xx once; mutations are not replayed; user sees the rate-limited copy      |
+| Appwrite bandwidth exhausted       | API denied until next cycle                                                              | Failures surface as generic connection errors; no auto-retry loops                                                   |
+| DOKU unreachable/failing           | Polls keep showing the order as it stands; checkout answers 503 "try again in N minutes" | Breaker stops probe spend; row state and webhook reconciliation resume when DOKU recovers; paid rows never roll back |
+| Turnstile siteverify unreachable   | Upload/support answer 502, nothing stored                                                | Fail closed (gate cannot be bypassed by unreachability)                                                              |
 
 ## 6. Remaining risks, unsupported safeguards, manual configuration
 
 **No code can do these — they need the provider dashboards:**
 
 - [ ] **Cloudflare:** Workers & Pages → notain → confirm **Free plan** stays
-  selected; R2 → set up a **spend/usage notification** for the `notain` bucket
-  (Cloudflare's billing area → notifications/alerts). R2 has no hard
-  spend-cap API on Free: the supported alternatives are alerts + keeping usage
-  under the free allowances (the code's size caps and rate fences exist for
-  exactly this).
+      selected; R2 → set up a **spend/usage notification** for the `notain` bucket
+      (Cloudflare's billing area → notifications/alerts). R2 has no hard
+      spend-cap API on Free: the supported alternatives are alerts + keeping usage
+      under the free allowances (the code's size caps and rate fences exist for
+      exactly this).
 - [ ] **Cloudflare:** confirm no Workers Paid subscription exists on the
-  account (Billing → subscriptions). The repo's deploy token cannot create
-  one; only a human can — do not add one.
+      account (Billing → subscriptions). The repo's deploy token cannot create
+      one; only a human can — do not add one.
 - [ ] **Cloudflare:** budget/spend alert on the account if offered on Free, so
-  an accidental paid resource is caught on day one.
+      an accidental paid resource is caught on day one.
 - [ ] **Appwrite:** Console → organization **Usage** tab: check reads/writes
-  trend against 500k/250k per month (no API for this exists on Free).
+      trend against 500k/250k per month (no API for this exists on Free).
 - [ ] **Appwrite:** confirm the org is on **Free** and no payment method /
-  paid plan is attached (Billing settings).
+      paid plan is attached (Billing settings).
 - [ ] **DOKU:** sandbox credentials only; notification URL configured to
-  `/api/payments/doku-notify`; re-verify after any domain change.
+      `/api/payments/doku-notify`; re-verify after any domain change.
 
 **Known limitations (honest list):**
 

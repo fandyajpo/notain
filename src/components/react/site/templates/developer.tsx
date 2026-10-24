@@ -35,7 +35,10 @@ export default function DeveloperTemplate({ site, items }: SiteTemplateProps) {
   const wa = whatsappHref(site);
   const hasList = items.length > 0;
   const rows = contactRows(site);
-  const path = site.businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const path = site.businessName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 
   return (
     <SiteFrame palette={PALETTE}>
@@ -137,14 +140,23 @@ export default function DeveloperTemplate({ site, items }: SiteTemplateProps) {
                 const Icon = row.icon;
                 const body = (
                   <span className="flex gap-3">
-                    <Icon size={15} className="mt-0.5 shrink-0 text-[color:var(--site-accent)]" aria-hidden="true" />
+                    <Icon
+                      size={15}
+                      className="mt-0.5 shrink-0 text-[color:var(--site-accent)]"
+                      aria-hidden="true"
+                    />
                     <span className="break-words">{row.text}</span>
                   </span>
                 );
                 return (
                   <li key={row.text}>
                     {row.href ? (
-                      <a href={row.href} target="_blank" rel="noopener noreferrer" className="hover:text-[color:var(--site-accent)]">
+                      <a
+                        href={row.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-[color:var(--site-accent)]"
+                      >
                         {body}
                       </a>
                     ) : (
@@ -154,7 +166,9 @@ export default function DeveloperTemplate({ site, items }: SiteTemplateProps) {
                 );
               })}
               {rows.length === 0 && (
-                <li className="text-[color:var(--site-muted)]">Belum ada kontak yang dipublikasikan.</li>
+                <li className="text-[color:var(--site-muted)]">
+                  Belum ada kontak yang dipublikasikan.
+                </li>
               )}
             </ul>
           </div>

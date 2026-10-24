@@ -1,7 +1,13 @@
 import { AppwriteException } from 'appwrite';
 import { describe, expect, it } from 'vite-plus/test';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
-import { appErrorFromStatus, isConflict, isRateLimited, isUnauthenticated, toAppError } from './errors';
+import {
+  appErrorFromStatus,
+  isConflict,
+  isRateLimited,
+  isUnauthenticated,
+  toAppError,
+} from './errors';
 
 function appwriteError(status: number, type = ''): AppwriteException {
   return new AppwriteException('boom', status, type);
@@ -89,7 +95,10 @@ describe('appErrorFromStatus', () => {
     // The quota breaker's controlled answer: classified like a connection
     // failure (queries may retry) but its curated "try again later" guidance
     // is ours to show — unlike a raw 5xx body from upstream.
-    const error = appErrorFromStatus(503, 'Gateway pembayaran sedang tidak tersedia. Coba lagi dalam beberapa menit.');
+    const error = appErrorFromStatus(
+      503,
+      'Gateway pembayaran sedang tidak tersedia. Coba lagi dalam beberapa menit.',
+    );
 
     expect(error.code).toBe(ERROR_CODES.NETWORK);
     expect(error.message).toContain('Coba lagi dalam beberapa menit');

@@ -157,7 +157,9 @@ async function reconcile(env: Env, auth: TableAuth, payment: StatusRow): Promise
 
   // Concurrent polls for the same order (several tabs, a 3 s interval that
   // overlaps a slow probe) share one DOKU call instead of stacking probes.
-  return singleFlight(`doku-probe:${payment.$id}`, () => probeAndSettle(env, auth, payment, clientId, secretKey));
+  return singleFlight(`doku-probe:${payment.$id}`, () =>
+    probeAndSettle(env, auth, payment, clientId, secretKey),
+  );
 }
 
 async function probeAndSettle(
@@ -181,7 +183,7 @@ async function probeAndSettle(
         'Client-Id': clientId,
         'Request-Id': requestId,
         'Request-Timestamp': timestamp,
-        'Signature': signature,
+        Signature: signature,
       },
       signal: AbortSignal.timeout(10_000),
     });

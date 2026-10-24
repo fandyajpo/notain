@@ -51,7 +51,10 @@ function MenuBlock({ title, names }: { title: string; names: PublicSiteItem[] })
               {price?.per && (
                 <span className="text-sm text-[color:var(--site-muted)]">/ {price.per}</span>
               )}
-              <span aria-hidden="true" className="mx-1 min-w-6 flex-1 self-center border-b border-dotted border-[color:var(--site-line)]" />
+              <span
+                aria-hidden="true"
+                className="mx-1 min-w-6 flex-1 self-center border-b border-dotted border-[color:var(--site-line)]"
+              />
               <span className="shrink-0 font-serif font-semibold">
                 {price?.price ?? CONTACT_FOR_PRICE}
               </span>
@@ -90,7 +93,9 @@ export default function CateringTemplate({ site, items }: SiteTemplateProps) {
           <p className="text-xs font-semibold tracking-[0.22em] text-[color:var(--site-accent)] uppercase">
             {INDUSTRY_LABELS.catering}
           </p>
-          <h1 className="mt-4 font-serif text-4xl leading-tight sm:text-5xl">{site.businessName}</h1>
+          <h1 className="mt-4 font-serif text-4xl leading-tight sm:text-5xl">
+            {site.businessName}
+          </h1>
           <p className="mt-4 max-w-md text-[color:var(--site-muted)]">
             Pesan langsung lewat WhatsApp{hasList ? ', dan lihat daftarnya di bawah.' : '.'}
           </p>
@@ -138,9 +143,7 @@ export default function CateringTemplate({ site, items }: SiteTemplateProps) {
               <span aria-hidden="true" className="h-px w-8 bg-[color:var(--site-line)]" />
             </div>
 
-            {services.length > 0 && (
-              <MenuBlock title="Layanan" names={services} />
-            )}
+            {services.length > 0 && <MenuBlock title="Layanan" names={services} />}
             {products.length > 0 && <MenuBlock title="Produk" names={products} />}
           </div>
         </section>
@@ -156,14 +159,23 @@ export default function CateringTemplate({ site, items }: SiteTemplateProps) {
                   const Icon = row.icon;
                   const body = (
                     <>
-                      <Icon size={16} className="mt-0.5 shrink-0 text-[color:var(--site-accent)]" aria-hidden="true" />
+                      <Icon
+                        size={16}
+                        className="mt-0.5 shrink-0 text-[color:var(--site-accent)]"
+                        aria-hidden="true"
+                      />
                       <span className="break-words">{row.text}</span>
                     </>
                   );
                   return (
                     <li key={row.text} className="flex gap-3">
                       {row.href ? (
-                        <a href={row.href} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                        <a
+                          href={row.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline"
+                        >
                           {body}
                         </a>
                       ) : (

@@ -93,8 +93,8 @@ export function PricingPreview() {
               </motion.a>
               <p className="max-w-xl text-center text-xs leading-relaxed text-muted">
                 Pembayaran Pro dan Business diproses lewat DOKU dan plan aktif otomatis setelah
-                pembayaran terkonfirmasi. Tidak ada biaya di luar harga yang tertera, dan kamu
-                bisa berhenti kapan saja.
+                pembayaran terkonfirmasi. Tidak ada biaya di luar harga yang tertera, dan kamu bisa
+                berhenti kapan saja.
               </p>
             </div>
           </Reveal>

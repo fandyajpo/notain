@@ -76,7 +76,7 @@ describe('invoiceDocumentId', () => {
     expect(first).toBe(second);
   });
 
-  it('fits Appwrite\'s id limit and the URL segment pattern', async () => {
+  it("fits Appwrite's id limit and the URL segment pattern", async () => {
     const id = await invoiceDocumentId('user-1', 'INV-2026-007');
 
     expect(id).toMatch(/^inv_[0-9a-f]{32}$/);

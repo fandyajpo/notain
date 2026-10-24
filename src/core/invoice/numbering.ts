@@ -64,6 +64,8 @@ export async function invoiceDocumentId(ownerId: string, invoiceNumber: string):
     'SHA-256',
     new TextEncoder().encode(`${ownerId}:${invoiceNumber}`),
   );
-  const hex = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  const hex = [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
   return `inv_${hex.slice(0, 32)}`;
 }

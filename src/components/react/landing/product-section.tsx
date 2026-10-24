@@ -69,10 +69,7 @@ function FeatureRow({
 
 /** Rincian tagihan: the calculator's real output for the sample invoice. */
 function TotalsCard() {
-  const { draft } = useMemo(
-    () => createSampleInvoice(new Date(Date.UTC(2026, 9, 8))),
-    [],
-  );
+  const { draft } = useMemo(() => createSampleInvoice(new Date(Date.UTC(2026, 9, 8))), []);
   const totals = calculateTotals({
     items: draft.items,
     discount: draft.discount,
@@ -89,7 +86,11 @@ function TotalsCard() {
   ];
 
   return (
-    <div role="img" aria-label="Contoh rincian invoice: subtotal, diskon, pajak, dan total tagihan" className={cardClass('md')}>
+    <div
+      role="img"
+      aria-label="Contoh rincian invoice: subtotal, diskon, pajak, dan total tagihan"
+      className={cardClass('md')}
+    >
       <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
         <p className="text-sm font-semibold">Rincian tagihan</p>
         <span className="rounded-pill border border-border bg-sunken px-2.5 py-0.5 text-xs font-medium text-muted">
@@ -205,10 +206,7 @@ function DirectoryCards() {
  * the exact labels and sub-labels of the dashboard's finance cards.
  */
 function StatusBoardCards() {
-  const { draft } = useMemo(
-    () => createSampleInvoice(new Date(Date.UTC(2026, 9, 8))),
-    [],
-  );
+  const { draft } = useMemo(() => createSampleInvoice(new Date(Date.UTC(2026, 9, 8))), []);
   const totals = calculateTotals({
     items: draft.items,
     discount: draft.discount,
@@ -216,16 +214,30 @@ function StatusBoardCards() {
   });
 
   const rows = [
-    { number: draft.invoiceNumber, customer: draft.customerName, total: totals.grandTotal, status: 'sent' as const },
+    {
+      number: draft.invoiceNumber,
+      customer: draft.customerName,
+      total: totals.grandTotal,
+      status: 'sent' as const,
+    },
     { number: 'INV-2026-002', customer: 'Siti Rahma', total: 140_000, status: 'paid' as const },
-    { number: 'INV-2026-003', customer: 'Katering Bu Tini', total: 56_000, status: 'paid' as const },
+    {
+      number: 'INV-2026-003',
+      customer: 'Katering Bu Tini',
+      total: 56_000,
+      status: 'paid' as const,
+    },
   ];
 
   // Internally consistent with the rows above: only INV-2026-001 is unpaid.
   const received = 140_000 + 56_000;
   const unpaid = totals.grandTotal;
   const moneyCards = [
-    { label: 'Pendapatan diterima', value: formatRupiah(received), sub: 'Invoice lunas pada periode ini' },
+    {
+      label: 'Pendapatan diterima',
+      value: formatRupiah(received),
+      sub: 'Invoice lunas pada periode ini',
+    },
     { label: 'Belum dibayar', value: formatRupiah(unpaid), sub: 'Piutang yang masih menunggu' },
     { label: 'Jatuh tempo lewat', value: '0 invoice', sub: 'Tidak ada' },
     { label: 'Invoice dibuat', value: '3', sub: 'Termasuk yang batal' },
@@ -258,7 +270,11 @@ function StatusBoardCards() {
         </ul>
       </div>
 
-      <div role="img" aria-label="Contoh kartu ringkasan dashboard: pendapatan diterima, belum dibayar, jatuh tempo lewat, dan invoice dibuat" className="grid gap-3 sm:grid-cols-2">
+      <div
+        role="img"
+        aria-label="Contoh kartu ringkasan dashboard: pendapatan diterima, belum dibayar, jatuh tempo lewat, dan invoice dibuat"
+        className="grid gap-3 sm:grid-cols-2"
+      >
         {moneyCards.map((card) => (
           <div key={card.label} className="rounded-control border border-border bg-card p-3.5">
             <p className="truncate text-xs text-muted">{card.label}</p>

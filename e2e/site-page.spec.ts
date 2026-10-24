@@ -47,9 +47,7 @@ test('serves the shell at /site/<ownerId> and renders the warung template', asyn
   await expect(page).toHaveURL(new RegExp(`/site/${OWNER}$`));
   // Scoped by role+name: the shell ships its own sr-only h1 for the loading
   // moment, and the dev toolbar carries headings of its own.
-  await expect(
-    page.getByRole('heading', { level: 1, name: 'Warung Maju Jaya' }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Warung Maju Jaya' })).toBeVisible();
 
   // Template signature: warung's menu board with a formatted price, and the
   // WhatsApp CTA normalized from the profile's phone.

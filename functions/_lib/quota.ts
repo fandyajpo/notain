@@ -141,7 +141,11 @@ export function count(name: string, by = 1): void {
  * One structured log line. No personal data: callers pass route names,
  * statuses and counters — never emails or full ids (use {@link shortId}).
  */
-export function logQuota(component: string, event: string, fields: Record<string, unknown> = {}): void {
+export function logQuota(
+  component: string,
+  event: string,
+  fields: Record<string, unknown> = {},
+): void {
   console.log(JSON.stringify({ t: 'quota', component, event, ...fields }));
 }
 
@@ -205,12 +209,9 @@ export function enforceLimit(name: LimitName, key: string, env?: QuotaEnv): Resp
   const result = rateLimit(name, key, quotaPolicy(env));
   if (result.allowed) return null;
   count(`${name}.rate-limited`);
-  return apiError(
-    429,
-    'rate_limited',
-    'Terlalu banyak permintaan. Coba lagi beberapa saat lagi.',
-    { 'retry-after': String(result.retryAfterSeconds) },
-  );
+  return apiError(429, 'rate_limited', 'Terlalu banyak permintaan. Coba lagi beberapa saat lagi.', {
+    'retry-after': String(result.retryAfterSeconds),
+  });
 }
 
 /** Caller identity for rate limiting: the connecting IP, falling back to a single bucket. */

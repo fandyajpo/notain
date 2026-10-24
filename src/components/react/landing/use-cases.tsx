@@ -77,8 +77,8 @@ export function UseCases() {
 
           <Reveal y={14} delay={0.2}>
             <p className="mt-8 text-center text-xs text-muted">
-              Semua pengguna memakai fitur yang sama: Invoice, pelanggan, katalog,
-              dan PDF, semuanya dibuka dari HP maupun laptop.
+              Semua pengguna memakai fitur yang sama: Invoice, pelanggan, katalog, dan PDF, semuanya
+              dibuka dari HP maupun laptop.
             </p>
           </Reveal>
         </div>

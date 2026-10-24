@@ -201,8 +201,7 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
             className="mx-auto mt-6 max-w-xl text-lead text-muted"
           >
             Buat invoice profesional, kelola pelanggan, dan simpan dokumen tagihan dalam satu
-            platform yang praktis, lebih mudah mengatur pekerjaan, lebih siap melayani
-            pelanggan.
+            platform yang praktis, lebih mudah mengatur pekerjaan, lebih siap melayani pelanggan.
           </motion.p>
 
           <motion.div

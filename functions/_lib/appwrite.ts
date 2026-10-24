@@ -50,7 +50,10 @@ export async function verifySession(request: Request, env: Env): Promise<Session
       if (!response.ok) return null;
       const account = (await response.json()) as { $id?: unknown; email?: unknown };
       if (typeof account.$id !== 'string' || account.$id === '') return null;
-      const session = { userId: account.$id, email: typeof account.email === 'string' ? account.email : '' };
+      const session = {
+        userId: account.$id,
+        email: typeof account.email === 'string' ? account.email : '',
+      };
       if (policy.sessionCacheTtlMs > 0) {
         cacheSet(`session:${await sha256Hex(token)}`, session, policy.sessionCacheTtlMs);
       }

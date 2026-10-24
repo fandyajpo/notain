@@ -108,9 +108,14 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const limited = rateLimit('checkout', session.userId, policy);
   if (!limited.allowed) {
     count('checkout.rate-limited');
-    return apiError(429, 'rate_limited', 'Terlalu banyak percobaan pembayaran. Coba lagi beberapa menit lagi.', {
-      'retry-after': String(limited.retryAfterSeconds),
-    });
+    return apiError(
+      429,
+      'rate_limited',
+      'Terlalu banyak percobaan pembayaran. Coba lagi beberapa menit lagi.',
+      {
+        'retry-after': String(limited.retryAfterSeconds),
+      },
+    );
   }
   if (!breakerAllows('doku', policy)) {
     count('checkout.breaker-rejected');

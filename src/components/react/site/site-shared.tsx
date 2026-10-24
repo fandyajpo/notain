@@ -171,7 +171,11 @@ export function contactRows(site: PublicSite): ContactRow[] {
   const rows: ContactRow[] = [];
   if (site.address) rows.push({ icon: MapPin, text: site.address, href: mapsHref(site.address) });
   if (site.phone) {
-    rows.push({ icon: Phone, text: site.phone, href: buildWhatsAppUrl({ phone: site.phone, message: inquiryMessage(site) }) });
+    rows.push({
+      icon: Phone,
+      text: site.phone,
+      href: buildWhatsAppUrl({ phone: site.phone, message: inquiryMessage(site) }),
+    });
   }
   if (site.email) rows.push({ icon: Mail, text: site.email, href: `mailto:${site.email}` });
   return rows;
@@ -191,7 +195,8 @@ type NoteProps = {
 export function EmptyListNote({ className, children }: NoteProps) {
   return (
     <p className={`text-sm text-[color:var(--site-muted)] ${className ?? ''}`}>
-      {children ?? 'Daftar belum tersedia di halaman ini. Silakan hubungi langsung untuk informasi.'}
+      {children ??
+        'Daftar belum tersedia di halaman ini. Silakan hubungi langsung untuk informasi.'}
     </p>
   );
 }
@@ -208,7 +213,9 @@ export function SiteFooter({ site, className }: FooterProps) {
       className={`border-t border-[color:var(--site-line)] px-5 py-6 text-sm text-[color:var(--site-muted)] ${className ?? ''}`}
     >
       <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-        <span>© {new Date().getFullYear()} {site.businessName}</span>
+        <span>
+          © {new Date().getFullYear()} {site.businessName}
+        </span>
         <span>
           Halaman usaha dibuat dengan{' '}
           <a href="/" className="underline underline-offset-2 hover:text-[color:var(--site-ink)]">

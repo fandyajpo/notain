@@ -148,14 +148,23 @@ export default function WarungTemplate({ site, items }: SiteTemplateProps) {
                 const Icon = row.icon;
                 const body = (
                   <span className="flex gap-3">
-                    <Icon size={16} className="mt-0.5 shrink-0 text-[color:var(--site-accent)]" aria-hidden="true" />
+                    <Icon
+                      size={16}
+                      className="mt-0.5 shrink-0 text-[color:var(--site-accent)]"
+                      aria-hidden="true"
+                    />
                     <span className="break-words">{row.text}</span>
                   </span>
                 );
                 return (
                   <li key={row.text}>
                     {row.href ? (
-                      <a href={row.href} target="_blank" rel="noopener noreferrer" className="hover:text-[color:var(--site-accent)] hover:underline">
+                      <a
+                        href={row.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-[color:var(--site-accent)] hover:underline"
+                      >
                         {body}
                       </a>
                     ) : (
@@ -165,7 +174,9 @@ export default function WarungTemplate({ site, items }: SiteTemplateProps) {
                 );
               })}
               {rows.length === 0 && (
-                <li className="text-[color:var(--site-muted)]">Belum ada kontak yang dipublikasikan.</li>
+                <li className="text-[color:var(--site-muted)]">
+                  Belum ada kontak yang dipublikasikan.
+                </li>
               )}
             </ul>
           </div>

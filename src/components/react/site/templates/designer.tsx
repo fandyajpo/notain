@@ -101,7 +101,9 @@ export default function DesignerTemplate({ site, items }: SiteTemplateProps) {
                     {String(index + 1).padStart(2, '0')}
                   </span>
                   <span className="min-w-0">
-                    <span className="text-xl font-bold tracking-tight sm:text-2xl">{item.name}</span>
+                    <span className="text-xl font-bold tracking-tight sm:text-2xl">
+                      {item.name}
+                    </span>
                     <span className="ml-3 font-mono text-[11px] tracking-wider text-[color:var(--site-muted)] uppercase">
                       {item.kind === 'barang' ? 'produk' : 'jasa'}
                     </span>

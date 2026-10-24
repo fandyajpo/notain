@@ -97,7 +97,10 @@ export default function FreelancerTemplate({ site, items }: SiteTemplateProps) {
           </div>
         )}
       </section>
-      <section id="layanan" className="border-t border-[color:var(--site-line)] bg-[var(--site-surface)]">
+      <section
+        id="layanan"
+        className="border-t border-[color:var(--site-line)] bg-[var(--site-surface)]"
+      >
         <div className="mx-auto max-w-4xl px-5 py-14 sm:py-16">
           <h2 className="text-2xl font-bold tracking-tight">Layanan</h2>
           {hasList ? (
@@ -111,7 +114,10 @@ export default function FreelancerTemplate({ site, items }: SiteTemplateProps) {
                       className="flex items-baseline justify-between gap-4 border-b border-[color:var(--site-line)] py-4"
                     >
                       <span className="flex min-w-0 items-baseline gap-2.5">
-                        <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--site-accent)]" />
+                        <span
+                          aria-hidden="true"
+                          className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--site-accent)]"
+                        />
                         <span className="truncate font-medium">{item.name}</span>
                       </span>
                       <span className="shrink-0 text-sm font-semibold text-[color:var(--site-accent)]">
@@ -144,14 +150,23 @@ export default function FreelancerTemplate({ site, items }: SiteTemplateProps) {
                 const Icon = row.icon;
                 const body = (
                   <span className="flex gap-3">
-                    <Icon size={16} className="mt-0.5 shrink-0 text-[color:var(--site-accent)]" aria-hidden="true" />
+                    <Icon
+                      size={16}
+                      className="mt-0.5 shrink-0 text-[color:var(--site-accent)]"
+                      aria-hidden="true"
+                    />
                     <span className="break-words">{row.text}</span>
                   </span>
                 );
                 return (
                   <li key={row.text}>
                     {row.href ? (
-                      <a href={row.href} target="_blank" rel="noopener noreferrer" className="hover:text-[color:var(--site-accent)] hover:underline">
+                      <a
+                        href={row.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-[color:var(--site-accent)] hover:underline"
+                      >
                         {body}
                       </a>
                     ) : (
@@ -161,7 +176,9 @@ export default function FreelancerTemplate({ site, items }: SiteTemplateProps) {
                 );
               })}
               {rows.length === 0 && (
-                <li className="text-[color:var(--site-muted)]">Belum ada kontak yang dipublikasikan.</li>
+                <li className="text-[color:var(--site-muted)]">
+                  Belum ada kontak yang dipublikasikan.
+                </li>
               )}
             </ul>
           </div>

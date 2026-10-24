@@ -306,7 +306,9 @@ export function InvoicePreview({
                       {item.unit ?? <span style={muted}>-</span>}
                     </td>
                   )}
-                  <td className="py-2 pl-2 text-right tabular-nums">{formatRupiah(item.unitPrice)}</td>
+                  <td className="py-2 pl-2 text-right tabular-nums">
+                    {formatRupiah(item.unitPrice)}
+                  </td>
                   <td className="py-2 pl-2 text-right font-medium tabular-nums">
                     {formatRupiah(totals.itemSubtotals[invoice.items.indexOf(item)] ?? 0)}
                   </td>

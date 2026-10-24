@@ -137,7 +137,11 @@ export default function RepairTemplate({ site, items }: SiteTemplateProps) {
               const Icon = row.icon;
               const body = (
                 <span className="flex items-center gap-2">
-                  <Icon size={15} className="shrink-0 text-[color:var(--site-accent)]" aria-hidden="true" />
+                  <Icon
+                    size={15}
+                    className="shrink-0 text-[color:var(--site-accent)]"
+                    aria-hidden="true"
+                  />
                   <span className="break-words">{row.text}</span>
                 </span>
               );
@@ -147,7 +151,12 @@ export default function RepairTemplate({ site, items }: SiteTemplateProps) {
                   className="rounded-sm border border-[color:var(--site-line)] bg-[var(--site-surface)] px-3.5 py-2 text-sm"
                 >
                   {row.href ? (
-                    <a href={row.href} target="_blank" rel="noopener noreferrer" className="hover:text-[color:var(--site-accent)]">
+                    <a
+                      href={row.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-[color:var(--site-accent)]"
+                    >
                       {body}
                     </a>
                   ) : (

@@ -1,4 +1,9 @@
-import { catalogRowToDomain, profileRowToDomain, type CatalogRow, type ProfileRow } from '../../../src/appwrite/mappers';
+import {
+  catalogRowToDomain,
+  profileRowToDomain,
+  type CatalogRow,
+  type ProfileRow,
+} from '../../../src/appwrite/mappers';
 import { ID_SEGMENT_PATTERN } from '../../../src/lib/edit-route';
 import { apiError, json } from '../../_lib/http';
 import { enforceLimit, requestKey } from '../../_lib/quota';
@@ -74,7 +79,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
     env,
   );
   if (itemRows === null) {
-    return apiError(503, 'unavailable', 'Layanan sedang tidak tersedia. Coba lagi beberapa saat lagi.');
+    return apiError(
+      503,
+      'unavailable',
+      'Layanan sedang tidak tersedia. Coba lagi beberapa saat lagi.',
+    );
   }
 
   const items = itemRows
@@ -115,6 +124,8 @@ function publicSiteFromProfile(profile: ReturnType<typeof profileRowToDomain>) {
     businessType: profile.businessType,
     // Plan details and the raw R2 id stay server-side; only the URL the
     // browser fetches the image from is handed over.
-    ...(profile.logoFileId ? { logoUrl: `/api/logo/${encodeURIComponent(profile.logoFileId)}` } : {}),
+    ...(profile.logoFileId
+      ? { logoUrl: `/api/logo/${encodeURIComponent(profile.logoFileId)}` }
+      : {}),
   };
 }

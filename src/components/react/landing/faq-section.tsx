@@ -35,8 +35,7 @@ const FAQS = [
   },
   {
     question: 'Bisa diunduh jadi PDF?',
-    answer:
-      `Bisa. Invoice dibuka di tampilan cetak berukuran A4. Pilih "Simpan sebagai PDF" di dialog cetak browser, lalu kirim ke pelanggan. Dari aplikasinya, kamu juga bisa langsung membuka WhatsApp-nya.`,
+    answer: `Bisa. Invoice dibuka di tampilan cetak berukuran A4. Pilih "Simpan sebagai PDF" di dialog cetak browser, lalu kirim ke pelanggan. Dari aplikasinya, kamu juga bisa langsung membuka WhatsApp-nya.`,
   },
   {
     question: 'Berapa biayanya?',

@@ -93,11 +93,7 @@ describe('GET /api/site/<ownerId>', () => {
       logoUrl: '/api/logo/logo-key-1',
     });
     // Deterministic display order, `unit` omitted when the row has none.
-    expect(body.items.map((item) => item.name)).toEqual([
-      'Es Teh',
-      'Jasa Antar',
-      'Nasi Goreng',
-    ]);
+    expect(body.items.map((item) => item.name)).toEqual(['Es Teh', 'Jasa Antar', 'Nasi Goreng']);
     expect(body.items.find((item) => item.name === 'Jasa Antar')).not.toHaveProperty('unit');
     // A zero price is "never configured", not a number the client must show.
     expect(body.items.find((item) => item.name === 'Es Teh')?.unitPrice).toBe(0);

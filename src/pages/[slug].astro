@@ -84,29 +84,25 @@ const MUTED_LINK = 'font-medium text-foreground underline underline-offset-2 hov
       <!-- Features -->
       <h2 class="text-section mt-12">Fitur yang paling kepakai</h2>
       <ul class="mt-4 grid gap-4 sm:grid-cols-3">
-        {
-          page.features.map((feature) => (
-            <li class={CARD}>
-              <p class="font-semibold">{feature.title}</p>
-              <p class="mt-2 text-sm leading-relaxed text-muted">{feature.body}</p>
-            </li>
-          ))
-        }
+        {page.features.map((feature) => (
+          <li class={CARD}>
+            <p class="font-semibold">{feature.title}</p>
+            <p class="mt-2 text-sm leading-relaxed text-muted">{feature.body}</p>
+          </li>
+        ))}
       </ul>
 
       <!-- Workflow -->
       <h2 class={H2}>Cara kerjanya</h2>
       <ol class="mt-4 grid gap-4 sm:grid-cols-3">
-        {
-          page.workflow.map((step, index) => (
-            <li class={CARD}>
-              <span class="inline-flex size-7 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">
-                {index + 1}
-              </span>
-              <p class="mt-3 text-sm leading-relaxed">{step}</p>
-            </li>
-          ))
-        }
+        {page.workflow.map((step, index) => (
+          <li class={CARD}>
+            <span class="inline-flex size-7 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">
+              {index + 1}
+            </span>
+            <p class="mt-3 text-sm leading-relaxed">{step}</p>
+          </li>
+        ))}
       </ol>
 
       <!-- Example nota — illustrative lines, labelled as such -->
@@ -117,7 +113,9 @@ const MUTED_LINK = 'font-medium text-foreground underline underline-offset-2 hov
           <span class="text-xs text-muted">Rupiah</span>
         </div>
         <ul class="mt-3 space-y-2 text-sm text-muted">
-          {page.exampleLines.map((line) => <li>{line}</li>)}
+          {page.exampleLines.map((line) => (
+            <li>{line}</li>
+          ))}
         </ul>
         <p class="mt-4 border-t border-border pt-3 text-xs text-muted">{page.exampleNote}</p>
       </div>
@@ -129,22 +127,20 @@ const MUTED_LINK = 'font-medium text-foreground underline underline-offset-2 hov
       <!-- FAQ (rendered identically into FAQPage JSON-LD below) -->
       <h2 class={H2}>Pertanyaan yang sering muncul</h2>
       <dl class="mt-4 max-w-2xl space-y-5">
-        {
-          page.faq.map((item) => (
-            <div>
-              <dt class="font-semibold">{item.question}</dt>
-              <dd class="mt-1.5 text-sm leading-relaxed text-muted">{item.answer}</dd>
-            </div>
-          ))
-        }
+        {page.faq.map((item) => (
+          <div>
+            <dt class="font-semibold">{item.question}</dt>
+            <dd class="mt-1.5 text-sm leading-relaxed text-muted">{item.answer}</dd>
+          </div>
+        ))}
       </dl>
 
       <!-- Closing CTA -->
       <div class="mt-14 rounded-card border border-border bg-card p-8 text-center shadow-card">
         <h2 class="text-section">Mulai gratis, nota pertama hari ini</h2>
         <p class="mx-auto mt-2 max-w-xl text-sm text-muted">
-          Tidak perlu kartu kredit dan tidak perlu install — Notain dibuka langsung dari browser,
-          di HP maupun desktop.
+          Tidak perlu kartu kredit dan tidak perlu install — Notain dibuka langsung dari browser, di
+          HP maupun desktop.
         </p>
         <div class="mt-5 flex flex-wrap justify-center gap-3">
           <a
@@ -167,29 +163,35 @@ const MUTED_LINK = 'font-medium text-foreground underline underline-offset-2 hov
       <nav aria-label="Industri lain" class="mt-10">
         <p class="text-eyebrow uppercase text-muted">Industri lain</p>
         <ul class="mt-3 flex flex-wrap gap-2">
-          {
-            others.map((other) => (
-              <li>
-                <a
-                  href={`/${other.slug}/`}
-                  class="inline-flex rounded-control border border-border bg-card px-3.5 py-1.5 text-sm shadow-card transition-colors hover:bg-background focus-ring"
-                >
-                  {other.label}
-                </a>
-              </li>
-            ))
-          }
+          {others.map((other) => (
+            <li>
+              <a
+                href={`/${other.slug}/`}
+                class="inline-flex rounded-control border border-border bg-card px-3.5 py-1.5 text-sm shadow-card transition-colors hover:bg-background focus-ring"
+              >
+                {other.label}
+              </a>
+            </li>
+          ))}
         </ul>
       </nav>
 
       <p class="mt-10 text-sm text-muted">
-        Sudah punya usaha lain? Lihat juga <a href="/pricing" class={MUTED_LINK}>harga Notain</a> dan
-        <a href="/" class={MUTED_LINK}>kenapa Notain</a>.
+        Sudah punya usaha lain? Lihat juga{' '}
+        <a href="/pricing" class={MUTED_LINK}>
+          harga Notain
+        </a>{' '}
+        dan
+        <a href="/" class={MUTED_LINK}>
+          kenapa Notain
+        </a>
+        .
       </p>
 
       <script
         type="application/ld+json"
-        set:html={JSON.stringify(jsonLd).replace(/</g, '\u003c')} />
+        set:html={JSON.stringify(jsonLd).replace(/</g, '\u003c')}
+      />
     </main>
 
     <SiteFooter anchorPrefix="/" />

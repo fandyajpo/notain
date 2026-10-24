@@ -69,8 +69,8 @@ export function BenefitsBand() {
               transition={{ duration: 0.6, delay: 0.2, ease: EASE }}
               className="mt-4 max-w-sm text-sm leading-relaxed text-white/55"
             >
-              Bukan fitur demi fitur, tapi jawaban untuk hal yang selama ini bikin pusing
-              tiap mau tagih pembayaran.
+              Bukan fitur demi fitur, tapi jawaban untuk hal yang selama ini bikin pusing tiap mau
+              tagih pembayaran.
             </motion.p>
           </div>
 
