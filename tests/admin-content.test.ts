@@ -184,6 +184,27 @@ describe('POST /api/admin/content — invoices', () => {
     expect(writes('invoices')).toEqual([]);
   });
 
+  it('lets exactly one of two dialogs racing the same number win', async () => {
+    // Nothing is seeded: the fast-path check is blind to both calls, exactly
+    // like two admin tabs that opened on the same suggestion. What stops the
+    // duplicate is the deterministic document id — Appwrite refuses the
+    // second explicit id, and the endpoint must surface that as a 409 rather
+    // than a 500 or a silent overwrite.
+    const first = await handle(
+      post({ userId: 'user-1', resource: 'invoices', action: 'create', draft: baseDraft }),
+    );
+    const second = await handle(
+      post({ userId: 'user-1', resource: 'invoices', action: 'create', draft: baseDraft }),
+    );
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(409);
+    expect(await second.json()).toMatchObject({
+      error: 'conflict',
+      message: 'Nomor invoice ini sudah dipakai. Gunakan nomor lain.',
+    });
+  });
+
   it('refuses a write for a user that does not exist', async () => {
     const response = await handle(
       post({ userId: 'ghost', resource: 'invoices', action: 'create', draft: baseDraft }),

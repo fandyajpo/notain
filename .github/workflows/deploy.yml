@@ -69,6 +69,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Nothing ships that fails its own suite: tests and type check used to
+      # run only on a developer machine, so a red suite could still deploy.
+      # CI has no `.env`, so this also proves the suite passes on the config
+      # defaults alone — the same values production falls back to.
+      - name: Test
+        run: npm test
+
+      - name: Type check
+        run: npm run typecheck
+
       # `.env` is intentionally absent in CI: the build falls back to the
       # defaults in `src/appwrite/config.ts`, which already match production.
       # `.env` only feeds Vite; the Function reads `wrangler.toml` instead.

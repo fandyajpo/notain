@@ -1,4 +1,5 @@
 import { cacheGet, cacheSet, quotaPolicy, singleFlight } from './quota';
+import { fetchUpstream as fetch } from './http';
 import type { Env } from './types';
 
 export type Session = { userId: string; email: string };

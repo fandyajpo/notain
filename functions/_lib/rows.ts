@@ -1,4 +1,5 @@
 import { count, quotaPolicy } from './quota';
+import { fetchUpstream as fetch } from './http';
 import { querySearchAll } from './appwrite';
 import type { Env } from './types';
 

@@ -108,3 +108,14 @@ export function isUnauthenticated(error: unknown): boolean {
 export function isRateLimited(error: unknown): boolean {
   return error instanceof AppError && error.code === ERROR_CODES.RATE_LIMITED;
 }
+
+/**
+ * True when Appwrite refused a write because the row already exists —
+ * a duplicate document id (the deterministic invoice-number claim) or a
+ * unique-index violation behind it. Keyed on the exception's 409 rather than
+ * a `type` string, because Appwrite spells those differently per mechanism
+ * and both mean the same thing to the caller: "that number is taken".
+ */
+export function isConflict(error: unknown): boolean {
+  return error instanceof AppwriteException && error.code === 409;
+}

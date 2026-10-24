@@ -64,6 +64,19 @@ const DESIRED = [
         attributes: ['ownerId', 'invoiceNumber'],
         orders: ['asc', 'asc'],
       },
+      // One invoice per (owner, number), enforced by the database itself —
+      // the backstop behind the deterministic invoice ids (an *update* never
+      // changes $id, so editing one number onto another is only stoppable
+      // here). If creation fails with a uniqueness error, rows already
+      // sharing (ownerId, invoiceNumber) exist in the data: list them with a
+      // query on those two attributes, resolve the duplicates by hand, then
+      // re-run. Same pattern payments already uses (`byInvoiceNumber`).
+      {
+        key: 'owner_invoiceNumber_unique',
+        type: 'unique',
+        attributes: ['ownerId', 'invoiceNumber'],
+        orders: ['asc', 'asc'],
+      },
       // Search box: Query.search on each field (fulltext is mandatory for
       // search). Key names match the ones the Console setup already created,
       // so a re-run recognises them instead of duplicating.

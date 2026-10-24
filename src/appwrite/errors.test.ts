@@ -1,7 +1,7 @@
 import { AppwriteException } from 'appwrite';
 import { describe, expect, it } from 'vite-plus/test';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
-import { appErrorFromStatus, isRateLimited, isUnauthenticated, toAppError } from './errors';
+import { appErrorFromStatus, isConflict, isRateLimited, isUnauthenticated, toAppError } from './errors';
 
 function appwriteError(status: number, type = ''): AppwriteException {
   return new AppwriteException('boom', status, type);
@@ -108,5 +108,21 @@ describe('isUnauthenticated', () => {
   it('is true only for an unauthenticated AppError', () => {
     expect(isUnauthenticated(toAppError(appwriteError(401)))).toBe(true);
     expect(isUnauthenticated(toAppError(appwriteError(429)))).toBe(false);
+  });
+});
+
+describe('isConflict', () => {
+  it('is true for a 409 whichever uniqueness mechanism produced it', () => {
+    // Deterministic id collision and unique-index violation both arrive as
+    // 409 with different `type` strings; the number claim must recognise
+    // either without waiting on a type list Appwrite may extend.
+    expect(isConflict(appwriteError(409, 'document_already_exists'))).toBe(true);
+    expect(isConflict(appwriteError(409, 'general_unique_index'))).toBe(true);
+  });
+
+  it('is false for every other failure', () => {
+    expect(isConflict(appwriteError(404))).toBe(false);
+    expect(isConflict(appwriteError(500))).toBe(false);
+    expect(isConflict(new Error('nope'))).toBe(false);
   });
 });

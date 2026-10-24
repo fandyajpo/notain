@@ -37,8 +37,6 @@ const INDEXABLE_ROUTES = new Set([
   '/blog/',
   '/contact/',
   '/developers/',
-  '/login/',
-  '/register/',
   '/pricing/',
   '/privacy/',
   '/terms/',

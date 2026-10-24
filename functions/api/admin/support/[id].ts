@@ -1,6 +1,6 @@
 import { writeAudit } from '../../../_lib/audit';
 import { requireAdmin } from '../../../_lib/admin';
-import { apiError, json } from '../../../_lib/http';
+import { apiError, fetchUpstream as fetch, json } from '../../../_lib/http';
 import type { Env, PagesFunction } from '../../../_lib/types';
 
 const DATABASE_ID = 'notain_db';

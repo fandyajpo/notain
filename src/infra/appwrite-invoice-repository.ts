@@ -1,10 +1,11 @@
-import { ID, Query } from 'appwrite';
+import { Query } from 'appwrite';
 import type { Invoice, InvoiceDraft, InvoiceStatus } from '../core/invoice/model';
 import { APPWRITE } from '../appwrite/config';
 import { getTables } from '../appwrite/client';
-import { toAppError } from '../appwrite/errors';
+import { isConflict, toAppError } from '../appwrite/errors';
 import { ownerRowPermissions } from '../appwrite/permissions';
-import { invoiceNumberPrefix } from '../core/invoice/numbering';
+import { AppError, ERROR_CODES } from '../core/shared/errors';
+import { invoiceDocumentId, invoiceNumberPrefix } from '../core/invoice/numbering';
 import {
   draftToRowData,
   draftToRowUpdateData,
@@ -234,13 +235,17 @@ export class AppwriteInvoiceRepository implements InvoiceRepository {
       const row = await getTables().createRow<InvoiceRow>({
         databaseId: APPWRITE.databaseId,
         tableId: APPWRITE.invoicesTableId,
-        rowId: input.id || ID.unique(),
+        // Derived from (owner, number): Appwrite's own id uniqueness is what
+        // makes "one invoice per number per owner" a server-side fact. Two
+        // tabs offered the same number cannot both win the create — the
+        // second one answers 409 and lands in the conflict translation below.
+        rowId: input.id ?? (await invoiceDocumentId(input.ownerId, input.draft.invoiceNumber)),
         data: { ownerId: input.ownerId, ...draftToRowData(input.draft) },
         permissions: ownerRowPermissions(input.ownerId),
       });
       return invoiceRowToDomain(row);
     } catch (error) {
-      throw toAppError(error);
+      throw invoiceWriteError(error);
     }
   }
 
@@ -257,7 +262,10 @@ export class AppwriteInvoiceRepository implements InvoiceRepository {
       });
       return invoiceRowToDomain(row);
     } catch (error) {
-      throw toAppError(error);
+      // With the unique (ownerId, invoiceNumber) index in place, editing one
+      // number onto another is refused here — the create-time id cannot help
+      // an update, the index can.
+      throw invoiceWriteError(error);
     }
   }
 
@@ -324,6 +332,23 @@ function filterBySearch(invoices: Invoice[], search: string): Invoice[] {
     if (invoice.customerName.toLowerCase().includes(needle)) return true;
     return invoice.items.some((item) => item.name.toLowerCase().includes(needle));
   });
+}
+
+/**
+ * Translates a failed invoice write. 409 is the one status Appwrite answers
+ * with when the deterministic id (or the unique index behind it) rejects the
+ * row, and this is the layer that knows what a conflict *means* here: the
+ * number is taken. Everything else keeps the standard mapping.
+ */
+function invoiceWriteError(error: unknown): AppError {
+  if (isConflict(error)) {
+    return new AppError(
+      ERROR_CODES.CONFLICT,
+      'Nomor invoice ini sudah dipakai. Gunakan nomor lain.',
+      { cause: error },
+    );
+  }
+  return toAppError(error);
 }
 
 function isNotFound(error: unknown): boolean {

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vite-plus/test';
+import { ID_SEGMENT_PATTERN } from '../../lib/edit-route';
 import {
   extractInvoiceSequence,
   formatInvoiceNumber,
+  invoiceDocumentId,
   isInvoiceNumber,
   nextInvoiceNumber,
 } from './numbering';
@@ -63,5 +65,30 @@ describe('isInvoiceNumber', () => {
     expect(isInvoiceNumber('INV-26-001')).toBe(false);
     expect(isInvoiceNumber('INV-2026-1')).toBe(false);
     expect(isInvoiceNumber('')).toBe(false);
+  });
+});
+
+describe('invoiceDocumentId', () => {
+  it('is stable: the same owner and number always claim the same id', async () => {
+    const first = await invoiceDocumentId('user-1', 'INV-2026-001');
+    const second = await invoiceDocumentId('user-1', 'INV-2026-001');
+
+    expect(first).toBe(second);
+  });
+
+  it('fits Appwrite\'s id limit and the URL segment pattern', async () => {
+    const id = await invoiceDocumentId('user-1', 'INV-2026-007');
+
+    expect(id).toMatch(/^inv_[0-9a-f]{32}$/);
+    expect(id.length).toBe(36);
+    expect(ID_SEGMENT_PATTERN.test(id)).toBe(true);
+  });
+
+  it('separates tenants and numbers — two owners both start at 001', async () => {
+    const ownerA = await invoiceDocumentId('user-a', 'INV-2026-001');
+    const ownerB = await invoiceDocumentId('user-b', 'INV-2026-001');
+    const ownerANext = await invoiceDocumentId('user-a', 'INV-2026-002');
+
+    expect(new Set([ownerA, ownerB, ownerANext]).size).toBe(3);
   });
 });

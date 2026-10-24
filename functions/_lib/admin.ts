@@ -1,5 +1,5 @@
 import { querySearch, verifySession, type Session } from './appwrite';
-import { apiError } from './http';
+import { apiError, fetchUpstream as fetch } from './http';
 import { cacheGet, cacheSet, count, quotaPolicy } from './quota';
 import type { Env } from './types';
 

@@ -52,3 +52,44 @@ export const IMAGE_RESPONSE_HEADERS: Record<string, string> = {
   'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
   'cross-origin-resource-policy': 'same-origin',
 };
+
+/**
+ * How long any one outbound provider call (Appwrite, DOKU, Turnstile) may
+ * take before it is abandoned. Ten seconds is far above normal latency and
+ * far below the point where a hung upstream would eat the request: a stalled
+ * provider must degrade into the failure path each caller already handles
+ * (retry / null / fail-closed) instead of pinning the invocation open.
+ */
+export const UPSTREAM_TIMEOUT_MS = 10_000;
+
+/**
+ * `fetch` with a deadline.
+ *
+ * Modules under `functions/` import this *aliased as* `fetch`
+ * (`import { fetchUpstream as fetch } from './http'`), so every outbound call
+ * in this codebase is bounded without rewriting a single call site — and a
+ * reader seeing `fetch(…)` in a Function knows which one it is from the import.
+ *
+ * An explicitly passed `signal` wins (the caller already owns that deadline).
+ * The timer is cleared as soon as the call settles, so a healthy request
+ * leaves nothing behind. On timeout the abort reason is a `TimeoutError` DOMException,
+ * which the callers' existing catch blocks treat like any network failure.
+ */
+export async function fetchUpstream(
+  url: string,
+  init: RequestInit = {},
+  timeoutMs: number = UPSTREAM_TIMEOUT_MS,
+): Promise<Response> {
+  if (init.signal) return fetch(url, { ...init });
+
+  const controller = new AbortController();
+  const timer = setTimeout(
+    () => controller.abort(new DOMException(`Upstream timed out after ${timeoutMs}ms`, 'TimeoutError')),
+    timeoutMs,
+  );
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}

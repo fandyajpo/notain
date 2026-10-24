@@ -149,6 +149,13 @@ function route(fake: AppwriteFake, method: string, url: string): Response {
         documentId: string;
         data: Record<string, unknown>;
       };
+      // Appwrite rejects a second document whose explicit id already exists
+      // (`unique()` never collides). The invoice number claim depends on
+      // exactly that behaviour, so the fake has to model it — otherwise a
+      // test would see a silent overwrite where production sees a 409.
+      if (payload.documentId !== 'unique()' && fake.rows.has(`${table}/${payload.documentId}`)) {
+        return json(409, { message: 'Document already exists', type: 'document_already_exists' });
+      }
       const row = { $id: payload.documentId, ...payload.data } as Row;
       fake.rows.set(`${table}/${payload.documentId}`, row);
       return json(201, row);

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { writeAudit } from '../../_lib/audit';
 import { requireAdmin } from '../../_lib/admin';
 import { querySearchAll } from '../../_lib/appwrite';
-import { apiError, json } from '../../_lib/http';
+import { apiError, fetchUpstream as fetch, json } from '../../_lib/http';
 import { cacheDelete, cacheGet, cacheSet, count, quotaPolicy } from '../../_lib/quota';
 import { getRow, patchRow, type TableId } from '../../_lib/rows';
 import type { Env, PagesFunction } from '../../_lib/types';
@@ -22,7 +22,7 @@ import {
 } from '../../../src/core/invoice/model';
 import { canChangeStatus, statusFlowMessage } from '../../../src/core/invoice/status';
 import { invoiceDraftSchema } from '../../../src/core/invoice/schema';
-import { nextInvoiceNumber } from '../../../src/core/invoice/numbering';
+import { invoiceDocumentId, nextInvoiceNumber } from '../../../src/core/invoice/numbering';
 import { invoiceContentFingerprint } from '../../../src/core/invoice/fingerprint';
 import { invoiceTemplateSchema } from '../../../src/core/template/schema';
 import { BUILTIN_TEMPLATE_IDS, getBuiltinTemplate } from '../../../src/core/template/builtins';
@@ -673,10 +673,20 @@ async function createInvoice(
     return apiError(409, 'conflict', 'Nomor invoice ini sudah dipakai. Gunakan nomor lain.');
   }
 
-  const created = await createDocument(auth, 'invoices', userId, {
-    ownerId: userId,
-    ...draftToRowData(parsed.data as InvoiceDraft),
-  });
+  const created = await createDocument(
+    auth,
+    'invoices',
+    userId,
+    {
+      ownerId: userId,
+      ...draftToRowData(parsed.data as InvoiceDraft),
+    },
+    // The same deterministic id the app's own create mints: even when two
+    // admin dialogs race past the `invoiceNumberTaken` fast path, Appwrite
+    // accepts exactly one of them and the loser gets a 409 instead of a
+    // silent duplicate.
+    await invoiceDocumentId(userId, parsed.data.invoiceNumber),
+  );
   if (!created.ok) return created.response;
 
   // The number is consumed: drop any cached suggestion so the next dialog
@@ -710,6 +720,13 @@ async function createDocument(
   table: TableId,
   ownerId: string,
   data: Record<string, unknown>,
+  /**
+   * Explicit document id. Only the invoice create passes one (the
+   * deterministic number claim); every other caller keeps `unique()`, which
+   * can never collide — so a 409 from this endpoint always means "that
+   * invoice number is already owned".
+   */
+  rowId?: string,
 ): Promise<{ ok: true; rowId: string } | { ok: false; response: Response }> {
   const response = await fetch(
     `${auth.endpoint}/databases/${DATABASE_ID}/collections/${table}/documents`,
@@ -717,7 +734,7 @@ async function createDocument(
       method: 'POST',
       headers: { ...auth.headers, 'content-type': 'application/json' },
       body: JSON.stringify({
-        documentId: 'unique()',
+        documentId: rowId ?? 'unique()',
         data,
         permissions: [
           `read("user:${ownerId}")`,
@@ -727,6 +744,12 @@ async function createDocument(
       }),
     },
   );
+  if (response.status === 409) {
+    return {
+      ok: false,
+      response: apiError(409, 'conflict', 'Nomor invoice ini sudah dipakai. Gunakan nomor lain.'),
+    };
+  }
   if (!response.ok) {
     const text = await response.text().catch(() => '');
     return {

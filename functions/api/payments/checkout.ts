@@ -1,6 +1,6 @@
 import { getRow, patchRow, tableAuth } from '../../_lib/rows';
 import { verifySession } from '../../_lib/appwrite';
-import { apiError, json } from '../../_lib/http';
+import { apiError, fetchUpstream as fetch, json } from '../../_lib/http';
 import { writeAudit } from '../../_lib/audit';
 import {
   breakerAllows,

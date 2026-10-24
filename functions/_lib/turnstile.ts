@@ -1,3 +1,4 @@
+import { fetchUpstream as fetch } from './http';
 import type { Env } from './types';
 
 const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';

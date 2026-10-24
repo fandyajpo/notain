@@ -1,3 +1,4 @@
+import { fetchUpstream as fetch } from './http';
 import type { Env } from './types';
 
 const DATABASE_ID = 'notain_db';

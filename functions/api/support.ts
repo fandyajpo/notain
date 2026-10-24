@@ -1,5 +1,5 @@
 import { checkTurnstile } from '../_lib/turnstile';
-import { apiError, json } from '../_lib/http';
+import { apiError, fetchUpstream as fetch, json } from '../_lib/http';
 import { tableAuth } from '../_lib/rows';
 import { enforceLimit, requestKey } from '../_lib/quota';
 import type { Env, PagesFunction } from '../_lib/types';
