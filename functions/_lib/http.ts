@@ -1,7 +1,18 @@
 export function json(status: number, body: unknown, headers: HeadersInit = {}): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'content-type': 'application/json; charset=utf-8', ...headers },
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      // Every JSON route in this app answers with private user, admin or
+      // payment data (or an error about it), so none of it may land in a
+      // browser or shared cache — making that the helper's default means a
+      // new endpoint is safe by omission rather than by remembering one
+      // header. The image routes serve public bytes through their own
+      // `Response` and are unaffected; a route that genuinely wants a
+      // different policy can still override it by passing the header.
+      'cache-control': 'no-store',
+      ...headers,
+    },
   });
 }
 
