@@ -69,6 +69,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Cheapest gate first: formatting drift once reached 35 files with
+      # nothing running this check anywhere. One second here, and `vp fmt .`
+      # is the fix the failure message points at.
+      - name: Format check
+        run: npm run format:check
+
       # Nothing ships that fails its own suite: tests and type check used to
       # run only on a developer machine, so a red suite could still deploy.
       # CI has no `.env`, so this also proves the suite passes on the config
