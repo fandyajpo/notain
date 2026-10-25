@@ -1,10 +1,15 @@
 import { motion, MotionConfig } from 'motion/react';
 import { ArrowRight, Check } from 'lucide-react';
 import { PLAN_PRICES, PLAN_TAGLINES, PLAN_TIER_IDS } from '../../../core/billing/plan-benefits';
+import { FREE_PLAN_LIMITS } from '../../../core/billing/plans';
 import { EASE, Reveal, SectionHeading } from './reveal';
 
 const HIGHLIGHTS: Record<(typeof PLAN_TIER_IDS)[number], readonly string[]> = {
-  free: ['Invoice tanpa batas', 'PDF A4 & kirim ke WhatsApp', 'Data pelanggan & katalog'],
+  free: [
+    `${FREE_PLAN_LIMITS.invoicesPerMonth} invoice baru per bulan`,
+    'PDF A4 & kirim ke WhatsApp',
+    'Data pelanggan & katalog',
+  ],
   pro: ['Template premium & branding', 'Laporan bisnis & invoice link', 'Penyimpanan lebih besar'],
   business: ['API key untuk tim & integrasi', 'Webhook event invoice', 'Rate limit lebih tinggi'],
 };

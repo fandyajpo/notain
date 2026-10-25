@@ -29,25 +29,26 @@ separate execution quota — also never treated as spare capacity.
 
 ## 2. Endpoint classification
 
-| Endpoint                                                                          | Class (per service rules)         | Server-side because                                                          |
-| --------------------------------------------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------- |
-| `GET/PATCH /api/admin/users`, `PATCH/GET /api/admin/users/[id]`                   | Privileged admin (Pages Function) | Team-membership gate, API-key reads/writes, suspend capability, audit writes |
-| `GET/POST /api/admin/content`                                                     | Privileged admin                  | Ownership-enforced writes as another user, zod validation, audit             |
-| `GET /api/admin/audit`, `GET /api/admin/support`, `PATCH /api/admin/support/[id]` | Privileged admin                  | API-key reads of permission-less rows; audit trail                           |
-| **`GET /api/admin/quota`** (new)                                                  | Privileged admin                  | Quota counters/policy snapshot                                               |
-| `POST /api/payments/checkout`                                                     | Secret-dependent billing mutation | DOKU credentials, server-side pricing, duplicate-order guard                 |
-| `POST /api/payments/doku-notify`                                                  | Webhook verification              | HMAC signature over raw body; settlement state machine                       |
-| `GET /api/payments/status`                                                        | Secret-dependent reconciliation   | Signed DOKU Check Status probe; throttled + breaker-protected                |
-| `GET /api/payments/portal`                                                        | Server read of private data       | `payments` rows have empty permissions; only the API key can read them       |
-| `GET /api/invoice/[id]`                                                           | Server read with business gate    | Pro-plan 402 gate + owner-scoped row reads by API key                        |
-| `POST /api/invoice/[id]/proof`                                                    | File write (R2 binding)           | Turnstile verification, one-shot guard, R2 only exists in Functions          |
-| `POST /api/logo`, `GET/DELETE /api/logo/[key]`                                    | File read/write (R2 binding)      | Session + ownership checks; private bucket                                   |
-| `GET/DELETE /api/proof/[key]`                                                     | File read/write (R2 binding)      | Capability URL + owner check; clears row reference                           |
-| `POST /api/support`                                                               | Public write                      | Turnstile + validation + rate fence; permission-less row                     |
-| `POST /api/turnstile`                                                             | Public verification               | Secret lives only in Functions                                               |
-| `POST /api/csp-report`                                                            | Public diagnostics                | Rate-fenced log sink                                                         |
-| `/invoice/[id]`, `/templates/[id]` shells                                         | Platform routing                  | Serve built shells under dynamic URLs; no redirects                          |
-| Invoice/template/customer/catalog CRUD                                            | **Direct Appwrite SDK (client)**  | Auth + owner row permissions + client ownership checks; kept as-is           |
+| Endpoint                                                                          | Class (per service rules)         | Server-side because                                                              |
+| --------------------------------------------------------------------------------- | --------------------------------- | -------------------------------------------------------------------------------- |
+| `GET/PATCH /api/admin/users`, `PATCH/GET /api/admin/users/[id]`                   | Privileged admin (Pages Function) | Team-membership gate, API-key reads/writes, suspend capability, audit writes     |
+| `GET/POST /api/admin/content`                                                     | Privileged admin                  | Ownership-enforced writes as another user, zod validation, audit                 |
+| `GET /api/admin/audit`, `GET /api/admin/support`, `PATCH /api/admin/support/[id]` | Privileged admin                  | API-key reads of permission-less rows; audit trail                               |
+| **`GET /api/admin/quota`** (new)                                                  | Privileged admin                  | Quota counters/policy snapshot                                                   |
+| `POST /api/payments/checkout`                                                     | Secret-dependent billing mutation | DOKU credentials, server-side pricing, duplicate-order guard                     |
+| `POST /api/payments/doku-notify`                                                  | Webhook verification              | HMAC signature over raw body; settlement state machine                           |
+| `GET /api/payments/status`                                                        | Secret-dependent reconciliation   | Signed DOKU Check Status probe; throttled + breaker-protected                    |
+| `GET /api/payments/portal`                                                        | Server read of private data       | `payments` rows have empty permissions; only the API key can read them           |
+| `GET /api/invoice/[id]`                                                           | Server read with business gate    | Pro-plan 402 gate + owner-scoped row reads by API key                            |
+| `GET/POST /api/quota/invoices`                                                    | Session-scoped billing gate       | Free tier's 10-invoices-a-month counted server-side; 402 when the month is spent |
+| `POST /api/invoice/[id]/proof`                                                    | File write (R2 binding)           | Turnstile verification, one-shot guard, R2 only exists in Functions              |
+| `POST /api/logo`, `GET/DELETE /api/logo/[key]`                                    | File read/write (R2 binding)      | Session + ownership checks; private bucket                                       |
+| `GET/DELETE /api/proof/[key]`                                                     | File read/write (R2 binding)      | Capability URL + owner check; clears row reference                               |
+| `POST /api/support`                                                               | Public write                      | Turnstile + validation + rate fence; permission-less row                         |
+| `POST /api/turnstile`                                                             | Public verification               | Secret lives only in Functions                                                   |
+| `POST /api/csp-report`                                                            | Public diagnostics                | Rate-fenced log sink                                                             |
+| `/invoice/[id]`, `/templates/[id]` shells                                         | Platform routing                  | Serve built shells under dynamic URLs; no redirects                              |
+| Invoice/template/customer/catalog CRUD                                            | **Direct Appwrite SDK (client)**  | Auth + owner row permissions + client ownership checks; kept as-is               |
 
 Nothing is duplicated across services: each operation has exactly one
 implementation, and no handler was moved off its current runtime.

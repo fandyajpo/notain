@@ -4,9 +4,11 @@ import { EASE } from './reveal';
 import { MagneticButton } from './interactive';
 import { Aurora } from './aurora';
 import {
+  PLAN_BADGES,
   PLAN_BENEFITS,
   PLAN_PRICES,
   PLAN_TAGLINES,
+  yearlySavingNote,
   type PlanTier,
 } from '../../../core/billing/plan-benefits';
 
@@ -30,17 +32,20 @@ const PLANS: readonly Plan[] = [
   {
     id: 'free',
     name: 'Free',
+    badge: PLAN_BADGES.free ?? undefined,
     cta: { href: '/register', label: 'Buat Invoice Gratis' },
   },
   {
     id: 'pro',
     name: 'Pro',
+    badge: PLAN_BADGES.pro ?? undefined,
     cta: { href: '/checkout?plan=pro', label: 'Berlangganan Pro' },
     primary: true,
   },
   {
     id: 'business',
     name: 'Business',
+    badge: PLAN_BADGES.business ?? undefined,
     cta: { href: '/checkout?plan=business', label: 'Berlangganan Business' },
   },
 ];
@@ -50,6 +55,9 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
   const { amount, period } = PLAN_PRICES[plan.id];
   const tagline = PLAN_TAGLINES[plan.id];
   const benefits = PLAN_BENEFITS[plan.id];
+  // A paid tier also shows the annual alternative. Derived, so the saving can
+  // never disagree with the monthly price printed a few pixels above it.
+  const yearly = plan.id === 'free' ? null : yearlySavingNote(plan.id);
 
   return (
     <motion.article
@@ -78,6 +86,7 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
         <span className="text-[2rem] font-semibold leading-none tracking-[-0.03em]">{amount}</span>
         <span className="text-sm text-muted">{period}</span>
       </p>
+      {yearly && <p className="mt-2 text-sm leading-relaxed text-muted">{yearly}</p>}
       <p className="mt-3 text-sm leading-relaxed text-muted">{tagline}</p>
 
       <div className="mt-6">

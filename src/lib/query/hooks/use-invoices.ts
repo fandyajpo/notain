@@ -6,6 +6,7 @@ import {
   useQueryClient,
   type InfiniteData,
 } from '@tanstack/react-query';
+import { claimInvoiceQuota, fetchInvoiceQuota } from '../../../app/invoice-quota';
 import {
   createInvoice,
   deleteInvoice,
@@ -101,13 +102,38 @@ export function usePickerHistory() {
   });
 }
 
+/** The free tier's monthly allowance, for the builder's meter. */
+export function useInvoiceQuota(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.invoiceQuota,
+    queryFn: () => fetchInvoiceQuota(),
+    // Edits never consume allowance, so only the create page asks.
+    enabled,
+    ...queryPolicy('invoiceQuota'),
+  });
+}
+
 export function useCreateInvoice() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (draft: InvoiceDraft) => createInvoice(draft),
+    mutationFn: async (draft: InvoiceDraft) => {
+      // The free tier's monthly cap lives here, on the create path only:
+      // edits never consume allowance. The server counts this owner's rows
+      // and answers 402 when the month is spent (or 503 when it cannot tell
+      // — saving on an unknown answer would make the limit advisory exactly
+      // where it is meant to bind). Either way the failure reaches the
+      // builder's own error surface with the server's copy.
+      await claimInvoiceQuota();
+      return createInvoice(draft);
+    },
     onSuccess: (invoice) => {
       queryClient.setQueryData(queryKeys.invoice(invoice.id), invoice);
       invalidateCollections(queryClient);
+    },
+    onSettled: () => {
+      // A successful save consumed allowance; a failed one may have changed
+      // the month. Either way the meter must not keep its old number.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.invoiceQuota });
     },
   });
 }

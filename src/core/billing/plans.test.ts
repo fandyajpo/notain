@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vite-plus/test';
 import {
   computePlanExpiry,
+  freeInvoiceBudget,
   isPaidPlan,
   isSubscriptionActive,
   makeInvoiceNumber,
+  monthKey,
   PAID_PLANS,
   planAmount,
   planRank,
@@ -12,7 +14,7 @@ import {
 
 describe('plan catalog', () => {
   it('prices match the public pricing page copy', () => {
-    expect(PAID_PLANS.pro.priceIdr).toBe(29_000);
+    expect(PAID_PLANS.pro.priceIdr).toBe(49_000);
     expect(PAID_PLANS.business.priceIdr).toBe(99_000);
   });
 
@@ -21,17 +23,72 @@ describe('plan catalog', () => {
     expect(isPaidPlan('business')).toBe(true);
     expect(isPaidPlan('free')).toBe(false);
     expect(isPaidPlan('')).toBe(false);
-    expect(isPaidPlan(29_000)).toBe(false);
+    expect(isPaidPlan(49_000)).toBe(false);
   });
 
   it('reads amounts from the catalog only', () => {
-    expect(planAmount('pro')).toBe(29_000);
+    expect(planAmount('pro')).toBe(49_000);
     expect(planAmount('business')).toBe(99_000);
   });
 
   it('ranks plans for downgrade protection', () => {
     expect(planRank('free')).toBeLessThan(planRank('pro'));
     expect(planRank('pro')).toBeLessThan(planRank('business'));
+  });
+});
+
+describe('freeInvoiceBudget', () => {
+  const now = new Date('2026-10-21T10:00:00.000');
+  const thisMonth = monthKey(now);
+  const lastMonth = monthKey(new Date(2026, 8, 1)); // September
+
+  it('leaves the full allowance to an account that made none', () => {
+    expect(freeInvoiceBudget({ plan: 'free', monthlyCounts: {} }, now)).toMatchObject({
+      remaining: 10,
+      used: 0,
+      limit: 10,
+    });
+  });
+
+  it('subtracts only this month’s creations — last month is history', () => {
+    const budget = freeInvoiceBudget(
+      { plan: 'free', monthlyCounts: { [thisMonth]: 4, [lastMonth]: 99 } },
+      now,
+    );
+    expect(budget).toMatchObject({ remaining: 6, used: 4 });
+  });
+
+  it('clamps at zero instead of promising a negative allowance', () => {
+    const budget = freeInvoiceBudget({ plan: 'free', monthlyCounts: { [thisMonth]: 14 } }, now);
+    expect(budget.remaining).toBe(0);
+    expect(budget.used).toBe(14);
+  });
+
+  it('is unlimited while a paid plan is active, regardless of history', () => {
+    const budget = freeInvoiceBudget(
+      {
+        plan: 'pro',
+        planExpiresAt: '2999-01-01T00:00:00.000Z',
+        monthlyCounts: { [thisMonth]: 50 },
+      },
+      now,
+    );
+    expect(budget.remaining).toBeNull();
+  });
+
+  it('falls back to the free allowance when the paid plan has lapsed', () => {
+    const budget = freeInvoiceBudget(
+      { plan: 'pro', planExpiresAt: '2020-01-01T00:00:00.000Z', monthlyCounts: { [thisMonth]: 2 } },
+      now,
+    );
+    expect(budget).toMatchObject({ remaining: 8, used: 2 });
+  });
+
+  it('resets on the first instant of the next calendar month', () => {
+    const { resetsAt } = freeInvoiceBudget({ plan: 'free', monthlyCounts: {} }, now);
+    expect(resetsAt.getMonth()).toBe(10); // November, the month after October
+    expect(resetsAt.getDate()).toBe(1);
+    expect(resetsAt.getHours()).toBe(0);
   });
 });
 

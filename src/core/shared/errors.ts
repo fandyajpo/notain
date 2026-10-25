@@ -11,6 +11,8 @@ export const ERROR_CODES = {
   CONFLICT: 'conflict',
   RATE_LIMITED: 'rate_limited',
   NETWORK: 'network',
+  /** The account's plan does not cover this (server answers 402). */
+  PLAN_REQUIRED: 'plan_required',
   /** The account is blocked (Appwrite `user_blocked`) — not a transient failure. */
   SUSPENDED: 'suspended',
   UNKNOWN: 'unknown',

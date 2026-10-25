@@ -97,6 +97,7 @@ describe('QUERY_POLICIES', () => {
         'dashboardFinance',
         'invoice',
         'invoiceNumbers',
+        'invoiceQuota',
         'invoices',
         'paymentStatus',
         'portalSession',

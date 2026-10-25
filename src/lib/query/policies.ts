@@ -33,6 +33,12 @@ export const QUERY_POLICIES = {
   // The dashboard list is the app's home screen. Mutations invalidate it, so a
   // short window is enough to absorb back-navigation without going stale.
   invoices: { staleTime: 15_000, gcTime: 5 * 60_000 },
+  // The free tier's monthly allowance. It changes exactly when an invoice is
+  // created (every create invalidates this key), so staleTime only decides how
+  // long a returning builder tab may paint its meter from cache — and since a
+  // claim is re-checked server-side at save time, a stale meter can never let
+  // a save through that the server would refuse.
+  invoiceQuota: { staleTime: 30_000, gcTime: 5 * 60_000 },
   // A single invoice is edited and re-read often, but its contents feed a
   // customer-facing document, so it is trusted slightly longer than the list.
   invoice: { staleTime: 30_000, gcTime: 5 * 60_000 },

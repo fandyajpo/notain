@@ -11,7 +11,7 @@
  */
 
 export const PAID_PLANS = {
-  pro: { id: 'pro', name: 'Pro', priceIdr: 29_000 },
+  pro: { id: 'pro', name: 'Pro', priceIdr: 49_000 },
   business: { id: 'business', name: 'Business', priceIdr: 99_000 },
 } as const;
 
@@ -27,6 +27,60 @@ export function isPaidPlan(value: unknown): value is PaidPlan {
 
 export function planAmount(plan: PaidPlan): number {
   return PAID_PLANS[plan].priceIdr;
+}
+
+/**
+ * The free tier's allowance: how many invoices an account may *create* per
+ * calendar month before the builder asks them to upgrade.
+ *
+ * This is the number every surface quotes — the pricing card, the invoice
+ * builder's meter, `freeInvoiceBudget` below — so none of them can drift.
+ * Like {@link PAID_PLANS} it is a policy constant, not a secret: it ships in
+ * the browser bundle either way, and the enforcement point reads it from this
+ * same module rather than restating it.
+ */
+export const FREE_PLAN_LIMITS = { invoicesPerMonth: 10 } as const;
+
+/**
+ * Free-tier budget for one account, computed from the rows that already exist.
+ *
+ * `monthlyCounts` is the number of invoices created per month for the last few
+ * months (`YYYY-MM` key → count); the caller fetches it from the count
+ * endpoint, so this function stays pure and unit-testable. The window is a
+ * calendar month rather than a rolling 30 days: it is the unit the pricing
+ * copy promises ("per bulan"), it needs no stored timestamps of its own, and
+ * a count query can ask Appwrite to compute it instead of shipping rows.
+ *
+ * Both paid tiers return `remaining: null` — unlimited — so a caller that
+ * checks `remaining === null` never has to know which plan it is on.
+ */
+export function freeInvoiceBudget(
+  input: {
+    readonly plan: string | null | undefined;
+    readonly planExpiresAt?: string | null;
+    readonly monthlyCounts: Readonly<Record<string, number>>;
+  },
+  now: Date = new Date(),
+): { remaining: number | null; used: number; limit: number; resetsAt: Date } {
+  const limit = FREE_PLAN_LIMITS.invoicesPerMonth;
+  const resetsAt = startOfNextMonth(now);
+  if (isSubscriptionActive(input.plan, input.planExpiresAt, now)) {
+    return { remaining: null, used: 0, limit, resetsAt };
+  }
+
+  const used = input.monthlyCounts[monthKey(now)] ?? 0;
+  return { remaining: Math.max(0, limit - used), used, limit, resetsAt };
+}
+
+/** The first instant of the month after `date`, in local time. */
+function startOfNextMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 1);
+}
+
+/** `YYYY-MM` for `date` in local time — the key both sides count under. */
+export function monthKey(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `${date.getFullYear()}-${month}`;
 }
 
 /** free < pro < business — used to block pointless downgrades at checkout. */

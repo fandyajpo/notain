@@ -1,6 +1,6 @@
 # Pembayaran (DOKU Checkout)
 
-Langganan Pro (Rp 29.000/30 hari) dan Business (Rp 99.000/30 hari) dibayar lewat
+Langganan Pro (Rp 49.000/30 hari) dan Business (Rp 99.000/30 hari) dibayar lewat
 **DOKU Checkout** (hosted page, integrasi non-SNAP, **sandbox only** untuk saat
 ini). Dokumen resmi: <https://developers.doku.com/accept-payments/doku-checkout/integration-guide>.
 

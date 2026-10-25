@@ -46,6 +46,7 @@ import { clearDraft, readDraft, writeDraft } from '../../../lib/draft-storage';
 import { openPrintView } from '../../../lib/print';
 import {
   useCreateInvoice,
+  useInvoiceQuota,
   useUpdateInvoice,
   useUpdateInvoiceStatus,
 } from '../../../lib/query/hooks/use-invoices';
@@ -167,6 +168,10 @@ export function InvoiceBuilder({
 }: Props) {
   const isEditing = Boolean(invoiceId);
   const createInvoice = useCreateInvoice();
+  // Free-tier meter. Only the create page asks (an edit never consumes
+  // allowance), and a failed read simply hides the line — enforcement lives in
+  // the claim this mutation makes before saving, not in this display.
+  const { data: quota } = useInvoiceQuota(!isEditing);
   const updateInvoice = useUpdateInvoice();
   // Status-only write, so flipping the lifecycle state from the edit page does
   // not have to round-trip the whole draft (rich-text sections included).
@@ -577,6 +582,29 @@ export function InvoiceBuilder({
               <Check size={13} className="text-accent" aria-hidden="true" />
               Tersimpan otomatis sebagai draft di perangkat ini; kerjaanmu aman sampai kamu simpan
               beneran.
+            </p>
+          )}
+          {/* The free tier's monthly allowance, painted from the server's own
+              count. Paid accounts get `remaining: null` and no line at all. */}
+          {!isEditing && quota && quota.remaining !== null && (
+            <p role="status" className="inline-flex w-fit items-center gap-1.5 text-xs text-muted">
+              {quota.remaining > 0 ? (
+                <>
+                  Kuota gratis bulan ini: {quota.used} dari {quota.limit} invoice terpakai.
+                </>
+              ) : (
+                <>
+                  Kuota gratis bulan ini penuh ({quota.limit} dari {quota.limit}). Tunggu bulan
+                  depan atau{' '}
+                  <a
+                    href="/pricing"
+                    className="font-medium text-foreground underline underline-offset-2 hover:text-muted"
+                  >
+                    upgrade ke Pro
+                  </a>{' '}
+                  untuk invoice tanpa batas.
+                </>
+              )}
             </p>
           )}
         </header>

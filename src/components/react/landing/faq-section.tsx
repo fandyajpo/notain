@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { ChevronDown } from 'lucide-react';
 import { EASE, Reveal } from './reveal';
 import { PLAN_PRICES } from '../../../core/billing/plan-benefits';
+import { FREE_PLAN_LIMITS } from '../../../core/billing/plans';
 
 /**
  * Every answer here is verified against the implementation: the print-based
@@ -39,7 +40,7 @@ const FAQS = [
   },
   {
     question: 'Berapa biayanya?',
-    answer: `Gratis selamanya untuk fitur inti: invoice tanpa batas, PDF, kirim lewat WhatsApp, dan data pelanggan, tanpa kartu kredit dan tanpa masa trial. Butuh lebih? Pro ${PLAN_PRICES.pro.amount}${PLAN_PRICES.pro.period} untuk template premium dan laporan bisnis, serta Business ${PLAN_PRICES.business.amount}${PLAN_PRICES.business.period} untuk akses API. Detailnya ada di halaman Harga.`,
+    answer: `Gratis selamanya untuk fitur inti: ${FREE_PLAN_LIMITS.invoicesPerMonth} invoice baru tiap bulan, PDF, kirim lewat WhatsApp, dan data pelanggan, tanpa kartu kredit dan tanpa masa trial. Butuh lebih? Pro ${PLAN_PRICES.pro.amount}${PLAN_PRICES.pro.period} untuk invoice tanpa batas, template premium, dan invoice link, serta Business ${PLAN_PRICES.business.amount}${PLAN_PRICES.business.period} untuk akses API. Detailnya ada di halaman Harga.`,
   },
   {
     question: 'Bagaimana langganan dan perpanjangannya?',

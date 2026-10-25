@@ -26,6 +26,8 @@ export const queryKeys = {
   },
   invoice: (id: string) => ['invoice', id] as const,
   invoiceNumbers: ['invoice-numbers'] as const,
+  /** The free tier's monthly invoice allowance, read by the builder's meter. */
+  invoiceQuota: ['invoice-quota'] as const,
   /** Projected recent-invoice slice the picker derives its suggestions from. */
   pickerHistory: ['picker-history'] as const,
   templates: ['templates'] as const,

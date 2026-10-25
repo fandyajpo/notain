@@ -14,7 +14,7 @@
  * Accuracy rules for entries in this file:
  * - every feature claim must exist in the product today (no API, no
  *   marketplace integrations, no stock reports we do not ship);
- * - prices quote `core/billing/plans.ts` (Pro Rp29.000 / Business Rp99.000
+ * - prices quote `core/billing/plans.ts` (Pro Rp49.000 / Business Rp99.000
  *   per 30 hari) or link to `/pricing`;
  * - example invoice lines are illustrative and the section says so — they
  *   are not customer data.
@@ -84,7 +84,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Apakah Notain gratis dipakai katering kecil?',
         answer:
-          'Ya. Plan gratis mencakup pembuatan nota, katalog, dan kirim lewat WhatsApp. Link invoice dan laporan keuangan ada di plan Pro mulai Rp29.000 per 30 hari — detailnya di halaman Harga.',
+          'Ya. Plan gratis mencakup pembuatan nota, katalog, dan kirim lewat WhatsApp. Link invoice dan laporan keuangan ada di plan Pro mulai Rp49.000 per 30 hari — detailnya di halaman Harga.',
       },
       {
         question: 'Bisakah paket dan harganya dicatat sekali saja?',
@@ -142,7 +142,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Apakah Notain gratis untuk desainer freelance?',
         answer:
-          'Ya. Plan gratis mencakup pembuatan invoice, katalog jasa, dan pengiriman via WhatsApp. Link invoice dan laporan ada di plan Pro mulai Rp29.000 per 30 hari.',
+          'Ya. Plan gratis mencakup pembuatan invoice, katalog jasa, dan pengiriman via WhatsApp. Link invoice dan laporan ada di plan Pro mulai Rp49.000 per 30 hari.',
       },
       {
         question: 'Bisakah satu klien punya beberapa invoice?',
@@ -200,7 +200,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Apakah Notain gratis dipakai developer?',
         answer:
-          'Ya. Plan gratis mencakup pembuatan invoice, katalog layanan, dan kirim via WhatsApp. Link invoice dan laporan keuangan ada di plan Pro mulai Rp29.000 per 30 hari.',
+          'Ya. Plan gratis mencakup pembuatan invoice, katalog layanan, dan kirim via WhatsApp. Link invoice dan laporan keuangan ada di plan Pro mulai Rp49.000 per 30 hari.',
       },
       {
         question: 'Bisakah satu proyek punya beberapa invoice?',
@@ -258,7 +258,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Apakah Notain benar-benar gratis untuk warung kecil?',
         answer:
-          'Ya, plan gratis berlaku selamanya untuk pembuatan nota, katalog menu, dan kirim via WhatsApp. Plan Pro (Rp29.000 per 30 hari) menambahkan link invoice dan laporan keuangan.',
+          'Ya, plan gratis berlaku selamanya untuk pembuatan nota, katalog menu, dan kirim via WhatsApp. Plan Pro (Rp49.000 per 30 hari) menambahkan link invoice dan laporan keuangan.',
       },
       {
         question: 'Apakah harus punya komputer atau printer?',
@@ -316,7 +316,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Apakah Notain gratis untuk online shop kecil?',
         answer:
-          'Ya, plan gratis berlaku selamanya untuk katalog produk, pembuatan invoice, dan kirim via WhatsApp. Link invoice dan laporan ada di plan Pro mulai Rp29.000 per 30 hari.',
+          'Ya, plan gratis berlaku selamanya untuk katalog produk, pembuatan invoice, dan kirim via WhatsApp. Link invoice dan laporan ada di plan Pro mulai Rp49.000 per 30 hari.',
       },
       {
         question: 'Bisakah invoice dikirim langsung dari HP?',
@@ -374,7 +374,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Apakah Notain gratis untuk freelancer?',
         answer:
-          'Ya, plan gratis berlaku selamanya untuk katalog jasa, invoice, dan kirim via WhatsApp. Link invoice dan laporan keuangan tersedia di plan Pro mulai Rp29.000 per 30 hari.',
+          'Ya, plan gratis berlaku selamanya untuk katalog jasa, invoice, dan kirim via WhatsApp. Link invoice dan laporan keuangan tersedia di plan Pro mulai Rp49.000 per 30 hari.',
       },
       {
         question: 'Bagaimana kalau klien telat membayar?',
@@ -432,7 +432,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Apakah Notain gratis untuk bengkel kecil?',
         answer:
-          'Ya, plan gratis berlaku selamanya untuk pembuatan nota, katalog pekerjaan, dan kirim via WhatsApp. Plan Pro (Rp29.000 per 30 hari) menambahkan link invoice dan laporan keuangan.',
+          'Ya, plan gratis berlaku selamanya untuk pembuatan nota, katalog pekerjaan, dan kirim via WhatsApp. Plan Pro (Rp49.000 per 30 hari) menambahkan link invoice dan laporan keuangan.',
       },
       {
         question: 'Bisakah mencatat nomor polisi atau tipe kendaraan?',
@@ -490,7 +490,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Apakah Notain gratis dipakai salon kecil?',
         answer:
-          'Ya, plan gratis berlaku selamanya untuk katalog treatment, pembuatan nota, dan kirim via WhatsApp. Plan Pro (Rp29.000 per 30 hari) menambahkan link invoice dan laporan keuangan.',
+          'Ya, plan gratis berlaku selamanya untuk katalog treatment, pembuatan nota, dan kirim via WhatsApp. Plan Pro (Rp49.000 per 30 hari) menambahkan link invoice dan laporan keuangan.',
       },
       {
         question: 'Bisakah daftar harga dibagikan ke pelanggan?',

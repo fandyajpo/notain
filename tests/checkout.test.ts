@@ -143,9 +143,9 @@ describe('POST /api/payments/checkout', () => {
 
     // The row and the DOKU request both carry the catalog price.
     const created = paymentWrites().find((write) => write.method === 'POST');
-    expect(created?.data.amount).toBe(29_000);
+    expect(created?.data.amount).toBe(49_000);
     const dokuBody = JSON.parse(String(dokuCalls[0].init.body));
-    expect(dokuBody.order.amount).toBe(29_000);
+    expect(dokuBody.order.amount).toBe(49_000);
     expect(dokuBody.order.invoice_number).toBe(created?.id);
     expect(dokuBody.additional_info.override_notification_url).toBe(
       'https://notain.pages.dev/api/payments/doku-notify',

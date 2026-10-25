@@ -59,6 +59,7 @@ export type LimitName =
   | 'proof-upload-owner'
   | 'logo-upload'
   | 'checkout'
+  | 'invoice-quota'
   | 'site';
 
 const MINUTE = 60_000;
@@ -80,6 +81,12 @@ const DEFAULT_LIMITS: Record<LimitName, { limit: number; windowMs: number }> = {
   'proof-upload-owner': { limit: 30, windowMs: HOUR },
   'logo-upload': { limit: 10, windowMs: HOUR },
   checkout: { limit: 10, windowMs: HOUR },
+  // The quota claim runs on every save attempt, so this one is a *burst*
+  // fence rather than an hourly budget: a legitimate user taps save a handful
+  // of times a minute at most, while a loop asking "am I over?" sixty times a
+  // second is either a bug or a probe. The limit sits above the page's own
+  // debounce so a slow double-click never trips it.
+  'invoice-quota': { limit: 60, windowMs: MINUTE },
   // The public business page is a *read*, but an expensive one: every hit is
   // a profile row plus a catalog list (up to a hundred rows counted per row
   // against the Appwrite read quota). The fence stops a flood from burning
@@ -95,6 +102,7 @@ const LIMIT_ENV_OVERRIDES: Record<LimitName, string> = {
   'proof-upload-owner': 'QUOTA_LIMIT_PROOF_OWNER_PER_HOUR',
   'logo-upload': 'QUOTA_LIMIT_LOGO_PER_HOUR',
   checkout: 'QUOTA_LIMIT_CHECKOUT_PER_HOUR',
+  'invoice-quota': 'QUOTA_LIMIT_INVOICE_QUOTA_PER_MINUTE',
   site: 'QUOTA_LIMIT_SITE_PER_MINUTE',
 };
 
