@@ -26,6 +26,7 @@
     "orgs:ensure": "node --env-file=.env scripts/ensure-orgs.mjs",
     "org-columns:ensure": "node --env-file=.env scripts/ensure-org-columns.mjs",
     "business-type:ensure": "node --env-file=.env scripts/ensure-business-type.mjs",
+    "migrate:org-identity": "node --env-file=.env scripts/migrate-org-identity.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "lint": "vp lint .",

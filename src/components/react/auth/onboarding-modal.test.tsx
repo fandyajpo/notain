@@ -26,6 +26,7 @@ const mocks = vi.hoisted(() => ({
   listOrgs: vi.fn(),
   acceptPendingInvites: vi.fn(),
   createOrg: vi.fn(),
+  renameOrg: vi.fn(),
   getProfile: vi.fn(),
   saveProfile: vi.fn(),
   scheduleTour: vi.fn(),
@@ -35,11 +36,19 @@ vi.mock('../../../app/orgs', () => ({
   listOrgs: mocks.listOrgs,
   acceptPendingInvites: mocks.acceptPendingInvites,
   createOrg: mocks.createOrg,
-  renameOrg: vi.fn(async () => undefined),
+  renameOrg: mocks.renameOrg,
   deleteOrgCascade: vi.fn(async () => undefined),
   listOrgMembers: vi.fn(async () => []),
   inviteOrgMember: vi.fn(),
   removeOrgMember: vi.fn(async () => undefined),
+}));
+
+// The modal resolves the active org by id; pin it so the non-create tests
+// below find their organization regardless of the module store's state.
+vi.mock('../../../app/active-org', () => ({
+  getActiveOrgId: () => 'org_aaaaaaaaaaaaaaaa',
+  setActiveOrgId: vi.fn(),
+  subscribeActiveOrg: vi.fn(() => () => {}),
 }));
 
 vi.mock('../../../app/profile', () => ({
@@ -129,6 +138,7 @@ beforeEach(() => {
   document.body.appendChild(container);
   root = createRoot(container);
   mocks.createOrg.mockResolvedValue({ id: 'org_aaaaaaaaaaaaaaaa' });
+  mocks.renameOrg.mockResolvedValue(undefined);
   mocks.saveProfile.mockResolvedValue({ name: 'Fandy Ahmad' });
 });
 
@@ -199,5 +209,66 @@ describe('OnboardingModal (create mode)', () => {
     await until(() => expect(container.textContent).toContain('Masukkan nama usaha kamu.'));
     expect(mocks.createOrg).not.toHaveBeenCalled();
     expect(mocks.saveProfile).not.toHaveBeenCalled();
+  });
+});
+
+describe('OnboardingModal (existing organization)', () => {
+  const ORG_ID = 'org_aaaaaaaaaaaaaaaa';
+
+  function memberOrg() {
+    return {
+      id: ORG_ID,
+      name: 'Kopi Uji',
+      role: 'member',
+      isOwner: false,
+      plan: 'free',
+      active: false,
+      businessType: null,
+    };
+  }
+
+  it('completes for a member without touching the owner-only rename', async () => {
+    // An invited member whose profile name is empty lands on onboarding too.
+    // Their business-name field shows the ORG's name read-only — a rename
+    // attempt would answer 403 and block onboarding outright.
+    mocks.listOrgs.mockResolvedValue({ orgs: [memberOrg()], pendingInvites: [] });
+    mocks.getProfile.mockResolvedValue({ name: '', phone: '' });
+
+    render(<OnboardingModal />);
+    await until(() => expect(container.textContent).toContain('Siapa nama kamu?'));
+    await type('Fandy Ahmad', 'Fandy Ahmad');
+    await click('Lanjut');
+
+    await until(() => {
+      const input = container.querySelector<HTMLInputElement>('input[placeholder="Bengkel Jaya"]');
+      expect(input, 'business-name input must render').toBeTruthy();
+      expect(input?.disabled).toBe(true);
+    });
+    expect(container.textContent).toContain('diatur oleh owner-nya');
+
+    await click('Selesai');
+    await until(() => expect(mocks.saveProfile).toHaveBeenCalledTimes(1));
+    expect(mocks.renameOrg).not.toHaveBeenCalled();
+    await until(() => expect(mocks.scheduleTour).toHaveBeenCalledWith('welcome'));
+  });
+
+  it('renames the org during onboarding when the caller is its owner', async () => {
+    mocks.listOrgs.mockResolvedValue({
+      orgs: [{ ...memberOrg(), role: 'owner', isOwner: true }],
+      pendingInvites: [],
+    });
+    mocks.getProfile.mockResolvedValue({ name: '', phone: '' });
+
+    render(<OnboardingModal />);
+    await until(() => expect(container.textContent).toContain('Siapa nama kamu?'));
+
+    // Types "Kopi Senja" over the pre-filled org name — the owner's rename
+    // path must fire with the active org id and the typed name.
+    await fillBothSteps();
+    await click('Selesai');
+
+    await until(() => expect(mocks.renameOrg).toHaveBeenCalledTimes(1));
+    expect(mocks.renameOrg.mock.calls[0]).toEqual([ORG_ID, 'Kopi Senja']);
+    await until(() => expect(mocks.saveProfile).toHaveBeenCalledTimes(1));
   });
 });

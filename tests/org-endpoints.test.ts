@@ -190,6 +190,19 @@ describe('GET /api/orgs — my orgs and pending invites', () => {
     const response = await handle(orgsOnRequest, req('GET', '/api/orgs'));
     expect(response.status).toBe(401);
   });
+
+  it('degrades a business-type slug outside the taxonomy to null', async () => {
+    fake = appwriteFake();
+    seedOrg('org_aaaaaaaaaaaaaaaa', OWNER.$id, 'Org A');
+    seedMembership('org_aaaaaaaaaaaaaaaa', OWNER.$id, { role: 'owner', email: OWNER.email });
+    // A row written before the guard existed, carrying a retired slug.
+    fake.rows.get('organizations/org_aaaaaaaaaaaaaaaa')!.businessType = 'slug-tua';
+
+    const response = await handle(orgsOnRequest, req('GET', '/api/orgs'));
+    const body = (await response.json()) as { orgs: Array<{ businessType: string | null }> };
+    expect(response.status).toBe(200);
+    expect(body.orgs[0]?.businessType).toBeNull();
+  });
 });
 
 describe('POST /api/orgs/accept', () => {

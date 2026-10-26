@@ -35,6 +35,28 @@ import type { Env, PagesFunction } from '../_lib/types';
 /** Everything a member may write. `plan`/`planExpiresAt` are absent by design. */
 const editableProfileSchema = profileSchema.omit({ plan: true, planExpiresAt: true });
 
+/**
+ * The response shape of this endpoint: exactly the personal columns the
+ * domain mapper reads. Legacy rows still physically carry `businessName`
+ * and `businessType` from before the split — echoing the row would make
+ * those look authoritative again, so every response goes through this
+ * projection instead.
+ */
+function profileView(row: Record<string, unknown>) {
+  const str = (value: unknown): string => (typeof value === 'string' ? value : '');
+  const opt = (value: unknown): string | null =>
+    typeof value === 'string' && value !== '' ? value : null;
+  return {
+    name: str(row.name),
+    phone: str(row.phone),
+    address: opt(row.address),
+    email: opt(row.email),
+    logoFileId: opt(row.logoFileId),
+    plan: typeof row.plan === 'string' && row.plan !== '' ? row.plan : 'free',
+    planExpiresAt: opt(row.planExpiresAt),
+  };
+}
+
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method !== 'GET' && request.method !== 'PUT') {
     return apiError(405, 'method_not_allowed', 'Metode ini tidak didukung.', {
@@ -50,8 +72,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method === 'GET') {
     const row = await getRow(auth, 'profiles', gate.access.orgId, env);
     if (!row) return apiError(404, 'not_found', 'Profil tidak ditemukan.');
-    // Personalised to the org's members; never a shared cache.
-    return json(200, row, { 'cache-control': 'no-store' });
+    // Personalised to the org's members; never a shared cache. The row is
+    // projected — never echoed — so legacy business columns cannot leak.
+    return json(200, profileView(row), { 'cache-control': 'no-store' });
   }
 
   let body: unknown;
@@ -92,8 +115,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     }
     // `existing` is every column the row holds and `data` is exactly the set
     // the patch just wrote, so their merge *is* the saved row — a third
-    // Appwrite round trip would only fetch those same columns back.
-    return json(200, { ...existing, ...data });
+    // Appwrite round trip would only fetch those same columns back. The
+    // projection keeps plan columns (checkout moves them) and nothing else.
+    return json(200, profileView({ ...existing, ...data }));
   }
 
   const created = await createRow(
@@ -114,5 +138,5 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (!created) {
     return apiError(500, 'validation', 'Gagal menyimpan profil.');
   }
-  return json(201, created);
+  return json(201, profileView(created));
 };

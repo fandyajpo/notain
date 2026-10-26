@@ -4,6 +4,7 @@ import { apiError, json } from '../_lib/http';
 import { enforceLimit } from '../_lib/quota';
 import { createRow, deleteRow, getRow, listRows, tableAuth } from '../_lib/rows';
 import { isSubscriptionActive } from '../../src/core/billing/plans';
+import { businessSubtypeSlugSchema } from '../../src/core/business/schema';
 import type { Env, PagesFunction } from '../_lib/types';
 
 /**
@@ -38,6 +39,10 @@ function newOrgId(): string {
 /** The shape the switcher renders, per membership. */
 function orgView(row: Record<string, unknown>, role: string, isOwner: boolean) {
   const plan = typeof row.plan === 'string' ? row.plan : 'free';
+  // Validated against the taxonomy on the way out, not just on the way in:
+  // rows written before the PATCH guard, or after a slug was retired, read
+  // back as `null` instead of flowing through the UI typed as valid.
+  const type = businessSubtypeSlugSchema.safeParse(row.businessType);
   return {
     id: row.$id,
     name: typeof row.name === 'string' && row.name !== '' ? row.name : 'Organisasi',
@@ -48,7 +53,7 @@ function orgView(row: Record<string, unknown>, role: string, isOwner: boolean) {
       plan,
       typeof row.planExpiresAt === 'string' ? row.planExpiresAt : null,
     ),
-    businessType: typeof row.businessType === 'string' ? row.businessType : null,
+    businessType: type.success ? type.data : null,
   };
 }
 

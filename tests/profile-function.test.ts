@@ -191,7 +191,7 @@ describe('profile gate', () => {
 });
 
 describe('GET /api/profile', () => {
-  it('returns the org row to a member, never publicly cacheable', async () => {
+  it('returns the personal projection to a member, never publicly cacheable', async () => {
     fake.rows.set(`profiles/${ORG}`, storedProfile());
 
     const response = await handle(
@@ -200,9 +200,16 @@ describe('GET /api/profile', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('no-store');
-    const body = (await response.json()) as { $id: string; name: string };
-    expect(body.$id).toBe(ORG);
-    expect(body.name).toBe('Budi');
+    const body = (await response.json()) as Record<string, unknown>;
+    // The personal columns, projected — never the raw row.
+    expect(body).toMatchObject({ name: 'Budi', phone: '081234567890', plan: 'free' });
+    // Legacy business columns (still physically on old rows) and row
+    // internals must not leak through the contract.
+    expect(body).not.toHaveProperty('businessName');
+    expect(body).not.toHaveProperty('businessType');
+    expect(body).not.toHaveProperty('$id');
+    expect(body).not.toHaveProperty('ownerId');
+    expect(body).not.toHaveProperty('orgId');
     expect(writes()).toEqual([]);
   });
 

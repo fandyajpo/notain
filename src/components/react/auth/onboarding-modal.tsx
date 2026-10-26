@@ -56,7 +56,12 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
   // Pre-fill from whatever already exists. The business name is the active
   // org's name — never a profile field.
   const currentName = name || profile?.name || '';
-  const orgName = orgs?.orgs.find((candidate) => candidate.id === getActiveOrgId())?.name ?? '';
+  const activeOrg = orgs?.orgs.find((candidate) => candidate.id === getActiveOrgId()) ?? null;
+  const orgName = activeOrg?.name ?? '';
+  // Only the OWNER may rename the org (the server answers 403 otherwise), so
+  // a member who reaches this screen gets a read-only field instead of a
+  // submit that can never succeed.
+  const canRenameOrg = createMode || activeOrg?.isOwner === true;
   const currentBusiness = businessName || orgName;
 
   async function handleComplete() {
@@ -83,9 +88,11 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
       if (createMode && !orgCreated.current) {
         await createWorkspace.mutateAsync({ name: trimmedBusiness });
         orgCreated.current = true;
-      } else if (!createMode) {
+      } else if (!createMode && canRenameOrg) {
         // The org already exists; its name IS the business name. Renaming here
-        // is the only way an existing account can correct it during onboarding.
+        // is the only way an owning account can correct it during onboarding.
+        // Skipped for members: the field is read-only for them, and a 403 from
+        // the owner-only endpoint would otherwise block onboarding entirely.
         const orgId = getActiveOrgId();
         if (orgId && trimmedBusiness !== orgName) {
           await renameOrg(orgId, trimmedBusiness);
@@ -220,10 +227,16 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
               }}
               placeholder="Bengkel Jaya"
               autoComplete="organization"
+              disabled={!canRenameOrg}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') void handleComplete();
               }}
             />
+            {!canRenameOrg && (
+              <p className="text-xs text-muted">
+                Nama usaha organisasi ini diatur oleh owner-nya.
+              </p>
+            )}
           </div>
         </div>
       </div>

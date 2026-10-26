@@ -1,4 +1,5 @@
 import type { BusinessSubtypeSlug } from './taxonomy';
+import { businessSubtypeSlugSchema } from './schema';
 import type { BusinessProfile } from '../profile/model';
 
 /**
@@ -47,8 +48,14 @@ export function toBusinessIssuer(
     address: profile?.address,
     email: profile?.email,
     logoUrl: profile?.logoUrl ?? null,
-    businessType: (org?.businessType as BusinessSubtypeSlug | null | undefined) ?? null,
+    businessType: parseSubtypeSlug(org?.businessType),
   };
+}
+
+/** Unknown or retired slugs degrade to `null` instead of lying about the type. */
+function parseSubtypeSlug(value: unknown): BusinessSubtypeSlug | null {
+  const parsed = businessSubtypeSlugSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
 /** The demo issuer the landing page and template previews fall back to. */
