@@ -1,10 +1,11 @@
 import { writeAudit } from '../../_lib/audit';
-import { requireAdmin } from '../../_lib/admin';
+import { primaryOrgId, primaryOrgIds, requireAdmin } from '../../_lib/admin';
 import { querySearchAll } from '../../_lib/appwrite';
 import { apiError, fetchUpstream as fetch, json } from '../../_lib/http';
 import type { Env, PagesFunction } from '../../_lib/types';
 
 const PROFILES_TABLE_ID = 'profiles';
+const ORGS_TABLE_ID = 'organizations';
 const DATABASE_ID = 'notain_db';
 const LIST_DEFAULT_LIMIT = 25;
 const LIST_MAX_LIMIT = 50;
@@ -25,7 +26,12 @@ type ProfileRow = {
   address?: string | null;
   email?: string | null;
   businessType?: string | null;
-  plan?: string;
+};
+
+type OrgRow = {
+  $id: string;
+  /** Billing state lives on the ORGANIZATION since multi-tenancy. */
+  plan?: string | null;
   planExpiresAt?: string | null;
 };
 
@@ -117,11 +123,12 @@ function parseProfileUpdate(
 }
 
 /**
- * `GET /api/admin/users` — one page of registered users joined with their
- * profiles. Supports `?limit=` (1–50, default 25) and `?cursorAfter=<userId>`
+ * `GET /api/admin/users` — one page of registered users joined with the data
+ * their PRIMARY organization holds (see `primaryOrgIds` for the resolution).
+ * Supports `?limit=` (1–50, default 25) and `?cursorAfter=<userId>`
  * for the "Muat lebih banyak" pattern.
- * `PATCH /api/admin/users` — update one user's full profile (name, business,
- * contact fields, plan, and expiry).
+ * `PATCH /api/admin/users` — update the primary org's business profile and
+ * (separately, on the row that owns it) its plan.
  *
  * Both require the caller to be a member of the `admins` Appwrite team.
  * The API key lives as an encrypted Pages variable; it is never sent to
@@ -140,7 +147,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
   // Route by method.
   if (request.method === 'GET') {
-    return listUsers(endpoint, headers, new URL(request.url));
+    return listUsers(endpoint, headers, new URL(request.url), env);
   }
 
   // PATCH
@@ -161,6 +168,7 @@ async function listUsers(
   endpoint: string,
   headers: Record<string, string>,
   url: URL,
+  env: Env,
 ): Promise<Response> {
   const limitParam = Number(url.searchParams.get('limit'));
   const limit =
@@ -187,33 +195,58 @@ async function listUsers(
   const hasMore = usersData.users.length > limit;
   const page = hasMore ? usersData.users.slice(0, limit) : usersData.users;
 
-  // Join profiles for just this page (document id = userId). `equal` wants
-  // the ids as its own value array — passing `[ids]` nests them and Appwrite
-  // answers 400, which silently emptied this map and showed every user as
-  // `free` no matter what the PATCH had written. The explicit limit covers a
-  // full 50-row page (Appwrite would otherwise stop at its default 25).
+  // Resolve each account's PRIMARY organization (newest active membership),
+  // then join the two org-keyed rows. Nothing tenanted is user-keyed since
+  // multi-tenancy: the identity is `profiles/<orgId>` and the plan is on
+  // `organizations/<orgId>` — the old join (profiles by `$id == userId`)
+  // would now show every account as free with empty fields.
+  const orgByUser = await primaryOrgIds(
+    { endpoint, headers },
+    page.map((user) => user.$id),
+    env,
+  );
+  const orgIds = [...new Set(orgByUser.values())];
+
+  const orgMap = new Map<string, OrgRow>();
   const profileMap = new Map<string, ProfileRow>();
-  if (page.length > 0) {
-    const ids = page.map((user) => user.$id);
-    const profilesResponse = await fetch(
-      `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents?${querySearchAll(
-        [
-          { method: 'equal', attribute: '$id', values: ids },
-          { method: 'limit', values: [ids.length] },
-        ],
-      )}`,
-      { headers },
-    );
+  if (orgIds.length > 0) {
+    // `equal` wants the ids as its own value array — passing `[ids]` nests
+    // them and Appwrite answers 400. The explicit limit covers every id on
+    // this page (Appwrite would otherwise stop at its default 25).
+    const [orgsResponse, profilesResponse] = await Promise.all([
+      fetch(
+        `${endpoint}/databases/${DATABASE_ID}/collections/${ORGS_TABLE_ID}/documents?${querySearchAll(
+          [
+            { method: 'equal', attribute: '$id', values: orgIds },
+            { method: 'limit', values: [orgIds.length] },
+          ],
+        )}`,
+        { headers },
+      ),
+      fetch(
+        `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents?${querySearchAll(
+          [
+            { method: 'equal', attribute: '$id', values: orgIds },
+            { method: 'limit', values: [orgIds.length] },
+          ],
+        )}`,
+        { headers },
+      ),
+    ]);
+    if (orgsResponse.ok) {
+      const orgsData = (await orgsResponse.json()) as { documents: OrgRow[] };
+      for (const row of orgsData.documents) orgMap.set(row.$id, row);
+    }
     if (profilesResponse.ok) {
       const profilesData = (await profilesResponse.json()) as { documents: ProfileRow[] };
-      for (const row of profilesData.documents) {
-        profileMap.set(row.$id, row);
-      }
+      for (const row of profilesData.documents) profileMap.set(row.$id, row);
     }
   }
 
   const entries: AdminUserEntry[] = page.map((user) => {
-    const profile = profileMap.get(user.$id);
+    const orgId = orgByUser.get(user.$id);
+    const org = orgId ? orgMap.get(orgId) : undefined;
+    const profile = orgId ? profileMap.get(orgId) : undefined;
     return {
       userId: user.$id,
       email: user.email,
@@ -225,8 +258,10 @@ async function listUsers(
       address: profile?.address ?? '',
       profileEmail: profile?.email ?? '',
       businessType: profile?.businessType ?? '',
-      plan: profile?.plan ?? 'free',
-      planExpiresAt: profile?.planExpiresAt ?? null,
+      // Plan comes from the ORG row; an account with no org reads as free
+      // (there is no paid plan anywhere for it to borrow).
+      plan: org?.plan ?? 'free',
+      planExpiresAt: org?.planExpiresAt ?? null,
     };
   });
 
@@ -245,22 +280,34 @@ async function updateUserProfile(
   env: Env,
   actor: { userId: string; email: string },
 ): Promise<Response> {
-  // Shape matches the app's `profileToRowData` so empty optionals persist as
-  // null (the same value the client writes).
+  const auth = { endpoint, headers };
+
+  // Nothing tenanted is user-keyed: resolve which org this account works
+  // inside before touching anything. No active membership = nothing to edit
+  // (an account that never set up has no rows, and inventing a
+  // `profiles/<userId>` row would resurrect the pre-multi-tenancy contract).
+  const orgId = await primaryOrgId(auth, userId, env);
+  if (!orgId) {
+    return apiError(
+      404,
+      'not_found',
+      'User belum memiliki organisasi — belum ada data yang bisa diubah.',
+    );
+  }
+
+  // 1. The org's business identity. Plan columns are deliberately NOT on
+  //    this payload: they are vestigial on the profile row and billing state
+  //    belongs to `organizations` (written below and by payment settle).
   const data = {
     name: profile.name,
     businessName: profile.businessName || null,
     phone: profile.phone,
     address: profile.address || null,
     email: profile.email || null,
-    plan: profile.plan,
-    planExpiresAt: profile.planExpiresAt,
   };
 
-  // Update the profile document (document id = userId). Appwrite ≥2.4 wraps
-  // attribute values in a `data` object.
   const updateResponse = await fetch(
-    `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents/${userId}`,
+    `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents/${orgId}`,
     {
       method: 'PATCH',
       headers: { ...headers, 'content-type': 'application/json' },
@@ -270,8 +317,9 @@ async function updateUserProfile(
 
   if (!updateResponse.ok) {
     const errorBody = await updateResponse.text().catch(() => '');
-    // 404 means the profile doesn't exist yet — create it, granting the owner
-    // the same read/update/delete access the app sets on its own rows.
+    // 404 means the org has no profile row yet (org created, settings never
+    // opened) — create it keyed by the org id, API-key-only like every row
+    // the profile Function itself creates.
     if (updateResponse.status === 404) {
       const createResponse = await fetch(
         `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents`,
@@ -279,13 +327,9 @@ async function updateUserProfile(
           method: 'POST',
           headers: { ...headers, 'content-type': 'application/json' },
           body: JSON.stringify({
-            documentId: userId,
-            data,
-            permissions: [
-              `read("user:${userId}")`,
-              `update("user:${userId}")`,
-              `delete("user:${userId}")`,
-            ],
+            documentId: orgId,
+            data: { ...data, plan: 'free', planExpiresAt: null },
+            permissions: [],
           }),
         },
       );
@@ -294,20 +338,30 @@ async function updateUserProfile(
         return apiError(
           500,
           'validation',
-          `Gagal membuat profil user: ${createBody.slice(0, 200)}`,
+          `Gagal membuat profil organisasi: ${createBody.slice(0, 200)}`,
         );
       }
-      await writeAudit(env, {
-        actorId: actor.userId,
-        actorEmail: actor.email,
-        action: 'user.update',
-        targetType: 'user',
-        targetId: userId,
-        detail: JSON.stringify({ created: true, plan: profile.plan }),
-      });
-      return json(200, { success: true });
+    } else {
+      return apiError(500, 'validation', `Gagal update profil: ${errorBody.slice(0, 200)}`);
     }
-    return apiError(500, 'validation', `Gagal update profil: ${errorBody.slice(0, 200)}`);
+  }
+
+  // 2. The plan, on the row that owns it. This is the admin's grant — the
+  //    same two columns checkout/subscribe write, so the app reads one place
+  //    and the plan applies to everyone in the org at once.
+  const planResponse = await fetch(
+    `${endpoint}/databases/${DATABASE_ID}/collections/${ORGS_TABLE_ID}/documents/${orgId}`,
+    {
+      method: 'PATCH',
+      headers: { ...headers, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        data: { plan: profile.plan, planExpiresAt: profile.planExpiresAt },
+      }),
+    },
+  );
+  if (!planResponse.ok) {
+    const planBody = await planResponse.text().catch(() => '');
+    return apiError(500, 'validation', `Gagal update plan organisasi: ${planBody.slice(0, 200)}`);
   }
 
   await writeAudit(env, {
@@ -316,7 +370,11 @@ async function updateUserProfile(
     action: 'user.update',
     targetType: 'user',
     targetId: userId,
-    detail: JSON.stringify({ plan: profile.plan, planExpiresAt: profile.planExpiresAt }),
+    detail: JSON.stringify({
+      orgId,
+      plan: profile.plan,
+      planExpiresAt: profile.planExpiresAt,
+    }),
   });
   return json(200, { success: true });
 }

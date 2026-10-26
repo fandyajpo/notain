@@ -36,8 +36,11 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
   // Numbered keys — sharing `queries[0]` kept only the limit and dropped
   // the newest-first ordering.
-  const queries: Array<{ method: string; values: unknown[] }> = [
-    { method: 'orderDesc', values: ['createdAt'] },
+  const queries: Array<{ method: string; values: unknown[]; attribute?: string }> = [
+    // Canonical order form: Appwrite reads the sort column from `attribute`
+    // — the `values` form falls back to the internal sequence column and
+    // silently sorts by insertion order instead of `createdAt`.
+    { method: 'orderDesc', attribute: 'createdAt', values: [] },
     { method: 'limit', values: [limit] },
   ];
   if (cursor) queries.push({ method: 'cursorAfter', values: [cursor] });

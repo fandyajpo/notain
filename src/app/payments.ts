@@ -1,5 +1,6 @@
 import { getAccount } from '../appwrite/client';
 import { appErrorFromStatus } from '../app/errors';
+import { getActiveOrgId } from './active-org';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 import { isSubscriptionActive, type PaidPlan } from '../core/billing/plans';
 import { PLAN_VALUES, type Plan } from '../core/profile/model';
@@ -60,15 +61,33 @@ async function serverMessage(response: Response): Promise<string | undefined> {
 }
 
 /**
+ * The organization this billing action is FOR — sent only as the server's
+ * `requireOrg` hint, which re-resolves it against the caller's membership
+ * row (a stale or forged value can only produce a 400/404, never access).
+ * Billing is per-org since multi-tenancy: plan, expiry and history all live
+ * on the `organizations`/`payments` rows keyed by this id.
+ */
+function activeOrgId(): string {
+  const orgId = getActiveOrgId();
+  if (!orgId) {
+    throw new AppError(ERROR_CODES.FORBIDDEN, 'Pilih organisasi dulu.');
+  }
+  return orgId;
+}
+
+/**
  * Starts (or resumes) a sandbox checkout for a paid plan and returns the
  * hosted DOKU page URL to redirect to. The plan id is the ONLY thing sent —
  * the amount is resolved from the server-side catalog.
  */
 export async function startCheckout(plan: PaidPlan): Promise<{ url: string }> {
+  // Resolved before the JWT mint: with no active org there is nothing to
+  // charge for, and the failure should be the cheap local one.
+  const orgId = activeOrgId();
   const response = await bearerFetch('/api/payments/checkout', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ plan }),
+    body: JSON.stringify({ plan, orgId }),
   });
 
   if (!response.ok) {
@@ -145,7 +164,8 @@ export type PortalSession = {
  * (empty row permissions), so this Function is the only window onto them.
  */
 export async function readPortalSession(): Promise<PortalSession> {
-  const response = await bearerFetch('/api/payments/portal');
+  const orgId = activeOrgId();
+  const response = await bearerFetch(`/api/payments/portal?orgId=${encodeURIComponent(orgId)}`);
 
   if (!response.ok) {
     throw appErrorFromStatus(response.status, await serverMessage(response));

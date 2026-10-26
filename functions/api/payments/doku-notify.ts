@@ -107,8 +107,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       return json(200, { received: true, applied: true, status: 'expired' });
     case 'paid':
       return json(200, { received: true, applied: true, status: 'paid' });
-    case 'profile_missing':
-      return json(200, { received: true, applied: false, reason: 'profile_missing' });
+    case 'org_missing':
+      return json(200, { received: true, applied: false, reason: 'org_missing' });
     case 'error':
       return apiError(500, 'validation', outcome.message);
   }

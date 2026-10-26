@@ -1,5 +1,5 @@
-import { getRow, patchRow, tableAuth } from '../../_lib/rows';
-import { verifySession } from '../../_lib/appwrite';
+import { getRow, patchRow } from '../../_lib/rows';
+import { requireOrg } from '../../_lib/orgs';
 import { apiError, fetchUpstream as fetch, json } from '../../_lib/http';
 import { writeAudit } from '../../_lib/audit';
 import {
@@ -31,10 +31,8 @@ const PAYMENTS_TABLE_ID = 'payments';
 /** How long a pending row without a checkout URL is tolerated as an in-flight creation. */
 const IN_FLIGHT_GRACE_MS = 2 * 60 * 1000;
 
-type ProfileRow = {
+type OrgRow = {
   $id: string;
-  name?: string | null;
-  phone?: string | null;
   plan?: string | null;
   planExpiresAt?: string | null;
 };
@@ -51,14 +49,18 @@ type PendingRow = {
  * `POST /api/payments/checkout` — start a DOKU sandbox checkout for a paid plan.
  *
  * Trust boundaries:
- * - The caller must be signed in (JWT → `GET /account`, same as every other
- *   Function). The userId comes from that session, never from the body.
- * - The body carries only a *plan id*. The amount is looked up in the
- *   server-side plan catalog (`core/billing/plans`), so a tampered price in
- *   the request can't change what DOKU charges.
+ * - The caller must be a signed-in MEMBER of the org the order is for
+ *   (`requireOrg`: JWT → membership row). The body carries an `orgId` hint;
+ *   a foreign or unknown org answers 404 before anything else happens.
+ * - The body's only other field is a *plan id*. The amount is looked up in
+ *   the server-side plan catalog (`core/billing/plans`), so a tampered price
+ *   in the request can't change what DOKU charges.
  * - `free` is not a purchasable plan: free plans never reach payment.
+ * - The current-subscription guard reads the ORGANIZATION's row — billing is
+ *   per org, so one member's checkout upgrades (and downgrades are blocked
+ *   for) the whole organization.
  *
- * Duplicate-submission guard: one pending row per owner+plan. A fresh row
+ * Duplicate-submission guard: one pending row per org+plan. A fresh row
  * without a checkout URL is an creation still in flight — a second click gets
  * 409 rather than a second DOKU order. An older stranded row is abandoned and
  * replaced; an unexpired row with a URL is reused so the same checkout page
@@ -67,15 +69,13 @@ type PendingRow = {
  * The payment row is written *before* DOKU is called, so every order DOKU
  * ever notifies us about already exists locally (its $id IS the
  * invoice_number, which makes the webhook lookup a single document read).
+ * It is stamped with `orgId` (who the plan is for) and `ownerId` (who
+ * initiated — the session, for audit and the status endpoint's ownership
+ * check); `payment-settle.ts` activates the plan on the org row.
  */
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method !== 'POST') {
     return apiError(405, 'method_not_allowed', 'Metode ini tidak didukung.', { allow: 'POST' });
-  }
-
-  const session = await verifySession(request, env);
-  if (!session) {
-    return apiError(401, 'unauthenticated', 'Silakan masuk terlebih dahulu.');
   }
 
   let body: Record<string, unknown> | null = null;
@@ -90,10 +90,14 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     return apiError(400, 'validation', 'Plan tidak valid. Pilih plan Pro atau Business.');
   }
 
-  const auth = tableAuth(env);
+  const gate = await requireOrg(request, env, body.orgId);
+  if (!gate.ok) return gate.response;
+  const { session, auth } = gate.access;
+  const orgId = gate.access.orgId;
+
   const clientId = env.DOKU_CLIENT_ID?.trim() ?? '';
   const secretKey = env.DOKU_SECRET_KEY?.trim() ?? '';
-  if (!auth || !clientId || !secretKey) {
+  if (!clientId || !secretKey) {
     return apiError(500, 'validation', 'Pembayaran belum terkonfigurasi di server.');
   }
 
@@ -127,18 +131,30 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     );
   }
 
-  // Current subscription, for downgrade protection and renewal extension.
-  const profile = (await getRow(auth, 'profiles', session.userId)) as ProfileRow | null;
-  if (!profile) {
-    // Activation writes `profiles/<userId>` — without that row the money would
-    // be taken and the plan never granted (left as `payment.paid.*` audit rows
-    // for manual resolution only). Onboarding normally guarantees the row
-    // before `/checkout` can render; this is the backstop for anything that
-    // reaches the API without it.
-    return apiError(409, 'conflict', 'Lengkapi profil kamu dulu sebelum berlangganan.');
+  // Current subscription of the ORGANIZATION, for downgrade protection and
+  // renewal extension. Activation writes `organizations/<orgId>` — without
+  // that row the money would be taken and the plan never granted (left as
+  // `payment.paid.*` audit rows for manual resolution only). Org creation
+  // guarantees the row before `/checkout` can render; this is the backstop
+  // for anything that reaches the API without it (org deleted mid-flight).
+  const [org, profileRow] = (await Promise.all([
+    getRow(auth, 'organizations', orgId),
+    // The letterhead row doubles as the payer DOKU sees (name + phone). Both
+    // rows share the org id, so this is one id lookup, not a query — and it
+    // cannot fail the request: a missing profile just omits the optional
+    // customer fields below.
+    getRow(auth, 'profiles', orgId),
+  ])) as [OrgRow | null, { name?: string | null; phone?: string | null } | null];
+  if (!org) {
+    return apiError(
+      409,
+      'conflict',
+      'Organisasi tidak ditemukan. Muat ulang halaman lalu coba lagi.',
+    );
   }
-  const currentPlan = profile.plan ?? 'free';
-  const currentExpiresAt = profile.planExpiresAt ?? null;
+  const profile = profileRow;
+  const currentPlan = org.plan ?? 'free';
+  const currentExpiresAt = org.planExpiresAt ?? null;
   const now = Date.now();
   const currentActive =
     currentPlan !== 'free' && (currentExpiresAt === null || Date.parse(currentExpiresAt) > now);
@@ -150,14 +166,15 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     );
   }
 
-  // Reuse / replace an existing pending row instead of stacking orders.
+  // Reuse / replace an existing pending row instead of stacking orders —
+  // keyed by ORG so two orgs of the same user never share a pending order.
   const pendingList = await fetch(
     `${auth.endpoint}/databases/${DATABASE_ID}/collections/${PAYMENTS_TABLE_ID}/documents?` +
       new URLSearchParams({
         'queries[0]': JSON.stringify({
           method: 'equal',
-          attribute: 'ownerId',
-          values: [session.userId],
+          attribute: 'orgId',
+          values: [orgId],
         }),
         'queries[1]': JSON.stringify({ method: 'equal', attribute: 'status', values: ['pending'] }),
         'queries[2]': JSON.stringify({ method: 'equal', attribute: 'plan', values: [plan] }),
@@ -206,6 +223,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       body: JSON.stringify({
         documentId: invoiceNumber,
         data: {
+          // Who the plan is FOR (tenancy) vs who initiated the order (audit,
+          // status-endpoint ownership). Settle activates the org row.
+          orgId,
           ownerId: session.userId,
           plan,
           amount,
@@ -240,9 +260,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     dueMinutes: 60,
     customer: {
       id: session.userId,
-      name: profile.name ?? undefined,
+      name: profile?.name ?? undefined,
       email: session.email || undefined,
-      phone: profile.phone ?? undefined,
+      phone: profile?.phone ?? undefined,
     },
   });
   const timestamp = utcTimestamp();

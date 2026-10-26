@@ -64,6 +64,44 @@ const DESIRED = [
         attributes: ['ownerId', 'invoiceNumber'],
         orders: ['asc', 'asc'],
       },
+      // ── Organization-scoped twins of every list/allocation index above. ──
+      // Multi-tenancy: queries filter equal(orgId), never equal(ownerId), so
+      // each owner_* index gets an org_* counterpart with the same trailing
+      // attributes and ordering. The owner_* indexes are left in place while
+      // the transition settles — dropping them is safe cleanup later, not
+      // part of adding tenancy.
+      // List: equal(orgId) + orderDesc(date) + orderDesc($createdAt).
+      { key: 'org_date', type: 'key', attributes: ['orgId', 'date'], orders: ['asc', 'asc'] },
+      // Template filter: equal(orgId) + equal(templateId) + orderDesc(date).
+      {
+        key: 'org_template_date',
+        type: 'key',
+        attributes: ['orgId', 'templateId', 'date'],
+        orders: ['asc', 'asc', 'asc'],
+      },
+      // Status filter: equal(orgId) + equal(status) + orderDesc(date).
+      {
+        key: 'org_status_date',
+        type: 'key',
+        attributes: ['orgId', 'status', 'date'],
+        orders: ['asc', 'asc', 'asc'],
+      },
+      // Number allocation per organization: equal(orgId) +
+      // startsWith('invoiceNumber', 'INV-YYYY-').
+      {
+        key: 'org_invoiceNumber',
+        type: 'key',
+        attributes: ['orgId', 'invoiceNumber'],
+        orders: ['asc', 'asc'],
+      },
+      // One invoice per (org, number) — the uniqueness backstop now scoped to
+      // the organization, same failure handling as owner_invoiceNumber_unique.
+      {
+        key: 'org_invoiceNumber_unique',
+        type: 'unique',
+        attributes: ['orgId', 'invoiceNumber'],
+        orders: ['asc', 'asc'],
+      },
       // One invoice per (owner, number), enforced by the database itself —
       // the backstop behind the deterministic invoice ids (an *update* never
       // changes $id, so editing one number onto another is only stoppable
@@ -105,6 +143,13 @@ const DESIRED = [
         attributes: ['ownerId', 'name'],
         orders: ['asc', 'asc'],
       },
+      // Tenanted twin: list + duplicate check inside one organization.
+      {
+        key: 'org_name',
+        type: 'key',
+        attributes: ['orgId', 'name'],
+        orders: ['asc', 'asc'],
+      },
     ],
   },
   {
@@ -112,6 +157,8 @@ const DESIRED = [
     indexes: [
       // List by owner: equal(ownerId).
       { key: 'owner', type: 'key', attributes: ['ownerId'], orders: ['asc'] },
+      // Tenanted twin: list templates of the active organization.
+      { key: 'org', type: 'key', attributes: ['orgId'], orders: ['asc'] },
     ],
   },
   {
@@ -124,6 +171,13 @@ const DESIRED = [
         attributes: ['ownerId', 'name'],
         orders: ['asc', 'asc'],
       },
+      // Tenanted twin: list + duplicate check inside one organization.
+      {
+        key: 'org_name',
+        type: 'key',
+        attributes: ['orgId', 'name'],
+        orders: ['asc', 'asc'],
+      },
     ],
   },
   {
@@ -131,6 +185,28 @@ const DESIRED = [
     indexes: [
       // The dashboard's single-row-per-owner lookup: equal(ownerId).
       { key: 'owner', type: 'key', attributes: ['ownerId'], orders: ['asc'] },
+      // Tenanted twin: one counter row per organization.
+      { key: 'org', type: 'key', attributes: ['orgId'], orders: ['asc'] },
+    ],
+  },
+  {
+    collectionId: 'payments',
+    indexes: [
+      // Per-org billing views and the pending-order guard scoped to the org a
+      // checkout is buying for (plan lives on the organization).
+      {
+        key: 'byOrgStatus',
+        type: 'key',
+        attributes: ['orgId', 'status'],
+        orders: ['asc', 'asc'],
+      },
+    ],
+  },
+  {
+    collectionId: 'audit_logs',
+    indexes: [
+      // Per-org activity filtering for the admin log.
+      { key: 'byOrg', type: 'key', attributes: ['orgId'], orders: ['asc'] },
     ],
   },
 ];

@@ -5,6 +5,14 @@ export const queryKeys = {
   session: ['session'] as const,
   profile: ['profile'] as const,
   /**
+   * The caller's organizations plus pending invites — the org gate's query
+   * and the switcher's data. User-scoped (not org-scoped): it lists every
+   * org the account belongs to, so it survives an org switch unchanged.
+   */
+  orgs: ['orgs'] as const,
+  /** Members of ONE organization — one cache per org so switch/invite never mixes. */
+  orgMembers: (orgId: string): readonly unknown[] => ['org-members', orgId],
+  /**
    * The invoice list. `limit`, `status` and `templateId` are part of the key so
    * the dashboard's small "recent" page and the `/invoices` table's full page
    * do not collide, and a filtered list is cached separately from the

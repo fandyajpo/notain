@@ -16,7 +16,18 @@ import type { Env } from './types';
 
 const DATABASE_ID = 'notain_db';
 
-export type TableId = 'invoices' | 'profiles' | 'templates' | 'payments' | 'catalog';
+export type TableId =
+  | 'invoices'
+  | 'profiles'
+  | 'templates'
+  | 'payments'
+  | 'catalog'
+  | 'customers'
+  | 'stats'
+  | 'support'
+  | 'audit_logs'
+  | 'organizations'
+  | 'memberships';
 
 /** API-key headers against Appwrite, or `null` when the env is incomplete. */
 export type TableAuth = { endpoint: string; headers: Record<string, string> };
@@ -103,6 +114,29 @@ export async function listRows(
   queries: readonly ListQuery[],
   env?: Env,
 ): Promise<Array<Record<string, unknown> & { $id: string }> | null> {
+  const page = await listRowsPage(auth, table, queries, env);
+  return page === null ? null : page.rows;
+}
+
+/** One page plus Appwrite's `total` (the matched count, independent of limit). */
+export type RowsPage = {
+  rows: Array<Record<string, unknown> & { $id: string }>;
+  /** How many rows the query matched in total — what a `count=1` caller needs. */
+  total: number;
+};
+
+/**
+ * The same walk as {@link listRows}, keeping `total` — which Appwrite reports
+ * for the whole matched set regardless of `limit`, and the only way a count
+ * question ("how many templates?") is answered without shipping rows.
+ * `null` means the provider failed, identical contract as above.
+ */
+export async function listRowsPage(
+  auth: { endpoint: string; headers: Record<string, string> },
+  table: TableId,
+  queries: readonly ListQuery[],
+  env?: Env,
+): Promise<RowsPage | null> {
   const policy = quotaPolicy(env);
   const url = `${auth.endpoint}/databases/${DATABASE_ID}/collections/${table}/documents?${querySearchAll(queries)}`;
 
@@ -125,8 +159,10 @@ export async function listRows(
     try {
       const data = (await response.json()) as {
         documents?: Array<Record<string, unknown> & { $id: string }>;
+        total?: number;
       };
-      return Array.isArray(data.documents) ? data.documents : [];
+      const rows = Array.isArray(data.documents) ? data.documents : [];
+      return { rows, total: typeof data.total === 'number' ? data.total : rows.length };
     } catch {
       return null;
     }
@@ -160,6 +196,27 @@ export async function createRow(
   } catch {
     return null;
   }
+}
+
+/**
+ * Deletes a row by id. `true` when it is gone (or was already gone — a
+ * 404 on a delete means the desired state), `false` when Appwrite refused.
+ * Never retried: a write that timed out after applying would silently
+ * double-fire on a retry, and callers treat `false` as "still there" to
+ * report or re-attempt.
+ */
+export async function deleteRow(
+  auth: { endpoint: string; headers: Record<string, string> },
+  table: TableId,
+  rowId: string,
+  env?: Env,
+): Promise<boolean> {
+  void env; // parity with the other row helpers; a DELETE needs no retry policy
+  const response = await fetch(
+    `${auth.endpoint}/databases/${DATABASE_ID}/collections/${table}/documents/${encodeURIComponent(rowId)}`,
+    { method: 'DELETE', headers: auth.headers },
+  ).catch(() => null);
+  return response !== null && (response.ok || response.status === 404);
 }
 
 /**

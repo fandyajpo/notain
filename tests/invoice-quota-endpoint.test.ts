@@ -8,8 +8,10 @@ import type { Env } from '../functions/_lib/types';
  *
  * The counter itself (`freeInvoiceBudget`, month keys, paid-plan bypass) is
  * unit-tested in `src/core/billing/plans.test.ts`; this file covers the
- * endpoint's contract on top of it: session gate, the answer's shape, the 402
- * a spent month produces, and the fact that a paid plan is never counted.
+ * endpoint's contract on top of it: the ORG membership gate (since
+ * multi-tenancy both the plan and the counted invoices live on the org), the
+ * answer's shape, the 402 a spent month produces, and the fact that a paid
+ * plan is never counted.
  */
 
 const ENV = {
@@ -17,6 +19,9 @@ const ENV = {
   PUBLIC_APPWRITE_ENDPOINT: 'https://appwrite.test/v1',
   PUBLIC_APPWRITE_PROJECT_ID: 'proj_test',
 } as Env;
+
+/** Billing and the allowance are per organization. */
+const ORG = 'org_0123456789abcdef';
 
 let fake: AppwriteFake | null = null;
 
@@ -26,7 +31,7 @@ afterEach(() => {
 
 function handle(method: string): Promise<Response> {
   return (quotaOnRequest as (ctx: unknown) => Promise<Response>)({
-    request: new Request('https://notain.pages.dev/api/quota/invoices', {
+    request: new Request(`https://notain.pages.dev/api/quota/invoices?orgId=${ORG}`, {
       method,
       headers: { authorization: 'Bearer jwt-token' },
     }),
@@ -41,15 +46,24 @@ function thisMonthInvoice(count: number): Row[] {
   const now = new Date();
   return Array.from({ length: count }, (_unused, index) => ({
     $id: `inv-${index}`,
+    orgId: ORG,
     ownerId: 'user-1',
     date: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-0${(index % 9) + 1}`,
     $createdAt: new Date(now.getFullYear(), now.getMonth(), (index % 9) + 1, 9).toISOString(),
   }));
 }
 
-function seed(profile: Record<string, unknown>, invoices: Row[]): void {
+function seed(org: Record<string, unknown>, invoices: Row[]): void {
   fake = appwriteFake();
-  fake.rows.set('profiles/user-1', { $id: 'user-1', ...profile });
+  // Plan lives on the organization row; the membership is what the gate reads.
+  fake.rows.set('organizations/' + ORG, { $id: ORG, ...org });
+  fake.rows.set('memberships/mem_' + ORG, {
+    $id: 'mem_' + ORG,
+    orgId: ORG,
+    userId: 'user-1',
+    role: 'owner',
+    status: 'active',
+  });
   if (invoices.length > 0) fake.lists.set('invoices', invoices);
 }
 
@@ -58,7 +72,7 @@ describe('GET /api/quota/invoices', () => {
     seed({ plan: 'free', planExpiresAt: null }, []);
 
     const response = await (quotaOnRequest as (ctx: unknown) => Promise<Response>)({
-      request: new Request('https://notain.pages.dev/api/quota/invoices'),
+      request: new Request(`https://notain.pages.dev/api/quota/invoices?orgId=${ORG}`),
       params: {},
       env: ENV,
       waitUntil: () => {},
@@ -66,6 +80,30 @@ describe('GET /api/quota/invoices', () => {
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toMatchObject({ error: 'unauthenticated' });
+  });
+
+  it('refuses a caller with no active membership in the org', async () => {
+    seed({ plan: 'free', planExpiresAt: null }, thisMonthInvoice(3));
+    // A member the owner just removed must lose the meter on the next read.
+    fake!.rows.delete('memberships/mem_' + ORG);
+
+    const response = await handle('GET');
+
+    // Same 404 a nonexistent org gets — the gate never confirms an id exists.
+    expect(response.status).toBe(404);
+  });
+
+  it('refuses a malformed orgId before any lookup', async () => {
+    seed({ plan: 'free', planExpiresAt: null }, []);
+
+    const response = await (quotaOnRequest as (ctx: unknown) => Promise<Response>)({
+      request: new Request('https://notain.pages.dev/api/quota/invoices?orgId=drop-table'),
+      params: {},
+      env: ENV,
+      waitUntil: () => {},
+    });
+
+    expect(response.status).toBe(400);
   });
 
   it('counts this month rows against the free limit and is never cached', async () => {

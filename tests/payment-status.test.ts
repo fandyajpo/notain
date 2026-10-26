@@ -7,6 +7,8 @@ const CLIENT_ID = 'MCH-0001-10791114622547';
 const SECRET = 'sandbox-secret-key';
 const STATUS_PATH = '/api/payments/status';
 const INVOICE = 'NOTAIN-P-1-ABCD';
+/** The plan belongs to an organization since multi-tenancy. */
+const ORG = 'org_0123456789abcdef';
 
 const env = {
   DOKU_CLIENT_ID: CLIENT_ID,
@@ -73,7 +75,14 @@ beforeEach(() => {
   });
 
   fake.rows.set('payments/' + INVOICE, payment());
-  fake.rows.set('profiles/user-1', { $id: 'user-1', plan: 'free', planExpiresAt: null });
+  // The organization the order upgrades — `plan`/`planExpiresAt` live here.
+  fake.rows.set('organizations/' + ORG, {
+    $id: ORG,
+    name: 'Kopi Senja',
+    ownerId: 'user-1',
+    plan: 'free',
+    planExpiresAt: null,
+  });
 });
 
 afterEach(() => {
@@ -83,6 +92,7 @@ afterEach(() => {
 function payment(overrides: Record<string, unknown> = {}): Row {
   return {
     $id: INVOICE,
+    orgId: ORG,
     ownerId: 'user-1',
     plan: 'pro',
     amount: 29_000,
@@ -232,21 +242,22 @@ describe('GET /api/payments/status', () => {
     expect(stored?.status).toBe('paid');
     expect(stored?.paidAt).toBeTypeOf('string');
 
-    const profile = fake.rows.get('profiles/user-1');
-    expect(profile?.plan).toBe('pro');
-    const expiry = new Date(String(profile?.planExpiresAt)).getTime();
+    // The upgrade lands on the ORGANIZATION row — billing is per org.
+    const org = fake.rows.get('organizations/' + ORG);
+    expect(org?.plan).toBe('pro');
+    const expiry = new Date(String(org?.planExpiresAt)).getTime();
     const paidAt = new Date(String(stored?.paidAt)).getTime();
     expect(expiry - paidAt).toBe(30 * 24 * 60 * 60 * 1000);
 
     expect(writes()).toContain('PATCH payments/' + INVOICE);
-    expect(writes()).toContain('PATCH profiles/user-1');
+    expect(writes()).toContain('PATCH organizations/' + ORG);
   });
 
   it('never extends the plan twice, however often it is polled after success', async () => {
     dokuHandler = () => json(200, statusBody({ status: 'SUCCESS' }));
 
     await handle(get());
-    const firstExpiry = fake.rows.get('profiles/user-1')?.planExpiresAt;
+    const firstExpiry = fake.rows.get('organizations/' + ORG)?.planExpiresAt;
     dokuCalls = [];
 
     const second = await handle(get());
@@ -254,7 +265,7 @@ describe('GET /api/payments/status', () => {
     await expect(second.json()).resolves.toMatchObject({ status: 'paid' });
     // The row is final, so the probe is never sent again.
     expect(dokuCalls).toEqual([]);
-    expect(fake.rows.get('profiles/user-1')?.planExpiresAt).toBe(firstExpiry);
+    expect(fake.rows.get('organizations/' + ORG)?.planExpiresAt).toBe(firstExpiry);
   });
 
   it('ignores a SUCCESS whose amount does not match the stored order', async () => {
@@ -266,7 +277,7 @@ describe('GET /api/payments/status', () => {
     await expect(response.json()).resolves.toMatchObject({ status: 'pending' });
     // Left pending for manual review — not expired, not activated.
     expect(fake.rows.get('payments/' + INVOICE)?.status).toBe('pending');
-    expect(fake.rows.get('profiles/user-1')?.plan).toBe('free');
+    expect(fake.rows.get('organizations/' + ORG)?.plan).toBe('free');
     expect(writes()).toContain('POST audit_logs/(create)');
   });
 
@@ -277,7 +288,7 @@ describe('GET /api/payments/status', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ status: 'pending' });
-    expect(fake.rows.get('profiles/user-1')?.plan).toBe('free');
+    expect(fake.rows.get('organizations/' + ORG)?.plan).toBe('free');
     expect(writes()).toEqual([]);
   });
 
@@ -288,7 +299,7 @@ describe('GET /api/payments/status', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ status: 'expired' });
-    expect(fake.rows.get('profiles/user-1')?.plan).toBe('free');
+    expect(fake.rows.get('organizations/' + ORG)?.plan).toBe('free');
   });
 
   it('reports the row as it stands when DOKU has never seen the order', async () => {

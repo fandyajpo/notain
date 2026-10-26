@@ -19,7 +19,6 @@
  * bulk-delete endpoint, so concurrency is what keeps a big wipe quick.
  */
 
-const TABLES = ['profiles', 'invoices', 'templates', 'customers', 'stats'];
 const PAGE_SIZE = 100;
 /** Appwrite has no bulk-delete: throughput comes from parallel DELETEs per page. */
 const DELETE_CONCURRENCY = 8;
@@ -97,6 +96,32 @@ async function runPool(items, concurrency, task) {
 }
 
 /**
+ * Every collection in the database, discovered at run time.
+ *
+ * Deliberately not a hardcoded list: an earlier version named five tables
+ * (then nine) and would happily print "Selesai" while a table added later
+ * kept its rows. Discovering the schema means the next run covers whatever
+ * exists then, without anyone remembering to edit this file.
+ */
+async function listTables() {
+  const tables = [];
+  for (let cursor = ''; ;) {
+    const page = await api(
+      'GET',
+      `/databases/${databaseId}/collections?limit=${PAGE_SIZE}${cursor ? `&cursorAfter=${cursor}` : ''}`,
+    );
+    const items = page?.collections ?? [];
+    for (const item of items) {
+      if (typeof item.$id === 'string') tables.push(item.$id);
+    }
+    if (items.length < PAGE_SIZE) break;
+    cursor = items[items.length - 1].$id;
+  }
+  if (tables.length === 0) fail('Tidak ada collection ditemukan — periksa API key/database id.');
+  return tables;
+}
+
+/**
  * Always refetches the first page, so no cursor bookkeeping is needed — the
  * rows it deletes are gone before the next round. Each page's DELETEs go out
  * in parallel; a 429 slows the individual request down, not the whole run.
@@ -133,8 +158,11 @@ function collectionPath(tableId, suffix = '') {
 console.log(`Target: ${endpoint}  project=${projectId}  database=${databaseId}`);
 
 try {
+  const tables = await listTables();
+  console.log(`Tables: ${tables.join(', ')}`);
+
   const rowCounts = [];
-  for (const table of TABLES) {
+  for (const table of tables) {
     rowCounts.push([table, await count(collectionPath(table), 'documents')]);
   }
   const userCount = alsoUsers ? await count('/users', 'users') : null;

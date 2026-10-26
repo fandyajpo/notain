@@ -4,6 +4,8 @@ import { customerDraftSchema } from '../core/customer/schema';
 import { mapWithConcurrency } from '../core/shared/concurrency';
 import { AppError, ERROR_CODES, flattenIssues } from '../core/shared/errors';
 import { container } from '../infra/container';
+import { requireActiveOrgId } from './active-org';
+import { bulkDeleteAll } from './data-api';
 import { requireSession } from './session';
 
 /** Validates a customer and returns the normalized value, or throws. */
@@ -105,16 +107,15 @@ export async function deleteCustomer(id: string): Promise<void> {
 /**
  * Removes several customers in one call (the table's bulk action).
  *
- * The deletes run a few at a time rather than all at once so a big selection
- * does not trip the Appwrite rate limiter. A failure mid-batch leaves the
+ * One batched server call per 20 rows instead of one invocation per row: the
+ * Function skips foreign/missing ids itself, so a concurrent delete elsewhere
+ * is a no-op rather than an error. A failure mid-batch leaves the
  * already-deleted rows gone — the caller invalidates and refetches, so the
  * list settles on what actually survived.
  */
 export async function deleteCustomers(ids: string[]): Promise<void> {
   await requireSession();
-  await mapWithConcurrency(ids, WRITE_CONCURRENCY, async (id) => {
-    await container.customers.remove(id);
-  });
+  await bulkDeleteAll('customers', requireActiveOrgId(), ids);
 }
 
 /**

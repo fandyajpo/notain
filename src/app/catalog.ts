@@ -4,6 +4,8 @@ import { catalogDraftSchema } from '../core/catalog/schema';
 import { mapWithConcurrency } from '../core/shared/concurrency';
 import { AppError, ERROR_CODES, flattenIssues } from '../core/shared/errors';
 import { container } from '../infra/container';
+import { requireActiveOrgId } from './active-org';
+import { bulkDeleteAll } from './data-api';
 import { requireSession } from './session';
 
 /** Validates a catalog entry and returns the normalized value, or throws. */
@@ -96,14 +98,14 @@ export async function deleteCatalogItem(id: string): Promise<void> {
 /**
  * Removes several entries in one call (the table's bulk action).
  *
- * A failure mid-batch leaves the already-deleted rows gone — the caller
- * invalidates and refetches, so the list settles on what actually survived.
+ * One batched server call per 20 rows instead of one invocation per row; the
+ * Function skips foreign/missing ids itself. A failure mid-batch leaves the
+ * already-deleted rows gone — the caller invalidates and refetches, so the
+ * list settles on what actually survived.
  */
 export async function deleteCatalogItems(ids: string[]): Promise<void> {
   await requireSession();
-  await mapWithConcurrency(ids, WRITE_CONCURRENCY, async (id) => {
-    await container.catalog.remove(id);
-  });
+  await bulkDeleteAll('catalog', requireActiveOrgId(), ids);
 }
 
 /**

@@ -4,7 +4,7 @@ import type { BusinessProfile } from '../core/profile/model';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 
 const { getSession } = vi.hoisted(() => ({ getSession: vi.fn() }));
-const { getByOwner, save } = vi.hoisted(() => ({ getByOwner: vi.fn(), save: vi.fn() }));
+const { getByOrg, save } = vi.hoisted(() => ({ getByOrg: vi.fn(), save: vi.fn() }));
 const { uploadAsset, removeAsset, viewUrl } = vi.hoisted(() => ({
   uploadAsset: vi.fn(),
   removeAsset: vi.fn(),
@@ -14,15 +14,18 @@ const { uploadAsset, removeAsset, viewUrl } = vi.hoisted(() => ({
 vi.mock('../infra/container', () => ({
   container: {
     auth: { getSession },
-    profiles: { getByOwner, save },
+    profiles: { getByOrg, save },
     assets: { uploadLogo: uploadAsset, remove: removeAsset, viewUrl },
   },
 }));
 
 const { removeLogo, saveProfile, uploadLogo } = await import('./profile');
 const { forgetSession } = await import('./session');
+const { setActiveOrgId } = await import('./active-org');
 
 const ALICE: SessionUser = { id: 'user-a', email: 'a@example.com', name: 'Alice' };
+/** The active org every profile read/write is scoped to. */
+const ORG = 'org_aaaaaaaaaaaaaaaa';
 
 function logoFile(): File {
   return new File(['png-bytes'], 'logo.png', { type: 'image/png' });
@@ -45,8 +48,11 @@ beforeEach(() => {
   // "requires a session" cases see the previous account instead of a null.
   forgetSession();
   getSession.mockReset();
-  getByOwner.mockReset();
+  getByOrg.mockReset();
   save.mockReset();
+  // Profile reads/writes are org-scoped; without an active org every call
+  // would throw before reaching the repository.
+  setActiveOrgId(ORG);
   uploadAsset.mockReset();
   removeAsset.mockReset();
   viewUrl.mockReset();
@@ -69,7 +75,7 @@ describe('uploadLogo', () => {
     expect(removeAsset).toHaveBeenCalledTimes(1);
     expect(removeAsset).toHaveBeenCalledWith('logos_old');
     expect(save).toHaveBeenCalledWith({
-      ownerId: ALICE.id,
+      orgId: ORG,
       profile: expect.objectContaining({ logoFileId: 'logos_new' }),
     });
     // The row must already point at the new file before the old one goes —
@@ -129,13 +135,13 @@ describe('saveProfile', () => {
       plan: 'business',
       planExpiresAt: '2026-11-21T00:00:00.000Z',
     };
-    getByOwner.mockResolvedValue(stored);
+    getByOrg.mockResolvedValue(stored);
     save.mockImplementation(async ({ profile: next }: { profile: BusinessProfile }) => next);
 
     const saved = await saveProfile({ ...profile(), plan: 'free', planExpiresAt: null });
 
     expect(save).toHaveBeenCalledWith({
-      ownerId: ALICE.id,
+      orgId: ORG,
       profile: expect.objectContaining({
         plan: 'business',
         planExpiresAt: '2026-11-21T00:00:00.000Z',
@@ -145,13 +151,13 @@ describe('saveProfile', () => {
   });
 
   it('starts a brand-new profile on the free plan', async () => {
-    getByOwner.mockResolvedValue(null);
+    getByOrg.mockResolvedValue(null);
     save.mockImplementation(async ({ profile: next }: { profile: BusinessProfile }) => next);
 
     const saved = await saveProfile({ ...profile(), plan: 'business' });
 
     expect(save).toHaveBeenCalledWith({
-      ownerId: ALICE.id,
+      orgId: ORG,
       profile: expect.objectContaining({ plan: 'free', planExpiresAt: null }),
     });
     expect(saved.plan).toBe('free');

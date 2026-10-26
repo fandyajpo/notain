@@ -17,21 +17,27 @@ const env = {
 } as Env;
 
 const INVOICE = 'NOTAIN-P-1-ABCD';
+/** The plan belongs to an organization since multi-tenancy. */
+const ORG = 'org_0123456789abcdef';
 
 let fake: AppwriteFake;
 
 beforeEach(() => {
   fake = appwriteFake();
-  fake.rows.set('payments/NOTAIN-P-1-ABCD', {
+  fake.rows.set('payments/' + INVOICE, {
     $id: INVOICE,
+    orgId: ORG,
     ownerId: 'user-1',
     plan: 'pro',
     amount: 29_000,
     status: 'pending',
     paidAt: null,
   });
-  fake.rows.set('profiles/user-1', {
-    $id: 'user-1',
+  // The organization the order upgrades — `plan`/`planExpiresAt` live here.
+  fake.rows.set('organizations/' + ORG, {
+    $id: ORG,
+    name: 'Kopi Senja',
+    ownerId: 'user-1',
     plan: 'free',
     planExpiresAt: null,
   });
@@ -127,7 +133,7 @@ describe('POST /api/payments/doku-notify', () => {
     expect(response.status).toBe(401);
     expect(writes()).toEqual([]);
     expect(fake.rows.get('payments/' + INVOICE)?.status).toBe('pending');
-    expect(fake.rows.get('profiles/user-1')?.plan).toBe('free');
+    expect(fake.rows.get('organizations/' + ORG)?.plan).toBe('free');
   });
 
   it('activates the plan on a verified SUCCESS and stamps the payment paid', async () => {
@@ -140,24 +146,25 @@ describe('POST /api/payments/doku-notify', () => {
     expect(payment?.status).toBe('paid');
     expect(payment?.paidAt).toBeTypeOf('string');
 
-    const profile = fake.rows.get('profiles/user-1');
-    expect(profile?.plan).toBe('pro');
+    // The upgrade lands on the ORGANIZATION row, not on a user row.
+    const org = fake.rows.get('organizations/' + ORG);
+    expect(org?.plan).toBe('pro');
     // One 30-day period from the payment time.
-    const expiry = new Date(String(profile?.planExpiresAt)).getTime();
+    const expiry = new Date(String(org?.planExpiresAt)).getTime();
     const paidAt = new Date(String(payment?.paidAt)).getTime();
     expect(expiry - paidAt).toBe(30 * 24 * 60 * 60 * 1000);
   });
 
   it('is idempotent: a replayed SUCCESS acknowledges but never re-activates', async () => {
     await notify({ status: 'SUCCESS', amount: 29_000 });
-    const profileAfterFirst = { ...fake.rows.get('profiles/user-1') };
+    const orgAfterFirst = { ...fake.rows.get('organizations/' + ORG) };
 
     const replay = await notify({ status: 'SUCCESS', amount: 29_000 });
 
     expect(replay.status).toBe(200);
     await expect(replay.json()).resolves.toMatchObject({ applied: false, reason: 'duplicate' });
     // Same expiry as the first run — expiry math ran exactly once.
-    expect(fake.rows.get('profiles/user-1')?.planExpiresAt).toBe(profileAfterFirst.planExpiresAt);
+    expect(fake.rows.get('organizations/' + ORG)?.planExpiresAt).toBe(orgAfterFirst.planExpiresAt);
   });
 
   it('ignores a SUCCESS whose amount does not match the stored order', async () => {
@@ -167,7 +174,7 @@ describe('POST /api/payments/doku-notify', () => {
     await expect(response.json()).resolves.toMatchObject({ applied: false });
     // Left pending for manual review — not expired, not activated.
     expect(fake.rows.get('payments/' + INVOICE)?.status).toBe('pending');
-    expect(fake.rows.get('profiles/user-1')?.plan).toBe('free');
+    expect(fake.rows.get('organizations/' + ORG)?.plan).toBe('free');
   });
 
   it('expires a pending order on a verified EXPIRED notification', async () => {
@@ -176,7 +183,7 @@ describe('POST /api/payments/doku-notify', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ applied: true, status: 'expired' });
     expect(fake.rows.get('payments/' + INVOICE)?.status).toBe('expired');
-    expect(fake.rows.get('profiles/user-1')?.plan).toBe('free');
+    expect(fake.rows.get('organizations/' + ORG)?.plan).toBe('free');
   });
 
   it('never acts on an order it did not create', async () => {
@@ -191,18 +198,20 @@ describe('POST /api/payments/doku-notify', () => {
       applied: false,
       reason: 'unknown_order',
     });
-    expect(fake.rows.get('profiles/user-1')?.plan).toBe('free');
+    expect(fake.rows.get('organizations/' + ORG)?.plan).toBe('free');
   });
 
-  it('does not activate when the profile row is missing', async () => {
-    fake.rows.delete('profiles/user-1');
+  it('records the money but resolves nothing when the organization row is gone', async () => {
+    // The org was deleted between checkout and notification — a paid row is
+    // real, so it stays paid and is audited, never rolled back.
+    fake.rows.delete('organizations/' + ORG);
 
     const response = await notify({ status: 'SUCCESS', amount: 29_000 });
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       applied: false,
-      reason: 'profile_missing',
+      reason: 'org_missing',
     });
     // The money is recorded even though the upgrade needs manual resolution.
     expect(fake.rows.get('payments/' + INVOICE)?.status).toBe('paid');

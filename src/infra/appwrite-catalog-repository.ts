@@ -1,60 +1,71 @@
-import { ID, Query } from 'appwrite';
 import type { CatalogDraft, CatalogItem } from '../core/catalog/model';
-import { APPWRITE } from '../appwrite/config';
-import { getTables } from '../appwrite/client';
+import { AppError, ERROR_CODES } from '../core/shared/errors';
 import { toAppError } from '../appwrite/errors';
-import { ownerRowPermissions } from '../appwrite/permissions';
 import { catalogRowToDomain, catalogToRowData, type CatalogRow } from '../appwrite/mappers';
+import { getActiveOrgId } from '../app/active-org';
+import { createData, deleteData, listData, patchData } from '../app/data-api';
 import type { CatalogRepository } from '../ports/catalog-repository';
 
-const PAGE_LIMIT = 100;
+const PAGE_LIMIT = 100; // matches the server's catalog maxLimit
 
 /** Same bound as the customer repository — a ceiling, not a paging strategy. */
 const MAX_PAGES = 10;
 
+/**
+ * The organization's product/service catalog.
+ *
+ * Since multi-tenancy every call goes through `/api/data/catalog` behind
+ * `requireOrg` — the `ownerId` arguments stay in the interface as
+ * *createdBy* provenance, scoping is the gate-verified `orgId`.
+ */
 export class AppwriteCatalogRepository implements CatalogRepository {
+  private org(): string {
+    const orgId = getActiveOrgId();
+    if (!orgId) {
+      throw new AppError(ERROR_CODES.FORBIDDEN, 'Pilih organisasi dulu.');
+    }
+    return orgId;
+  }
+
   async listByOwner(ownerId: string): Promise<CatalogItem[]> {
+    void ownerId;
     const items: CatalogItem[] = [];
     let cursorAfter: string | undefined;
 
     for (let page = 0; page < MAX_PAGES; page += 1) {
-      const queries = [
-        Query.equal('ownerId', ownerId),
-        Query.limit(PAGE_LIMIT),
-        ...(cursorAfter ? [Query.cursorAfter(cursorAfter)] : []),
-      ];
-
       try {
-        const response = await getTables().listRows<CatalogRow>({
-          databaseId: APPWRITE.databaseId,
-          tableId: APPWRITE.catalogTableId,
-          queries,
+        const result = await listData<CatalogRow>('catalog', {
+          orgId: this.org(),
+          limit: PAGE_LIMIT,
+          ...(cursorAfter ? { cursorAfter } : {}),
         });
 
-        items.push(...response.rows.map(catalogRowToDomain));
+        items.push(...result.rows.map(catalogRowToDomain));
 
-        const last = response.rows.at(-1);
-        if (response.rows.length < PAGE_LIMIT || !last) break;
-        cursorAfter = last.$id;
+        if (!result.nextCursor) break;
+        cursorAfter = result.nextCursor;
       } catch (error) {
         throw toAppError(error);
       }
     }
 
-    // Sorted here rather than with `Query.orderAsc('name')`: ordering by a
-    // column wants an index on it, and a few dozen products are not worth
-    // another index to maintain.
+    // Sorted here rather than ordering server-side: the mapper hands us
+    // display rows already, and a few dozen products are not worth leaning
+    // on an index order for the picker's list.
     return items.sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
   }
 
   async countByOwner(ownerId: string): Promise<number> {
+    void ownerId;
     try {
-      const response = await getTables().listRows<CatalogRow>({
-        databaseId: APPWRITE.databaseId,
-        tableId: APPWRITE.catalogTableId,
-        queries: [Query.equal('ownerId', ownerId), Query.limit(1)],
+      // One row is enough: the response reports how many rows the query
+      // matched in `total`, independent of `limit`, so we never pull the
+      // catalog itself.
+      const result = await listData<CatalogRow>('catalog', {
+        orgId: this.org(),
+        limit: 1,
       });
-      return response.total;
+      return result.total;
     } catch (error) {
       throw toAppError(error);
     }
@@ -64,40 +75,30 @@ export class AppwriteCatalogRepository implements CatalogRepository {
     ownerId: string,
     options: { cursorAfter?: string; limit?: number } = {},
   ): Promise<{ rows: CatalogItem[]; nextCursor: string | null }> {
+    void ownerId;
     const limit = Math.min(Math.max(options.limit ?? 25, 1), 50);
     try {
-      const response = await getTables().listRows<CatalogRow>({
-        databaseId: APPWRITE.databaseId,
-        tableId: APPWRITE.catalogTableId,
-        queries: [
-          Query.equal('ownerId', ownerId),
-          Query.limit(limit),
-          ...(options.cursorAfter ? [Query.cursorAfter(options.cursorAfter)] : []),
-        ],
+      const result = await listData<CatalogRow>('catalog', {
+        orgId: this.org(),
+        limit,
+        ...(options.cursorAfter ? { cursorAfter: options.cursorAfter } : {}),
       });
-      const rows = response.rows.map(catalogRowToDomain).filter((item) => item.name.trim() !== '');
-      const last = response.rows.at(-1);
-      return {
-        rows,
-        nextCursor: response.rows.length === limit && last ? last.$id : null,
-      };
+      const rows = result.rows.map(catalogRowToDomain).filter((item) => item.name.trim() !== '');
+      return { rows, nextCursor: result.nextCursor };
     } catch (error) {
       throw toAppError(error);
     }
   }
 
   async findByName(ownerId: string, name: string): Promise<CatalogItem[]> {
+    void ownerId;
     try {
-      const response = await getTables().listRows<CatalogRow>({
-        databaseId: APPWRITE.databaseId,
-        tableId: APPWRITE.catalogTableId,
-        queries: [
-          Query.equal('ownerId', ownerId),
-          Query.equal('name', name),
-          Query.limit(PAGE_LIMIT),
-        ],
+      const result = await listData<CatalogRow>('catalog', {
+        orgId: this.org(),
+        eq: { name },
+        limit: PAGE_LIMIT,
       });
-      return response.rows.map(catalogRowToDomain);
+      return result.rows.map(catalogRowToDomain);
     } catch (error) {
       throw toAppError(error);
     }
@@ -109,20 +110,17 @@ export class AppwriteCatalogRepository implements CatalogRepository {
     item: CatalogDraft;
     lastUsedAt: string;
   }): Promise<CatalogItem> {
+    void input.ownerId; // stamped server-side from the session.
     try {
-      const row = await getTables().createRow<CatalogRow>({
-        databaseId: APPWRITE.databaseId,
-        tableId: APPWRITE.catalogTableId,
-        rowId: input.id || ID.unique(),
-        data: {
-          ownerId: input.ownerId,
-          ...catalogToRowData(input.item, input.lastUsedAt),
-        },
-        permissions: ownerRowPermissions(input.ownerId),
-      });
+      const row = await createData<CatalogRow>(
+        'catalog',
+        this.org(),
+        catalogToRowData(input.item, input.lastUsedAt),
+        input.id,
+      );
       return catalogRowToDomain(row);
     } catch (error) {
-      throw toAppError(error);
+      throw error instanceof AppError ? error : toAppError(error);
     }
   }
 
@@ -132,12 +130,12 @@ export class AppwriteCatalogRepository implements CatalogRepository {
     lastUsedAt: string;
   }): Promise<CatalogItem> {
     try {
-      const row = await getTables().updateRow<CatalogRow>({
-        databaseId: APPWRITE.databaseId,
-        tableId: APPWRITE.catalogTableId,
-        rowId: input.id,
-        data: catalogToRowData(input.item, input.lastUsedAt),
-      });
+      const row = await patchData<CatalogRow>(
+        'catalog',
+        this.org(),
+        input.id,
+        catalogToRowData(input.item, input.lastUsedAt),
+      );
       return catalogRowToDomain(row);
     } catch (error) {
       throw toAppError(error);
@@ -146,23 +144,9 @@ export class AppwriteCatalogRepository implements CatalogRepository {
 
   async remove(id: string): Promise<void> {
     try {
-      await getTables().deleteRow({
-        databaseId: APPWRITE.databaseId,
-        tableId: APPWRITE.catalogTableId,
-        rowId: id,
-      });
+      await deleteData('catalog', this.org(), id);
     } catch (error) {
-      if (isNotFound(error)) return;
       throw toAppError(error);
     }
   }
-}
-
-function isNotFound(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code: unknown }).code === 404
-  );
 }

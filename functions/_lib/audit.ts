@@ -18,6 +18,8 @@ export type AuditEntry = {
   targetId: string;
   /** Free-form JSON/text describing what changed. Kept small. */
   detail?: string;
+  /** The organization an admin/org action touched, when there is one. */
+  orgId?: string;
 };
 
 /**
@@ -39,6 +41,7 @@ export async function writeAudit(env: Env, entry: AuditEntry): Promise<void> {
     targetType: entry.targetType,
     targetId: entry.targetId.slice(0, TARGET_MAX),
     detail: (entry.detail ?? '').slice(0, DETAIL_MAX),
+    ...(entry.orgId ? { orgId: entry.orgId } : {}),
     createdAt: new Date().toISOString(),
   };
 

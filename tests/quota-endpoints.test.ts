@@ -93,6 +93,27 @@ describe('POST /api/csp-report rate fence', () => {
 });
 
 describe('POST /api/payments/checkout — breaker and budget', () => {
+  /** Billing is per organization: the order names the org it upgrades. */
+  const ORG = 'org_0123456789abcdef';
+
+  /** Seeds the org (billing lives here) plus the caller's active membership. */
+  function seedOrg(): void {
+    fake!.rows.set('organizations/' + ORG, {
+      $id: ORG,
+      name: 'Kopi Senja',
+      ownerId: 'user-1',
+      plan: 'free',
+      planExpiresAt: null,
+    });
+    fake!.rows.set('memberships/mem_' + ORG, {
+      $id: 'mem_' + ORG,
+      orgId: ORG,
+      userId: 'user-1',
+      role: 'owner',
+      status: 'active',
+    });
+  }
+
   beforeEach(() => {
     fake = appwriteFake({
       passthrough: (input) => {
@@ -117,13 +138,7 @@ describe('POST /api/payments/checkout — breaker and budget', () => {
         );
       },
     });
-    fake.rows.set('profiles/user-1', {
-      $id: 'user-1',
-      name: 'Budi',
-      phone: '081234567890',
-      plan: 'free',
-      planExpiresAt: null,
-    });
+    seedOrg();
   });
 
   const post = (env: Env) =>
@@ -132,7 +147,7 @@ describe('POST /api/payments/checkout — breaker and budget', () => {
       new Request('https://notain.pages.dev/api/payments/checkout', {
         method: 'POST',
         headers: { authorization: 'Bearer jwt-token', 'content-type': 'application/json' },
-        body: JSON.stringify({ plan: 'pro' }),
+        body: JSON.stringify({ orgId: ORG, plan: 'pro' }),
       }),
       env,
     );
@@ -171,12 +186,17 @@ describe('POST /api/payments/checkout — breaker and budget', () => {
 
     expect((await post(env)).status).toBe(200);
     expect((await post(env)).status).toBe(200);
+    // The second call resumed the first call's pending order (the duplicate-
+    // order guard) instead of asking DOKU for a new one — the fake exposes
+    // created rows to list queries now, exactly as Appwrite would.
+    const dokuAfterTwo = state.dokuCalls?.length ?? 0;
 
     const third = await post(env);
     expect(third.status).toBe(429);
     expect(Number(third.headers.get('retry-after'))).toBeGreaterThan(0);
-    // The refusal happened before DOKU — two orders were created, not three.
-    expect(state.dokuCalls).toHaveLength(2);
+    // The refusal happened before DOKU: if the fence ran after the provider
+    // call, this third attempt would have reached it and the count would grow.
+    expect(state.dokuCalls ?? []).toHaveLength(dokuAfterTwo);
   });
 });
 
@@ -270,13 +290,28 @@ describe('GET /api/payments/status — breaker stops probe storms', () => {
 
 describe('GET /api/payments/portal — session probe cache', () => {
   it('verifies the same bearer token with Appwrite exactly once', async () => {
+    // The gate needs an org + membership; `verifySession` itself is what is
+    // under test here, so a minimal valid world is enough.
     fake = appwriteFake();
-    fake.rows.set('profiles/user-1', { $id: 'user-1', plan: 'free', planExpiresAt: null });
+    fake.rows.set('organizations/org_0123456789abcdef', {
+      $id: 'org_0123456789abcdef',
+      name: 'Kopi Senja',
+      ownerId: 'user-1',
+      plan: 'free',
+      planExpiresAt: null,
+    });
+    fake.rows.set('memberships/mem_org', {
+      $id: 'mem_org',
+      orgId: 'org_0123456789abcdef',
+      userId: 'user-1',
+      role: 'owner',
+      status: 'active',
+    });
 
     const get = () =>
       handle(
         portalOnRequest as (ctx: unknown) => Promise<Response>,
-        new Request('https://notain.pages.dev/api/payments/portal', {
+        new Request('https://notain.pages.dev/api/payments/portal?orgId=org_0123456789abcdef', {
           headers: { authorization: 'Bearer jwt-token' },
         }),
         APPWRITE_ENV,

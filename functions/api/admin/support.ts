@@ -32,8 +32,10 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       : LIST_DEFAULT_LIMIT;
   const cursor = url.searchParams.get('cursorAfter');
 
-  const queries: Array<{ method: string; values: unknown[] }> = [
-    { method: 'orderDesc', values: ['createdAt'] },
+  const queries: Array<{ method: string; values: unknown[]; attribute?: string }> = [
+    // Canonical order form — see admin/audit.ts: the `values` form sorts by
+    // Appwrite's internal sequence column, not `createdAt`.
+    { method: 'orderDesc', attribute: 'createdAt', values: [] },
     { method: 'limit', values: [limit] },
   ];
   if (cursor) queries.push({ method: 'cursorAfter', values: [cursor] });

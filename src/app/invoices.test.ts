@@ -4,6 +4,7 @@ import type { Invoice, InvoiceDraft } from '../core/invoice/model';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 
 const { getSession } = vi.hoisted(() => ({ getSession: vi.fn() }));
+const { bulkDeleteAll } = vi.hoisted(() => ({ bulkDeleteAll: vi.fn() }));
 const { getById, update, updateStatus, listByOwner, create, remove } = vi.hoisted(() => ({
   getById: vi.fn(),
   update: vi.fn(),
@@ -20,8 +21,11 @@ vi.mock('../infra/container', () => ({
   },
 }));
 
+vi.mock('./data-api', () => ({ bulkDeleteAll }));
+
 const { deleteInvoices, updateInvoice, updateInvoiceStatus } = await import('./invoices');
 const { forgetSession } = await import('./session');
+const { setActiveOrgId } = await import('./active-org');
 
 const ALICE: SessionUser = { id: 'user-a', email: 'a@example.com', name: 'Alice' };
 
@@ -68,6 +72,8 @@ async function expectValidationFailure(run: () => Promise<unknown>, messagePart:
 beforeEach(() => {
   forgetSession();
   getSession.mockReset();
+  bulkDeleteAll.mockReset();
+  setActiveOrgId(null);
   getSession.mockResolvedValue(ALICE);
   getById.mockReset();
   update.mockReset();
@@ -180,26 +186,37 @@ describe('updateInvoice never writes the lifecycle status', () => {
 });
 
 describe('deleteInvoices bulk removal', () => {
-  it('removes every selected id through the repository', async () => {
-    remove.mockResolvedValue(undefined);
+  it('deletes every selected id through the batched server call', async () => {
+    setActiveOrgId('org_0123456789abcdef');
+    bulkDeleteAll.mockResolvedValue({ deleted: 3 });
 
     await deleteInvoices(['inv-1', 'inv-2', 'inv-3']);
 
-    expect(remove.mock.calls.map(([id]) => id).sort()).toEqual(['inv-1', 'inv-2', 'inv-3']);
+    expect(bulkDeleteAll).toHaveBeenCalledWith('invoices', 'org_0123456789abcdef', [
+      'inv-1',
+      'inv-2',
+      'inv-3',
+    ]);
   });
 
-  it('requires a session before touching the repository', async () => {
+  it('requires a session before touching the API', async () => {
     getSession.mockResolvedValue(null);
 
     await expect(deleteInvoices(['inv-1'])).rejects.toBeInstanceOf(AppError);
-    expect(remove).not.toHaveBeenCalled();
+    expect(bulkDeleteAll).not.toHaveBeenCalled();
   });
 
   it('propagates a mid-batch failure instead of swallowing it', async () => {
-    remove.mockImplementation(async (id: string) => {
-      if (id === 'inv-2') throw new Error('boom');
-    });
+    setActiveOrgId('org_0123456789abcdef');
+    bulkDeleteAll.mockRejectedValue(new Error('boom'));
 
     await expect(deleteInvoices(['inv-1', 'inv-2', 'inv-3'])).rejects.toThrow('boom');
+  });
+
+  it('refuses to delete without an active organization', async () => {
+    setActiveOrgId(null);
+
+    await expect(deleteInvoices(['inv-1'])).rejects.toThrow(/organisasi/i);
+    expect(bulkDeleteAll).not.toHaveBeenCalled();
   });
 });

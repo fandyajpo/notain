@@ -1,17 +1,20 @@
 import { getAccount } from '../appwrite/client';
 import { appErrorFromStatus } from './errors';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
+import { getActiveOrgId } from './active-org';
 
 /**
  * The browser's half of the free tier's monthly invoice allowance.
  *
  * The server owns the number (`functions/_lib/invoice-quota.ts` counts the
- * owner's own rows and reads their plan); this module only asks it. That split
- * is the whole point: a limit the client could enforce would be a limit a
- * modified client ignores, and the pricing page promises "10 invoice baru per
- * bulan" as a product fact, not a suggestion.
+ * ORGANIZATION's own rows and reads its plan); this module only asks it. That
+ * split is the whole point: a limit the client could enforce would be a limit
+ * a modified client ignores, and the pricing page promises "10 invoice baru
+ * per bulan" as a product fact, not a suggestion.
  *
- * Two calls, both on the same session-scoped endpoint:
+ * Two calls, both on the same org-scoped endpoint — the active organization
+ * rides as the `orgId` hint the server re-verifies against the caller's
+ * membership row:
  * - `fetchInvoiceQuota` — the meter, read when the builder mounts.
  * - `claimInvoiceQuota` — asked immediately before saving a *new* invoice.
  *   A denial arrives as a 402, mapped to a permanent, non-retriable
@@ -49,6 +52,19 @@ async function bearerFetch(path: string, init: { method?: string } = {}): Promis
   }
 }
 
+/**
+ * `orgId` for the quota endpoint — the same failure mode the repositories
+ * use when no organization is selected: a domain error the UI already knows
+ * how to render, not an unscoped request the server would reject anyway.
+ */
+function quotaPath(): string {
+  const orgId = getActiveOrgId();
+  if (!orgId) {
+    throw new AppError(ERROR_CODES.FORBIDDEN, 'Pilih organisasi dulu.');
+  }
+  return `/api/quota/invoices?orgId=${encodeURIComponent(orgId)}`;
+}
+
 function parseQuota(body: unknown): InvoiceQuota | null {
   if (!body || typeof body !== 'object') return null;
   const value = body as Partial<InvoiceQuota>;
@@ -72,9 +88,9 @@ async function serverMessage(response: Response): Promise<string | undefined> {
   }
 }
 
-/** The account's current allowance — the number the builder's meter paints. */
+/** The organization's current allowance — the number the builder's meter paints. */
 export async function fetchInvoiceQuota(): Promise<InvoiceQuota> {
-  const response = await bearerFetch('/api/quota/invoices');
+  const response = await bearerFetch(quotaPath());
   if (!response.ok) {
     throw appErrorFromStatus(response.status, await serverMessage(response));
   }
@@ -92,7 +108,7 @@ export async function fetchInvoiceQuota(): Promise<InvoiceQuota> {
  * the users it exists to bound.
  */
 export async function claimInvoiceQuota(): Promise<InvoiceQuota> {
-  const response = await bearerFetch('/api/quota/invoices', { method: 'POST' });
+  const response = await bearerFetch(quotaPath(), { method: 'POST' });
   if (!response.ok) {
     throw appErrorFromStatus(response.status, await serverMessage(response));
   }

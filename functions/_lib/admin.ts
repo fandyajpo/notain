@@ -1,5 +1,6 @@
 import { querySearch, verifySession, type Session } from './appwrite';
 import { apiError, fetchUpstream as fetch } from './http';
+import { listRows, type ListQuery, type TableAuth } from './rows';
 import { cacheGet, cacheSet, count, quotaPolicy } from './quota';
 import type { Env } from './types';
 
@@ -54,6 +55,77 @@ export async function requireAdmin(
   }
 
   return { ok: true, admin: { session, endpoint, headers } };
+}
+
+/**
+ * The organization a user is *primarily* attached to — their NEWEST active
+ * membership.
+ *
+ * Since multi-tenancy nothing tenanted is user-keyed anymore: the business
+ * profile is `profiles/<orgId>` and the plan lives on `organizations/<orgId>`,
+ * so every admin operation addressed by `userId` must first resolve WHICH
+ * org's rows the user means. Newest join wins, matching the order
+ * `GET /api/orgs` returns — the same org the switcher opens first, so admin
+ * and user see the same "current" workspace.
+ *
+ * `null` = the account has no active membership (never set up, or removed
+ * from every org). Callers then show free/empty, or answer 404 for writes —
+ * never another user's rows.
+ */
+export async function primaryOrgId(
+  auth: TableAuth,
+  userId: string,
+  env?: Env,
+): Promise<string | null> {
+  const rows = await listRows(
+    auth,
+    'memberships',
+    [
+      { method: 'equal', attribute: 'userId', values: [userId] },
+      { method: 'equal', attribute: 'status', values: ['active'] },
+      { method: 'orderDesc', attribute: 'createdAt', values: [] },
+      { method: 'limit', values: [1] },
+    ],
+    env,
+  );
+  const orgId = rows?.[0]?.orgId;
+  return typeof orgId === 'string' && orgId !== '' ? orgId : null;
+}
+
+/**
+ * Batched {@link primaryOrgId} for one page of accounts: ONE membership
+ * query (`userId IN [...]`, newest first) instead of a per-user read.
+ *
+ * First row per user wins because the whole set is ordered newest-first, so
+ * "first occurrence" *is* the newest membership. The page holds at most 50
+ * accounts and the query caps at Appwrite's 100-row page — an account whose
+ * memberships fall outside that window simply resolves to `null` (free/empty
+ * in the list) rather than costing a N+1 walk of every membership.
+ */
+export async function primaryOrgIds(
+  auth: TableAuth,
+  userIds: string[],
+  env?: Env,
+): Promise<Map<string, string>> {
+  const byUser = new Map<string, string>();
+  if (userIds.length === 0) return byUser;
+
+  const queries: ListQuery[] = [
+    { method: 'equal', attribute: 'userId', values: userIds },
+    { method: 'equal', attribute: 'status', values: ['active'] },
+    { method: 'orderDesc', attribute: 'createdAt', values: [] },
+    { method: 'limit', values: [100] },
+  ];
+  const rows = await listRows(auth, 'memberships', queries, env);
+  if (rows === null) return byUser; // provider failure → show free, never guess
+
+  for (const row of rows) {
+    const userId = typeof row.userId === 'string' ? row.userId : '';
+    const orgId = typeof row.orgId === 'string' ? row.orgId : '';
+    if (userId === '' || orgId === '' || byUser.has(userId)) continue;
+    byUser.set(userId, orgId);
+  }
+  return byUser;
 }
 
 /**

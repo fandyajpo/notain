@@ -5,27 +5,34 @@ import type { Env } from './types';
 /**
  * The free tier's monthly invoice allowance, enforced server-side.
  *
- * Invoices themselves are written from the browser through the Appwrite SDK
- * (row permissions make owner-scoped CRUD safe directly, and routing every
- * write through a Function would double-quota it — see `docs/quota.md`). So
- * the cap cannot live on the write path. Instead the builder asks for a claim
+ * Since multi-tenancy both halves of the question are ORGANIZATION-scoped:
+ * the plan lives on `organizations/<orgId>` (billing is per org), and the
+ * invoices counted are the ones stamped with that orgId. One membership gate
+ * (`requireOrg`) precedes every call, so "this org's allowance" can only ever
+ * be asked by one of its own members.
+ *
+ * Invoice writes run through `POST /api/data/invoices` (the org-gated data
+ * endpoint), but that endpoint deliberately does not re-count the month on
+ * every save: the count is a paginated walk, and billing it to each save would
+ * multiply read quota for a check the builder performs immediately before
+ * anyway (see `docs/quota.md`). Instead the builder asks for a claim
  * immediately before saving, and this module is what answers that question:
- * how many invoices did this owner create this calendar month, and is there
- * room for one more?
+ * how many invoices did this organization create this calendar month, and is
+ * there room for one more?
  *
  * What that buys, stated honestly:
  *
  * - The limit is real for everyone using the product: the meter and the save
- *   button both read this answer, so a free account past its tenth invoice
- *   cannot create an eleventh through the app.
- * - It is not a security boundary. A caller with the Appwrite SDK and a
- *   session can still write a row directly, the same as any owner-scoped
- *   write here. Making it one would mean moving every invoice write behind a
- *   Function and paying Workers quota for every save — a deliberate trade
- *   this project has already rejected.
+ *   button both read this answer, so a free org past its tenth invoice cannot
+ *   create an eleventh through the app.
+ * - It is not a hard boundary against a hand-rolled client: the create
+ *   endpoint itself does not re-check the count, so a caller who skips the
+ *   claim can still write a row. Closing that would mean counting the month
+ *   inside every invoice create — a per-save paginated walk against Appwrite
+ *   read quota — which this project has deliberately not paid for.
  *
- * Both endpoints are cheap by construction: one profile row (document id ==
- * userId) plus one projected list page of `$createdAt` strings.
+ * Both endpoints are cheap by construction: one organization row (document id
+ * == orgId) plus one projected list page of `$createdAt` strings.
  */
 
 /** What both endpoints answer with. `remaining: null` means unlimited. */
@@ -65,20 +72,22 @@ const MAX_PAGES = 100;
  *
  * Only `$createdAt` and `date` are selected, so a page is 100 short strings
  * rather than 100 full invoices (the rich-text sections alone are the heavy
- * part of a row). The sort rides the existing `owner_date` index
- * (equal ownerId + orderDesc date + orderDesc $createdAt) rather than asking
+ * part of a row). The sort rides the existing `org_date` index
+ * (equal orgId + orderDesc date + orderDesc $createdAt) rather than asking
  * Appwrite to sort on an unindexed column.
  */
 export async function monthlyInvoiceCounts(
   auth: TableAuth,
-  ownerId: string,
+  orgId: string,
   env?: Env,
 ): Promise<Record<string, number> | null> {
   const queries: ListQuery[] = [
-    { method: 'equal', attribute: 'ownerId', values: [ownerId] },
+    { method: 'equal', attribute: 'orgId', values: [orgId] },
     { method: 'select', values: ['date', '$createdAt'] },
-    { method: 'orderDesc', values: ['date'] },
-    { method: 'orderDesc', values: ['$createdAt'] },
+    // Canonical order form: `attribute` is where Appwrite reads the sort
+    // column; the `values` variant falls back to the sequence column.
+    { method: 'orderDesc', attribute: 'date', values: [] },
+    { method: 'orderDesc', attribute: '$createdAt', values: [] },
     { method: 'limit', values: [PAGE_SIZE] },
   ];
 
@@ -110,37 +119,37 @@ export async function monthlyInvoiceCounts(
   return counts;
 }
 
-/** The caller's profile row, or `null` when it is unreadable. */
-async function readProfile(
+/** The organization's row (plan lives there), or `null` when unreadable. */
+async function readOrg(
   auth: TableAuth,
-  userId: string,
+  orgId: string,
   env?: Env,
 ): Promise<Record<string, unknown> | null> {
-  // `profiles` documents are keyed by user id, so this is one id lookup — the
-  // same shape the admin and invoice-link Functions use, not a collection query.
-  return getRow(auth, 'profiles', userId, env);
+  // `organizations` documents are keyed by org id, so this is one id lookup —
+  // the same shape the checkout and invoice-link Functions use, not a query.
+  return getRow(auth, 'organizations', orgId, env);
 }
 
 /** Every quota read or claim goes through this one place. */
 async function resolve(
   auth: TableAuth,
-  userId: string,
+  orgId: string,
   env: Env | undefined,
   now: Date,
 ): Promise<{ quota: InvoiceQuota; withinLimit: boolean } | null> {
-  const [profile, counts] = await Promise.all([
-    readProfile(auth, userId, env),
-    monthlyInvoiceCounts(auth, userId, env),
+  const [org, counts] = await Promise.all([
+    readOrg(auth, orgId, env),
+    monthlyInvoiceCounts(auth, orgId, env),
   ]);
-  // A missing profile is not possible for a real caller (free is the default
-  // row), and an unreadable count is an outage — both fail closed here rather
-  // than inventing a zero.
-  if (profile === null || counts === null) return null;
+  // A missing org row is a gate that already passed but whose org was deleted
+  // mid-flight, and an unreadable count is an outage — both fail closed here
+  // rather than inventing a zero.
+  if (org === null || counts === null) return null;
 
   const budget = freeInvoiceBudget(
     {
-      plan: typeof profile.plan === 'string' ? profile.plan : 'free',
-      planExpiresAt: typeof profile.planExpiresAt === 'string' ? profile.planExpiresAt : null,
+      plan: typeof org.plan === 'string' ? org.plan : 'free',
+      planExpiresAt: typeof org.planExpiresAt === 'string' ? org.planExpiresAt : null,
       monthlyCounts: counts,
     },
     now,
@@ -160,11 +169,11 @@ async function resolve(
 /** `GET /api/quota/invoices` — the number the builder's meter renders. */
 export async function readInvoiceQuota(
   auth: TableAuth,
-  userId: string,
+  orgId: string,
   env?: Env,
   now: Date = new Date(),
 ): Promise<InvoiceQuota | null> {
-  const resolved = await resolve(auth, userId, env, now);
+  const resolved = await resolve(auth, orgId, env, now);
   return resolved?.quota ?? null;
 }
 
@@ -180,11 +189,11 @@ export async function readInvoiceQuota(
  */
 export async function claimInvoiceQuota(
   auth: TableAuth,
-  userId: string,
+  orgId: string,
   env?: Env,
   now: Date = new Date(),
 ): Promise<{ ok: true; quota: InvoiceQuota } | { ok: false; quota: InvoiceQuota | null }> {
-  const resolved = await resolve(auth, userId, env, now);
+  const resolved = await resolve(auth, orgId, env, now);
   if (resolved === null) return { ok: false, quota: null };
   return resolved.withinLimit
     ? { ok: true, quota: resolved.quota }

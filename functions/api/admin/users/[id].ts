@@ -1,11 +1,12 @@
 import { writeAudit } from '../../../_lib/audit';
-import { requireAdmin } from '../../../_lib/admin';
+import { primaryOrgId, requireAdmin } from '../../../_lib/admin';
 import { querySearchAll } from '../../../_lib/appwrite';
 import { apiError, fetchUpstream as fetch, json } from '../../../_lib/http';
 import type { Env, PagesFunction } from '../../../_lib/types';
 
 const DATABASE_ID = 'notain_db';
 const PROFILES_TABLE_ID = 'profiles';
+const ORGS_TABLE_ID = 'organizations';
 const DRILLDOWN_LIMIT_DEFAULT = 20;
 const DRILLDOWN_LIMIT_MAX = 50;
 
@@ -16,6 +17,10 @@ type ProfileRow = {
   address?: string | null;
   email?: string | null;
   businessType?: string | null;
+};
+
+type OrgRow = {
+  /** Billing state lives on the ORGANIZATION since multi-tenancy. */
   plan?: string | null;
   planExpiresAt?: string | null;
 };
@@ -37,8 +42,9 @@ const DRILL_RESOURCES: readonly DrillResource[] = [
  * client maps that `user_blocked` failure to the SuspendedScreen.
  *
  * `GET /api/admin/users/[id]?resource=…` — read-only drill-down into one
- * user's data: `overview` (profile + per-table totals), or a cursor-paged
- * slice of `invoices` / `customers` / `templates`.
+ * user's data: `overview` (their primary org's profile + plan, plus
+ * per-table totals counted by `ownerId`), or a cursor-paged slice of
+ * `invoices` / `customers` / `templates`.
  *
  * Admin-only (same wall as the collection routes).
  */
@@ -61,7 +67,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     return setUserStatus(endpoint, headers, session.userId, session.email, userId, request, env);
   }
 
-  return drillDown(endpoint, headers, userId, new URL(request.url));
+  return drillDown(endpoint, headers, userId, new URL(request.url), env);
 };
 
 async function setUserStatus(
@@ -114,6 +120,7 @@ async function drillDown(
   headers: Record<string, string>,
   userId: string,
   url: URL,
+  env: Env,
 ): Promise<Response> {
   const resourceParam = url.searchParams.get('resource') ?? 'overview';
   if (!(DRILL_RESOURCES as readonly string[]).includes(resourceParam)) {
@@ -126,7 +133,7 @@ async function drillDown(
   const resource = resourceParam as DrillResource;
 
   if (resource === 'overview') {
-    return overview(endpoint, headers, userId);
+    return overview(endpoint, headers, userId, env);
   }
   return listResource(endpoint, headers, userId, resource, url);
 }
@@ -135,18 +142,34 @@ async function overview(
   endpoint: string,
   headers: Record<string, string>,
   userId: string,
+  env: Env,
 ): Promise<Response> {
-  // Five independent reads — account, profile, and three limit-1 row counts.
-  // Run them together: the read count (and therefore the Appwrite quota cost)
-  // is identical either way, but the admin's drill-down no longer waits for
-  // five round trips in series.
-  const [userResponse, profileResponse, invoiceCount, customerCount, templateCount] =
+  // The org resolution runs first (one membership read): since
+  // multi-tenancy the profile row is `profiles/<orgId>` and the plan lives on
+  // `organizations/<orgId>` — joining by userId (the old contract) would
+  // render every account as free with empty fields. A user with no active
+  // membership gets `null` reads below: free, empty, never someone else's.
+  const orgId = await primaryOrgId({ endpoint, headers }, userId, env);
+
+  // Six independent reads — account, the org's profile, the org row, and
+  // three limit-1 row counts. Run them together: the read count (and therefore
+  // the Appwrite quota cost) is identical either way, but the admin's
+  // drill-down no longer waits for six round trips in series.
+  const [userResponse, profileResponse, orgResponse, invoiceCount, customerCount, templateCount] =
     await Promise.all([
       fetch(`${endpoint}/users/${userId}`, { headers }),
-      fetch(
-        `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents/${userId}`,
-        { headers },
-      ),
+      orgId
+        ? fetch(
+            `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents/${orgId}`,
+            { headers },
+          )
+        : Promise.resolve(null),
+      orgId
+        ? fetch(
+            `${endpoint}/databases/${DATABASE_ID}/collections/${ORGS_TABLE_ID}/documents/${orgId}`,
+            { headers },
+          )
+        : Promise.resolve(null),
       countRows(endpoint, headers, 'invoices', userId),
       countRows(endpoint, headers, 'customers', userId),
       countRows(endpoint, headers, 'templates', userId),
@@ -166,9 +189,10 @@ async function overview(
     status: boolean;
   };
 
-  const profile: ProfileRow | null = profileResponse.ok
-    ? ((await profileResponse.json()) as ProfileRow)
-    : null;
+  const profile: ProfileRow | null =
+    profileResponse && profileResponse.ok ? ((await profileResponse.json()) as ProfileRow) : null;
+  const org: OrgRow | null =
+    orgResponse && orgResponse.ok ? ((await orgResponse.json()) as OrgRow) : null;
 
   const counts = {
     invoices: invoiceCount,
@@ -188,8 +212,9 @@ async function overview(
       address: profile?.address ?? '',
       profileEmail: profile?.email ?? '',
       businessType: profile?.businessType ?? '',
-      plan: profile?.plan ?? 'free',
-      planExpiresAt: profile?.planExpiresAt ?? null,
+      // The primary org's plan; a missing org row reads as free.
+      plan: org?.plan ?? 'free',
+      planExpiresAt: org?.planExpiresAt ?? null,
     },
     counts,
   });

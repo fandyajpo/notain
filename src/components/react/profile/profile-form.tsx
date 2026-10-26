@@ -21,7 +21,15 @@ type Props = {
   profile: BusinessProfile;
 };
 
-/** Business profile editor: identity fields plus the invoice logo. */
+/**
+ * Business profile editor: the person's identity + contact fields and the
+ * invoice logo. `businessName` deliberately has NO input here — it is the
+ * ORGANIZATION's name (settings → Organisasi → rename), which the server
+ * mirrors into the profile row. It stays in the form values only so the
+ * shared `profileFormSchema` still types the payload; every write reads it
+ * from the `profile` prop instead, so a rename elsewhere can never be
+ * reverted by a later save of this form.
+ */
 export function ProfileForm({ profile }: Props) {
   const saveProfile = useSaveProfile();
   const uploadLogo = useUploadLogo();
@@ -50,7 +58,9 @@ export function ProfileForm({ profile }: Props) {
       try {
         await saveProfile.mutateAsync({
           name: value.name.trim(),
-          businessName: value.businessName.trim(),
+          // From the prop, not the form: the org's rename (which mirrors into
+          // the profile row) may have landed after this form mounted.
+          businessName: (profile.businessName ?? '').trim(),
           phone: value.phone.trim(),
           address: value.address.trim() || undefined,
           email: value.email.trim() || undefined,
@@ -70,7 +80,7 @@ export function ProfileForm({ profile }: Props) {
 
   const currentProfile = (): BusinessProfile => ({
     name: form.state.values.name.trim() || profile.name,
-    businessName: form.state.values.businessName.trim() || profile.businessName || '',
+    businessName: profile.businessName || '',
     phone: form.state.values.phone.trim() || profile.phone,
     address: form.state.values.address.trim() || undefined,
     email: form.state.values.email.trim() || undefined,
@@ -130,18 +140,6 @@ export function ProfileForm({ profile }: Props) {
             placeholder="Fandy Ahmad"
             required
             autoComplete="name"
-          />
-        )}
-      </form.Field>
-
-      <form.Field name="businessName">
-        {(field) => (
-          <ProfileField
-            field={field}
-            label="Nama usaha"
-            placeholder="Warung Maju Jaya"
-            required
-            autoComplete="organization"
           />
         )}
       </form.Field>

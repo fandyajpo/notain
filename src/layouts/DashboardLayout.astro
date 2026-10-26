@@ -2,6 +2,7 @@
 import { Menu, PanelLeft, X } from 'lucide-react';
 import { SignOutIsland } from '../components/react/auth/sign-out-island';
 import { AdminNavGroup } from '../components/react/auth/admin-nav-link';
+import { OrgSwitcherIsland } from '../components/react/orgs/org-switcher-island';
 import { ShortcutsIsland, ShortcutsTrigger } from '../components/react/ui/shortcuts';
 import { NAV_GROUPS, UTILITIES_GROUP_LABEL, drawerStagger } from '../lib/nav';
 import { navLinkClass } from '../lib/ui/classes';
@@ -79,6 +80,11 @@ const stagger = drawerStagger();
             class="flex flex-col gap-0.5 border-t border-border px-2 py-2"
             aria-label="Navigasi utama"
           >
+            {/* Which workspace am I in — first thing in the drawer, before any
+                page link, so the org context reads before the data does. */}
+            <div class="mb-1">
+              <OrgSwitcherIsland client:only="react" />
+            </div>
             {NAV_GROUPS.map((group, groupIndex) => (
               <div class:list={['flex flex-col gap-0.5', groupIndex > 0 && 'mt-2']}>
                 <p class={GROUP_LABEL}>{group.label}</p>
@@ -160,7 +166,13 @@ const stagger = drawerStagger();
               <PanelLeft size={16} aria-hidden="true" />
             </button>
           </div>
-          <nav class="mt-8 flex flex-col gap-1" aria-label="Navigasi utama">
+          {/* The switcher sits between the brand and the nav: workspace first,
+              pages second. Its `mt` and the nav's shrunken `mt` add back up to
+              the rail's original rhythm. */}
+          <div class="mt-4 px-2">
+            <OrgSwitcherIsland client:only="react" />
+          </div>
+          <nav class="mt-6 flex flex-col gap-1" aria-label="Navigasi utama">
             {NAV_GROUPS.map((group, groupIndex) => (
               <div class:list={['flex flex-col gap-1', groupIndex > 0 && 'mt-2']}>
                 <p class={GROUP_LABEL}>{group.label}</p>

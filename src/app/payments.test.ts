@@ -8,6 +8,10 @@ vi.mock('../appwrite/client', () => ({
 }));
 
 const { fetchPaymentStatus, readPortalSession, startCheckout } = await import('./payments');
+const { setActiveOrgId } = await import('./active-org');
+
+/** Billing is per-org: the hint every client call now carries. */
+const ORG = 'org_aaaaaaaaaaaaaaaa';
 
 const fetchMock = vi.fn();
 
@@ -16,6 +20,7 @@ beforeEach(() => {
   createJWT.mockResolvedValue({ jwt: 'jwt-token', $id: 'user-1' });
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
+  setActiveOrgId(ORG);
 });
 
 function response(body: unknown, status = 200): Response {
@@ -26,7 +31,7 @@ function response(body: unknown, status = 200): Response {
 }
 
 describe('startCheckout', () => {
-  it('sends only the plan id, carrying the session JWT — never a price', async () => {
+  it('sends the plan id and the org hint, carrying the session JWT — never a price', async () => {
     fetchMock.mockResolvedValue(response({ url: 'https://sandbox.doku.com/pay/abc' }));
 
     const result = await startCheckout('pro');
@@ -36,8 +41,19 @@ describe('startCheckout', () => {
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('/api/payments/checkout');
     expect(init.method).toBe('POST');
-    expect(JSON.parse(String(init.body))).toEqual({ plan: 'pro' });
+    // `orgId` is the server's `requireOrg` hint, re-verified against the
+    // membership row — the amount still never crosses the wire.
+    expect(JSON.parse(String(init.body))).toEqual({ plan: 'pro', orgId: ORG });
     expect((init.headers as Record<string, string>).Authorization).toBe('Bearer jwt-token');
+  });
+
+  it('fails locally before any request when no organization is active', async () => {
+    setActiveOrgId(null);
+
+    await expect(startCheckout('pro')).rejects.toMatchObject({
+      code: ERROR_CODES.FORBIDDEN,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('surfaces the server’s copy for a rejected request', async () => {
@@ -153,8 +169,17 @@ describe('readPortalSession', () => {
       payments: [{ invoiceNumber: 'NOTAIN-P-1-ABCD', status: 'paid' }],
     });
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe('/api/payments/portal');
+    expect(url).toBe(`/api/payments/portal?orgId=${ORG}`);
     expect((init.headers as Record<string, string>).Authorization).toBe('Bearer jwt-token');
+  });
+
+  it('fails locally before any request when no organization is active', async () => {
+    setActiveOrgId(null);
+
+    await expect(readPortalSession()).rejects.toMatchObject({
+      code: ERROR_CODES.FORBIDDEN,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('degrades an unknown plan and hostile rows to safe defaults', async () => {

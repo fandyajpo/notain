@@ -6,6 +6,8 @@ import type { Env } from '../functions/_lib/types';
 const CLIENT_ID = 'MCH-0001-10791114622547';
 const SECRET = 'sandbox-secret-key';
 const CHECKOUT_PATH = '/api/payments/checkout';
+/** Billing is per organization: the order names the org it upgrades. */
+const ORG = 'org_0123456789abcdef';
 
 const env = {
   DOKU_CLIENT_ID: CLIENT_ID,
@@ -42,20 +44,43 @@ beforeEach(() => {
       return dokuAnswer();
     },
   });
-  fake.rows.set('profiles/user-1', {
-    $id: 'user-1',
+  seedOrg();
+});
+
+/** Seeds the org (billing lives here), the caller's membership and its letterhead row. */
+function seedOrg(options: { plan?: string; planExpiresAt?: string | null } = {}): void {
+  fake.rows.set('organizations/' + ORG, {
+    $id: ORG,
+    name: 'Kopi Senja',
+    ownerId: 'user-1',
+    plan: options.plan ?? 'free',
+    planExpiresAt: options.planExpiresAt ?? null,
+  });
+  fake.rows.set('memberships/mem_' + ORG, {
+    $id: 'mem_' + ORG,
+    orgId: ORG,
+    userId: 'user-1',
+    role: 'owner',
+    status: 'active',
+  });
+  // The letterhead row (id == orgId) doubles as the payer DOKU sees.
+  fake.rows.set('profiles/' + ORG, {
+    $id: ORG,
     name: 'Budi',
     phone: '081234567890',
     plan: 'free',
     planExpiresAt: null,
   });
-});
+}
 
 function post(body: unknown): Request {
   return new Request('https://notain.pages.dev' + CHECKOUT_PATH, {
     method: 'POST',
     headers: { authorization: 'Bearer jwt-token', 'content-type': 'application/json' },
-    body: typeof body === 'string' ? body : JSON.stringify(body),
+    body: JSON.stringify({
+      orgId: ORG,
+      ...(typeof body === 'object' && body !== null ? body : {}),
+    }),
   });
 }
 
@@ -100,8 +125,19 @@ describe('POST /api/payments/checkout', () => {
     expect(paymentWrites()).toEqual([]);
   });
 
-  it('refuses when the account has no profile row yet', async () => {
-    fake.rows.delete('profiles/user-1');
+  it('refuses a caller who is not a member of the org', async () => {
+    fake.rows.delete('memberships/mem_' + ORG);
+
+    const response = await handle(post({ plan: 'pro' }));
+
+    // Same answer a nonexistent org gets — the gate never confirms an id exists.
+    expect(response.status).toBe(404);
+    expect(dokuCalls).toEqual([]);
+    expect(paymentWrites()).toEqual([]);
+  });
+
+  it('refuses when the organization row itself is missing', async () => {
+    fake.rows.delete('organizations/' + ORG);
 
     const response = await handle(post({ plan: 'pro' }));
 
@@ -175,6 +211,7 @@ describe('POST /api/payments/checkout', () => {
     fake.lists.set('payments', [
       {
         $id: 'NOTAIN-P-OLD',
+        orgId: ORG,
         ownerId: 'user-1',
         plan: 'pro',
         status: 'pending',
@@ -195,11 +232,7 @@ describe('POST /api/payments/checkout', () => {
   });
 
   it('blocks a downgrade while an active higher plan is running', async () => {
-    fake.rows.set('profiles/user-1', {
-      $id: 'user-1',
-      plan: 'business',
-      planExpiresAt: '2999-01-01T00:00:00.000Z',
-    });
+    seedOrg({ plan: 'business', planExpiresAt: '2999-01-01T00:00:00.000Z' });
 
     const response = await handle(post({ plan: 'pro' }));
 
@@ -208,11 +241,7 @@ describe('POST /api/payments/checkout', () => {
   });
 
   it('still allows a same-plan renewal and an upgrade', async () => {
-    fake.rows.set('profiles/user-1', {
-      $id: 'user-1',
-      plan: 'pro',
-      planExpiresAt: '2999-01-01T00:00:00.000Z',
-    });
+    seedOrg({ plan: 'pro', planExpiresAt: '2999-01-01T00:00:00.000Z' });
 
     await expect(handle(post({ plan: 'pro' }))).resolves.toMatchObject({ status: 200 });
     await expect(handle(post({ plan: 'business' }))).resolves.toMatchObject({ status: 200 });
@@ -222,6 +251,7 @@ describe('POST /api/payments/checkout', () => {
     fake.lists.set('payments', [
       {
         $id: 'NOTAIN-P-STRANDED',
+        orgId: ORG,
         ownerId: 'user-1',
         plan: 'pro',
         status: 'pending',
@@ -268,12 +298,7 @@ describe('POST /api/payments/checkout', () => {
   it('answers 500 when the payment table cannot be written', async () => {
     // Rebuild the environment with Appwrite payment writes failing.
     fake = appwriteFake({ writeFailureFor: '/collections/payments/' });
-    fake.rows.set('profiles/user-1', {
-      $id: 'user-1',
-      name: 'Budi',
-      plan: 'free',
-      planExpiresAt: null,
-    });
+    seedOrg();
 
     const response = await handle(post({ plan: 'pro' }));
 

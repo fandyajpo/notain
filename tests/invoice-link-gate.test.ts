@@ -4,6 +4,8 @@ import { appwriteFake, type AppwriteFake } from './appwrite-fake';
 import type { Env } from '../functions/_lib/types';
 
 const INVOICE_ID = 'inv_01HZY6Q8W9K2M4N6P8R0S2T4V6';
+/** Every invoice belongs to an organization since multi-tenancy. */
+const ORG = 'org_0123456789abcdef';
 
 const env = {
   APPWRITE_API_KEY: 'key_test',
@@ -13,10 +15,28 @@ const env = {
 
 let fake: AppwriteFake;
 
+/** The org row (which owns the plan) plus its letterhead profile row. */
+function seedOrg(options: { plan?: string; planExpiresAt?: string | null } = {}): void {
+  fake.rows.set('organizations/' + ORG, {
+    $id: ORG,
+    name: 'Kopi Senja',
+    ownerId: 'user-1',
+    plan: options.plan ?? 'pro',
+    planExpiresAt: options.planExpiresAt ?? '2999-01-01T00:00:00.000Z',
+  });
+  fake.rows.set('profiles/' + ORG, {
+    $id: ORG,
+    name: 'Budi',
+    plan: 'free',
+    planExpiresAt: null,
+  });
+}
+
 beforeEach(() => {
   fake = appwriteFake();
   fake.rows.set(`invoices/${INVOICE_ID}`, {
     $id: INVOICE_ID,
+    orgId: ORG,
     ownerId: 'user-1',
     invoiceNumber: 'INV-001',
     date: '2026-10-20',
@@ -26,11 +46,7 @@ beforeEach(() => {
     $createdAt: '2026-10-20T10:00:00.000Z',
     $updatedAt: '2026-10-20T10:00:00.000Z',
   });
-  fake.rows.set('profiles/user-1', {
-    $id: 'user-1',
-    plan: 'pro',
-    planExpiresAt: '2999-01-01T00:00:00.000Z',
-  });
+  seedOrg();
 });
 
 function get(id = INVOICE_ID): Request {
@@ -55,12 +71,8 @@ describe('GET /api/invoice/<id> plan gate', () => {
     expect(body.invoice.invoiceNumber).toBe('INV-001');
   });
 
-  it('answers 402 with upgrade copy for a free account', async () => {
-    fake.rows.set('profiles/user-1', {
-      $id: 'user-1',
-      plan: 'free',
-      planExpiresAt: null,
-    });
+  it('answers 402 with upgrade copy for a free organization', async () => {
+    seedOrg({ plan: 'free', planExpiresAt: null });
 
     const response = await handle(get());
     const body = (await response.json()) as { error: string; message: string };
@@ -72,18 +84,31 @@ describe('GET /api/invoice/<id> plan gate', () => {
   });
 
   it('answers 402 when the paid plan has expired', async () => {
-    fake.rows.set('profiles/user-1', {
-      $id: 'user-1',
-      plan: 'pro',
-      planExpiresAt: '2020-01-01T00:00:00.000Z',
-    });
+    seedOrg({ plan: 'pro', planExpiresAt: '2020-01-01T00:00:00.000Z' });
 
     const response = await handle(get());
     expect(response.status).toBe(402);
   });
 
-  it('treats a missing profile row as free', async () => {
-    fake.rows.delete('profiles/user-1');
+  it('treats a missing org row as free', async () => {
+    fake.rows.delete('organizations/' + ORG);
+
+    const response = await handle(get());
+    expect(response.status).toBe(402);
+  });
+
+  it('answers 402 for a legacy invoice stamped before multi-tenancy', async () => {
+    // No orgId: there is no organization whose plan could possibly cover it,
+    // so it must never borrow another account's.
+    fake.rows.set(`invoices/${INVOICE_ID}`, {
+      $id: INVOICE_ID,
+      ownerId: 'user-1',
+      invoiceNumber: 'INV-001',
+      date: '2026-10-20',
+      customerName: 'Budi',
+      status: '',
+      items: '',
+    });
 
     const response = await handle(get());
     expect(response.status).toBe(402);

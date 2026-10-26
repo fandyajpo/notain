@@ -4,6 +4,8 @@ import { appwriteFake, type AppwriteFake, type Row } from './appwrite-fake';
 import type { Env } from '../functions/_lib/types';
 
 const PORTAL_PATH = '/api/payments/portal';
+/** Billing is per organization; the query names the org to inspect. */
+const ORG = 'org_0123456789abcdef';
 
 const env = {
   APPWRITE_API_KEY: 'key_test',
@@ -13,17 +15,31 @@ const env = {
 
 let fake: AppwriteFake;
 
+/** Seeds the org (billing lives here) plus the caller's active membership. */
+function seedOrg(options: { plan?: string; planExpiresAt?: string | null } = {}): void {
+  fake.rows.set('organizations/' + ORG, {
+    $id: ORG,
+    name: 'Kopi Senja',
+    ownerId: 'user-1',
+    plan: options.plan ?? 'free',
+    planExpiresAt: options.planExpiresAt ?? null,
+  });
+  fake.rows.set('memberships/mem_' + ORG, {
+    $id: 'mem_' + ORG,
+    orgId: ORG,
+    userId: 'user-1',
+    role: 'owner',
+    status: 'active',
+  });
+}
+
 beforeEach(() => {
   fake = appwriteFake();
-  fake.rows.set('profiles/user-1', {
-    $id: 'user-1',
-    plan: 'free',
-    planExpiresAt: null,
-  });
+  seedOrg();
 });
 
-function get(): Request {
-  return new Request('https://notain.pages.dev' + PORTAL_PATH, {
+function get(query = `?orgId=${ORG}`): Request {
+  return new Request('https://notain.pages.dev' + PORTAL_PATH + query, {
     headers: { authorization: 'Bearer jwt-token' },
   });
 }
@@ -40,6 +56,7 @@ function handle(request: Request): Promise<Response> {
 function payment(overrides: Record<string, unknown>): Row {
   return {
     $id: 'NOTAIN-P-1-ABCD',
+    orgId: ORG,
     ownerId: 'user-1',
     plan: 'pro',
     amount: 29_000,
@@ -69,8 +86,8 @@ describe('GET /api/payments/portal', () => {
     expect(response.status).toBe(405);
   });
 
-  it('answers free for an account without a profile row, not an error', async () => {
-    fake.rows.delete('profiles/user-1');
+  it('answers free for an organization without a profile row, not an error', async () => {
+    fake.rows.delete('organizations/' + ORG);
 
     const response = await handle(get());
 
@@ -83,12 +100,23 @@ describe('GET /api/payments/portal', () => {
     });
   });
 
+  it('refuses a caller who is not a member of the org', async () => {
+    fake.rows.delete('memberships/mem_' + ORG);
+
+    const response = await handle(get());
+
+    // Same 404 a nonexistent org gets — the gate never confirms an id exists.
+    expect(response.status).toBe(404);
+  });
+
+  it('refuses an orgId the caller cannot even name', async () => {
+    const response = await handle(get('?orgId=org_notreal'));
+
+    expect(response.status).toBe(400);
+  });
+
   it('reports an active paid plan with its expiry', async () => {
-    fake.rows.set('profiles/user-1', {
-      $id: 'user-1',
-      plan: 'pro',
-      planExpiresAt: '2999-01-01T00:00:00.000Z',
-    });
+    seedOrg({ plan: 'pro', planExpiresAt: '2999-01-01T00:00:00.000Z' });
 
     const response = await handle(get());
 
@@ -100,11 +128,7 @@ describe('GET /api/payments/portal', () => {
   });
 
   it('marks an expired plan inactive', async () => {
-    fake.rows.set('profiles/user-1', {
-      $id: 'user-1',
-      plan: 'business',
-      planExpiresAt: '2020-01-01T00:00:00.000Z',
-    });
+    seedOrg({ plan: 'business', planExpiresAt: '2020-01-01T00:00:00.000Z' });
 
     const response = await handle(get());
 
@@ -114,12 +138,12 @@ describe('GET /api/payments/portal', () => {
     });
   });
 
-  it('keeps another account’s payments out even if the backend returns them', async () => {
+  it('keeps another organization’s payments out even if the backend returns them', async () => {
     // The fake ignores Appwrite query params — exactly the failure mode the
     // handler's own ownership filter has to survive.
     fake.lists.set('payments', [
       payment({ $id: 'NOTAIN-P-1-MINE', status: 'paid', paidAt: '2026-10-20T10:05:00.000Z' }),
-      payment({ $id: 'NOTAIN-P-1-THEIRS', ownerId: 'user-2' }),
+      payment({ $id: 'NOTAIN-P-1-THEIRS', orgId: 'org_ffffffffffffffff' }),
     ]);
 
     const response = await handle(get());

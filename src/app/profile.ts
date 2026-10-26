@@ -2,17 +2,26 @@ import { LOGO_ALLOWED_TYPES, LOGO_MAX_BYTES } from '../core/profile/logo';
 import { profileSchema, type BusinessProfile } from '../core/profile/model';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 import { container } from '../infra/container';
+import { requireActiveOrgId } from './active-org';
 import { requireSession } from './session';
 
+/**
+ * The active organization's business profile. The profile row id IS the org
+ * id (`docs/multi-tenancy.md`), so this is one Function read scoped by the
+ * org the user currently works inside — no session-scoped profile exists
+ * anymore.
+ */
 export async function getProfile(): Promise<BusinessProfile | null> {
-  const user = await requireSession();
-  const profile = await container.profiles.getByOwner(user.id);
+  const orgId = requireActiveOrgId();
+  const profile = await container.profiles.getByOrg(orgId);
   if (!profile) return null;
   return { ...profile, logoUrl: container.assets.viewUrl(profile.logoFileId) ?? undefined };
 }
 
 export async function saveProfile(input: BusinessProfile): Promise<BusinessProfile> {
-  const user = await requireSession();
+  // Fail fast with "you are signed out" (the Function would 401 anyway, but
+  // this names the cause before any network round trip).
+  await requireSession();
   const parsed = profileSchema.safeParse(input);
   if (!parsed.success) {
     throw new AppError(ERROR_CODES.VALIDATION, 'Periksa kembali isian profil kamu.', {
@@ -21,14 +30,16 @@ export async function saveProfile(input: BusinessProfile): Promise<BusinessProfi
       ),
     });
   }
-  // `plan` / `planExpiresAt` are owned by billing (payment settle) and the
-  // admin API — never by a profile save. Taking them from the input would let
-  // any signed-in client upgrade its own plan, and it let a caller holding a
-  // stale copy (the smoke test's sample profile) silently downgrade a paid
-  // account. The stored row wins; a brand-new row starts on free.
-  const stored = await container.profiles.getByOwner(user.id);
+  // `plan` / `planExpiresAt` are owned by billing (the `organizations` row,
+  // written by payment settle and the admin API) — never by a profile save.
+  // Taking them from the input would let any signed-in client upgrade its own
+  // plan, and it let a caller holding a stale copy (the smoke test's sample
+  // profile) silently downgrade a paid account. The stored row wins; a
+  // brand-new row starts on free.
+  const orgId = requireActiveOrgId();
+  const stored = await container.profiles.getByOrg(orgId);
   const saved = await container.profiles.save({
-    ownerId: user.id,
+    orgId,
     profile: {
       ...parsed.data,
       businessName: parsed.data.businessName ?? '',

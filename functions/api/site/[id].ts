@@ -11,22 +11,25 @@ import { getRow, listRows, tableAuth } from '../../_lib/rows';
 import type { Env, PagesFunction } from '../../_lib/types';
 
 /**
- * `GET /api/site/<ownerId>` — the payload behind the public business page at
- * `/site/<ownerId>`.
+ * `GET /api/site/<orgId>` — the payload behind the public business page at
+ * `/site/<orgId>`.
  *
  * Unauthenticated on purpose, exactly like `GET /api/invoice/<id>`: the page
- * is a capability URL the owner hands out, so no session may stand between a
+ * is a capability URL the org hands out, so no session may stand between a
  * visitor and it — Appwrite row permissions would refuse an anonymous read,
  * which is why this Function reads with the server's API key and the id
  * segment (validated against `ID_SEGMENT_PATTERN`, so it is one clean path
- * segment) is the only credential.
+ * segment) is the only credential. Since multi-tenancy the id IS the
+ * organization id: its profile row (`profiles/<orgId>`) and its catalog rows
+ * (`orgId` column) are exactly the tenant's public data — a foreign org id
+ * simply has no rows here, which is the isolation property.
  *
  * The response is the *publishable* view of the profile — never the row:
  * plan, expiry and the raw R2 object id stay server-side (the client only
- * gets the rendered `/api/logo/…` URL), the internal owner id is the id
- * itself and is not echoed, and `ownerId` never appears in catalog items.
+ * gets the rendered `/api/logo/…` URL), the internal org id is the id
+ * itself and is not echoed, and `orgId` never appears in catalog items.
  * That is the whole privacy contract of this endpoint: it may only carry
- * fields the owner already typed into their public profile on purpose.
+ * fields the org already typed into their public profile on purpose.
  *
  * Two failure shapes are kept apart on purpose: a missing profile (or one
  * that never named a business — an unnamed business has no page) answers 404,
@@ -70,7 +73,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
     auth,
     'catalog',
     [
-      { method: 'equal', attribute: 'ownerId', values: [id] },
+      // The catalog is org-scoped since multi-tenancy; `id` is the org id.
+      { method: 'equal', attribute: 'orgId', values: [id] },
       // `$id` has to be named explicitly or Appwrite drops it from a
       // projection — the row mapper keys off it.
       { method: 'select', values: ['$id', 'name', 'kind', 'unit', 'unitPrice'] },

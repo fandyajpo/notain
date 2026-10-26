@@ -22,9 +22,15 @@ import type { Env, PagesFunction } from '../../_lib/types';
  * invoice id (an unguessable 64-char segment) is the only credential.
  *
  * The response is deliberately narrower than the row: the domain invoice
- * minus `ownerId` (an internal user id the customer has no use for), the
+ * minus `ownerId`/`orgId` (internal ids the customer has no use for), the
  * profile fields the letterhead renders, and the resolved template — enough
  * for `InvoicePreview` and nothing that reveals another tenant.
+ *
+ * Multi-tenancy: the invoice row carries `orgId` (stamped server-side by the
+ * data endpoint), the letterhead row IS `profiles/<orgId>`, and the plan the
+ * gate reads lives on `organizations/<orgId>`. A legacy row without `orgId`
+ * has no org behind it, so its plan can never be active — it answers 402,
+ * never someone else's letterhead.
  */
 export const onRequest: PagesFunction<Env> = async ({ request, params, env }) => {
   if (request.method !== 'GET') {
@@ -45,17 +51,22 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
   if (!row) return apiError(404, 'not_found', 'Invoice tidak ditemukan.');
 
   const invoice = invoiceRowToDomain(row as InvoiceRow);
+  const orgId = typeof row.orgId === 'string' ? row.orgId : null;
 
-  // Profile is fetched for two reasons: the Pro gate below and the letterhead.
-  const profileRow = await getRow(auth, 'profiles', invoice.ownerId);
+  // The org's plan row and its letterhead row share the same id, so both are
+  // read in one parallel step — the profile serves the gate's fallback and
+  // the letterhead below.
+  const [orgRow, profileRow] = orgId
+    ? await Promise.all([getRow(auth, 'organizations', orgId), getRow(auth, 'profiles', orgId)])
+    : [null, null];
 
   // "Invoice link" is the headline Pro benefit on the pricing page — the
   // customer opening the nota without a download is what the sender pays for.
-  // Free (or expired) accounts get a 402 with actionable copy; the signed-in
-  // builder and dashboard never come through this endpoint, so nothing the
-  // owner does inside the app is affected.
-  const profile = profileRow ? (profileRow as ProfileRow) : null;
-  if (!isSubscriptionActive(profile?.plan, profile?.planExpiresAt)) {
+  // Free (or expired) organizations get a 402 with actionable copy; the
+  // signed-in builder and dashboard never come through this endpoint, so
+  // nothing the org does inside the app is affected.
+  const org = orgRow as { plan?: string | null; planExpiresAt?: string | null } | null;
+  if (!isSubscriptionActive(org?.plan ?? 'free', org?.planExpiresAt ?? null)) {
     return apiError(
       402,
       'plan_required',
@@ -63,13 +74,14 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
     );
   }
 
-  // The customer never needs the internal owner id or the row timestamps —
-  // the print view renders the document, not the audit trail.
+  // The customer never needs the internal owner/org ids or the row
+  // timestamps — the print view renders the document, not the audit trail.
   const publicInvoice = omitFields(invoice, ['ownerId', 'createdAt', 'updatedAt']);
 
-  // A missing profile cannot happen past the gate above (free is the default),
-  // and a missing template falls back to a built-in on the client — the same
-  // fallback the signed-in print view has.
+  // A missing profile cannot happen past the gate above (an org always has
+  // its letterhead row), and a missing template falls back to a built-in on
+  // the client — the same fallback the signed-in print view has.
+  const profile = profileRow ? (profileRow as ProfileRow) : null;
   const business = profile ? publicBusinessFromRow(profile) : null;
 
   const templateRow = invoice.templateId

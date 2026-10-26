@@ -116,8 +116,8 @@ describe('GET /api/admin/content', () => {
 
   it('answers the next free invoice number from the rows that exist', async () => {
     fake.lists.set('invoices', [
-      { $id: 'a', invoiceNumber: `INV-${YEAR}-001` },
-      { $id: 'b', invoiceNumber: `INV-${YEAR}-003` },
+      { $id: 'a', ownerId: 'user-1', invoiceNumber: `INV-${YEAR}-001` },
+      { $id: 'b', ownerId: 'user-1', invoiceNumber: `INV-${YEAR}-003` },
     ] as Row[]);
 
     const response = await handle(get('?userId=user-1&resource=invoices&nextNumber=1'));

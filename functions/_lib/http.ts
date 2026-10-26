@@ -25,6 +25,8 @@ export function apiError(
     | 'not_found'
     | 'method_not_allowed'
     | 'conflict'
+    /** Authenticated, but the role/ownership forbids this action (HTTP 403). */
+    | 'forbidden'
     /** The caller's plan doesn't cover this resource (HTTP 402). */
     | 'plan_required'
     /** A local quota guard refused the request (HTTP 429 + `retry-after`). */

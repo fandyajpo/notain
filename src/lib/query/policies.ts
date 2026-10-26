@@ -27,6 +27,11 @@ export const QUERY_POLICIES = {
   session: { staleTime: Number.POSITIVE_INFINITY, gcTime: Number.POSITIVE_INFINITY },
   // Business identity changes rarely and is safe to reuse across pages.
   profile: { staleTime: 5 * 60_000, gcTime: 30 * 60_000 },
+  // The org list (and one org's member list) change on invite/accept/remove,
+  // all of which invalidate the keys explicitly — this window only absorbs
+  // navigation between the switcher and settings. Org membership revocation
+  // is enforced server-side per request regardless of this cache.
+  orgs: { staleTime: 30_000, gcTime: 5 * 60_000 },
   // Invoice numbering drives the "next number" suggestion, so it may lag a few
   // seconds; a duplicate suggestion is a UX annoyance, not data loss.
   invoiceNumbers: { staleTime: 15_000, gcTime: 5 * 60_000 },

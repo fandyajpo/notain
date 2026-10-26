@@ -60,6 +60,9 @@ export type LimitName =
   | 'logo-upload'
   | 'checkout'
   | 'invoice-quota'
+  | 'org-create'
+  | 'org-invite'
+  | 'data-write'
   | 'site';
 
 const MINUTE = 60_000;
@@ -87,6 +90,20 @@ const DEFAULT_LIMITS: Record<LimitName, { limit: number; windowMs: number }> = {
   // second is either a bug or a probe. The limit sits above the page's own
   // debounce so a slow double-click never trips it.
   'invoice-quota': { limit: 60, windowMs: MINUTE },
+  // Creating an organization is free-tier-unlimited by product rule, but each
+  // one costs an org row + a membership row + a profile row. 10/hour is far
+  // above any real setup flow ("make a second workspace" a handful of times)
+  // and stops a script from minting thousands of tenancy roots in a loop.
+  'org-create': { limit: 10, windowMs: HOUR },
+  // One invite = one membership write. Generous for a real admin (inviting a
+  // team), useless as a spam cannon.
+  'org-invite': { limit: 30, windowMs: HOUR },
+  // One tenant write (create/update/delete through /api/data/*) is one
+  // Workers invocation plus a few Appwrite subrequests — the price of moving
+  // CRUD server-side for tenancy. 120/min is far above any human or form-
+  // autosave rate (the builder debounces writes itself) while stopping a
+  // runaway client loop from burning the 100k/day Workers budget in minutes.
+  'data-write': { limit: 120, windowMs: MINUTE },
   // The public business page is a *read*, but an expensive one: every hit is
   // a profile row plus a catalog list (up to a hundred rows counted per row
   // against the Appwrite read quota). The fence stops a flood from burning
@@ -103,6 +120,9 @@ const LIMIT_ENV_OVERRIDES: Record<LimitName, string> = {
   'logo-upload': 'QUOTA_LIMIT_LOGO_PER_HOUR',
   checkout: 'QUOTA_LIMIT_CHECKOUT_PER_HOUR',
   'invoice-quota': 'QUOTA_LIMIT_INVOICE_QUOTA_PER_MINUTE',
+  'org-create': 'QUOTA_LIMIT_ORG_CREATE_PER_HOUR',
+  'org-invite': 'QUOTA_LIMIT_ORG_INVITE_PER_HOUR',
+  'data-write': 'QUOTA_LIMIT_DATA_WRITE_PER_MINUTE',
   site: 'QUOTA_LIMIT_SITE_PER_MINUTE',
 };
 

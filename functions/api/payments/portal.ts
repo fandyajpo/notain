@@ -1,5 +1,5 @@
-import { getRow, tableAuth } from '../../_lib/rows';
-import { verifySession } from '../../_lib/appwrite';
+import { getRow } from '../../_lib/rows';
+import { requireOrg } from '../../_lib/orgs';
 import { apiError, fetchUpstream as fetch, json } from '../../_lib/http';
 import { isSubscriptionActive } from '../../../src/core/billing/plans';
 import type { Env, PagesFunction } from '../../_lib/types';
@@ -9,7 +9,7 @@ const PAYMENTS_TABLE_ID = 'payments';
 /** How much history the settings card shows; older orders stay in the table. */
 const HISTORY_LIMIT = 10;
 
-type ProfileRow = {
+type OrgRow = {
   $id: string;
   plan?: string | null;
   planExpiresAt?: string | null;
@@ -17,6 +17,7 @@ type ProfileRow = {
 
 type PaymentRow = {
   $id: string;
+  orgId?: string | null;
   ownerId?: string | null;
   plan?: string | null;
   amount?: number | null;
@@ -34,49 +35,46 @@ function normalizeStatus(value: unknown): 'pending' | 'paid' | 'expired' | 'fail
 }
 
 /**
- * `GET /api/payments/portal` — the billing portal's one read: what plan the
- * caller is on, when it ends, and their recent payment history.
+ * `GET /api/payments/portal?orgId=…` — the billing portal's one read: what
+ * plan this organization is on, when it ends, and its recent payment history.
  *
  * Trust boundaries:
- * - The caller must be signed in (JWT → `GET /account`, same as the other
- *   payment Functions). The userId comes from that session, never the body.
+ * - `requireOrg`: the caller must be a signed-in member of the org. The
+ *   `orgId` query value is a hint that resolves to 404 for non-members.
+ * - Billing is per organization: `plan`/`planExpiresAt` come from the
+ *   `organizations` row the verified DOKU notification wrote, and the
+ *   history lists THIS org's orders (not every order the user ever placed).
  * - The `payments` rows are written with empty permissions, so the browser
  *   SDK cannot read them at all — this endpoint (server API key) is the only
- *   way a user ever sees their own orders. Ownership is therefore filtered
- *   here *and* in the Appwrite query: the API key bypasses row permissions,
- *   so a dropped or ignored query must never widen the answer.
- * - It is strictly a read. `active` is computed from the profile row the
- *   verified DOKU notification wrote; nothing this endpoint returns can
- *   change it.
+ *   way anyone sees orders. Tenancy is therefore filtered here *and* in the
+ *   Appwrite query: the API key bypasses row permissions, so a dropped or
+ *   ignored query must never widen the answer.
+ * - It is strictly a read; nothing this endpoint returns can change it.
  */
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method !== 'GET') {
     return apiError(405, 'method_not_allowed', 'Metode ini tidak didukung.', { allow: 'GET' });
   }
 
-  const session = await verifySession(request, env);
-  if (!session) {
-    return apiError(401, 'unauthenticated', 'Silakan masuk terlebih dahulu.');
-  }
+  const orgId = new URL(request.url).searchParams.get('orgId');
+  const gate = await requireOrg(request, env, orgId);
+  if (!gate.ok) return gate.response;
+  const { auth } = gate.access;
 
-  const auth = tableAuth(env);
-  if (!auth) {
-    return apiError(500, 'validation', 'Server belum terkonfigurasi.');
-  }
-
-  // A missing profile row means the account never completed onboarding —
-  // that is the free plan, not an error.
-  const profile = (await getRow(auth, 'profiles', session.userId)) as ProfileRow | null;
-  const plan = profile?.plan === 'business' || profile?.plan === 'pro' ? profile.plan : 'free';
-  const planExpiresAt = profile?.planExpiresAt ?? null;
+  // Billing lives on the organization row. A missing row (org deleted
+  // mid-flight) reads as free rather than erroring — a downgrade the next
+  // create would fix anyway, and the gate already proved membership.
+  const org = (await getRow(auth, 'organizations', gate.access.orgId)) as OrgRow | null;
+  const plan = org?.plan === 'business' || org?.plan === 'pro' ? org.plan : 'free';
+  const planExpiresAt = org?.planExpiresAt ?? null;
 
   const list = await fetch(
     `${auth.endpoint}/databases/${DATABASE_ID}/collections/${PAYMENTS_TABLE_ID}/documents?` +
       new URLSearchParams({
         'queries[0]': JSON.stringify({
           method: 'equal',
-          attribute: 'ownerId',
-          values: [session.userId],
+          attribute: 'orgId',
+          values: [gate.access.orgId],
         }),
         'queries[1]': JSON.stringify({ method: 'orderDesc', attribute: 'createdAt', values: [] }),
         'queries[2]': JSON.stringify({ method: 'limit', values: [HISTORY_LIMIT] }),
@@ -91,9 +89,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   const now = Date.now();
   const payments = documents
-    // Defence in depth: keep only this account's rows even if the query above
+    // Defence in depth: keep only this org's rows even if the query above
     // was dropped by the transport or ignored by the backend.
-    .filter((row) => row.ownerId === session.userId)
+    .filter((row) => row.orgId === gate.access.orgId)
     .map((row) => {
       const status = normalizeStatus(row.status);
       // A pending order still worth paying: it has a hosted page and DOKU has

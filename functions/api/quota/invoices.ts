@@ -3,59 +3,57 @@ import {
   INVOICE_QUOTA_MESSAGE,
   readInvoiceQuota,
 } from '../../_lib/invoice-quota';
-import { verifySession } from '../../_lib/appwrite';
+import { requireOrg } from '../../_lib/orgs';
 import { apiError, json } from '../../_lib/http';
 import { enforceLimit } from '../../_lib/quota';
-import { tableAuth } from '../../_lib/rows';
 import type { Env, PagesFunction } from '../../_lib/types';
 
 /**
- * `GET /api/quota/invoices`  — how much of the free tier's monthly allowance
- * this account has left (the meter the invoice builder renders).
- * `POST /api/quota/invoices` — the claim the builder asks for immediately
- * before saving a *new* invoice: 200 with the quota when there is room, 402
- * `plan_required` with {@link INVOICE_QUOTA_MESSAGE} when the month is spent.
+ * `GET /api/quota/invoices?orgId=…`  — how much of the free tier's monthly
+ * allowance this ORGANIZATION has left (the meter the invoice builder renders).
+ * `POST /api/quota/invoices?orgId=…` — the claim the builder asks for
+ * immediately before saving a *new* invoice: 200 with the quota when there is
+ * room, 402 `plan_required` with {@link INVOICE_QUOTA_MESSAGE} when the month
+ * is spent.
  *
- * Session-scoped (the browser's own JWT, exactly like `/api/logo`), never
- * admin: this is the caller's own allowance. The answer is private — it
- * describes one account — so `json`'s default `no-store` stands: no browser
- * or shared cache may hold one user's quota under a key another user could
- * hit. The rate fence (`invoice-quota`, a burst cap) runs before any Appwrite
- * read so a loop asking "am I over?" cannot spend read quota.
+ * Org-scoped since multi-tenancy: `requireOrg` resolves the `orgId` hint
+ * against the caller's active membership row, so one member can read the same
+ * shared allowance and a non-member gets 404 before any counting happens. The
+ * answer is private — it describes one organization — so `json`'s default
+ * `no-store` stands: no browser or shared cache may hold one org's quota
+ * under a key another caller could hit. The rate fence (`invoice-quota`, a
+ * burst cap) keyed by user runs before any Appwrite read so a loop asking
+ * "am I over?" cannot spend read quota.
  *
  * What this does and does not guarantee is written down in
  * `functions/_lib/invoice-quota.ts`: a real product gate, not a security
- * boundary — the invoice row itself is still written from the browser.
+ * boundary — the invoice row itself is still written by the data endpoint
+ * without re-counting the month.
  */
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method !== 'GET' && request.method !== 'POST') {
     return apiError(405, 'method_not_allowed', 'Gunakan GET atau POST.', { allow: 'GET, POST' });
   }
 
-  const session = await verifySession(request, env);
-  if (!session) {
-    return apiError(401, 'unauthenticated', 'Silakan masuk terlebih dahulu.');
-  }
+  const orgId = new URL(request.url).searchParams.get('orgId');
+  const gate = await requireOrg(request, env, orgId);
+  if (!gate.ok) return gate.response;
+  const { session, auth } = gate.access;
 
   const limited = enforceLimit('invoice-quota', session.userId, env);
   if (limited) return limited;
 
-  const auth = tableAuth(env);
-  if (!auth) {
-    return apiError(503, 'unavailable', 'Layanan sedang tidak tersedia. Coba lagi nanti.');
-  }
-
   if (request.method === 'GET') {
-    const quota = await readInvoiceQuota(auth, session.userId, env);
+    const quota = await readInvoiceQuota(auth, gate.access.orgId, env);
     // An unreadable answer is an outage, never "you have 0 left" — a false
-    // empty meter would tell a paying-feeling user they are out of room.
+    // empty meter would tell a paying-feeling org they are out of room.
     if (quota === null) {
       return apiError(503, 'unavailable', 'Kuota belum bisa dibaca. Coba lagi beberapa saat lagi.');
     }
     return json(200, quota);
   }
 
-  const claim = await claimInvoiceQuota(auth, session.userId, env);
+  const claim = await claimInvoiceQuota(auth, gate.access.orgId, env);
   if (claim.quota === null) {
     return apiError(503, 'unavailable', 'Kuota belum bisa dicek. Coba lagi beberapa saat lagi.');
   }

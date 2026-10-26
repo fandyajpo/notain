@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useProfile, useSaveProfile } from '../../../lib/query/hooks/use-profile';
+import { useCreateOrg } from '../../../lib/query/hooks/use-orgs';
+import { isAppError } from '../../../core/shared/errors';
 import { queryKeys } from '../../../lib/query/keys';
 import { Button } from '../ui/button';
 import { useFieldIds } from '../ui/field';
@@ -10,17 +12,32 @@ import { Modal } from '../ui/modal';
 import { scheduleTour } from '../../../lib/tour/tour-store';
 
 /**
- * Two-step onboarding: personal name, then business name.
+ * Two-step onboarding: personal name, then business name — in create mode
+ * ONE submit also creates the organization the account is missing.
  *
- * Mounted by AuthGate only when the profile row is missing one of the two
- * fields. On completion the profile is saved and the query is invalidated —
- * AuthGate re-renders, sees the profile is now complete, and mounts the
- * dashboard children for the first time. There is nothing to inspect-and-delete
- * beforehand because the children were never in the DOM.
+ * Two mounts, one shape:
+ *
+ * - **Normal** — AuthGate renders it when the profile row is missing one of
+ *   the two fields; completion saves the profile, AuthGate re-renders and
+ *   mounts the dashboard children for the first time.
+ * - **Create** (`createOrg`) — OrgGate renders it instead of a bare "make an
+ *   organization" card when the account has zero orgs. The business name IS
+ *   the workspace: the second step's submit creates the org named after it
+ *   (the server seeds the profile row with the same business name), then
+ *   writes the profile — so a fresh sign-up fills one flow, not two screens
+ *   asking overlapping questions.
+ *
+ * `orgCreated` makes the create step run at most once: if the org was made
+ *   but the profile write failed, retrying `Selesai` must save the profile
+ *   only — never mint a second org with the same name.
  */
-export function OnboardingModal() {
-  const { data: profile } = useProfile();
+export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) {
+  const createMode = createOrg;
+  // No org yet → no profile row to read; the create submit seeds it.
+  const { data: profile } = useProfile(!createMode);
   const saveProfile = useSaveProfile();
+  const createWorkspace = useCreateOrg();
+  const orgCreated = useRef(false);
   const queryClient = useQueryClient();
 
   const [step, setStep] = useState<0 | 1>(0);
@@ -53,6 +70,16 @@ export function OnboardingModal() {
     setSubmitting(true);
     setError(null);
     try {
+      // Create mode: mint the workspace first, named after the business.
+      // `onSuccess` inside the hook makes it the active org, so the profile
+      // write below lands in the org this submit just created.
+      if (createMode && !orgCreated.current) {
+        await createWorkspace.mutateAsync({
+          name: trimmedBusiness,
+          businessName: trimmedBusiness,
+        });
+        orgCreated.current = true;
+      }
       await saveProfile.mutateAsync({
         ...(profile ?? {
           name: '',
@@ -70,8 +97,10 @@ export function OnboardingModal() {
       scheduleTour('welcome');
       // Invalidate so AuthGate sees the fresh profile and mounts the dashboard.
       void queryClient.invalidateQueries({ queryKey: queryKeys.profile });
-    } catch {
-      setError('Gagal menyimpan. Coba lagi.');
+    } catch (cause) {
+      // After a successful create the retry path saves the profile only —
+      // the inline message comes from the layer that actually failed.
+      setError(isAppError(cause) ? cause.message : 'Gagal menyimpan. Coba lagi.');
     } finally {
       setSubmitting(false);
     }
@@ -123,7 +152,7 @@ export function OnboardingModal() {
           {isLast ? (
             <Button size="sm" loading={submitting} onClick={() => void handleComplete()}>
               <Check size={16} aria-hidden="true" />
-              Selesai
+              {createMode ? 'Buat dan mulai' : 'Selesai'}
             </Button>
           ) : (
             <Button size="sm" disabled={!canAdvance} onClick={() => setStep(1)}>
@@ -172,7 +201,9 @@ export function OnboardingModal() {
         <div className="w-full shrink-0 px-5 py-6 sm:px-6 sm:py-8">
           <h2 className="text-xl font-semibold text-foreground">Apa nama usahamu?</h2>
           <p className="mt-1 text-sm text-muted">
-            Nama usaha akan tampil di header invoice yang kamu kirim.
+            {createMode
+              ? 'Nama usaha ini juga jadi nama organisasi (ruang kerja) kamu di Notain — semua data tersimpan di dalamnya.'
+              : 'Nama usaha akan tampil di header invoice yang kamu kirim.'}
           </p>
           <div className="mt-6 flex flex-col gap-1.5">
             <label htmlFor={businessIds.id} className="text-sm font-medium text-foreground">

@@ -1,12 +1,14 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
 import { Ban } from 'lucide-react';
 import { useSession, useSignOut } from '../../../lib/query/hooks/use-session';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
+import { getActiveOrgId, subscribeActiveOrg } from '../../../app/active-org';
 import { toast } from '../../../lib/ui/toast';
 import { ERROR_CODES, isAppError } from '../../../core/shared/errors';
 import { Button } from '../ui/button';
 import { ErrorState, LoadingState } from '../ui/state';
 import { OnboardingModal } from './onboarding-modal';
+import { OrgGate } from './org-gate';
 
 type Props = {
   children: ReactNode;
@@ -18,15 +20,31 @@ type Props = {
  * Client-side session gate. The site is statically rendered, so protected
  * pages render their shell and swap in a redirect once the session resolves.
  *
- * After the session is confirmed the profile is checked. Until both `name`
- * and `businessName` are filled the children are NOT rendered — no dashboard
- * DOM, no data fetches, nothing to inspect-and-delete. The onboarding modal
- * is the only thing on screen. Once onboarding completes the children mount
- * and the page loads normally.
+ * Three stages, each blocking the next:
+ *
+ * 1. **Session** — confirmed here; a missing one redirects to `/login`.
+ * 2. **Organization** (`OrgGate`) — since multi-tenancy the profile row IS
+ *    `profiles/<orgId>`, so nothing about the account can be read before an
+ *    organization is active. Zero orgs = the onboarding, whose final step
+ *    creates the first organization from the business name.
+ * 3. **Profile/onboarding** — until both `name` and `businessName` are filled
+ *    the children are NOT rendered — no dashboard DOM, no data fetches,
+ *    nothing to inspect-and-delete. The onboarding modal is the only thing on
+ *    screen. Once onboarding completes the children mount and the page loads
+ *    normally.
  */
 export function AuthGate({ children, fallback }: Props) {
   const { data: session, isLoading, isError, error, refetch, isFetching } = useSession();
-  const { data: profile, isLoading: profileLoading } = useProfile(Boolean(session));
+  const orgId = useSyncExternalStore(subscribeActiveOrg, getActiveOrgId, () => null);
+  // The profile read throws (as the UI's domain error) without an active org,
+  // so the query stays disabled until the OrgGate has chosen one — otherwise
+  // it would cache that throw as a non-retriable FORBIDDEN failure for the
+  // whole session. `isPending` (not `isLoading`) guards the hand-off: a query
+  // that just became enabled is pending before it is fetching, and that gap
+  // must not read as "profile missing → start onboarding over".
+  const { data: profile, isPending: profilePending } = useProfile(
+    Boolean(session) && orgId !== null,
+  );
 
   useEffect(() => {
     // Only a completed query that answers "no session" may redirect. An error
@@ -52,8 +70,31 @@ export function AuthGate({ children, fallback }: Props) {
     return <>{fallback ?? <SessionFallback />}</>;
   }
 
-  // Session confirmed. Wait for the profile before deciding what to render.
-  if (profileLoading) {
+  // Session confirmed → organization next. Everything the profile stage needs
+  // is org-scoped, so the OrgGate wraps it (and, through it, the children).
+  return (
+    <OrgGate fallback={fallback}>
+      <ProfileStage fallback={fallback} profile={profile} pending={profilePending}>
+        {children}
+      </ProfileStage>
+    </OrgGate>
+  );
+}
+
+/** Stage 3 of {@link AuthGate}: profile load → onboarding → children. */
+function ProfileStage({
+  children,
+  fallback,
+  profile,
+  pending,
+}: {
+  children: ReactNode;
+  fallback?: ReactNode;
+  profile: ReturnType<typeof useProfile>['data'];
+  pending: boolean;
+}) {
+  // Wait for the profile before deciding what to render.
+  if (pending) {
     return <>{fallback ?? <SessionFallback />}</>;
   }
 
