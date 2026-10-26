@@ -9,13 +9,15 @@ import { InvoiceBuilder } from './invoice-builder';
 import { TemplatePicker } from '../template/template-picker';
 import { useInvoice, useInvoiceNumbers } from '../../../lib/query/hooks/use-invoices';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
+import { useOrgs } from '../../../lib/query/hooks/use-orgs';
 import { useTemplates } from '../../../lib/query/hooks/use-templates';
+import { getActiveOrgId } from '../../../app/active-org';
 import { createEmptyDraft, duplicateDraft } from '../../../core/invoice/model';
 import { nextInvoiceNumber } from '../../../core/invoice/numbering';
 import { addDaysIsoDate, todayIsoDate } from '../../../core/shared/dates';
 import { ERROR_CODES, isAppError } from '../../../core/shared/errors';
 import { listSelectableTemplates } from '../../../core/template/resolve';
-import { EMPTY_PROFILE } from '../../../core/profile/model';
+import { toBusinessIssuer } from '../../../core/business/issuer';
 
 /**
  * `/invoice/new` — pick a template, then create the invoice with the next free
@@ -47,6 +49,9 @@ function readSourceId(): string | undefined {
 function InvoiceNewContent() {
   const sourceId = useMemo(readSourceId, []);
   const profileQuery = useProfile();
+  const { data: orgs } = useOrgs();
+  const orgId = getActiveOrgId();
+  const org = orgs?.orgs.find((candidate) => candidate.id === orgId) ?? null;
   const numbersQuery = useInvoiceNumbers();
   const templatesQuery = useTemplates();
   const sourceQuery = useInvoice(sourceId);
@@ -139,14 +144,18 @@ function InvoiceNewContent() {
     );
   }
 
+  // The issuer joins the person's profile with the org that owns the name and
+  // type — the builder and the picker both render it.
+  const issuer = toBusinessIssuer(profile, org);
+
   // Duplicate mode skips the picker: the copy already knows its template.
   if (!duplicating && pickedTemplateId === null) {
     return (
       <TemplatePicker
         templates={listSelectableTemplates(savedTemplates ?? [])}
         logoUrl={profile?.logoUrl ?? null}
-        business={profile}
-        businessType={profile?.businessType ?? null}
+        business={issuer}
+        businessType={issuer.businessType}
         onPick={setPickedTemplateId}
       />
     );
@@ -158,7 +167,7 @@ function InvoiceNewContent() {
       initialDraft={draft}
       restoreAutosave={!duplicating}
       firstInvoicePossible={!duplicating && (numbers?.length ?? 1) === 0}
-      profile={profile ?? EMPTY_PROFILE}
+      profile={issuer}
       logoUrl={profile?.logoUrl ?? null}
     />
   );

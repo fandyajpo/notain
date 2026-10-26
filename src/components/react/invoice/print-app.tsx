@@ -12,9 +12,8 @@ import {
 } from '../../../lib/query/hooks/use-public-invoice';
 import { printInvoiceIdFromLocation } from '../../../lib/edit-route';
 import { resolveTemplate } from '../../../core/template/resolve';
-import { EMPTY_PROFILE } from '../../../core/profile/model';
 import { isAppError, ERROR_CODES } from '../../../core/shared/errors';
-import type { BusinessProfile } from '../../../core/profile/model';
+import { SAMPLE_ISSUER, type BusinessIssuer } from '../../../core/business/issuer';
 
 /**
  * The half that needs a session — `AuthGate` plus the profile/template queries
@@ -127,14 +126,26 @@ function PublicPrintView({ invoiceId }: { invoiceId: string }) {
 
   const { invoice, business, template } = payload;
   const printTemplate = resolveTemplate(invoice.templateId, template ? [template] : []);
-  const profile: BusinessProfile = { ...EMPTY_PROFILE, ...business };
+  // The public payload already joins the org (businessName/businessType) with
+  // the profile's contact fields — exactly the issuer shape the preview reads.
+  const issuer: BusinessIssuer = business
+    ? {
+        name: business.name,
+        businessName: business.businessName,
+        phone: business.phone,
+        address: business.address,
+        email: business.email,
+        logoUrl: business.logoUrl ?? null,
+        businessType: business.businessType,
+      }
+    : SAMPLE_ISSUER;
 
   return (
     <>
       <PrintToolbar>
         <p className="text-sm font-semibold">Invoice {invoice.invoiceNumber}</p>
         <p className="text-xs text-muted">
-          Dari {profile.businessName || profile.name || 'penjual'} · untuk {invoice.customerName}
+          Dari {issuer.businessName || issuer.name || 'penjual'} · untuk {invoice.customerName}
         </p>
         <p className="mt-0.5 text-xs text-muted">
           Pilih <span className="font-medium">Save as PDF</span> di dialog cetak untuk menyimpannya
@@ -153,10 +164,10 @@ function PublicPrintView({ invoiceId }: { invoiceId: string }) {
       </div>
 
       <PrintSheet
-        business={profile}
+        business={issuer}
         invoice={invoice}
         template={printTemplate}
-        logoUrl={profile.logoUrl}
+        logoUrl={issuer.logoUrl ?? undefined}
       />
     </>
   );

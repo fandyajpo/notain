@@ -153,7 +153,6 @@ export function AdminUsersPanel() {
     if (!editing) return;
     const parsed = profileFormSchema.safeParse({
       name: form.name,
-      businessName: form.businessName,
       phone: form.phone,
       address: form.address,
       email: form.email,
@@ -167,12 +166,18 @@ export function AdminUsersPanel() {
       setFormErrors(errs);
       return;
     }
+    // `businessName` is the organization's name, not a profile field — the
+    // profile schema no longer validates it, so check its length here.
+    if (form.businessName.trim().length > 128) {
+      setFormErrors({ businessName: 'Nama usaha terlalu panjang.' });
+      return;
+    }
     setFormErrors({});
     try {
       await updateAdminUser.mutateAsync({
         userId: editing.userId,
         name: parsed.data.name,
-        businessName: parsed.data.businessName,
+        businessName: form.businessName.trim(),
         phone: parsed.data.phone,
         address: parsed.data.address,
         email: parsed.data.email,

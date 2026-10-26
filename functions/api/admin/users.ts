@@ -21,15 +21,17 @@ type AppwriteUser = {
 type ProfileRow = {
   $id: string;
   name: string;
-  businessName?: string | null;
   phone: string;
   address?: string | null;
   email?: string | null;
-  businessType?: string | null;
 };
 
 type OrgRow = {
   $id: string;
+  /** The org's display name — the business name everywhere in the app. */
+  name?: string | null;
+  /** The org's trade slug; `null`/absent when never chosen. */
+  businessType?: string | null;
   /** Billing state lives on the ORGANIZATION since multi-tenancy. */
   plan?: string | null;
   planExpiresAt?: string | null;
@@ -253,11 +255,13 @@ async function listUsers(
       createdAt: user.$createdAt,
       status: user.status,
       name: profile?.name || user.name || '',
-      businessName: profile?.businessName ?? '',
+      // The business name is the org's `name`, and the type its
+      // `businessType` — neither is a profile column any more.
+      businessName: org?.name ?? '',
       phone: profile?.phone ?? '',
       address: profile?.address ?? '',
       profileEmail: profile?.email ?? '',
-      businessType: profile?.businessType ?? '',
+      businessType: org?.businessType ?? '',
       // Plan comes from the ORG row; an account with no org reads as free
       // (there is no paid plan anywhere for it to borrow).
       plan: org?.plan ?? 'free',
@@ -298,9 +302,10 @@ async function updateUserProfile(
   // 1. The org's business identity. Plan columns are deliberately NOT on
   //    this payload: they are vestigial on the profile row and billing state
   //    belongs to `organizations` (written below and by payment settle).
+  //    `businessName` is the org's `name` — not a profile column — so it is
+  //    written to the org row in step 2.
   const data = {
     name: profile.name,
-    businessName: profile.businessName || null,
     phone: profile.phone,
     address: profile.address || null,
     email: profile.email || null,
@@ -346,17 +351,23 @@ async function updateUserProfile(
     }
   }
 
-  // 2. The plan, on the row that owns it. This is the admin's grant — the
-  //    same two columns checkout/subscribe write, so the app reads one place
-  //    and the plan applies to everyone in the org at once.
+  // 2. The plan (and the business name, which IS the org's `name`), on the
+  //    row that owns both. This is the admin's grant — the same two plan
+  //    columns checkout/subscribe write, so the app reads one place and the
+  //    plan applies to everyone in the org at once. The name is only written
+  //    when the admin actually supplied one, so a blank field cannot wipe it.
+  const orgData: Record<string, unknown> = {
+    plan: profile.plan,
+    planExpiresAt: profile.planExpiresAt,
+  };
+  if (profile.businessName !== '') orgData.name = profile.businessName;
+
   const planResponse = await fetch(
     `${endpoint}/databases/${DATABASE_ID}/collections/${ORGS_TABLE_ID}/documents/${orgId}`,
     {
       method: 'PATCH',
       headers: { ...headers, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        data: { plan: profile.plan, planExpiresAt: profile.planExpiresAt },
-      }),
+      body: JSON.stringify({ data: orgData }),
     },
   );
   if (!planResponse.ok) {

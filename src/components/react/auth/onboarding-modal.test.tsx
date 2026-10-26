@@ -129,7 +129,7 @@ beforeEach(() => {
   document.body.appendChild(container);
   root = createRoot(container);
   mocks.createOrg.mockResolvedValue({ id: 'org_aaaaaaaaaaaaaaaa' });
-  mocks.saveProfile.mockResolvedValue({ name: 'Fandy Ahmad', businessName: 'Kopi Senja' });
+  mocks.saveProfile.mockResolvedValue({ name: 'Fandy Ahmad' });
 });
 
 afterEach(() => {
@@ -153,15 +153,13 @@ describe('OnboardingModal (create mode)', () => {
     await click('Buat dan mulai');
 
     await until(() => expect(mocks.createOrg).toHaveBeenCalledTimes(1));
-    // The org is named after the business, with the business name passed on
-    // so the server seeds `profiles/<orgId>` with it in the same write.
+    // The org is named after the business; the profile write carries only the
+    // person's name (the business name lives on the org row).
     expect(mocks.createOrg.mock.calls[0]?.[0]).toBe('Kopi Senja');
-    expect(mocks.createOrg.mock.calls[0]?.[1]).toBe('Kopi Senja');
 
     await until(() => expect(mocks.saveProfile).toHaveBeenCalledTimes(1));
     expect(mocks.saveProfile.mock.calls[0]?.[0]).toMatchObject({
       name: 'Fandy Ahmad',
-      businessName: 'Kopi Senja',
     });
     await until(() => expect(mocks.scheduleTour).toHaveBeenCalledWith('welcome'));
   });

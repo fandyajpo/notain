@@ -9,11 +9,16 @@
  *     'free' | 'pro' | 'business') and planExpiresAt (string 32, nullable)
  *     hold the subscription — billing is per ORGANIZATION, so a checkout
  *     upgrades this row and deleting the org deletes the paid plan with it;
+ *     businessType (string 64, nullable) — the taxonomy slug of the org's
+ *     trade; `null` until someone picks one in Settings. It lives here (not on
+ *     `profiles`) because it describes the workspace, and the public page and
+ *     template grouping read it per org.
  *     createdAt (string 32, ISO).
  *
- *     Note: the business identity (kop usaha, logo, WhatsApp, address) does
- *     NOT live here — it stays in `profiles`, whose document id becomes the
- *     orgId. This row is tenancy + billing; that row is the public face.
+ *     Note: the rest of the business identity (kop usaha, logo, WhatsApp,
+ *     address) does NOT live here — it stays in `profiles`, whose document id
+ *     becomes the orgId. The business NAME is this row's `name`; `profiles`
+ *     has no separate copy.
  *
  *   memberships — who belongs to which organization:
  *     orgId (string 64), userId (string 64 — empty until an invite is
@@ -67,6 +72,7 @@ const TABLES = [
       // Mirrors payments.plan: whole-word plan id, never a price.
       { key: 'plan', size: 16 },
       { key: 'planExpiresAt', size: 32 },
+      { key: 'businessType', size: 64 },
       { key: 'createdAt', size: 32 },
     ],
     integerAttributes: [],

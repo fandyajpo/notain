@@ -28,6 +28,8 @@ export type OrgView = {
   plan: string;
   /** Whether the org's paid plan is currently active (not expired). */
   active: boolean;
+  /** The org's business-type slug (taxonomy), or `null` when never chosen. */
+  businessType: string | null;
 };
 
 /** An invitation addressed to this account's email, still unaccepted. */
@@ -132,11 +134,11 @@ export async function acceptPendingInvites(): Promise<string[]> {
  * and the same call makes a second workspace later. The response is the view
  * the switcher renders, ready to be made active.
  */
-export async function createOrg(name: string, businessName?: string): Promise<OrgView> {
+export async function createOrg(name: string): Promise<OrgView> {
   const response = await bearerFetch('/api/orgs', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name, ...(businessName ? { businessName } : {}) }),
+    body: JSON.stringify({ name }),
   });
   if (!response.ok) {
     throw appErrorFromStatus(response.status, await serverMessage(response));
@@ -154,6 +156,26 @@ export async function renameOrg(orgId: string, name: string): Promise<void> {
     method: 'PATCH',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ name }),
+  });
+  if (!response.ok) {
+    throw appErrorFromStatus(response.status, await serverMessage(response));
+  }
+}
+
+/**
+ * Sets (or clears, with `null`) the organization's business type. Owner only;
+ * the server validates the slug against the taxonomy and answers 400 for an
+ * unknown one.
+ */
+export async function setOrgBusinessType(
+  orgId: string,
+  businessType: string | null,
+): Promise<void> {
+  assertOrgId(orgId);
+  const response = await bearerFetch(`/api/orgs/${orgId}`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ businessType }),
   });
   if (!response.ok) {
     throw appErrorFromStatus(response.status, await serverMessage(response));

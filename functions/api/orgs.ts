@@ -48,6 +48,7 @@ function orgView(row: Record<string, unknown>, role: string, isOwner: boolean) {
       plan,
       typeof row.planExpiresAt === 'string' ? row.planExpiresAt : null,
     ),
+    businessType: typeof row.businessType === 'string' ? row.businessType : null,
   };
 }
 
@@ -137,10 +138,6 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (name === '' || name.length > NAME_MAX) {
     return apiError(400, 'validation', 'Nama organisasi wajib diisi (maksimal 128 karakter).');
   }
-  const businessName =
-    typeof body.businessName === 'string' && body.businessName.trim() !== ''
-      ? body.businessName.trim().slice(0, NAME_MAX)
-      : null;
 
   const orgId = newOrgId();
   const now = new Date().toISOString();
@@ -157,6 +154,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       // (API key, server-priced) ever writes these two columns.
       plan: 'free',
       planExpiresAt: null,
+      // The business type starts unset; Settings picks it once.
+      businessType: null,
       createdAt: now,
     },
     [],
@@ -189,20 +188,18 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   // The business identity row, keyed by orgId (its document id IS the org).
   // `name` seeds from the org name; everything else is filled in Settings.
-  // Written with the profile Function's column whitelist so an unknown key
-  // can never reject the row.
+  // The org's name/type stay on the org row — this profile row only carries
+  // the contact fields, so the two can never drift.
   const profile = await createRow(
     auth,
     'profiles',
     orgId,
     {
       name,
-      businessName,
       phone: '',
       address: null,
       email: session.email,
       logoFileId: null,
-      businessType: null,
       plan: 'free',
       planExpiresAt: null,
     },

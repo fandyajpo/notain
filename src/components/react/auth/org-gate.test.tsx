@@ -69,6 +69,7 @@ const ORG_A: OrgView = {
   isOwner: true,
   plan: 'free',
   active: false,
+  businessType: null,
 };
 const ORG_B: OrgView = {
   id: 'org_bbbbbbbbbbbbbbbb',
@@ -77,6 +78,7 @@ const ORG_B: OrgView = {
   isOwner: false,
   plan: 'free',
   active: false,
+  businessType: null,
 };
 
 /**
@@ -134,7 +136,7 @@ beforeEach(() => {
   root = createRoot(container);
   mocks.listOrgs.mockResolvedValue({ orgs: [], pending: [] });
   mocks.acceptPendingInvites.mockResolvedValue([]);
-  mocks.saveProfile.mockResolvedValue({ name: '', businessName: '' });
+  mocks.saveProfile.mockResolvedValue({ name: '' });
 });
 
 afterEach(() => {
@@ -242,6 +244,7 @@ describe('OrgGate', () => {
       isOwner: true,
       plan: 'free',
       active: false,
+      businessType: null,
     };
     mocks.listOrgs.mockResolvedValue({ orgs: [created], pending: [] });
     mocks.listOrgs
@@ -279,19 +282,17 @@ describe('OrgGate', () => {
     // Step 0 → step 1.
     await type('Fandy Ahmad', 'Fandy Ahmad');
     await click('Lanjut');
-    // The business name becomes BOTH the organization and the profile's
-    // business name — one submit, not a second screen afterwards.
+    // The business name IS the organization's name — one submit mints the org
+    // AND writes the personal profile.
     await type('Bengkel Jaya', 'Usaha Baru');
     await click('Buat dan mulai');
 
     await until(() => expect(getActiveOrgId()).toBe(created.id));
     expect(mocks.createOrg).toHaveBeenCalledTimes(1);
     expect(mocks.createOrg.mock.calls[0]?.[0]).toBe('Usaha Baru');
-    expect(mocks.createOrg.mock.calls[0]?.[1]).toBe('Usaha Baru');
     await until(() => expect(mocks.saveProfile).toHaveBeenCalledTimes(1));
     expect(mocks.saveProfile.mock.calls[0]?.[0]).toMatchObject({
       name: 'Fandy Ahmad',
-      businessName: 'Usaha Baru',
     });
     await until(() => expect(container.textContent).toContain('APP'));
   });

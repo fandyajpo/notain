@@ -55,34 +55,28 @@ afterEach(() => {
 });
 
 describe('ProfileForm', () => {
-  it('shows the picked business type after the picker modal is saved', async () => {
-    await render(<ProfileForm profile={{ ...EMPTY_PROFILE, businessType: null }} />);
-    expect(document.body.textContent).toContain('Belum ditentukan');
+  it('edits only the personal fields — no business name or type input', async () => {
+    await render(<ProfileForm profile={EMPTY_PROFILE} />);
 
-    await click(button('Ubah'));
-    await click(document.querySelector('[data-subtype="bengkel-mobil"]'));
-    await click(button('Simpan'));
-
-    expect(document.body.textContent).toContain('Bengkel Mobil');
-    expect(document.body.textContent).not.toContain('Belum ditentukan');
+    expect(document.body.textContent).toContain('Nama kamu');
+    expect(document.body.textContent).not.toContain('Jenis bisnis');
+    expect(document.body.textContent).not.toContain('Nama usaha');
   });
 
-  it('submits the picked business type and keeps showing it after save', async () => {
+  it('saves the personal fields without carrying business identity', async () => {
     const profile: BusinessProfile = {
       ...EMPTY_PROFILE,
       name: 'Budi',
-      businessName: 'Warung Maju',
       phone: '081234567890',
     };
     await render(<ProfileForm profile={profile} />);
 
-    await click(button('Ubah'));
-    await click(document.querySelector('[data-subtype="katering"]'));
-    await click(button('Simpan'));
-
     await click(button('Simpan profil'));
 
-    expect(saveProfile).toHaveBeenCalledWith(expect.objectContaining({ businessType: 'katering' }));
-    expect(document.body.textContent).toContain('Katering');
+    expect(saveProfile).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Budi', phone: '081234567890' }),
+    );
+    expect(saveProfile.mock.calls[0]?.[0]).not.toHaveProperty('businessName');
+    expect(saveProfile.mock.calls[0]?.[0]).not.toHaveProperty('businessType');
   });
 });

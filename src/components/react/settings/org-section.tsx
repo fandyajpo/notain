@@ -2,6 +2,7 @@ import { useSyncExternalStore, useState, type SyntheticEvent } from 'react';
 import { Trash2, UserPlus } from 'lucide-react';
 import { getActiveOrgId, subscribeActiveOrg } from '../../../app/active-org';
 import { isAppError } from '../../../core/shared/errors';
+import { isBusinessSubtypeSlug } from '../../../core/business/taxonomy';
 import {
   useCreateOrg,
   useDeleteOrg,
@@ -10,6 +11,7 @@ import {
   useOrgs,
   useRemoveOrgMember,
   useRenameOrg,
+  useSetOrgBusinessType,
 } from '../../../lib/query/hooks/use-orgs';
 import { toast } from '../../../lib/ui/toast';
 import { Badge } from '../ui/badge';
@@ -18,6 +20,7 @@ import { Card } from '../ui/card';
 import { FieldShell, useFieldIds } from '../ui/field';
 import { Input } from '../ui/input';
 import { ErrorState, LoadingState } from '../ui/state';
+import { BusinessTypeField } from '../business/business-type-field';
 
 /**
  * `/settings → Organisasi`: everything one workspace can do to itself.
@@ -50,6 +53,7 @@ function OrgSectionContent({ orgId }: { orgId: string }) {
   const { data: orgs, isLoading: orgsLoading } = useOrgs();
   const current = orgs?.orgs.find((org) => org.id === orgId) ?? null;
   const isOwner = current?.isOwner ?? false;
+  const setType = useSetOrgBusinessType(orgId);
 
   if (orgsLoading || !current) {
     return (
@@ -80,6 +84,28 @@ function OrgSectionContent({ orgId }: { orgId: string }) {
               bisa mengganti nama.
             </p>
           )}
+          <BusinessTypeField
+            value={
+              current.businessType && isBusinessSubtypeSlug(current.businessType)
+                ? current.businessType
+                : null
+            }
+            onChange={
+              isOwner
+                ? (slug) => {
+                    void setType
+                      .mutateAsync(slug)
+                      .then(() => toast('Jenis bisnis disimpan.', { variant: 'success' }))
+                      .catch((error) =>
+                        toast(isAppError(error) ? error.message : 'Gagal menyimpan jenis bisnis.', {
+                          variant: 'error',
+                        }),
+                      );
+                  }
+                : undefined
+            }
+            description="Dipakai untuk mengelompokkan template, mengisi contoh invoice, dan menentukan tampilan halaman usaha publik."
+          />
         </div>
       </Card>
 

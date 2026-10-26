@@ -4,7 +4,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { createSampleInvoice } from '../../../core/invoice/sample';
 import type { InvoiceDraft } from '../../../core/invoice/model';
-import type { BusinessProfile } from '../../../core/profile/model';
+import type { BusinessIssuer } from '../../../core/business/issuer';
 import type { InvoiceTemplate } from '../../../core/template/model';
 import { BUILTIN_TEMPLATES } from '../../../core/template/builtins';
 import { resolveTemplate } from '../../../core/template/resolve';
@@ -28,7 +28,7 @@ async function render(node: ReactNode) {
 }
 
 function setup(mutate?: (draft: InvoiceDraft) => void): {
-  business: BusinessProfile;
+  business: BusinessIssuer;
   draft: InvoiceDraft;
 } {
   const sample = createSampleInvoice();

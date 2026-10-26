@@ -321,12 +321,11 @@ describe('templateRowToDomain', () => {
   });
 });
 
-describe('profile businessType round-trip', () => {
+describe('profile row round-trip', () => {
   const profileRow = (over: Partial<ProfileRow> = {}): ProfileRow =>
     ({
       $id: 'user-1',
       name: 'Fandy',
-      businessName: 'Bengkel Fa',
       phone: '081234567890',
       address: null,
       email: null,
@@ -336,21 +335,27 @@ describe('profile businessType round-trip', () => {
       ...over,
     }) as ProfileRow;
 
-  it('reads and writes a known slug', () => {
-    const profile = profileRowToDomain(profileRow({ businessType: 'bengkel-mobil' }));
-    expect(profile.businessType).toBe('bengkel-mobil');
-    expect(profileToRowData(profile).businessType).toBe('bengkel-mobil');
+  it('carries only the personal fields — business identity lives on the org', () => {
+    const profile = profileRowToDomain(profileRow());
+    expect(profile).toEqual({
+      name: 'Fandy',
+      phone: '081234567890',
+      address: undefined,
+      email: undefined,
+      logoFileId: undefined,
+      plan: 'free',
+      planExpiresAt: null,
+    });
+    expect(profileToRowData(profile)).not.toHaveProperty('businessName');
+    expect(profileToRowData(profile)).not.toHaveProperty('businessType');
   });
 
-  it('reads a missing column or an unknown slug as null', () => {
-    expect(profileRowToDomain(profileRow()).businessType).toBeNull();
-    expect(profileRowToDomain(profileRow({ businessType: 'bengkel-kapal' })).businessType).toBe(
-      null,
-    );
-  });
-
-  it('writes null when no type was ever chosen', () => {
-    expect(profileToRowData(profileRowToDomain(profileRow())).businessType).toBeNull();
+  it('round-trips a row that still carries legacy business columns through as null', () => {
+    // Rows written before the columns were moved still hold businessName/
+    // businessType; the mapper must ignore them rather than fail the read.
+    const profile = profileRowToDomain(profileRow({ businessName: 'Bengkel Fa' }));
+    expect(profile.name).toBe('Fandy');
+    expect(profileToRowData(profile)).not.toHaveProperty('businessName');
   });
 });
 

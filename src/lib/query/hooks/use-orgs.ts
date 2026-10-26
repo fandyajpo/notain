@@ -8,6 +8,7 @@ import {
   listOrgs,
   removeOrgMember,
   renameOrg,
+  setOrgBusinessType,
 } from '../../../app/orgs';
 import { getActiveOrgId, setActiveOrgId } from '../../../app/active-org';
 import { queryPolicy } from '../policies';
@@ -71,8 +72,7 @@ export function useAcceptPendingInvites() {
 export function useCreateOrg() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ name, businessName }: { name: string; businessName?: string }) =>
-      createOrg(name, businessName),
+    mutationFn: ({ name }: { name: string }) => createOrg(name),
     onSuccess: (org) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.orgs });
       // The gate's switch handler clears per-org caches once this lands —
@@ -89,9 +89,24 @@ export function useRenameOrg(orgId: string) {
     mutationFn: (name: string) => renameOrg(orgId, name),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.orgs });
-      // The server mirrors the rename into `profiles/<orgId>.businessName`
-      // (they are the same name to the user) — refresh the profile so the
-      // invoice header copy and the settings form show it without a reload.
+      // The org name IS the business name on the invoice header and the
+      // public page — refresh the profile so both reflect the rename.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.profile });
+    },
+  });
+}
+
+/**
+ * Sets (or clears) the active org's business type. Invalidates the org list
+ * (the switcher's data) and the profile, whose `businessType` is projected
+ * from the org row.
+ */
+export function useSetOrgBusinessType(orgId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (businessType: string | null) => setOrgBusinessType(orgId, businessType),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.orgs });
       void queryClient.invalidateQueries({ queryKey: queryKeys.profile });
     },
   });

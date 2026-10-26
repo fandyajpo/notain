@@ -78,6 +78,7 @@ function seed(): void {
     ownerId: 'user-1',
     plan: 'free',
     planExpiresAt: null,
+    businessType: null,
   } as Row);
   fake.rows.set('organizations/' + ORG_NEW, {
     $id: ORG_NEW,
@@ -85,16 +86,15 @@ function seed(): void {
     ownerId: 'user-1',
     plan: 'pro',
     planExpiresAt: '2999-01-01T00:00:00.000Z',
+    businessType: 'kafe',
   } as Row);
 
   fake.rows.set('profiles/' + ORG_NEW, {
     $id: ORG_NEW,
     name: 'Budi',
-    businessName: 'Kopi Senja',
     phone: '081234567890',
     address: null,
     email: null,
-    businessType: 'coffee-shop',
     plan: 'free', // vestigial on the profile row; billing lives on the org
     planExpiresAt: null,
   } as Row);
@@ -180,17 +180,19 @@ describe('PATCH /api/admin/users', () => {
       ...body,
     });
 
-  it('writes the identity to profiles/<orgId> and the plan to organizations/<orgId>', async () => {
+  it('writes the person to profiles/<orgId> and name+plan to organizations/<orgId>', async () => {
     const response = await handle(onRequest, update({}));
 
     expect(response.status).toBe(200);
 
-    // The newest org's rows, both halves in their owning table…
+    // The person's contact fields live on the profile row…
     expect(fake!.rows.get('profiles/' + ORG_NEW)).toMatchObject({
       name: 'Budi Santoso',
-      businessName: 'Kopi Senja Baru',
     });
+    expect(fake!.rows.get('profiles/' + ORG_NEW)).not.toHaveProperty('businessName');
+    // …while the business name (the org's `name`) and plan live on the org.
     expect(fake!.rows.get('organizations/' + ORG_NEW)).toMatchObject({
+      name: 'Kopi Senja Baru',
       plan: 'business',
       planExpiresAt: '2027-01-01T00:00:00.000Z',
     });

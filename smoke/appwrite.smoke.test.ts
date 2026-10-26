@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vite-plus/test';
 import { AppError, ERROR_CODES } from '../src/core/shared/errors';
-import { createSampleInvoice, SAMPLE_BUSINESS } from '../src/core/invoice/sample';
+import { createSampleInvoice } from '../src/core/invoice/sample';
+import { SAMPLE_ISSUER } from '../src/core/business/issuer';
+import type { BusinessProfile } from '../src/core/profile/model';
 import { signIn, signOut, signUp } from '../src/app/auth';
 import { getProfile, removeLogo, saveProfile, uploadLogo } from '../src/app/profile';
 import {
@@ -85,15 +87,26 @@ describe('notain x appwrite', () => {
     expect(user.id).toBeTruthy();
   });
 
-  it('round-trips the business profile', async () => {
+  it('round-trips the personal profile', async () => {
     const before = await getProfile();
-    await saveProfile(SAMPLE_BUSINESS);
+    // The profile is personal only: it carries the person's contact fields,
+    // never the business name/type (those live on the organization row).
+    const personal: BusinessProfile = {
+      name: SAMPLE_ISSUER.name,
+      phone: SAMPLE_ISSUER.phone,
+      address: SAMPLE_ISSUER.address,
+      email: SAMPLE_ISSUER.email,
+      plan: 'free',
+      planExpiresAt: null,
+    };
+    await saveProfile(personal);
     const profile = await getProfile();
-    // The sample carries `plan: 'free'`, but a profile save must never write
-    // the plan — otherwise this very test downgrades whatever plan the live
-    // account is on (billing and the admin panel own that field).
-    const { plan: _plan, planExpiresAt: _planExpiresAt, ...business } = SAMPLE_BUSINESS;
-    expect(profile).toMatchObject(business);
+    // A profile save must never write the plan — otherwise this very test
+    // downgrades whatever plan the live account is on (billing and the admin
+    // panel own that field).
+    expect(profile).toMatchObject({ name: personal.name, phone: personal.phone });
+    expect(profile).not.toHaveProperty('businessName');
+    expect(profile).not.toHaveProperty('businessType');
     expect(profile?.plan).toBe(before?.plan ?? 'free');
     expect(profile?.planExpiresAt).toBe(before?.planExpiresAt ?? null);
   });

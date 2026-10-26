@@ -13,6 +13,9 @@ import { TemplateCard } from './template-picker';
 import { toast } from '../../../lib/ui/toast';
 import { useDeleteTemplate, useTemplatesPage } from '../../../lib/query/hooks/use-templates';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
+import { useOrgs } from '../../../lib/query/hooks/use-orgs';
+import { getActiveOrgId } from '../../../app/active-org';
+import { toBusinessIssuer } from '../../../core/business/issuer';
 import { BUILTIN_TEMPLATES } from '../../../core/template/builtins';
 import { GENERIC_ERROR_MESSAGE, isAppError } from '../../../core/shared/errors';
 import type { InvoiceTemplate } from '../../../core/template/model';
@@ -35,6 +38,9 @@ function TemplatesContent() {
     useTemplatesPage();
   const mine = useMemo(() => data?.pages.flatMap((page) => page.rows) ?? [], [data]);
   const { data: profile } = useProfile();
+  const { data: orgs } = useOrgs();
+  const org = orgs?.orgs.find((candidate) => candidate.id === getActiveOrgId()) ?? null;
+  const issuer = toBusinessIssuer(profile, org);
   const logoUrl = profile?.logoUrl ?? null;
   const remove = useDeleteTemplate();
   const [pendingDelete, setPendingDelete] = useState<InvoiceTemplate | null>(null);
@@ -120,7 +126,7 @@ function TemplatesContent() {
                 key={template.id}
                 template={template}
                 logoUrl={logoUrl}
-                business={profile}
+                business={issuer}
                 actions={
                   <Button href={`/templates/new?from=${template.id}`} variant="secondary" size="sm">
                     <Copy size={13} aria-hidden="true" />
@@ -169,7 +175,7 @@ function TemplatesContent() {
                   key={template.id}
                   template={template}
                   logoUrl={logoUrl}
-                  business={profile}
+                  business={issuer}
                   actions={
                     <>
                       <Button href={`/templates/${template.id}`} variant="secondary" size="sm">

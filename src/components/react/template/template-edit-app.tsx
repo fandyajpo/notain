@@ -23,12 +23,16 @@ import {
   useTemplates,
   useUpdateTemplate,
 } from '../../../lib/query/hooks/use-templates';
-import { useProfile, useSaveProfile } from '../../../lib/query/hooks/use-profile';
+import { useProfile } from '../../../lib/query/hooks/use-profile';
+import { useOrgs, useSetOrgBusinessType } from '../../../lib/query/hooks/use-orgs';
+import { getActiveOrgId } from '../../../app/active-org';
 import { createSampleInvoice, SAMPLE_BUSINESS } from '../../../core/invoice/sample';
+import { toBusinessIssuer } from '../../../core/business/issuer';
 import { invoiceTemplateSchema } from '../../../core/template/schema';
 import { defaultsForBusiness, seedTemplateForBusiness } from '../../../core/template/seed';
 import type { AuthoredTemplate, InvoiceTemplate } from '../../../core/template/model';
 import type { BusinessSubtypeSlug } from '../../../core/business/taxonomy';
+import { isBusinessSubtypeSlug } from '../../../core/business/taxonomy';
 import { BusinessTypeField } from '../business/business-type-field';
 import { BusinessTypeStep } from '../business/business-type-step';
 import { GENERIC_ERROR_MESSAGE, isAppError } from '../../../core/shared/errors';
@@ -66,8 +70,11 @@ export function TemplateEditApp() {
 function TemplateEditContent() {
   const { id, seedId } = templateEditorTargetFromLocation(window.location);
   const { data, isLoading, isError, refetch } = useTemplates();
-  const { data: profile, isLoading: profileLoading } = useProfile();
-  const saveProfile = useSaveProfile();
+  const { isLoading: profileLoading } = useProfile();
+  const { data: orgs } = useOrgs();
+  const orgId = getActiveOrgId();
+  const org = orgs?.orgs.find((candidate) => candidate.id === orgId) ?? null;
+  const setOrgType = useSetOrgBusinessType(orgId ?? '');
   // `undefined` = the first-run step is still waiting; `null` = skipped.
   const [picked, setPicked] = useState<BusinessSubtypeSlug | null | undefined>(undefined);
 
@@ -101,20 +108,23 @@ function TemplateEditContent() {
 
   // Every new template opens with the question: the pick seeds this editor
   // and, once the template is actually saved, preselects the next visit.
-  // Editing an existing template never asks — its type is its own.
-  const profileType = profile?.businessType ?? null;
+  // Editing an existing template never asks — its type is its own. The type
+  // is the ORGANIZATION's, not the profile's.
+  const profileType = isBusinessSubtypeSlug(org?.businessType ?? '')
+    ? (org?.businessType as BusinessSubtypeSlug)
+    : null;
 
   /**
-   * Persists the step's answer into the profile after a successful create —
-   * and only then. Called with the form's final business type, so changing it
-   * inside the editor after the step wins over the step's pick. Skips and
-   * identical remembered choices leave the profile alone.
+   * Persists the step's answer into the ORGANIZATION after a successful
+   * create — and only then. Called with the form's final business type, so
+   * changing it inside the editor after the step wins over the step's pick.
+   * Skips and identical remembered choices leave the org alone.
    */
   const persistStepPick = (finalType: BusinessSubtypeSlug | null) => {
-    if (picked === undefined || picked === null || !profile) return;
-    if (profile.businessType === finalType) return;
-    void saveProfile.mutateAsync({ ...profile, businessType: finalType }).catch(() =>
-      toast('Pilihan belum tersimpan ke profil. Bisa diatur lagi di Settings.', {
+    if (picked === undefined || picked === null || !orgId) return;
+    if (profileType === finalType) return;
+    void setOrgType.mutateAsync(finalType).catch(() =>
+      toast('Pilihan belum tersimpan. Bisa diatur lagi di Settings.', {
         variant: 'error',
       }),
     );
@@ -159,6 +169,8 @@ function TemplateForm({
   const createMutation = useCreateTemplate();
   const updateMutation = useUpdateTemplate();
   const { data: profile } = useProfile();
+  const { data: orgs } = useOrgs();
+  const org = orgs?.orgs.find((candidate) => candidate.id === getActiveOrgId()) ?? null;
   const { id: nameId } = useFieldIds();
 
   const form = useForm({
@@ -203,7 +215,7 @@ function TemplateForm({
     [existing, values.name, values.layout, values.theme, values.defaults, values.businessType],
   );
 
-  const business = profile ?? SAMPLE_BUSINESS;
+  const business = profile || org ? toBusinessIssuer(profile, org) : SAMPLE_BUSINESS;
   const sample = useMemo(() => createSampleInvoice(new Date(), business), [business]);
 
   return (

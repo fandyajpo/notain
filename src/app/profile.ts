@@ -42,7 +42,6 @@ export async function saveProfile(input: BusinessProfile): Promise<BusinessProfi
     orgId,
     profile: {
       ...parsed.data,
-      businessName: parsed.data.businessName ?? '',
       phone: parsed.data.phone ?? '',
       plan: stored?.plan ?? 'free',
       planExpiresAt: stored?.planExpiresAt ?? null,

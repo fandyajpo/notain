@@ -34,10 +34,8 @@ function logoFile(): File {
 function profile(logoFileId?: string): BusinessProfile {
   return {
     name: 'Bengkel Fa',
-    businessName: 'Bengkel Fa',
     phone: '081234567890',
     logoFileId,
-    businessType: null,
     plan: 'free',
     planExpiresAt: null,
   };

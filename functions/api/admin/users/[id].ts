@@ -12,14 +12,16 @@ const DRILLDOWN_LIMIT_MAX = 50;
 
 type ProfileRow = {
   name?: string | null;
-  businessName?: string | null;
   phone?: string | null;
   address?: string | null;
   email?: string | null;
-  businessType?: string | null;
 };
 
 type OrgRow = {
+  /** The org's display name — the business name everywhere in the app. */
+  name?: string | null;
+  /** The org's trade slug; absent/`null` when never chosen. */
+  businessType?: string | null;
   /** Billing state lives on the ORGANIZATION since multi-tenancy. */
   plan?: string | null;
   planExpiresAt?: string | null;
@@ -207,11 +209,12 @@ async function overview(
       name: profile?.name || user.name || '',
       createdAt: user.$createdAt,
       status: user.status,
-      businessName: profile?.businessName ?? '',
+      // The business name/type are the org row's `name`/`businessType`.
+      businessName: org?.name ?? '',
       phone: profile?.phone ?? '',
       address: profile?.address ?? '',
       profileEmail: profile?.email ?? '',
-      businessType: profile?.businessType ?? '',
+      businessType: org?.businessType ?? '',
       // The primary org's plan; a missing org row reads as free.
       plan: org?.plan ?? 'free',
       planExpiresAt: org?.planExpiresAt ?? null,

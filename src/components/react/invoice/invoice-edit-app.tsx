@@ -7,8 +7,10 @@ import { EmptyState, ErrorState, LoadingState } from '../ui/state';
 import { InvoiceBuilder } from './invoice-builder';
 import { useInvoice } from '../../../lib/query/hooks/use-invoices';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
+import { useOrgs } from '../../../lib/query/hooks/use-orgs';
+import { getActiveOrgId } from '../../../app/active-org';
+import { toBusinessIssuer } from '../../../core/business/issuer';
 import { invoiceIdFromLocation } from '../../../lib/edit-route';
-import { EMPTY_PROFILE } from '../../../core/profile/model';
 import { ERROR_CODES, isAppError } from '../../../core/shared/errors';
 
 /**
@@ -37,6 +39,8 @@ function readInvoiceId(): string | undefined {
 function InvoiceEditContent({ invoiceId }: { invoiceId: string | undefined }) {
   const { data: invoice, isLoading, isError, isFetching, refetch, error } = useInvoice(invoiceId);
   const { data: profile } = useProfile();
+  const { data: orgs } = useOrgs();
+  const org = orgs?.orgs.find((candidate) => candidate.id === getActiveOrgId()) ?? null;
 
   if (!invoiceId) {
     return <NotFound message="Tautan invoice tidak lengkap." />;
@@ -77,7 +81,7 @@ function InvoiceEditContent({ invoiceId }: { invoiceId: string | undefined }) {
       invoiceId={invoice.id}
       initialDraft={invoice}
       paymentProof={invoice.paymentProof ?? null}
-      profile={profile ?? EMPTY_PROFILE}
+      profile={toBusinessIssuer(profile, org)}
       logoUrl={profile?.logoUrl ?? null}
     />
   );

@@ -33,7 +33,7 @@ import { invoiceDraftSchema } from '../../../core/invoice/schema';
 import { formatRupiah } from '../../../core/shared/money';
 import { todayIsoDate, addDaysIsoDate } from '../../../core/shared/dates';
 import { buildInvoiceWhatsAppMessage, buildWhatsAppUrl } from '../../../core/whatsapp';
-import type { BusinessProfile } from '../../../core/profile/model';
+import type { BusinessIssuer } from '../../../core/business/issuer';
 import { toast } from '../../../lib/ui/toast';
 import { confettiBurst, confettiFromElement } from '../../../lib/ui/confetti';
 import { cx } from '../../../lib/ui/classes';
@@ -119,7 +119,7 @@ type Props = {
    * the year" celebration is close enough to keep the detection this cheap.
    */
   firstInvoicePossible?: boolean;
-  profile: BusinessProfile;
+  profile: BusinessIssuer;
   logoUrl?: string | null;
   /**
    * The customer's uploaded payment proof, when editing a saved invoice.
@@ -509,11 +509,12 @@ export function InvoiceBuilder({
     const message = buildInvoiceWhatsAppMessage({
       customerName: values.customerName || 'Customer',
       invoiceNumber: values.invoiceNumber,
-      businessName: profile.name || 'Bisnis kamu',
+      businessName: profile.businessName || profile.name || 'Bisnis kamu',
       total: totals.grandTotal,
     });
     window.open(buildWhatsAppUrl({ phone: values.customerPhone, message }), '_blank', 'noopener');
   }, [
+    profile.businessName,
     profile.name,
     totals.grandTotal,
     values.customerName,
@@ -572,7 +573,11 @@ export function InvoiceBuilder({
           </div>
           <p className="text-sm text-muted">Isi customer dan barangnya, total dihitung otomatis.</p>
           <p className="text-sm text-muted">
-            Dari: <span className="font-medium text-foreground">{profile.name || '-'}</span> ·{' '}
+            Dari:{' '}
+            <span className="font-medium text-foreground">
+              {profile.businessName || profile.name || '-'}
+            </span>{' '}
+            ·{' '}
             <a href="/settings" className="underline underline-offset-2 hover:text-foreground">
               Ubah profil
             </a>
@@ -1220,7 +1225,7 @@ function TemplateSwitcherGrid({
   templates: readonly InvoiceTemplate[];
   businessType: BusinessSubtypeSlug | null;
   logoUrl?: string | null;
-  business?: BusinessProfile | null;
+  business?: BusinessIssuer | null;
   selectedId?: string;
   onPick: (templateId: string) => void;
 }) {

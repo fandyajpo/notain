@@ -12,7 +12,6 @@ import type {
 } from '../core/invoice/model';
 import { INVOICE_STATUSES } from '../core/invoice/model';
 import type { BusinessProfile, Plan } from '../core/profile/model';
-import { isBusinessSubtypeSlug } from '../core/business/taxonomy';
 import type { AuthoredTemplate, InvoiceTemplate } from '../core/template/model';
 import { DEFAULT_THEME } from '../core/template/model';
 import { invoiceTemplateShapeSchema } from '../core/template/schema';
@@ -52,17 +51,15 @@ export type InvoiceRow = Models.Row &
     paymentProofUploadedAt?: string | null;
   };
 
-/** Row shape returned by the `profiles` table. */
+/** Row shape returned by the `profiles` table. Personal only — the business
+ * name and type live on `organizations`. */
 export type ProfileRow = Models.Row &
   Record<string, unknown> & {
     name: string;
-    businessName: string | null;
     phone: string;
     address: string | null;
     email: string | null;
     logoFileId: string | null;
-    /** Business-type slug; absent on rows written before the column existed. */
-    businessType?: string | null;
     plan: string;
     planExpiresAt: string | null;
   };
@@ -264,17 +261,10 @@ export function draftToRowUpdateData(draft: InvoiceDraft): Record<string, unknow
 export function profileRowToDomain(row: ProfileRow): BusinessProfile {
   return {
     name: row.name,
-    businessName: optionalString(row.businessName) ?? '',
     phone: row.phone,
     address: optionalString(row.address),
     email: optionalString(row.email),
     logoFileId: optionalString(row.logoFileId),
-    // A slug the taxonomy no longer knows reads as "no type" rather than
-    // poisoning every form that loads this profile.
-    businessType:
-      typeof row.businessType === 'string' && isBusinessSubtypeSlug(row.businessType)
-        ? row.businessType
-        : null,
     plan: (row.plan as Plan) ?? 'free',
     planExpiresAt: optionalString(row.planExpiresAt) ?? null,
   };
@@ -283,12 +273,10 @@ export function profileRowToDomain(row: ProfileRow): BusinessProfile {
 export function profileToRowData(profile: BusinessProfile): Record<string, unknown> {
   return {
     name: profile.name,
-    businessName: profile.businessName || null,
     phone: profile.phone,
     address: profile.address ?? null,
     email: profile.email ?? null,
     logoFileId: profile.logoFileId ?? null,
-    businessType: profile.businessType ?? null,
     plan: profile.plan,
     planExpiresAt: profile.planExpiresAt ?? null,
   };

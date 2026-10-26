@@ -3,11 +3,12 @@ import { verifySession } from '../../_lib/appwrite';
 import { apiError, json } from '../../_lib/http';
 import { deleteRow, getRow, listRows, patchRow, tableAuth, type TableAuth } from '../../_lib/rows';
 import { requireOrgOwner } from '../../_lib/orgs';
+import { isBusinessSubtypeSlug } from '../../../src/core/business/taxonomy';
 import type { Session } from '../../_lib/appwrite';
 import type { Env, PagesFunction } from '../../_lib/types';
 
 /**
- * `PATCH  /api/orgs/<id>` — rename (owner only).
+ * `PATCH  /api/orgs/<id>` — rename and/or set the business type (owner only).
  * `DELETE /api/orgs/<id>` — delete the organization and EVERYTHING under it.
  *
  * The delete is a **budgeted cascade the client loops over**: Cloudflare's
@@ -66,35 +67,49 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     if (!body) return apiError(400, 'validation', 'Format permintaan tidak valid.');
 
     const name = typeof body.name === 'string' ? body.name.trim() : '';
-    if (name === '' || name.length > NAME_MAX) {
+    const hasName = typeof body.name === 'string';
+    if (hasName && (name === '' || name.length > NAME_MAX)) {
       return apiError(400, 'validation', 'Nama organisasi wajib diisi (maksimal 128 karakter).');
     }
 
-    if (!(await patchRow(gate.access.auth, 'organizations', orgId, { name }))) {
-      return apiError(500, 'unavailable', 'Gagal menyimpan nama organisasi. Coba lagi.');
+    // `businessType` is the org's trade slug. `null` clears it; anything else
+    // must be a slug the taxonomy still knows, so a typo cannot poison every
+    // template/picker read that groups by it.
+    const hasBusinessType = Object.prototype.hasOwnProperty.call(body, 'businessType');
+    let businessType: string | null = null;
+    if (hasBusinessType) {
+      const raw = body.businessType;
+      if (raw === null || raw === '') {
+        businessType = null;
+      } else if (typeof raw === 'string' && isBusinessSubtypeSlug(raw)) {
+        businessType = raw;
+      } else {
+        return apiError(400, 'validation', 'Jenis bisnis tidak dikenal.');
+      }
     }
 
-    // The org's name IS the business name (onboarding creates them equal,
-    // and the profile form no longer edits `businessName` separately) — so
-    // the invoice-facing `profiles/<orgId>.businessName` follows the rename.
-    // Synced AFTER the org write as best effort: the rename already landed
-    // and is what the switcher shows; a transient profile failure here must
-    // not undo it, and the next rename (or profile save) converges the two.
-    const profile = await getRow(gate.access.auth, 'profiles', orgId, env);
-    if (profile) {
-      await patchRow(gate.access.auth, 'profiles', orgId, { businessName: name });
+    if (!hasName && !hasBusinessType) {
+      return apiError(400, 'validation', 'Tidak ada perubahan yang dikirim.');
+    }
+
+    const data: Record<string, unknown> = {};
+    if (hasName) data.name = name;
+    if (hasBusinessType) data.businessType = businessType;
+
+    if (!(await patchRow(gate.access.auth, 'organizations', orgId, data))) {
+      return apiError(500, 'unavailable', 'Gagal menyimpan organisasi. Coba lagi.');
     }
 
     await writeAudit(env, {
       actorId: gate.access.session.userId,
       actorEmail: gate.access.session.email,
-      action: 'org.rename',
+      action: 'org.update',
       targetType: 'organization',
       targetId: orgId,
-      detail: JSON.stringify({ name }),
+      detail: JSON.stringify(data),
       orgId,
     });
-    return json(200, { ok: true, name });
+    return json(200, { ok: true, ...data });
   }
 
   if (request.method === 'DELETE') {

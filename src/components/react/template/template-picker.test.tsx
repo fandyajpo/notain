@@ -91,8 +91,6 @@ describe('TemplatePicker', () => {
           businessName: 'Bengkel Fa',
           phone: '08111111111',
           businessType: null,
-          plan: 'free',
-          planExpiresAt: null,
         }}
         onPick={() => {}}
       />,

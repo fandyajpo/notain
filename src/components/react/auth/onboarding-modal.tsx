@@ -2,8 +2,11 @@ import { useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useProfile, useSaveProfile } from '../../../lib/query/hooks/use-profile';
-import { useCreateOrg } from '../../../lib/query/hooks/use-orgs';
+import { useCreateOrg, useOrgs } from '../../../lib/query/hooks/use-orgs';
 import { isAppError } from '../../../core/shared/errors';
+import { EMPTY_PROFILE } from '../../../core/profile/model';
+import { getActiveOrgId } from '../../../app/active-org';
+import { renameOrg } from '../../../app/orgs';
 import { queryKeys } from '../../../lib/query/keys';
 import { Button } from '../ui/button';
 import { useFieldIds } from '../ui/field';
@@ -17,15 +20,15 @@ import { scheduleTour } from '../../../lib/tour/tour-store';
  *
  * Two mounts, one shape:
  *
- * - **Normal** — AuthGate renders it when the profile row is missing one of
- *   the two fields; completion saves the profile, AuthGate re-renders and
+ * - **Normal** — AuthGate renders it when the person's name is missing OR the
+ *   active org has no name; completion saves the profile and, if the business
+ *   name changed, renames the organization, then AuthGate re-renders and
  *   mounts the dashboard children for the first time.
  * - **Create** (`createOrg`) — OrgGate renders it instead of a bare "make an
  *   organization" card when the account has zero orgs. The business name IS
- *   the workspace: the second step's submit creates the org named after it
- *   (the server seeds the profile row with the same business name), then
- *   writes the profile — so a fresh sign-up fills one flow, not two screens
- *   asking overlapping questions.
+ *   the workspace: the second step's submit creates the org named after it,
+ *   then writes the personal profile — one flow, not two screens asking
+ *   overlapping questions.
  *
  * `orgCreated` makes the create step run at most once: if the org was made
  *   but the profile write failed, retrying `Selesai` must save the profile
@@ -35,6 +38,7 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
   const createMode = createOrg;
   // No org yet → no profile row to read; the create submit seeds it.
   const { data: profile } = useProfile(!createMode);
+  const { data: orgs } = useOrgs(!createMode);
   const saveProfile = useSaveProfile();
   const createWorkspace = useCreateOrg();
   const orgCreated = useRef(false);
@@ -49,9 +53,11 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
   const nameIds = useFieldIds();
   const businessIds = useFieldIds();
 
-  // Pre-fill from whatever the profile already has.
+  // Pre-fill from whatever already exists. The business name is the active
+  // org's name — never a profile field.
   const currentName = name || profile?.name || '';
-  const currentBusiness = businessName || profile?.businessName || '';
+  const orgName = orgs?.orgs.find((candidate) => candidate.id === getActiveOrgId())?.name ?? '';
+  const currentBusiness = businessName || orgName;
 
   async function handleComplete() {
     const trimmedName = currentName.trim();
@@ -72,31 +78,27 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
     try {
       // Create mode: mint the workspace first, named after the business.
       // `onSuccess` inside the hook makes it the active org, so the profile
-      // write below lands in the org this submit just created.
+      // write below lands in the org this submit just created. The business
+      // name lives on the org row — the profile row carries only the person.
       if (createMode && !orgCreated.current) {
-        await createWorkspace.mutateAsync({
-          name: trimmedBusiness,
-          businessName: trimmedBusiness,
-        });
+        await createWorkspace.mutateAsync({ name: trimmedBusiness });
         orgCreated.current = true;
+      } else if (!createMode) {
+        // The org already exists; its name IS the business name. Renaming here
+        // is the only way an existing account can correct it during onboarding.
+        const orgId = getActiveOrgId();
+        if (orgId && trimmedBusiness !== orgName) {
+          await renameOrg(orgId, trimmedBusiness);
+        }
       }
-      await saveProfile.mutateAsync({
-        ...(profile ?? {
-          name: '',
-          businessName: '',
-          phone: '',
-          businessType: null,
-          plan: 'free' as const,
-          planExpiresAt: null,
-        }),
-        name: trimmedName,
-        businessName: trimmedBusiness,
-      });
+      await saveProfile.mutateAsync({ ...(profile ?? EMPTY_PROFILE), name: trimmedName });
       // Profile persisted — queue the welcome tour so it starts once the
       // dashboard mounts (it only mounts now that the profile is complete).
       scheduleTour('welcome');
-      // Invalidate so AuthGate sees the fresh profile and mounts the dashboard.
+      // Invalidate so AuthGate sees the fresh profile/org and mounts the
+      // dashboard.
       void queryClient.invalidateQueries({ queryKey: queryKeys.profile });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.orgs });
     } catch (cause) {
       // After a successful create the retry path saves the profile only —
       // the inline message comes from the layer that actually failed.

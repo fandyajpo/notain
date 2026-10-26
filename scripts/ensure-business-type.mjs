@@ -2,9 +2,12 @@
 /**
  * Adds the columns this app expects but the original tables lack:
  *
- *   profiles.businessType  — string64, nullable. The account's chosen business
- *                            type; `null` until the user picks one (asked on
- *                            first template creation, editable in settings).
+ *   organizations.businessType — string64, nullable. The workspace's chosen
+ *                            business type; `null` until someone picks one
+ *                            (asked on first template creation, editable in
+ *                            settings). Lives on the org row, not `profiles`,
+ *                            so it describes the tenant and the public page
+ *                            and template grouping read it per org.
  *   templates.businessType — string64, nullable. The type a template was
  *                            authored for; `null` for the three built-ins'
  *                            saved copies and every older template.
@@ -43,7 +46,7 @@ const apiKey = (process.env.APPWRITE_API_KEY ?? '').trim();
  * bounded values.
  */
 const TARGETS = [
-  { tableId: 'profiles', column: { key: 'businessType', size: 64 } },
+  { tableId: 'organizations', column: { key: 'businessType', size: 64 } },
   { tableId: 'templates', column: { key: 'businessType', size: 64 } },
   { tableId: 'invoices', column: { key: 'details', size: 100_000 } },
 ];

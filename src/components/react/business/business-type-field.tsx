@@ -7,7 +7,8 @@ import { BusinessTypePicker } from './business-type-picker';
 
 type Props = {
   value: BusinessSubtypeSlug | null;
-  onChange: (slug: BusinessSubtypeSlug | null) => void;
+  /** Omit to render the field read-only (a member who cannot change it). */
+  onChange?: (slug: BusinessSubtypeSlug | null) => void;
   /** Extra line under the label, when the surrounding screen needs its own wording. */
   description?: string;
 };
@@ -25,6 +26,7 @@ export function BusinessTypeField({ value, onChange, description }: Props) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<BusinessSubtypeSlug | null>(value);
   const label = businessSubtypeLabel(value);
+  const editable = onChange !== undefined;
 
   return (
     <>
@@ -37,53 +39,57 @@ export function BusinessTypeField({ value, onChange, description }: Props) {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm text-foreground">{label ?? 'Belum ditentukan'}</span>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              setDraft(value);
-              setOpen(true);
-            }}
-          >
-            Ubah
-          </Button>
+          {editable && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setDraft(value);
+                setOpen(true);
+              }}
+            >
+              Ubah
+            </Button>
+          )}
         </div>
       </Card>
 
-      <Modal
-        open={open}
-        onClose={() => setOpen(false)}
-        title="Pilih jenis bisnis"
-        size="lg"
-        footer={
-          <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={draft === null}
-              onClick={() => setDraft(null)}
-            >
-              Tanpa jenis
-            </Button>
-            <div className="flex gap-2">
-              <Button variant="secondary" size="sm" onClick={() => setOpen(false)}>
-                Batal
-              </Button>
+      {editable && (
+        <Modal
+          open={open}
+          onClose={() => setOpen(false)}
+          title="Pilih jenis bisnis"
+          size="lg"
+          footer={
+            <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <Button
+                variant="ghost"
                 size="sm"
-                onClick={() => {
-                  onChange(draft);
-                  setOpen(false);
-                }}
+                disabled={draft === null}
+                onClick={() => setDraft(null)}
               >
-                Simpan
+                Tanpa jenis
               </Button>
+              <div className="flex gap-2">
+                <Button variant="secondary" size="sm" onClick={() => setOpen(false)}>
+                  Batal
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    onChange?.(draft);
+                    setOpen(false);
+                  }}
+                >
+                  Simpan
+                </Button>
+              </div>
             </div>
-          </div>
-        }
-      >
-        <BusinessTypePicker value={draft} onChange={setDraft} />
-      </Modal>
+          }
+        >
+          <BusinessTypePicker value={draft} onChange={setDraft} />
+        </Modal>
+      )}
     </>
   );
 }

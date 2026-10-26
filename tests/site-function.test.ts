@@ -15,15 +15,22 @@ let fake: AppwriteFake;
 
 beforeEach(() => {
   fake = appwriteFake();
+  // The business name/type live on the ORG row; the profile row is personal.
+  fake.rows.set(`organizations/${ORG_ID}`, {
+    $id: ORG_ID,
+    name: 'Warung Uji Coba',
+    businessType: 'warung-makan',
+    ownerId: 'user-1',
+    plan: 'free',
+    planExpiresAt: null,
+  });
   fake.rows.set(`profiles/${ORG_ID}`, {
     $id: ORG_ID,
     name: 'Fandy Ahmad',
-    businessName: 'Warung Uji Coba',
     phone: '081234567890',
     address: 'Jl. Melati No. 12, Bandung',
     email: 'halo@ujicoba.test',
     logoFileId: 'logo-key-1',
-    businessType: 'warung-makan',
     plan: 'free',
     planExpiresAt: null,
   });
@@ -123,15 +130,21 @@ describe('GET /api/site/<orgId>', () => {
   });
 
   it('serves a profile with only the required name (everything else optional)', async () => {
+    fake.rows.set(`organizations/${ORG_ID}`, {
+      $id: ORG_ID,
+      name: 'Toko Minim',
+      businessType: null,
+      ownerId: 'user-1',
+      plan: 'free',
+      planExpiresAt: null,
+    });
     fake.rows.set(`profiles/${ORG_ID}`, {
       $id: ORG_ID,
       name: '',
-      businessName: 'Toko Minim',
       phone: '',
       address: null,
       email: null,
       logoFileId: null,
-      businessType: null,
       plan: 'free',
       planExpiresAt: null,
     });
@@ -150,15 +163,12 @@ describe('GET /api/site/<orgId>', () => {
     expect(body.items).toEqual([]);
   });
 
-  it('404s a profile that never named a business', async () => {
-    fake.rows.set(`profiles/${ORG_ID}`, {
+  it('404s an org that never named a business', async () => {
+    fake.rows.set(`organizations/${ORG_ID}`, {
       $id: ORG_ID,
-      name: 'Fandy',
-      businessName: null,
-      phone: '',
-      address: null,
-      email: null,
-      logoFileId: null,
+      name: '',
+      businessType: null,
+      ownerId: 'user-1',
       plan: 'free',
       planExpiresAt: null,
     });

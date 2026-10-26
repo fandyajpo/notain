@@ -343,15 +343,18 @@ describe('PUT /api/profile — validation', () => {
     expect(writes()).toEqual([]);
   });
 
-  it('stores an unknown business type as null instead of the raw slug', async () => {
-    // `profileSchema` is `.catch(null)` on purpose: a slug the taxonomy no
-    // longer knows must degrade to "no type", never block a save.
-    const response = await handle(put(bodyWithPlan({ businessType: 'not-a-slug' })));
+  it('drops business identity from the body — it is not a profile column', async () => {
+    // The business name/type belong to the organization, so a PUT carrying
+    // them must never write them onto the profile row.
+    const response = await handle(
+      put(bodyWithPlan({ businessName: 'Bengkel Palsu', businessType: 'not-a-slug' })),
+    );
 
     expect(response.status).toBe(201);
     const create = fake.calls.find((c) => c.method === 'POST')!.body as {
       data: Record<string, unknown>;
     };
-    expect(create.data.businessType).toBeNull();
+    expect(create.data).not.toHaveProperty('businessName');
+    expect(create.data).not.toHaveProperty('businessType');
   });
 });

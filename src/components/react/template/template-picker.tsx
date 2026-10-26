@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Check } from 'lucide-react';
 import { createSampleInvoice, SAMPLE_BUSINESS } from '../../../core/invoice/sample';
-import type { BusinessProfile } from '../../../core/profile/model';
+import type { BusinessIssuer } from '../../../core/business/issuer';
 import type { InvoiceTemplate } from '../../../core/template/model';
 import { groupTemplatesForBusiness } from '../../../core/template/resolve';
 import { businessSubtypeLabel, type BusinessSubtypeSlug } from '../../../core/business/taxonomy';
@@ -22,7 +22,7 @@ type ThumbnailProps = {
   template: InvoiceTemplate;
   logoUrl?: string | null;
   /** The viewer's own business, so the preview reads like their invoice. */
-  business?: BusinessProfile | null;
+  business?: BusinessIssuer | null;
 };
 
 /**
@@ -78,7 +78,7 @@ type CardProps = {
   template: InvoiceTemplate;
   logoUrl?: string | null;
   /** The viewer's own business, so the preview reads like their invoice. */
-  business?: BusinessProfile | null;
+  business?: BusinessIssuer | null;
   selected?: boolean;
   onPick?: (templateId: string) => void;
   /** Extra row under the name, for list pages that are not pickers. */
@@ -147,7 +147,7 @@ type PickerProps = {
   selectedId?: string;
   logoUrl?: string | null;
   /** The viewer's own business, so the preview reads like their invoice. */
-  business?: BusinessProfile | null;
+  business?: BusinessIssuer | null;
   /** The viewer's chosen business type; groups but never hides the rest. */
   businessType?: BusinessSubtypeSlug | null;
   onPick: (templateId: string) => void;

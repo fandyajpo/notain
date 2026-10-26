@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Button } from '../ui/button';
 import { InvoicePreview } from './invoice-preview';
-import type { BusinessProfile } from '../../../core/profile/model';
+import type { BusinessIssuer } from '../../../core/business/issuer';
 import type { InvoiceDraft } from '../../../core/invoice/model';
 import type { InvoiceTemplate } from '../../../core/template/model';
 
@@ -36,7 +36,7 @@ export function PrintSheet({
   template,
   logoUrl,
 }: {
-  business: BusinessProfile;
+  business: BusinessIssuer;
   invoice: InvoiceDraft;
   template: InvoiceTemplate;
   logoUrl?: string;

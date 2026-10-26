@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test';
 import { createSampleInvoice } from './sample';
+import { SAMPLE_ISSUER } from '../business/issuer';
 import { invoiceDraftSchema } from './schema';
 import { calculateTotals } from './calculator';
 import { INVOICE_LIMITS } from './model';
@@ -168,5 +169,20 @@ describe('createSampleInvoice', () => {
     expect(totals.taxableAmount).toBe(79_800);
     expect(totals.taxAmount).toBe(8_778);
     expect(totals.grandTotal).toBe(88_578);
+  });
+
+  it('names the organization in its copy, not the account holder', () => {
+    const business = { ...SAMPLE_ISSUER, name: 'Buffy Tester', businessName: 'Kopi Uji' };
+    const { draft } = createSampleInvoice(new Date(Date.UTC(2026, 9, 8)), business);
+    expect(draft.sections.header).toContain('memesan di Kopi Uji');
+    expect(draft.sections.footer).toContain('a.n. Kopi Uji');
+    expect(draft.sections.header).not.toContain('Buffy Tester');
+    expect(draft.sections.footer).not.toContain('Buffy Tester');
+  });
+
+  it('falls back to the personal name when the profile has no business name', () => {
+    const business = { ...SAMPLE_ISSUER, name: 'Buffy Tester', businessName: '' };
+    const { draft } = createSampleInvoice(new Date(Date.UTC(2026, 9, 8)), business);
+    expect(draft.sections.header).toContain('memesan di Buffy Tester');
   });
 });

@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
 import { Ban } from 'lucide-react';
 import { useSession, useSignOut } from '../../../lib/query/hooks/use-session';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
+import { useOrgs } from '../../../lib/query/hooks/use-orgs';
 import { getActiveOrgId, subscribeActiveOrg } from '../../../app/active-org';
 import { toast } from '../../../lib/ui/toast';
 import { ERROR_CODES, isAppError } from '../../../core/shared/errors';
@@ -45,6 +46,9 @@ export function AuthGate({ children, fallback }: Props) {
   const { data: profile, isPending: profilePending } = useProfile(
     Boolean(session) && orgId !== null,
   );
+  // The business name is the ORGANIZATION's name, not a profile field, so the
+  // onboarding gate also needs the org list to know whether it is filled in.
+  const { data: orgs } = useOrgs(Boolean(session));
 
   useEffect(() => {
     // Only a completed query that answers "no session" may redirect. An error
@@ -74,7 +78,12 @@ export function AuthGate({ children, fallback }: Props) {
   // is org-scoped, so the OrgGate wraps it (and, through it, the children).
   return (
     <OrgGate fallback={fallback}>
-      <ProfileStage fallback={fallback} profile={profile} pending={profilePending}>
+      <ProfileStage
+        fallback={fallback}
+        profile={profile}
+        pending={profilePending}
+        businessName={orgs?.orgs.find((org) => org.id === orgId)?.name ?? ''}
+      >
         {children}
       </ProfileStage>
     </OrgGate>
@@ -87,11 +96,14 @@ function ProfileStage({
   fallback,
   profile,
   pending,
+  businessName,
 }: {
   children: ReactNode;
   fallback?: ReactNode;
   profile: ReturnType<typeof useProfile>['data'];
   pending: boolean;
+  /** The active org's name — the business name the profile form never holds. */
+  businessName: string;
 }) {
   // Wait for the profile before deciding what to render.
   if (pending) {
@@ -101,8 +113,7 @@ function ProfileStage({
   // Onboarding incomplete: block the children entirely. The modal is the only
   // interactive element; deleting it from the DOM just reveals the blocked
   // state because `children` was never mounted.
-  const onboarded =
-    profile != null && profile.name.trim() !== '' && (profile.businessName ?? '').trim() !== '';
+  const onboarded = profile != null && profile.name.trim() !== '' && businessName.trim() !== '';
 
   if (!onboarded) {
     return (

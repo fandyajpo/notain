@@ -1,11 +1,8 @@
 import '../zod-csp';
 import { z } from 'zod';
-import { businessSubtypeSlugSchema } from '../business/schema';
-import type { BusinessSubtypeSlug } from '../business/taxonomy';
 
 export const PROFILE_LIMITS = {
   name: 128,
-  businessName: 128,
   phone: 32,
   address: 256,
   email: 128,
@@ -15,21 +12,19 @@ export const PROFILE_LIMITS = {
 export const PLAN_VALUES = ['free', 'pro', 'business'] as const;
 export type Plan = (typeof PLAN_VALUES)[number];
 
+/**
+ * A person's profile inside one organization: who they are and how customers
+ * reach them. Deliberately carries NO business identity — the business NAME
+ * and TYPE belong to the organization (`organizations/<orgId>`) and are read
+ * from `OrgView`, never duplicated here.
+ */
 export type BusinessProfile = {
   name: string;
-  businessName: string;
   phone: string;
   address?: string;
   email?: string;
   logoFileId?: string;
   logoUrl?: string;
-  /**
-   * The account's business type (see `core/business/taxonomy`). Asked once
-   * when the first template is created, editable in settings afterwards.
-   * Prefills new templates and groups the invoice template picker.
-   * `null` means the user has not chosen one yet.
-   */
-  businessType: BusinessSubtypeSlug | null;
   plan: Plan;
   /** ISO date string. `null` means no expiry (lifetime or free). */
   planExpiresAt: string | null;
@@ -37,9 +32,7 @@ export type BusinessProfile = {
 
 export const EMPTY_PROFILE: BusinessProfile = {
   name: '',
-  businessName: '',
   phone: '',
-  businessType: null,
   plan: 'free',
   planExpiresAt: null,
 };
@@ -73,15 +66,6 @@ export const profileSchema = z.object({
     .trim()
     .min(1, 'Masukkan nama kamu terlebih dahulu.')
     .max(PROFILE_LIMITS.name, 'Nama terlalu panjang.'),
-  businessName: z.preprocess(
-    emptyToUndefined,
-    z
-      .string()
-      .trim()
-      .min(1, 'Masukkan nama usaha terlebih dahulu.')
-      .max(PROFILE_LIMITS.businessName, 'Nama usaha terlalu panjang.')
-      .optional(),
-  ),
   phone: z.preprocess(
     emptyToUndefined,
     z
@@ -103,9 +87,6 @@ export const profileSchema = z.object({
       .optional(),
   ),
   logoFileId: z.preprocess(emptyToUndefined, z.string().trim().max(64).optional()),
-  // Nullable, not optional: "not chosen yet" is a stored state, and a slug the
-  // taxonomy has since renamed must not block a save — it reads back as null.
-  businessType: businessSubtypeSlugSchema.nullable().catch(null),
   plan: z.enum(PLAN_VALUES).default('free'),
   planExpiresAt: z.preprocess(emptyToUndefined, z.string().trim().max(32).nullable().optional()),
 });
@@ -119,7 +100,6 @@ export type ProfileInput = z.infer<typeof profileSchema>;
  */
 export const profileFormSchema = z.object({
   name: profileSchema.shape.name,
-  businessName: z.string().trim().max(PROFILE_LIMITS.businessName, 'Nama usaha terlalu panjang.'),
   // Mirrors the email field below: the settings form keeps every value as a
   // filled string, so an empty phone is valid and only a non-empty one is
   // checked against the pattern. (`profileSchema.shape.phone` is a preprocess
@@ -138,10 +118,6 @@ export const profileFormSchema = z.object({
     .refine((value) => value === '' || emailPattern.test(value), {
       message: 'Masukkan email yang valid.',
     }),
-  // Kept as a plain value so the controlled picker stays simple: '' means
-  // "no type". Typed as the slug union (plus '') rather than `string`, so the
-  // form's values line up with `BusinessProfile.businessType` on submit.
-  businessType: z.union([businessSubtypeSlugSchema, z.literal('')]),
 });
 
 export type ProfileFormValues = z.infer<typeof profileFormSchema>;

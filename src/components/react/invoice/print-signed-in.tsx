@@ -7,9 +7,11 @@ import { Notice } from '../ui/notice';
 import { PrintSheet, PrintToolbar, Status } from './print-shared';
 import { readPrintPayload } from '../../../lib/print';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
+import { useOrgs } from '../../../lib/query/hooks/use-orgs';
 import { useTemplates } from '../../../lib/query/hooks/use-templates';
+import { getActiveOrgId } from '../../../app/active-org';
 import { resolveTemplate } from '../../../core/template/resolve';
-import { EMPTY_PROFILE } from '../../../core/profile/model';
+import { toBusinessIssuer } from '../../../core/business/issuer';
 
 /**
  * The `/invoice/print` half that needs a session: the builder hands the draft
@@ -38,6 +40,9 @@ function SignedInPrintContent() {
     refetch: refetchProfile,
   } = useProfile();
   const { data: templates, isLoading: templatesLoading } = useTemplates();
+  const { data: orgs } = useOrgs();
+  const orgId = getActiveOrgId();
+  const org = orgs?.orgs.find((candidate) => candidate.id === orgId) ?? null;
 
   // A custom template has to be in hand before this page is ready. Printing
   // while the list is still in flight would silently render the built-in
@@ -67,7 +72,7 @@ function SignedInPrintContent() {
     );
   }
 
-  const business = profile ?? EMPTY_PROFILE;
+  const business = toBusinessIssuer(profile, org);
   const printTemplate = resolveTemplate(invoice.templateId, templates);
 
   return (
@@ -88,7 +93,7 @@ function SignedInPrintContent() {
         business={business}
         invoice={invoice}
         template={printTemplate}
-        logoUrl={business.logoUrl}
+        logoUrl={business.logoUrl ?? undefined}
       />
     </>
   );

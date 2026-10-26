@@ -16,6 +16,9 @@ import type { DashboardStats } from '../../../core/stats/model';
 import { hasProAccess } from '../../../core/profile/model';
 import type { InvoiceStatus } from '../../../core/invoice/model';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
+import { useOrgs } from '../../../lib/query/hooks/use-orgs';
+import { getActiveOrgId } from '../../../app/active-org';
+import { toBusinessIssuer } from '../../../core/business/issuer';
 import { useSession } from '../../../lib/query/hooks/use-session';
 import { useDashboardStats } from '../../../lib/query/hooks/use-dashboard-stats';
 import { useInvoices } from '../../../lib/query/hooks/use-invoices';
@@ -70,6 +73,9 @@ function DashboardContent() {
   usePageTour('welcome');
   const { data: session } = useSession();
   const { data: profile, isError: profileFailed } = useProfile();
+  const { data: orgs } = useOrgs();
+  const org = orgs?.orgs.find((candidate) => candidate.id === getActiveOrgId()) ?? null;
+  const issuer = toBusinessIssuer(profile, org);
   // One small page feeds the recent list and the "any invoice yet?" checklist;
   // every headline number comes from the cached `stats` row instead of its own
   // live count, so the screen costs one six-row request plus one tiny read.
@@ -77,8 +83,10 @@ function DashboardContent() {
   const stats = useDashboardStats();
 
   const greeting = formatSalam();
+  // The page header greets the person; the finance card is named after the
+  // business, which is the ORGANIZATION's name.
   const businessName = profile?.name?.trim() || 'Usaha kamu';
-  const usahaName = profile?.businessName?.trim() || 'Usaha kamu';
+  const usahaName = issuer.businessName.trim() || 'Usaha kamu';
 
   const firstPage = invoices.data?.pages[0];
   const recent = firstPage?.items.slice(0, RECENT_PREVIEW) ?? [];

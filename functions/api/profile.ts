@@ -5,23 +5,27 @@ import { createRow, getRow, patchRow } from '../_lib/rows';
 import type { Env, PagesFunction } from '../_lib/types';
 
 /**
- * `GET  /api/profile?orgId=…` — read the organization's business profile.
+ * `GET  /api/profile?orgId=…` — read the org's PERSONAL profile row.
  * `PUT  /api/profile?orgId=…` — the only writer of that row.
  *
  * Multi-tenancy: the row id IS the org id (`ensure-orgs.mjs` rekeys it), so
- * one organization has exactly one business identity no matter how many
- * members edit it. Both methods walk `requireOrg` first: the caller's
- * membership row is the only authority, and the `orgId` query value is just a
- * hint that resolves to 404 for anyone outside the org.
+ * one organization has exactly one profile row no matter how many members
+ * edit it. Both methods walk `requireOrg` first: the caller's membership row
+ * is the only authority, and the `orgId` query value is just a hint that
+ * resolves to 404 for anyone outside the org.
+ *
+ * The row is deliberately PERSONAL only — the person's name, contact fields
+ * and logo. The business NAME and TYPE belong to the organization
+ * (`organizations/<orgId>`); the invoice and public-site Functions read them
+ * from there. This endpoint neither stores nor returns them, so the two can
+ * never drift.
  *
  * The plan lock is why writes stayed on this route at all: Appwrite has no
  * per-column permissions, so any session that can write its row can write
  * *every* column — including `plan`/`planExpiresAt`, which used to make the
  * client-side "never change the plan" guard a suggestion. The row id comes
  * from the validated `orgId` (never the body), the writable columns are the
- * fixed whitelist below, and plan columns are simply not on it. (Plan itself
- * now lives on the `organizations` row — see `docs/multi-tenancy.md` — so
- * these columns are vestigial `free` defaults kept only for the schema.)
+ * fixed whitelist below, and plan columns are simply not on it.
  *
  * The API key that performs the Appwrite write bypasses row security, so
  * nothing here depends on session permissions — and no session has a write
@@ -67,16 +71,15 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   // The column whitelist, spelled out: whatever else the body carried (plan,
-  // $id, an invented column) is dropped right here. `phone` is a required
-  // column, so "no phone" is the empty string rather than null.
+  // businessName, businessType, $id, an invented column) is dropped right
+  // here. `phone` is a required column, so "no phone" is the empty string
+  // rather than null.
   const data = {
     name: parsed.data.name,
-    businessName: parsed.data.businessName || null,
     phone: parsed.data.phone ?? '',
     address: parsed.data.address ?? null,
     email: parsed.data.email ?? null,
     logoFileId: parsed.data.logoFileId ?? null,
-    businessType: parsed.data.businessType ?? null,
   };
 
   const existing = await getRow(auth, 'profiles', gate.access.orgId, env);

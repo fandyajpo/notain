@@ -17,7 +17,7 @@ GET /api/site/<ownerId>  (functions/api/site/[id].ts, tanpa sesi, API key server
         ↓
 src/app/public-site.ts (zod shape) → usePublicSite → site-app.tsx
         ↓
-industryForSubtype(profile.businessType) → templates/<industri>.tsx (lazy chunk)
+industryForSubtype(org.businessType) → templates/<industri>.tsx (lazy chunk)
 ```
 
 Kedua setengah route (function dan middleware) mengimpor pola segmen yang sama dari
@@ -26,9 +26,9 @@ dianggap "id" tidak pernah berbeda antara produksi dan dev.
 
 ## Pemilihan template
 
-Tidak ada preferensi baru untuk disimpan. Halaman membaca `profiles.businessType`
-(subtipe dari taksonomi 175 entri, sudah diedit di settings) lalu memetakannya ke
-industri di `src/core/site/industries.ts`:
+Tidak ada preferensi baru untuk disimpan. Halaman membaca `organizations.businessType`
+(subtipe dari taksonomi 175 entri, sudah diedit di settings → Organisasi) lalu
+memetakannya ke industri di `src/core/site/industries.ts`:
 
 | Industri      | Subtipe representatif                                          |
 | ------------- | -------------------------------------------------------------- |
@@ -50,8 +50,9 @@ template terpisah.
 
 Endpoint hanya boleh membawa field yang pemilik ketik ke profil untuk dipublikasikan:
 
-- **Dikirim**: `businessName`, nama orang, telepon, alamat, email, slug tipe usaha,
-  URL logo hasil render (`/api/logo/…`), dan katalog (nama, jenis, satuan, harga).
+- **Dikirim**: `businessName` (dari `organizations.name`), nama orang, telepon,
+  alamat, email, slug tipe usaha (`organizations.businessType`), URL logo hasil
+  render (`/api/logo/…`), dan katalog (nama, jenis, satuan, harga).
 - **Tidak pernah dikirim**: `plan`, `planExpiresAt`, `logoFileId` (mentah), seluruh
   `ownerId` di row mana pun, timestamp baris.
 - ID pemilik tetap terbaca di path — itu memang kredensial capability URL-nya, bukan
@@ -59,14 +60,16 @@ Endpoint hanya boleh membawa field yang pemilik ketik ke profil untuk dipublikas
 
 Biaya dijaga dua lapis: daftar katalog dibatasi 100 baris (proyeksi kolom saja), dan
 limit `site` (60/menit/IP, `QUOTA_LIMIT_SITE_PER_MINUTE`) di `_lib/quota.ts` — tiap
-hit membaca 1 row profil + sampai 100 row katalog terhadap kuota Appwrite.
+hit membaca 1 row organisasi + 1 row profil + sampai 100 row katalog terhadap kuota
+Appwrite.
 
 `/site/` tidak ada di `INDEXABLE_ROUTES` (`src/lib/seo.ts`), jadi halaman per-usaha
 selalu `noindex` — halaman pelanggan bukan bagian dari sitemap Notain.
 
 ## Kesenjangan model data
 
-Delapan industri diminta; yang tersedia di tabel `profiles` + `catalog` hari ini
+Delapan industri diminta; yang tersedia di tabel `organizations` + `profiles` +
+`catalog` hari ini
 hanyalah: nama usaha, nama orang, telepon, alamat, email, logo, tipe usaha, dan
 katalog (nama/jenis/satuan/harga). Bagian landing yang datanya **belum ada**
 ditampilkan hanya jika tersedia, dan tidak pernah diisi placeholder:
@@ -88,7 +91,7 @@ tabel, layanan, atau dependensi baru**:
 
 1. `sitePublished` (boolean, default `false`) — gerbang opt-in: `GET /api/site/<id>`
    menjawab 404 selama `false`. Ini satu-satunya perubahan perilaku yang berarti
-   (halaman hari ini selalu "ada" selama `businessName` terisi, mengikuti model
+   (halaman hari ini selalu "ada" selama `organizations.name` terisi, mengikuti model
    capability URL yang sama dengan invoice).
 2. `siteBio` (teks, 300 char) — deskripsi/tagline.
 3. `siteHours` (JSON, `{ "sen": "08:00-21:00", … }`) — jam operasional.

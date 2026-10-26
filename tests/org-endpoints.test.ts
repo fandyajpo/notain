@@ -387,6 +387,54 @@ describe('PATCH /api/orgs/<id> — rename', () => {
       name: 'Nama Baru',
     });
   });
+
+  it('sets the org business type, rejecting an unknown slug', async () => {
+    fake = appwriteFake();
+    seedOrg('org_aaaaaaaaaaaaaaaa');
+    seedMembership('org_aaaaaaaaaaaaaaaa', OWNER.$id, { role: 'owner', email: OWNER.email });
+
+    const ok = await handle(
+      orgOnRequest,
+      req('PATCH', '/api/orgs/org_aaaaaaaaaaaaaaaa', { businessType: 'bengkel-mobil' }),
+      { id: 'org_aaaaaaaaaaaaaaaa' },
+    );
+    expect(ok.status).toBe(200);
+    // The type lives on the ORG row, not a profile row.
+    expect(fake.rows.get('organizations/org_aaaaaaaaaaaaaaaa')).toMatchObject({
+      businessType: 'bengkel-mobil',
+    });
+    expect(fake.rows.get('profiles/org_aaaaaaaaaaaaaaaa')).toBeUndefined();
+
+    const bad = await handle(
+      orgOnRequest,
+      req('PATCH', '/api/orgs/org_aaaaaaaaaaaaaaaa', { businessType: 'not-a-slug' }),
+      { id: 'org_aaaaaaaaaaaaaaaa' },
+    );
+    expect(bad.status).toBe(400);
+    expect(fake.rows.get('organizations/org_aaaaaaaaaaaaaaaa')).toMatchObject({
+      businessType: 'bengkel-mobil',
+    });
+  });
+
+  it('clears the org business type with an explicit null', async () => {
+    fake = appwriteFake();
+    seedOrg('org_aaaaaaaaaaaaaaaa');
+    fake.rows.set('organizations/org_aaaaaaaaaaaaaaaa', {
+      ...fake.rows.get('organizations/org_aaaaaaaaaaaaaaaa')!,
+      businessType: 'bengkel-mobil',
+    } as Row);
+    seedMembership('org_aaaaaaaaaaaaaaaa', OWNER.$id, { role: 'owner', email: OWNER.email });
+
+    const response = await handle(
+      orgOnRequest,
+      req('PATCH', '/api/orgs/org_aaaaaaaaaaaaaaaa', { businessType: null }),
+      { id: 'org_aaaaaaaaaaaaaaaa' },
+    );
+    expect(response.status).toBe(200);
+    expect(fake.rows.get('organizations/org_aaaaaaaaaaaaaaaa')).toMatchObject({
+      businessType: null,
+    });
+  });
 });
 
 describe('DELETE /api/orgs/<id> — cascade', () => {

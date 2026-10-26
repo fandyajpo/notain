@@ -5,7 +5,7 @@ import type { InvoiceDraft } from '../../../core/invoice/model';
 import { formatRupiah } from '../../../core/shared/money';
 import { formatTanggal } from '../../../core/shared/dates';
 import { sanitizeRichHtml } from '../../../core/shared/sanitize';
-import type { BusinessProfile } from '../../../core/profile/model';
+import type { BusinessIssuer } from '../../../core/business/issuer';
 import { getDetailFields } from '../../../core/business/detail-fields';
 import type { BusinessSubtypeSlug } from '../../../core/business/taxonomy';
 import type {
@@ -17,7 +17,7 @@ import type {
 import { visibleBlocks } from '../../../core/template/model';
 
 type Props = {
-  business: BusinessProfile;
+  business: BusinessIssuer;
   invoice: InvoiceDraft;
   /**
    * Drives both the order of the blocks and every colour on the page. Pass

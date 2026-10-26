@@ -7,6 +7,7 @@ import {
   type TemplateRow,
 } from '../../../src/appwrite/mappers';
 import { ID_SEGMENT_PATTERN } from '../../../src/lib/edit-route';
+import { isBusinessSubtypeSlug } from '../../../src/core/business/taxonomy';
 import { getRow, tableAuth } from '../../_lib/rows';
 import { apiError, json } from '../../_lib/http';
 import { isSubscriptionActive } from '../../../src/core/billing/plans';
@@ -82,7 +83,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
   // its letterhead row), and a missing template falls back to a built-in on
   // the client — the same fallback the signed-in print view has.
   const profile = profileRow ? (profileRow as ProfileRow) : null;
-  const business = profile ? publicBusinessFromRow(profile) : null;
+  const business = profile ? publicBusinessFromRow(profile, orgRow) : null;
 
   const templateRow = invoice.templateId
     ? await getRow(auth, 'templates', invoice.templateId)
@@ -99,13 +100,22 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
 };
 
 /** The letterhead fields `InvoicePreview` reads, plus the computed logo URL. */
-function publicBusinessFromRow(row: ProfileRow) {
+function publicBusinessFromRow(
+  row: ProfileRow,
+  orgRow: (Record<string, unknown> & { $id: string }) | null,
+) {
   const profile = profileRowToDomain(row);
   // Plan details and the raw R2 id stay server-side; the letterhead only
-  // needs the rendered URL.
+  // needs the rendered URL. The business NAME and TYPE come from the org row,
+  // the single source of truth since they are not profile columns.
   const rest = omitFields(profile, ['plan', 'planExpiresAt', 'logoFileId']);
   return {
     ...rest,
+    businessName: typeof orgRow?.name === 'string' ? orgRow.name : '',
+    businessType:
+      typeof orgRow?.businessType === 'string' && isBusinessSubtypeSlug(orgRow.businessType)
+        ? orgRow.businessType
+        : null,
     logoUrl: profile.logoFileId ? `/api/logo/${profile.logoFileId}` : undefined,
   };
 }

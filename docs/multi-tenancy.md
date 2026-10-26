@@ -7,13 +7,19 @@ gate (`OrgGate`) creates the first one automatically after sign-up.
 
 ## 1. Data model
 
-| Table                                           | Keyed by            | Contents                                                                               |
-| ----------------------------------------------- | ------------------- | -------------------------------------------------------------------------------------- |
-| `organizations`                                 | `$id` = `org_…`     | `name`, `ownerId`, **`plan` + `planExpiresAt`** (billing state lives here)             |
-| `memberships`                                   | random `$id`        | `orgId`, `userId`, `role` (`owner` \| `member`), `status`, `inviteEmail`, `createdAt`  |
-| `profiles`                                      | `$id` = **`orgId`** | Business identity: `name`, `businessName`, `phone`, `address`, `email`, `businessType` |
-| `invoices`, `customers`, `catalog`, `templates` | `orgId` column      | All rows carry `orgId` + keep `ownerId` as creator provenance                          |
-| `stats`                                         | `$id` = **`orgId`** | One dashboard-counter row per organization                                             |
+| Table                                           | Keyed by            | Contents                                                                                          |
+| ----------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------- |
+| `organizations`                                 | `$id` = `org_…`     | `name` (the business name), `ownerId`, **`businessType`**, **`plan` + `planExpiresAt`** (billing) |
+| `memberships`                                   | random `$id`        | `orgId`, `userId`, `role` (`owner` \| `member`), `status`, `inviteEmail`, `createdAt`             |
+| `profiles`                                      | `$id` = **`orgId`** | The PERSON's profile: `name`, `phone`, `address`, `email`, `logoFileId` (no business identity)    |
+| `invoices`, `customers`, `catalog`, `templates` | `orgId` column      | All rows carry `orgId` + keep `ownerId` as creator provenance                                     |
+| `stats`                                         | `$id` = **`orgId`** | One dashboard-counter row per organization                                                        |
+
+The business identity is split on purpose: the ORGANIZATION owns its **name** and
+**business type** (the workspace's trade), while the `profiles` row is the
+person's contact card. Invoices join the two at render time
+(`toBusinessIssuer`), so renaming the org or changing its type never touches a
+profile row and the two can never drift.
 
 Migrations: [`scripts/ensure-orgs.mjs`](../scripts/ensure-orgs.mjs) creates the
 tables and permissions; [`scripts/ensure-org-columns.mjs`](../scripts/ensure-org-columns.mjs)
@@ -40,17 +46,17 @@ is re-verified server-side on every request.
 
 ## 3. API surface
 
-| Endpoint                                | Gate              | Notes                                                            |
-| --------------------------------------- | ----------------- | ---------------------------------------------------------------- |
-| `GET/POST /api/orgs`                    | session           | List orgs + pending invites; create (creator becomes `owner`)    |
-| `PATCH/DELETE /api/orgs/[id]`           | `requireOrgOwner` | Rename; delete **cascades** rows + memberships of that org       |
-| `GET/POST /api/orgs/[id]/members`       | `requireOrg`      | Members + pending invitations; invite by email                   |
-| `DELETE /api/orgs/[id]/members/[id]`    | owner / self      | Owner removes a member; anyone may leave                         |
-| `POST /api/orgs/accept`                 | session           | Sweep-accept invites addressed to the signed-in email            |
-| `GET/POST/PATCH/DELETE /api/data/[res]` | `requireOrg`      | The tenant-scoped CRUD every list/detail/mutation goes through   |
-| `GET/PATCH /api/profile`                | `requireOrg`      | The org's business profile (`profiles/<orgId>`)                  |
-| `GET/POST /api/quota/invoices`          | `requireOrg`      | Free tier's **10-invoices-per-month counted per organization**   |
-| `GET/PATCH /api/admin/users`, `…/[id]`  | `requireAdmin`    | Resolve primary org first; plan written to `organizations/<org>` |
+| Endpoint                                | Gate              | Notes                                                              |
+| --------------------------------------- | ----------------- | ------------------------------------------------------------------ |
+| `GET/POST /api/orgs`                    | session           | List orgs + pending invites; create (creator becomes `owner`)      |
+| `PATCH/DELETE /api/orgs/[id]`           | `requireOrgOwner` | Rename + set business type; delete **cascades** rows + memberships |
+| `GET/POST /api/orgs/[id]/members`       | `requireOrg`      | Members + pending invitations; invite by email                     |
+| `DELETE /api/orgs/[id]/members/[id]`    | owner / self      | Owner removes a member; anyone may leave                           |
+| `POST /api/orgs/accept`                 | session           | Sweep-accept invites addressed to the signed-in email              |
+| `GET/POST/PATCH/DELETE /api/data/[res]` | `requireOrg`      | The tenant-scoped CRUD every list/detail/mutation goes through     |
+| `GET/PATCH /api/profile`                | `requireOrg`      | The org's business profile (`profiles/<orgId>`)                    |
+| `GET/POST /api/quota/invoices`          | `requireOrg`      | Free tier's **10-invoices-per-month counted per organization**     |
+| `GET/PATCH /api/admin/users`, `…/[id]`  | `requireAdmin`    | Resolve primary org first; plan written to `organizations/<org>`   |
 
 Admin content (`/api/admin/content`) still targets rows by `userId` as
 creator provenance and re-checks ownership per row.
