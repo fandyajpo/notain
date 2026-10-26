@@ -98,7 +98,7 @@ async function api(method, path, body) {
 /** Every profile row, following the cursor past the page limit. */
 async function listProfiles() {
   const rows = [];
-  for (let cursor = null; ; ) {
+  for (let cursor = null; ;) {
     const params = new URLSearchParams();
     params.set('queries[0]', JSON.stringify({ method: 'limit', values: [PAGE_LIMIT] }));
     if (cursor) params.set('cursorAfter', cursor);

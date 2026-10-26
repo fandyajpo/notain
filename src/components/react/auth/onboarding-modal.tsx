@@ -233,9 +233,7 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
               }}
             />
             {!canRenameOrg && (
-              <p className="text-xs text-muted">
-                Nama usaha organisasi ini diatur oleh owner-nya.
-              </p>
+              <p className="text-xs text-muted">Nama usaha organisasi ini diatur oleh owner-nya.</p>
             )}
           </div>
         </div>
