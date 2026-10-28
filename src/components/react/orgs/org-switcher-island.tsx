@@ -101,8 +101,30 @@ function OrgSwitcher() {
     );
   }, [open]);
 
-  // Nothing to switch between yet: the forced create screen (OrgGate) owns
-  // this moment, and a dead button under it would only compete for attention.
+  // Orgs still loading: hold the switcher's exact footprint with a
+  // non-interactive skeleton instead of rendering nothing. The list arrives
+  // over the network, and returning null until then made the control pop into
+  // the sidebar whenever it resolved — most noticeable on a first visit, where
+  // the fetch lands seconds after the nav is already painted and the pop-in
+  // coincides with the user's first navigation. Same geometry as the trigger
+  // (h-5 bar matches the text-sm line box → 32px tall), and `sidebar-label`
+  // keeps the collapsed rail's icon-only state identical — so when the real
+  // button replaces it, nothing moves.
+  if (!data) {
+    return (
+      <div
+        aria-hidden="true"
+        className="flex w-full min-w-0 items-center gap-2 rounded-control px-2 py-1.5 text-sm"
+      >
+        <Building2 size={16} className="shrink-0 text-muted opacity-40" />
+        <span className="sidebar-label h-5 flex-1 animate-pulse rounded-full bg-background" />
+      </div>
+    );
+  }
+
+  // With the list known, an empty one means the forced create screen (OrgGate)
+  // owns this moment, and a dead button under it would only compete for
+  // attention.
   if (!active) return null;
 
   function switchTo(orgId: string, toName: string): void {
