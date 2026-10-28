@@ -105,9 +105,7 @@ export function useRenameOrg(orgId: string) {
           current
             ? {
                 ...current,
-                orgs: current.orgs.map((org) =>
-                  org.id === orgId ? { ...org, name } : org,
-                ),
+                orgs: current.orgs.map((org) => (org.id === orgId ? { ...org, name } : org)),
               }
             : current,
       );

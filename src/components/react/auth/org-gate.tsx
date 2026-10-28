@@ -176,9 +176,7 @@ export function OrgGate({ children, fallback }: Props) {
     }
 
     const targetValid =
-      activeOrgId !== null &&
-      data !== undefined &&
-      data.orgs.some((org) => org.id === activeOrgId);
+      activeOrgId !== null && data !== undefined && data.orgs.some((org) => org.id === activeOrgId);
 
     if (targetValid && fetchingCount === 0) {
       const remaining = SWITCH_MIN_MS - elapsed;
@@ -212,9 +210,7 @@ export function OrgGate({ children, fallback }: Props) {
   // in those cases, so this only covers the frames in between). The name comes
   // from the store — captured by the dropdown before the reset blanked the
   // cache — so it is correct on the very first frame of the transition.
-  const overlay = orgSwitch ? (
-    <OrgSwitchOverlay name={orgSwitch.toName || 'organisasi'} />
-  ) : null;
+  const overlay = orgSwitch ? <OrgSwitchOverlay name={orgSwitch.toName || 'organisasi'} /> : null;
 
   if (isError) {
     return (

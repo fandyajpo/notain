@@ -38,12 +38,18 @@ export function OrgSwitchOverlay({ name }: { name: string }) {
     >
       {/* Indeterminate progress bar pinned to the top edge: reads as "something
           is moving" without pretending to know how long the load will take. */}
-      <div className="pointer-events-none fixed inset-x-0 top-0 h-1 overflow-hidden bg-accent-soft" aria-hidden="true">
+      <div
+        className="pointer-events-none fixed inset-x-0 top-0 h-1 overflow-hidden bg-accent-soft"
+        aria-hidden="true"
+      >
         <div className="h-full w-1/3 animate-org-switch-progress bg-accent" />
       </div>
 
       <div className="flex w-full max-w-64 flex-col items-center gap-3 rounded-card border border-border bg-card p-6 text-center shadow-modal">
-        <span className="flex size-10 items-center justify-center rounded-full bg-accent-soft" aria-hidden="true">
+        <span
+          className="flex size-10 items-center justify-center rounded-full bg-accent-soft"
+          aria-hidden="true"
+        >
           <Building2 className="text-accent" size={20} />
         </span>
         <p className="text-sm font-semibold">Berpindah ke {name}…</p>

@@ -81,7 +81,7 @@ creator provenance and re-checks ownership per row.
   has no fetch in flight (450 ms minimum display, 8 s hard cap). If the org
   list errors mid-switch the previous org is restored and an error toast
   explains the rollback.
-- **One shared `QueryClient`** — every island (shell *and* pages) reads the
+- **One shared `QueryClient`** — every island (shell _and_ pages) reads the
   module-level client from [`src/lib/query/shell-client.ts`](../src/lib/query/shell-client.ts).
   ClientRouter soft navigation remounts page islands, so a per-mount client
   would refetch org/session/profile on every menu click and split

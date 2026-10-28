@@ -268,60 +268,64 @@ export function InvoicePreview({
           // the bar never appears and print/PDF are untouched.
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr
-                className="text-left text-xs"
-                style={{ borderBottom: `1px solid ${theme.border}`, color: theme.muted }}
-              >
-                <th scope="col" className="pb-2 pr-3 font-medium">
-                  Barang
-                </th>
-                <th scope="col" className="pb-2 pl-2 text-right font-medium">
-                  Jumlah
-                </th>
-                {showUnit && (
-                  <th scope="col" className="pb-2 pl-2 text-left font-medium">
-                    Satuan
+              <thead>
+                <tr
+                  className="text-left text-xs"
+                  style={{ borderBottom: `1px solid ${theme.border}`, color: theme.muted }}
+                >
+                  <th scope="col" className="pb-2 pr-3 font-medium">
+                    Barang
                   </th>
-                )}
-                <th scope="col" className="pb-2 pl-2 text-right font-medium">
-                  Harga
-                </th>
-                <th scope="col" className="pb-2 pl-2 text-right font-medium">
-                  Subtotal
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {invoice.items.length === 0 && (
-                <tr>
-                  <td colSpan={showUnit ? 5 : 4} className="py-6 text-center text-sm" style={muted}>
-                    Belum ada barang.
-                  </td>
+                  <th scope="col" className="pb-2 pl-2 text-right font-medium">
+                    Jumlah
+                  </th>
+                  {showUnit && (
+                    <th scope="col" className="pb-2 pl-2 text-left font-medium">
+                      Satuan
+                    </th>
+                  )}
+                  <th scope="col" className="pb-2 pl-2 text-right font-medium">
+                    Harga
+                  </th>
+                  <th scope="col" className="pb-2 pl-2 text-right font-medium">
+                    Subtotal
+                  </th>
                 </tr>
-              )}
-              {invoice.items.map((item) => (
-                <tr key={item.id} style={{ borderBottom: `1px solid ${theme.border}` }}>
-                  {/* On a narrow preview the numeric columns would otherwise
+              </thead>
+              <tbody>
+                {invoice.items.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={showUnit ? 5 : 4}
+                      className="py-6 text-center text-sm"
+                      style={muted}
+                    >
+                      Belum ada barang.
+                    </td>
+                  </tr>
+                )}
+                {invoice.items.map((item) => (
+                  <tr key={item.id} style={{ borderBottom: `1px solid ${theme.border}` }}>
+                    {/* On a narrow preview the numeric columns would otherwise
                       touch and read as one number (`2Rp25.000Rp50.000`), so
                       every one carries its own left padding rather than
                       relying on the name column to absorb it. */}
-                  <td className="py-2 pr-3">{item.name || <span style={muted}>-</span>}</td>
-                  <td className="py-2 pl-2 text-right tabular-nums">{item.quantity}</td>
-                  {showUnit && (
-                    <td className="py-2 pl-2 text-left tabular-nums">
-                      {item.unit ?? <span style={muted}>-</span>}
+                    <td className="py-2 pr-3">{item.name || <span style={muted}>-</span>}</td>
+                    <td className="py-2 pl-2 text-right tabular-nums">{item.quantity}</td>
+                    {showUnit && (
+                      <td className="py-2 pl-2 text-left tabular-nums">
+                        {item.unit ?? <span style={muted}>-</span>}
+                      </td>
+                    )}
+                    <td className="py-2 pl-2 text-right tabular-nums">
+                      {formatRupiah(item.unitPrice)}
                     </td>
-                  )}
-                  <td className="py-2 pl-2 text-right tabular-nums">
-                    {formatRupiah(item.unitPrice)}
-                  </td>
-                  <td className="py-2 pl-2 text-right font-medium tabular-nums">
-                    {formatRupiah(totals.itemSubtotals[invoice.items.indexOf(item)] ?? 0)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+                    <td className="py-2 pl-2 text-right font-medium tabular-nums">
+                      {formatRupiah(totals.itemSubtotals[invoice.items.indexOf(item)] ?? 0)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
         );
