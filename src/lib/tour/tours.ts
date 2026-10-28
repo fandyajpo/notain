@@ -169,9 +169,9 @@ export const TOURS: Record<string, TourDef> = {
     steps: [
       {
         target: 'settings-profile',
-        title: 'Profil usaha kamu',
+        title: 'Profil kamu',
         description:
-          'Isi sekali di sini — nama, logo, dan data usaha ini yang otomatis dipakai di setiap invoice.',
+          'Isi sekali di sini — nama, kontak, dan logo kamu yang otomatis dipakai di setiap invoice.',
         side: 'bottom',
       },
       {

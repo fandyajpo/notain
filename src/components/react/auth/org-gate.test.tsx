@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { OrgGate } from './org-gate';
 import { getActiveOrgId, setActiveOrgId } from '../../../app/active-org';
+import { beginOrgSwitch, endOrgSwitch, getOrgSwitch } from '../../../app/org-switch';
 import type { OrgView } from '../../../app/orgs';
 
 /**
@@ -123,6 +124,9 @@ beforeEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   window.localStorage.clear();
   setActiveOrgId(null);
+  // The switch store is module-level, like `active-org` — a test that starts
+  // a switch must not leak its pending state into the next one.
+  endOrgSwitch();
   queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -144,6 +148,7 @@ afterEach(() => {
   container.remove();
   queryClient.clear();
   setActiveOrgId(null);
+  endOrgSwitch();
   vi.clearAllMocks();
 });
 
@@ -234,6 +239,58 @@ describe('OrgGate', () => {
     // under a loading indicator beats a flash of the previous org's numbers.
     expect(queryClient.getQueryData(['invoices', ''])).toBeUndefined();
     expect(container.textContent).toContain('APP');
+  });
+
+  it('blocks the screen during a switch and lifts the overlay once the target org is ready', async () => {
+    mocks.listOrgs.mockResolvedValue({ orgs: [ORG_A, ORG_B], pending: [] });
+
+    renderGate();
+    await until(() => expect(getActiveOrgId()).toBe(ORG_A.id));
+    await until(() => expect(container.textContent).toContain('APP'));
+
+    // Exactly what the dropdown does: flag the transition (carrying the
+    // target's name), then move the selection. The overlay is portalled to
+    // `document.body`, above the app.
+    act(() => {
+      beginOrgSwitch(ORG_A.id, ORG_B.id, ORG_B.name);
+      setActiveOrgId(ORG_B.id);
+    });
+
+    // The name comes from the switch store, not the orgs cache — the cache is
+    // mid-reset at this point, so a cache-derived label would read
+    // "Berpindah ke organisasi…" for the whole transition.
+    await until(() => expect(document.body.textContent).toContain('Berpindah ke Toko Sebelah…'));
+
+    // The refetch settles (the harness resolves immediately), so once the
+    // minimum display time passes the gate must clear the switch by itself
+    // and remount the children for the target org.
+    await until(() => expect(getOrgSwitch()).toBeNull(), 750);
+    expect(document.body.textContent).not.toContain('Berpindah ke');
+    expect(getActiveOrgId()).toBe(ORG_B.id);
+    await until(() => expect(container.textContent).toContain('APP'));
+  });
+
+  it('restores the previous organization when the switch fails', async () => {
+    // Base answer stays valid for the recovery refetch AFTER the rollback;
+    // only the refetch the switch itself triggers is allowed to fail.
+    mocks.listOrgs.mockResolvedValue({ orgs: [ORG_A, ORG_B], pending: [] });
+    mocks.listOrgs.mockResolvedValueOnce({ orgs: [ORG_A, ORG_B], pending: [] });
+    mocks.listOrgs.mockRejectedValueOnce(new Error('network down'));
+    renderGate();
+    await until(() => expect(getActiveOrgId()).toBe(ORG_A.id));
+    await until(() => expect(container.textContent).toContain('APP'));
+
+    // The list refetch a switch triggers now fails (revoked membership,
+    // offline): the gate must roll back to the org we came from and drop the
+    // overlay instead of hanging on it.
+    act(() => {
+      beginOrgSwitch(ORG_A.id, ORG_B.id, ORG_B.name);
+      setActiveOrgId(ORG_B.id);
+    });
+
+    await until(() => expect(getOrgSwitch()).toBeNull(), 300);
+    expect(getActiveOrgId()).toBe(ORG_A.id);
+    expect(document.body.textContent).not.toContain('Berpindah ke');
   });
 
   it('lands in a newly created organization when the account was empty', async () => {

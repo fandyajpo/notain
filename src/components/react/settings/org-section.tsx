@@ -23,7 +23,7 @@ import { ErrorState, LoadingState } from '../ui/state';
 import { BusinessTypeField } from '../business/business-type-field';
 
 /**
- * `/settings → Organisasi`: everything one workspace can do to itself.
+ * `/settings/organization` → Organisasi: everything one workspace can do to itself.
  *
  * Three cards, in the order the product needs them:
  *

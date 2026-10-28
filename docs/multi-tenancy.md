@@ -74,6 +74,19 @@ creator provenance and re-checks ownership per row.
   per-org query through the live observers, so the new org repaints under its
   own loading state instead of the previous org's rows. The session query
   (`staleTime: Infinity`) survives the switch.
+- **Switch transition** — the dropdown flags the switch in
+  [`src/app/org-switch.ts`](../src/app/org-switch.ts) (module store, same
+  pattern as `active-org`); `OrgGate` renders a blocking full-screen overlay
+  and clears it only once the target org is validated and the shared client
+  has no fetch in flight (450 ms minimum display, 8 s hard cap). If the org
+  list errors mid-switch the previous org is restored and an error toast
+  explains the rollback.
+- **One shared `QueryClient`** — every island (shell *and* pages) reads the
+  module-level client from [`src/lib/query/shell-client.ts`](../src/lib/query/shell-client.ts).
+  ClientRouter soft navigation remounts page islands, so a per-mount client
+  would refetch org/session/profile on every menu click and split
+  `invalidateQueries` away from the sidebar dropdown (a rename would never
+  reach it); one cache makes navigation cheap and invalidation global.
 - Repositories pass `orgId` from the store; query keys stay resource-based
   because the reset-on-switch is what scopes the cache.
 

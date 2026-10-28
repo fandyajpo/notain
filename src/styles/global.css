@@ -109,6 +109,21 @@
   --duration-slow: 500ms;
 }
 
+/*
+ * Tailwind v4 has no z-index theme namespace, so the `--z-*` vars above alone
+ * do NOT generate `z-portal`/`z-celebration` — without these utilities every
+ * portal (toasts, portalled menus/selects, the org-switch overlay) silently
+ * fell back to `z-index: auto` and stacked UNDER the z-40 sticky chrome and
+ * the z-50 modals it is supposed to sit above. Declared explicitly instead.
+ */
+@utility z-portal {
+  z-index: var(--z-portal);
+}
+
+@utility z-celebration {
+  z-index: var(--z-celebration);
+}
+
 @utility focus-ring {
   &:focus-visible {
     outline: 2px solid var(--color-accent);
@@ -553,6 +568,23 @@
 
 @utility animate-toast-in {
   animation: toast-in 220ms var(--ease-smooth);
+}
+
+/* ---- Org-switch indeterminate bar (OrgSwitchOverlay). A third of the
+   track sweeps across; the exact wait is unknown, so it loops instead of
+   pretending to be determinate. */
+@keyframes org-switch-progress {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(300%);
+  }
+}
+
+@utility animate-org-switch-progress {
+  animation: org-switch-progress 1.1s ease-in-out infinite;
 }
 
 /* ---- "Lunas" pill pop (invoice builder): a tiny bounce on the status row

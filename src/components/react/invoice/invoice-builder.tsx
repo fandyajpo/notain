@@ -542,10 +542,10 @@ export function InvoiceBuilder({
     // preview column stays deliberately narrower than the form: the document
     // scales to its column (`max-w-[182mm]`), so a slimmer preview is a
     // shorter one — less scrolling through the same invoice.
-    <div className="flex flex-col gap-6 pb-32 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,0.72fr)] md:items-start md:gap-6 md:pb-0 lg:gap-8">
+    <div className="flex min-w-0 flex-col gap-6 pb-32 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,0.72fr)] md:items-start md:gap-6 md:pb-0 lg:gap-8">
       <form
         id="invoice-form"
-        className="flex flex-col gap-6"
+        className="flex min-w-0 flex-col gap-6"
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
@@ -578,7 +578,13 @@ export function InvoiceBuilder({
               {profile.businessName || profile.name || '-'}
             </span>{' '}
             ·{' '}
-            <a href="/settings" className="underline underline-offset-2 hover:text-foreground">
+            {/* The issuer line shows the BUSINESS name when one exists — its
+                editor lives on Organization Settings; only the personal name
+                is editable on Profile Settings. */}
+            <a
+              href={profile.businessName ? '/settings/organization' : '/settings'}
+              className="underline underline-offset-2 hover:text-foreground"
+            >
               Ubah profil
             </a>
           </p>

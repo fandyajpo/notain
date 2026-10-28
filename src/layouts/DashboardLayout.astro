@@ -212,7 +212,17 @@ const stagger = drawerStagger();
       <main
         id="konten"
         tabindex="-1"
-        class:list={['app-main mx-auto w-full px-4 py-8 sm:px-6', wide ? 'max-w-6xl' : 'max-w-5xl']}
+        class:list={[
+          'app-main mx-auto w-full px-4 py-8 sm:px-6',
+          // The 5xl/6xl caps keep prose and cards at a readable measure on
+          // normal screens, but on wide desktops they left a dead gutter: at
+          // 1440 the 1024px cap sat inside a ~1177px column, wasting ~150px.
+          // `xl:` reopens the cap only where there is room to spare, so narrow
+          // and medium widths render byte-identical and only wide desktops
+          // use the extra space (the closed-rail rule below already lifts the
+          // cap entirely, which is the precedent for this).
+          wide ? 'max-w-6xl 2xl:max-w-7xl' : 'max-w-5xl xl:max-w-7xl',
+        ]}
       >
         <slot />
       </main>

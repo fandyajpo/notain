@@ -47,7 +47,16 @@ export function SegmentedControl<T extends string>({
     <div
       role="group"
       aria-label={ariaLabel}
-      className={cx('inline-flex rounded-control border border-border bg-sunken p-0.5', className)}
+      className={cx(
+        // The default track hugs its chips (`inline-flex`), which is right for
+        // the small inline toggles (align, Rp/%, width) that sit inside a form
+        // row. Long tracks (the builder's 6-section tab strip) override this
+        // with `!block` so `max-w-full` can bite and `overflow-x-auto` scrolls
+        // instead of the page — an inline box cannot shrink below its
+        // min-content, so `max-w-full` alone is a no-op on it.
+        'inline-flex rounded-control border border-border bg-sunken p-0.5',
+        className,
+      )}
     >
       {options.map((option) => {
         const active = option.value === value;

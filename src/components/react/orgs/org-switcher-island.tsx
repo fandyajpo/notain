@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { Building2, Check, ChevronsUpDown, Settings } from 'lucide-react';
 import { getShellClient } from '../../../lib/query/shell-client';
 import { getActiveOrgId, setActiveOrgId, subscribeActiveOrg } from '../../../app/active-org';
+import { beginOrgSwitch } from '../../../app/org-switch';
 import { useOrgs } from '../../../lib/query/hooks/use-orgs';
 import { cx, menuItemClass, popoverClass } from '../../../lib/ui/classes';
 
@@ -104,8 +105,16 @@ function OrgSwitcher() {
   // this moment, and a dead button under it would only compete for attention.
   if (!active) return null;
 
-  function switchTo(orgId: string): void {
+  function switchTo(orgId: string, toName: string): void {
+    const previous = getActiveOrgId();
+    if (orgId === previous) return;
     setOpen(false);
+    // Flag the switch as in-flight BEFORE changing the selection: `OrgGate`
+    // reads the store, raises the blocking overlay and only clears it once the
+    // target org's context and data are settled — or restores `previous` if
+    // the switch fails. The target's name travels with the flag so the overlay
+    // can name the destination even while the orgs cache is being reset.
+    if (previous) beginOrgSwitch(previous, orgId, toName);
     // OrgGate sees the store change and clears the page's per-org caches.
     setActiveOrgId(orgId);
   }
@@ -152,7 +161,7 @@ function OrgSwitcher() {
                   type="button"
                   role="menuitem"
                   tabIndex={-1}
-                  onClick={() => switchTo(org.id)}
+                  onClick={() => switchTo(org.id, org.name)}
                   className={menuItemClass({ active: isActive })}
                 >
                   <span className="truncate">{org.name}</span>
@@ -164,7 +173,7 @@ function OrgSwitcher() {
             <a
               role="menuitem"
               tabIndex={-1}
-              href="/settings#organisasi"
+              href="/settings/organization"
               onClick={() => setOpen(false)}
               className={menuItemClass()}
             >

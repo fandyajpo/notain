@@ -2,16 +2,29 @@ import type { QueryClient } from '@tanstack/react-query';
 import { createQueryClient } from './client';
 
 /**
- * One `QueryClient` for the app shell (`DashboardLayout.astro`).
+ * The ONE `QueryClient` for the whole app.
  *
- * The shell lives outside every page island, so shell components (sign-out,
- * the admin nav link) cannot reach a page's provider. They share this single
- * client so the shell costs one cache, not one per component, and so a
- * session change seen by one is seen by both.
+ * It serves both audiences:
+ *
+ * - the shell islands in `DashboardLayout.astro` (org switcher, sign-out, the
+ *   admin nav link), which live outside every page island and cannot reach a
+ *   page's provider;
+ * - every page island, through `AppProviders`.
+ *
+ * Pages unmount and remount on each ClientRouter navigation, so a per-mount
+ * client would throw the cache away on every menu click — org list, session
+ * and profile refetched each time — and would split invalidation: renaming an
+ * organization from Settings would invalidate the page's cache while the
+ * dropdown, reading a different cache, kept the stale name. Sharing one
+ * client makes navigation cheap and `invalidateQueries` global, which is the
+ * same "satu cache" contract ADR 0006 sets out for the query layer.
+ *
+ * Cross-cutting behaviour (retry, session-expiry handling) is configured once
+ * in `createQueryClient`.
  */
-let shellClient: QueryClient | undefined;
+let appClient: QueryClient | undefined;
 
 export function getShellClient(): QueryClient {
-  shellClient ??= createQueryClient();
-  return shellClient;
+  appClient ??= createQueryClient();
+  return appClient;
 }

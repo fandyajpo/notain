@@ -9,6 +9,8 @@ import {
   removeOrgMember,
   renameOrg,
   setOrgBusinessType,
+  type OrgView,
+  type PendingInvite,
 } from '../../../app/orgs';
 import { getActiveOrgId, setActiveOrgId } from '../../../app/active-org';
 import { queryPolicy } from '../policies';
@@ -19,7 +21,8 @@ import { queryKeys } from '../keys';
  *
  * Two families:
  * - the ORG LIST (`useOrgs`), which is user-scoped — it feeds the org gate
- *   and the switcher and survives an org switch unchanged;
+ *   and the switcher, and is refetched when the selection changes (the gate's
+ *   reset), which doubles as validation that the switch target still exists;
  * - one org's MEMBERS, keyed by org id so switching workspaces can never
  *   paint another org's people into the members table.
  *
@@ -82,15 +85,33 @@ export function useCreateOrg() {
   });
 }
 
-/** Renames one org (owner only) — refreshes the list the switcher renders. */
+/**
+ * Renames one org (owner only).
+ *
+ * The org list cache is patched in place on success — the sidebar switcher
+ * reads that same shared cache, so the new name is on screen synchronously,
+ * with no refetch round-trip and no full-page rerender. The invalidation
+ * that follows reconciles with the server and refreshes the profile, whose
+ * `businessName` (invoice header, public page) is projected from the org row.
+ */
 export function useRenameOrg(orgId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (name: string) => renameOrg(orgId, name),
-    onSuccess: () => {
+    onSuccess: (_result, name) => {
+      queryClient.setQueryData<{ orgs: OrgView[]; pending: PendingInvite[] }>(
+        queryKeys.orgs,
+        (current) =>
+          current
+            ? {
+                ...current,
+                orgs: current.orgs.map((org) =>
+                  org.id === orgId ? { ...org, name } : org,
+                ),
+              }
+            : current,
+      );
       void queryClient.invalidateQueries({ queryKey: queryKeys.orgs });
-      // The org name IS the business name on the invoice header and the
-      // public page — refresh the profile so both reflect the rename.
       void queryClient.invalidateQueries({ queryKey: queryKeys.profile });
     },
   });

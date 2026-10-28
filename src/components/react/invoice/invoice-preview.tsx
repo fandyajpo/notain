@@ -260,7 +260,14 @@ export function InvoicePreview({
         // space from the prices.
         const showUnit = invoice.items.some((item) => Boolean(item.unit));
         return (
-          <table className="w-full border-collapse text-sm">
+          // Contained scroll: a many-column table (or a long barang name)
+          // has more min-content than a phone can show inside the A4 column.
+          // Without this it pushed the whole page ~100px wide at 320px;
+          // `overflow-x-auto` scrolls the document preview instead. At A4
+          // widths (>= 688px — the `max-w-[182mm]` article) there is room, so
+          // the bar never appears and print/PDF are untouched.
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
             <thead>
               <tr
                 className="text-left text-xs"
@@ -315,7 +322,8 @@ export function InvoicePreview({
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         );
       }
 
