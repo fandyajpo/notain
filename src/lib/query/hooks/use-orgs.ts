@@ -13,6 +13,7 @@ import {
   type PendingInvite,
 } from '../../../app/orgs';
 import { getActiveOrgId, setActiveOrgId } from '../../../app/active-org';
+import { beginOrgSwitch } from '../../../app/org-switch';
 import { queryPolicy } from '../policies';
 import { queryKeys } from '../keys';
 
@@ -71,15 +72,60 @@ export function useAcceptPendingInvites() {
   });
 }
 
-/** Creates an organization and makes it the active one immediately. */
+/**
+ * Creates an organization, makes it the active one — unless the caller says
+ * it will do that itself (`switchTo: false`, the settings modal, whose success
+ * panel must outlive the click that created the org).
+ *
+ * Three steps, in this order, and the order IS the fix:
+ *
+ * 1. **Patch the shared cache first.** `invalidateQueries` only STARTS a
+ *    refetch — it does not change the cached list — so flipping the selection
+ *    while the old list was still cached gave `OrgGate`'s ensure effect a list
+ *    without the new org on the very next commit, and it bounced the selection
+ *    back to `orgs[0]` (a second reset, a second refetch, and the user left in
+ *    the OLD org). The patch makes the ensure effect see a valid target
+ *    synchronously, and it is the same cache the sidebar switcher reads, so
+ *    the new org is in the dropdown on this very frame.
+ * 2. **Raise the switch overlay before flipping** — the same
+ *    `beginOrgSwitch` the dropdown uses — so the gate's reset (which blanks
+ *    the page to its loading state while per-org caches are cleared) happens
+ *    behind a blocking, named transition instead of a bare flash.
+ * 3. **Invalidate** so every reader reconciles with the server's own answer
+ *    (plan, role, membership) — the fresh refetch is also what validates the
+ *    switch target.
+ */
 export function useCreateOrg() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ name }: { name: string }) => createOrg(name),
-    onSuccess: (org) => {
+    mutationFn: ({ name }: { name: string; switchTo?: boolean }) => createOrg(name),
+    onSuccess: (org, vars) => {
+      queryClient.setQueryData<{ orgs: OrgView[]; pending: PendingInvite[] }>(
+        queryKeys.orgs,
+        (current) =>
+          current
+            ? {
+                ...current,
+                // Idempotent: a retry after a flaky success must not double the row.
+                orgs: current.orgs.some((row) => row.id === org.id)
+                  ? current.orgs
+                  : [...current.orgs, org],
+              }
+            : { orgs: [org], pending: [] },
+      );
+      // Refetch the list for every reader (the dropdown included) so the
+      // patched row is reconciled with the server's own answer.
       void queryClient.invalidateQueries({ queryKey: queryKeys.orgs });
+
+      // The caller (settings) shows a success panel first and switches from
+      // its own "Selesai" — flipping here would unmount that panel mid-render,
+      // because the gate blanks its children while the selection changes.
+      if (vars.switchTo === false) return;
+
       // The gate's switch handler clears per-org caches once this lands —
       // the new org's profile/stats/invoices must never show the old org's.
+      const previous = getActiveOrgId();
+      if (previous && previous !== org.id) beginOrgSwitch(previous, org.id, org.name);
       setActiveOrgId(org.id);
     },
   });

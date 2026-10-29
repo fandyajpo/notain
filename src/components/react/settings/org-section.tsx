@@ -1,6 +1,8 @@
 import { useSyncExternalStore, useState, type SyntheticEvent } from 'react';
-import { Trash2, UserPlus } from 'lucide-react';
-import { getActiveOrgId, subscribeActiveOrg } from '../../../app/active-org';
+import { Check, Trash2, UserPlus } from 'lucide-react';
+import { getActiveOrgId, setActiveOrgId, subscribeActiveOrg } from '../../../app/active-org';
+import { beginOrgSwitch } from '../../../app/org-switch';
+import type { OrgView } from '../../../app/orgs';
 import { isAppError } from '../../../core/shared/errors';
 import { isBusinessSubtypeSlug } from '../../../core/business/taxonomy';
 import {
@@ -19,6 +21,7 @@ import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { FieldShell, useFieldIds } from '../ui/field';
 import { Input } from '../ui/input';
+import { Modal } from '../ui/modal';
 import { ErrorState, LoadingState } from '../ui/state';
 import { BusinessTypeField } from '../business/business-type-field';
 
@@ -116,36 +119,156 @@ function OrgSectionContent({ orgId }: { orgId: string }) {
   );
 }
 
-/** Owner-only "spin up another workspace" — switches to it on success. */
+/**
+ * Owner-only "spin up another workspace", as a MODAL rather than the old
+ * `window.prompt`: a native prompt has no label, no error slot, no pending
+ * state and no success confirmation — it could only say "undefined" when the
+ * server rejected the name.
+ *
+ * Three states, all inside the dialog:
+ * - **form** — labelled input, Enter submits, validation and server errors
+ *   land inline (`FieldShell` renders them as `role="alert"`), and the typed
+ *   name survives a failure so the fix is a retry, not a retyping;
+ * - **pending** — the primary action shows the spinner and dismissal is
+ *   blocked, so a slow POST cannot be abandoned into a half-finished switch;
+ * - **success** — a confirmation panel replaces the form before anything
+ *   closes, naming the org that just landed in the sidebar dropdown (the
+ *   mutation patches the shared cache, so it is already visible behind the
+ *   dialog); its "Selesai" is what enters the new workspace, through the
+ *   same blocking switch overlay the dropdown uses. Entering inside the
+ *   mutation would unmount this panel mid-callback — the gate blanks its
+ *   children while the active org changes — so the switch waits here.
+ */
 function NewOrgButton() {
-  const create = useCreateOrg();
+  const [open, setOpen] = useState(false);
   return (
-    <Button
-      variant="secondary"
-      size="sm"
-      loading={create.isPending}
-      onClick={() => {
-        const name = window.prompt('Nama organisasi baru:');
-        if (name === null) return; // cancelled
-        const trimmed = name.trim();
-        if (trimmed === '') {
-          toast('Nama organisasi wajib diisi.', { variant: 'error' });
-          return;
-        }
-        create.mutate(
-          { name: trimmed },
-          {
-            onSuccess: (org) => toast(`Organisasi "${org.name}" dibuat.`, { variant: 'success' }),
-            onError: (error) =>
-              toast(isAppError(error) ? error.message : 'Gagal membuat organisasi.', {
-                variant: 'error',
-              }),
-          },
-        );
-      }}
+    <>
+      <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
+        Buat organisasi baru
+      </Button>
+      {open && <NewOrgModal onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+function NewOrgModal({ onClose }: { onClose: () => void }) {
+  const create = useCreateOrg();
+  const [name, setName] = useState('');
+  const [error, setError] = useState<string | undefined>(undefined);
+  const [created, setCreated] = useState<OrgView | null>(null);
+  const ids = useFieldIds('new-org');
+
+  // While the POST is in flight the dialog stays put: closing here would let
+  // the switch underneath start with no way to show its result or its error.
+  const handleClose = () => {
+    if (!create.isPending) onClose();
+  };
+
+  /**
+   * "Selesai": entering the new workspace is a real ORG SWITCH, so it runs
+   * the same path the sidebar dropdown does — raise the blocking overlay
+   * first, then flip the selection — and the gate's reset lands behind that
+   * overlay instead of blanking the page under the user's cursor.
+   */
+  const enterCreated = () => {
+    if (!created) return;
+    const previous = getActiveOrgId();
+    if (previous && previous !== created.id) beginOrgSwitch(previous, created.id, created.name);
+    setActiveOrgId(created.id);
+    onClose();
+  };
+
+  async function handleCreate(): Promise<void> {
+    const trimmed = name.trim();
+    if (trimmed === '') {
+      setError('Nama organisasi wajib diisi.');
+      return;
+    }
+    setError(undefined);
+    try {
+      // `switchTo: false` — the success panel below owns the switch, on
+      // "Selesai". Flipping the selection inside the hook would unmount this
+      // dialog mid-callback (the gate blanks its children while the active
+      // org changes), so the confirmation would never be seen.
+      const org = await create.mutateAsync({ name: trimmed, switchTo: false });
+      setCreated(org);
+      // The shared cache was patched by the hook, so the new org is already
+      // in the sidebar dropdown behind this dialog — this is the confirmation.
+      toast(`Organisasi "${org.name}" dibuat.`, { variant: 'success' });
+    } catch (cause) {
+      // The server's own copy (duplicate name, quota, 403) is more precise
+      // than anything invented here.
+      setError(isAppError(cause) ? cause.message : 'Gagal membuat organisasi. Coba lagi.');
+    }
+  }
+
+  if (created) {
+    return (
+      <Modal
+        open
+        onClose={onClose}
+        title="Organisasi dibuat"
+        actions={[{ label: 'Selesai', onClick: enterCreated }]}
+      >
+        <div className="flex flex-col items-center gap-3 py-4 text-center">
+          <span className="flex size-11 items-center justify-center rounded-full bg-success-soft text-success">
+            <Check size={22} aria-hidden="true" />
+          </span>
+          <div className="flex flex-col gap-1">
+            <p className="font-medium text-foreground">{created.name}</p>
+            <p className="text-sm text-muted">
+              Sudah muncul di daftar organisasi di sidebar. Tekan Selesai untuk masuk ke ruang kerja
+              baru ini.
+            </p>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
+
+  return (
+    <Modal
+      open
+      onClose={handleClose}
+      title="Buat organisasi baru"
+      ariaLabelledBy="new-org-title"
+      actions={[
+        { label: 'Batal', variant: 'secondary', onClick: handleClose, disabled: create.isPending },
+        {
+          label: 'Buat organisasi',
+          onClick: () => void handleCreate(),
+          loading: create.isPending,
+        },
+      ]}
     >
-      Buat organisasi baru
-    </Button>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleCreate();
+        }}
+      >
+        <FieldShell
+          label="Nama organisasi"
+          htmlFor={ids.id}
+          error={error}
+          hint="Ruang kerja terpisah: data invoice, pelanggan, dan pembayarannya tidak bercampur dengan organisasi lain."
+          required
+        >
+          <Input
+            id={ids.id}
+            value={name}
+            onChange={(event) => {
+              setName(event.target.value);
+              setError(undefined);
+            }}
+            placeholder="Bengkel Jaya"
+            autoComplete="organization"
+            maxLength={128}
+            autoFocus
+          />
+        </FieldShell>
+      </form>
+    </Modal>
   );
 }
 
