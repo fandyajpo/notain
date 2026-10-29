@@ -14,8 +14,8 @@ export const customerDraftSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(1, 'Masukkan nama customer.')
-    .max(CUSTOMER_LIMITS.name, 'Nama customer terlalu panjang.'),
+    .min(1, 'Masukkan nama pelanggan.')
+    .max(CUSTOMER_LIMITS.name, 'Nama pelanggan terlalu panjang.'),
   email: z.string().trim().max(CUSTOMER_LIMITS.email, 'Email terlalu panjang.'),
   phone: z.string().trim().max(CUSTOMER_LIMITS.phone, 'Nomor terlalu panjang.'),
 });

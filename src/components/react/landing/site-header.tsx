@@ -184,7 +184,7 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
               transition={{ type: 'spring', stiffness: 400, damping: 22 }}
               className="ml-1 inline-flex h-9 items-center rounded-control bg-accent px-3 text-sm font-medium text-accent-foreground shadow-accent focus-ring"
             >
-              Buat Invoice Gratis
+              Buat invoice gratis
             </motion.a>
           </nav>
 
@@ -238,7 +238,7 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
                   onClick={() => setMenuOpen(false)}
                   className="mt-2 inline-flex h-11 items-center justify-center rounded-control bg-accent px-4 text-base font-medium text-accent-foreground focus-ring"
                 >
-                  Buat Invoice Gratis
+                  Buat invoice gratis
                 </a>
               </div>
             </motion.div>

@@ -12,12 +12,12 @@ const STEPS = [
   {
     icon: FileSpreadsheet,
     title: 'Isi di Excel',
-    description: 'Salin daftar customer kamu, simpan sebagai .xlsx atau .csv.',
+    description: 'Salin daftar pelanggan kamu, simpan sebagai .xlsx atau .csv.',
   },
   {
     icon: Upload,
     title: 'Upload kembali',
-    description: 'Customer langsung masuk, tanpa ketik ulang satu-satu.',
+    description: 'Pelanggan langsung masuk, tanpa ketik ulang satu-satu.',
   },
 ];
 
@@ -31,7 +31,7 @@ export function ExcelSection() {
             <div>
               <SectionHeading
                 title="Sudah punya daftar di Excel? Tinggal pindah."
-                description="Ekspor & impor customer dan invoice dalam format Excel (.xlsx) atau CSV. Tidak perlu input ulang satu-satu."
+                description="Ekspor & impor pelanggan dan invoice dalam format Excel (.xlsx) atau CSV. Tidak perlu input ulang satu-satu."
               />
 
               <div className="mt-8 flex flex-col gap-5">
@@ -65,7 +65,7 @@ export function ExcelSection() {
             >
               <div className="flex items-center gap-2 border-b border-border pb-3">
                 <FileSpreadsheet size={16} className="shrink-0 text-accent" aria-hidden="true" />
-                <span className="truncate text-sm font-medium">template-customer.xlsx</span>
+                <span className="truncate text-sm font-medium">template-customer.csv</span>
               </div>
               <table className="mt-3 w-full text-sm">
                 <thead>

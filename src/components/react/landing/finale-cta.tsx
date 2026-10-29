@@ -45,7 +45,7 @@ export function FinaleCta() {
                 href="/register"
                 className="group inline-flex h-12 items-center gap-2 rounded-control bg-accent px-5 text-base font-medium text-accent-foreground shadow-accent transition-colors hover:bg-accent/90 focus-ring"
               >
-                Buat Invoice Gratis
+                Buat invoice gratis
                 <ArrowRight
                   size={17}
                   aria-hidden="true"

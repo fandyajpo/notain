@@ -27,7 +27,7 @@ const FAQS = [
   {
     question: 'Bagaimana cara membuat invoice?',
     answer:
-      'Daftar, lengkapi profil usaha sekali, lalu tekan "Buat Invoice". Pilih pelanggan dan barang dari daftar yang sudah tersimpan, atur diskon dan pajak, totalnya dihitung otomatis. Selesai dalam hitungan detik.',
+      'Daftar, lengkapi profil usaha sekali, lalu tekan tombol "Buat invoice". Pilih pelanggan dan barang dari daftar yang sudah tersimpan, atur diskon dan pajak, totalnya dihitung otomatis. Selesai dalam hitungan detik.',
   },
   {
     question: 'Bisakah detail invoice disesuaikan?',
@@ -40,12 +40,12 @@ const FAQS = [
   },
   {
     question: 'Berapa biayanya?',
-    answer: `Gratis selamanya untuk fitur inti: ${FREE_PLAN_LIMITS.invoicesPerMonth} invoice baru tiap bulan, PDF, kirim lewat WhatsApp, dan data pelanggan, tanpa kartu kredit dan tanpa masa trial. Butuh lebih? Pro ${PLAN_PRICES.pro.amount}${PLAN_PRICES.pro.period} untuk invoice tanpa batas, template premium, dan invoice link, serta Business ${PLAN_PRICES.business.amount}${PLAN_PRICES.business.period} untuk akses API. Detailnya ada di halaman Harga.`,
+    answer: `Gratis selamanya untuk fitur inti: ${FREE_PLAN_LIMITS.invoicesPerMonth} invoice baru tiap bulan, PDF, kirim lewat WhatsApp, dan data pelanggan, tanpa kartu kredit dan tanpa masa trial. Butuh lebih? Pro ${PLAN_PRICES.pro.amount}${PLAN_PRICES.pro.period} untuk invoice tanpa batas, template premium, dan invoice link. Plan Business untuk akses API sedang disiapkan dan belum bisa dibeli — harganya ${PLAN_PRICES.business.amount}${PLAN_PRICES.business.period}, diumumkan di halaman Harga saat siap.`,
   },
   {
     question: 'Bagaimana langganan dan perpanjangannya?',
     answer:
-      'Plan Pro dan Business dibayar per bulan lewat DOKU. Setelah pembayaran terkonfirmasi, plan langsung aktif. Perpanjangan memperpanjang masa aktif dari tanggal berakhirnya, jadi bayar lebih awal tidak mengurangi hari. Tidak ada biaya di luar harga yang tertera, dan kamu bisa berhenti kapan saja.',
+      'Plan Pro dibayar per bulan lewat DOKU. Setelah pembayaran terkonfirmasi, plan langsung aktif. Perpanjangan memperpanjang masa aktif dari tanggal berakhirnya, jadi bayar lebih awal tidak mengurangi hari. Tidak ada biaya di luar harga yang tertera, dan kamu bisa berhenti kapan saja.',
   },
   {
     question: 'Apa yang terjadi setelah masa aktif berakhir?',

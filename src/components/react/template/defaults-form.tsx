@@ -7,7 +7,7 @@ type Props = {
 };
 
 const ZONES: { key: 'header' | 'content' | 'footer' | 'notes'; label: string; hint: string }[] = [
-  { key: 'header', label: 'Teks pembuka', hint: 'Muncul di bawah kop, di atas kotak customer' },
+  { key: 'header', label: 'Teks pembuka', hint: 'Muncul di bawah kop, di atas kotak pelanggan' },
   { key: 'content', label: 'Teks di tengah', hint: 'Muncul setelah daftar barang' },
   { key: 'footer', label: 'Teks penutup', hint: 'Bagian paling bawah invoice' },
   { key: 'notes', label: 'Catatan', hint: 'Isi kotak catatan' },

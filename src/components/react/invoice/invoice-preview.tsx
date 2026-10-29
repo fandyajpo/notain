@@ -224,7 +224,7 @@ export function InvoicePreview({
             <p className="text-xs font-medium uppercase tracking-wide" style={muted}>
               Untuk
             </p>
-            <p className="mt-1 text-sm font-semibold">{invoice.customerName || 'Nama customer'}</p>
+            <p className="mt-1 text-sm font-semibold">{invoice.customerName || 'Nama pelanggan'}</p>
             {invoice.customerEmail && (
               <p className="text-xs" style={muted}>
                 {invoice.customerEmail}

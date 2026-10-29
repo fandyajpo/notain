@@ -576,7 +576,7 @@ export function InvoiceTable() {
             <SearchField
               id={searchField.id}
               value={searchInput}
-              placeholder="Cari nomor, customer, atau barang…"
+              placeholder="Cari nomor, pelanggan, atau barang…"
               onChange={(value) => {
                 setSearchInput(value);
                 debouncedSearch(value);
@@ -639,7 +639,7 @@ export function InvoiceTable() {
           </div>
         </div>
         {/* No create button here on purpose: the page header already owns the
-            one primary "Buat Invoice" CTA (and the tour points at it), the
+            one primary "Buat invoice" CTA (and the tour points at it), the
             empty state gets its own contextual copy when there is nothing yet. */}
       </div>
 
@@ -706,13 +706,13 @@ export function InvoiceTable() {
           description={
             anyFilter
               ? 'Coba kata kunci lain, atau ubah/hapus filter di atas.'
-              : 'Buat invoice pertama kamu dan kirim ke customer dalam hitungan menit.'
+              : 'Buat invoice pertama kamu dan kirim ke pelanggan dalam hitungan menit.'
           }
           action={
             !anyFilter ? (
               <Button href="/invoice/new">
                 <Plus size={16} aria-hidden="true" />
-                Buat Invoice
+                Buat invoice
               </Button>
             ) : undefined
           }

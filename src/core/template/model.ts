@@ -35,7 +35,7 @@ export type BlockType = (typeof BLOCK_TYPES)[number];
 export const BLOCK_LABELS: Record<BlockType, string> = {
   letterhead: 'Kop & info invoice',
   richHeader: 'Teks pembuka',
-  customer: 'Kotak customer',
+  customer: 'Kotak pelanggan',
   items: 'Daftar barang',
   richContent: 'Teks di tengah',
   totals: 'Ringkasan total',

@@ -42,7 +42,7 @@ function InvoicesContent() {
               data-tour="invoices-create"
             >
               <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
-              Buat Invoice
+              Buat invoice
             </Button>
           </>
         }

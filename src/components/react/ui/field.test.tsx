@@ -42,7 +42,7 @@ function customerNameIssue(): unknown {
 
 describe('errorMessage', () => {
   it('reads the message off a raw Zod 4 issue object', () => {
-    expect(errorMessage(customerNameIssue())).toBe('Masukkan nama customer terlebih dahulu.');
+    expect(errorMessage(customerNameIssue())).toBe('Masukkan nama pelanggan terlebih dahulu.');
   });
 
   it('unwraps a whole ZodError down to its first issue', () => {
@@ -67,18 +67,18 @@ describe('errorMessage', () => {
 describe('FieldShell', () => {
   it('renders a Zod issue object as its message instead of crashing', async () => {
     await render(
-      <FieldShell label="Nama customer" htmlFor="customerName" error={customerNameIssue()}>
+      <FieldShell label="Nama pelanggan" htmlFor="customerName" error={customerNameIssue()}>
         <input id="customerName" />
       </FieldShell>,
     );
 
     const alert = container.querySelector('[role="alert"]');
-    expect(alert?.textContent).toContain('Masukkan nama customer terlebih dahulu.');
+    expect(alert?.textContent).toContain('Masukkan nama pelanggan terlebih dahulu.');
   });
 
   it('falls back to the hint when there is no error', async () => {
     await render(
-      <FieldShell label="Nama customer" htmlFor="customerName" hint="Contoh: Budi">
+      <FieldShell label="Nama pelanggan" htmlFor="customerName" hint="Contoh: Budi">
         <input id="customerName" />
       </FieldShell>,
     );

@@ -10,12 +10,12 @@ const BULLETS = [
   {
     icon: Send,
     title: 'Pesan tinggal kirim',
-    description: 'Nomor invoice, nama customer, dan totalnya sudah terisi otomatis.',
+    description: 'Nomor invoice, nama pelanggan, dan totalnya sudah terisi otomatis.',
   },
   {
     icon: MessageCircle,
     title: 'Chat langsung terbuka',
-    description: 'Nomor WhatsApp customer tersambung, tanpa perlu salin tempel.',
+    description: 'Nomor WhatsApp pelanggan tersambung, tanpa perlu salin tempel.',
   },
   {
     icon: Paperclip,
@@ -146,7 +146,7 @@ export function WhatsAppSection() {
       <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:py-20">
         <div>
           <SectionHeading
-            title="Sampai ke customer dalam satu ketukan"
+            title="Sampai ke pelanggan dalam satu ketukan"
             description="Notain menyiapkan pesan WhatsApp-nya untuk kamu. Buka chat, lampirkan PDF, kirim."
           />
 

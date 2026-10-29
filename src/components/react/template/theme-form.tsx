@@ -20,7 +20,7 @@ type ColorKey =
 
 const COLORS: { key: ColorKey; label: string; hint?: string }[] = [
   { key: 'background', label: 'Latar halaman' },
-  { key: 'surface', label: 'Latar kartu', hint: 'Kotak customer, kotak catatan' },
+  { key: 'surface', label: 'Latar kartu', hint: 'Kotak pelanggan, kotak catatan' },
   { key: 'text', label: 'Teks utama' },
   { key: 'muted', label: 'Teks sekunder' },
   { key: 'border', label: 'Garis' },

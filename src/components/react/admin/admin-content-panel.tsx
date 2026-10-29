@@ -1529,7 +1529,7 @@ function InvoiceFormModal({
               </FieldShell>
 
               <FieldShell
-                label="Nama customer"
+                label="Nama pelanggan"
                 htmlFor="ac-inv-customer"
                 required
                 error={errors.customerName}
@@ -1582,7 +1582,7 @@ function InvoiceFormModal({
               </FieldShell>
 
               <FieldShell
-                label="Email customer"
+                label="Email pelanggan"
                 htmlFor="ac-inv-email"
                 error={errors.customerEmail}
               >

@@ -88,7 +88,7 @@ export function SetupChecklist({ profile, hasInvoices, hidden }: Props) {
     {
       id: 'invoice',
       label: 'Buat invoice pertama',
-      hint: 'Pilih template, isi customer & barang, langsung siap kirim.',
+      hint: 'Pilih template, isi pelanggan & barang, langsung siap kirim.',
       done: hasInvoices,
       href: '/invoice/new',
       cta: 'Buat',

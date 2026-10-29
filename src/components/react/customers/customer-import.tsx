@@ -59,7 +59,7 @@ export function CustomerImportPanel() {
     if (!result || result.customers.length === 0) return;
     importCustomers.mutate(result.customers, {
       onSuccess: ({ imported }) => {
-        toast(`${imported} customer berhasil diimpor.`, { variant: 'success' });
+        toast(`${imported} pelanggan berhasil diimpor.`, { variant: 'success' });
         reset();
       },
       onError: (error) => toast(toAppError(error).message, { variant: 'error' }),

@@ -73,7 +73,7 @@ export function repairInvoiceContent<T extends InvoiceDraft>(draft: T): InvoiceR
   next.customerName = clamp(
     next.customerName,
     INVOICE_LIMITS.customerName,
-    'Nama customer dipotong.',
+    'Nama pelanggan dipotong.',
     repaired,
   );
   next.customerEmail =
@@ -82,7 +82,7 @@ export function repairInvoiceContent<T extends InvoiceDraft>(draft: T): InvoiceR
       : clamp(
           next.customerEmail,
           INVOICE_LIMITS.customerEmail,
-          'Email customer dipotong.',
+          'Email pelanggan dipotong.',
           repaired,
         );
   next.notes =

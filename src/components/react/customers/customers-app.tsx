@@ -236,7 +236,7 @@ function CustomersContent() {
       onSuccess: () => {
         setSelected(new Set());
         setBulkDeleteOpen(false);
-        toast(`${ids.length} customer berhasil dihapus.`, { variant: 'success' });
+        toast(`${ids.length} pelanggan berhasil dihapus.`, { variant: 'success' });
       },
       onError: (error) => {
         setBulkDeleteOpen(false);
@@ -272,7 +272,7 @@ function CustomersContent() {
       {
         onSuccess: () => {
           exitMergeMode();
-          toast(`${sources.length + 1} customer digabungkan.`, { variant: 'success' });
+          toast(`${sources.length + 1} pelanggan digabungkan.`, { variant: 'success' });
         },
         onError: (error) => {
           toast(toAppError(error).message, { variant: 'error' });
@@ -295,7 +295,7 @@ function CustomersContent() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Customer"
-        description="Daftar customer yang pernah kamu buat invoice. Otomatis terisi tiap kali kamu simpan invoice."
+        description="Daftar pelanggan yang pernah kamu buat invoice. Otomatis terisi tiap kali kamu simpan invoice."
         actions={
           <div className="flex items-center gap-2">
             {mergeMode ? (
@@ -430,13 +430,13 @@ function CustomersContent() {
       <CustomerImportPanel />
 
       {isLoading ? (
-        <LoadingState label="Memuat customer…" />
+        <LoadingState label="Memuat pelanggan…" />
       ) : isError && customers.length === 0 ? (
-        // A failed load must not masquerade as "Belum ada customer" — copy the
+        // A failed load must not masquerade as "Belum ada pelanggan" — copy the
         // invoice table's two-state handling: full error + retry when empty,
         // stale rows when we still have them.
         <ErrorState
-          title="Gagal memuat customer"
+          title="Gagal memuat pelanggan"
           message="Periksa koneksi internet kamu, lalu coba lagi."
           action={
             <Button size="sm" loading={isFetching} onClick={() => void refetch()}>
@@ -447,7 +447,7 @@ function CustomersContent() {
       ) : customers.length === 0 ? (
         <EmptyState
           icon={Users}
-          title="Belum ada customer"
+          title="Belum ada pelanggan"
           description="Tambahkan lewat form di atas, atau simpan invoice."
         />
       ) : (
@@ -455,7 +455,7 @@ function CustomersContent() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="w-full sm:max-w-xs">
               <label htmlFor={searchIds.id} className="sr-only">
-                Cari customer
+                Cari pelanggan
               </label>
               <SearchField
                 id={searchIds.id}
@@ -478,7 +478,7 @@ function CustomersContent() {
             <div className={CARD_ROW}>
               <p className="text-sm text-muted">
                 <span className="font-medium text-foreground">{selectedCustomers.length}</span>{' '}
-                customer dipilih
+                pelanggan dipilih
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 <ExportButtons
@@ -508,7 +508,7 @@ function CustomersContent() {
           )}
 
           {filtered.length === 0 ? (
-            <EmptyState title="Tidak ada customer yang cocok." />
+            <EmptyState title="Tidak ada pelanggan yang cocok." />
           ) : (
             <div data-tour="cust-list" className={TABLE_SHELL}>
               <table className={TABLE} style={{ minWidth: '640px' }}>
@@ -529,7 +529,7 @@ function CustomersContent() {
                           }
                         }}
                         onChange={toggleSelectAll}
-                        aria-label="Pilih semua customer yang dimuat"
+                        aria-label="Pilih semua pelanggan yang dimuat"
                         className="h-4 w-4 accent-accent"
                         disabled={filtered.length === 0}
                       />
@@ -749,7 +749,7 @@ function CustomersContent() {
         role="alertdialog"
         size="sm"
         ariaLabelledBy="delete-customer-title"
-        title={<span id="delete-customer-title">Hapus customer ini?</span>}
+        title={<span id="delete-customer-title">Hapus pelanggan ini?</span>}
         actions={[
           { label: 'Batal', variant: 'secondary', onClick: () => setDeleteTarget(null) },
           {
@@ -761,7 +761,7 @@ function CustomersContent() {
         ]}
       >
         <p className="text-sm text-muted">
-          {deleteTarget?.name} akan dihapus permanen dari daftar customer kamu.
+          {deleteTarget?.name} akan dihapus permanen dari daftar pelanggan kamu.
         </p>
       </Modal>
 
@@ -774,7 +774,7 @@ function CustomersContent() {
         ariaLabelledBy="bulk-delete-customer-title"
         title={
           <span id="bulk-delete-customer-title">
-            Hapus {selectedCustomers.length} customer terpilih?
+            Hapus {selectedCustomers.length} pelanggan terpilih?
           </span>
         }
         actions={[
@@ -799,7 +799,7 @@ function CustomersContent() {
         role="alertdialog"
         size="sm"
         ariaLabelledBy="customer-warning-title"
-        title={<span id="customer-warning-title">Tidak bisa menambah customer</span>}
+        title={<span id="customer-warning-title">Tidak bisa menambah pelanggan</span>}
         actions={[{ label: 'Mengerti', onClick: () => setWarning(null) }]}
       >
         <p className="text-sm text-muted">{warning}</p>

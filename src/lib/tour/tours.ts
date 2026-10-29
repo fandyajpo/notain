@@ -39,21 +39,21 @@ export const TOURS: Record<string, TourDef> = {
         target: 'dash-summary',
         title: 'Ringkasan usaha kamu',
         description:
-          'Jumlah invoice dan customer tampil di sini, selalu terbaru. Semua otomatis terhitung.',
+          'Jumlah invoice dan pelanggan tampil di sini, selalu terbaru. Semua otomatis terhitung.',
         side: 'top',
       },
       {
         target: 'dash-create',
         title: 'Bikin invoice baru',
         description:
-          'Ketuk tombol ini kapan saja. Isi data customer dan item, lalu totalnya dihitung otomatis: diskon, pajak, pembulatan.',
+          'Ketuk tombol ini kapan saja. Isi data pelanggan dan item, lalu totalnya dihitung otomatis: diskon, pajak, pembulatan.',
         side: 'bottom',
       },
       {
         target: 'dash-recent',
         title: 'Kelola & bagikan invoice',
         description:
-          'Invoice terbaru ada di sini. Buka satu untuk melihat detail, unduh PDF A4, atau kirim langsung ke WhatsApp customer. Selamat berkarya!',
+          'Invoice terbaru ada di sini. Buka satu untuk melihat detail, unduh PDF A4, atau kirim langsung ke WhatsApp pelanggan. Selamat berkarya!',
         side: 'top',
       },
     ],
@@ -73,7 +73,7 @@ export const TOURS: Record<string, TourDef> = {
         target: 'invoices-search',
         title: 'Cari cepat',
         description:
-          'Ketik nomor, nama customer, atau barang untuk menemukan invoice dalam sekejap.',
+          'Ketik nomor, nama pelanggan, atau barang untuk menemukan invoice dalam sekejap.',
         side: 'bottom',
       },
       {
@@ -87,7 +87,7 @@ export const TOURS: Record<string, TourDef> = {
         target: 'invoices-table',
         title: 'Daftar invoice kamu',
         description:
-          'Setiap baris menampilkan nomor, customer, tanggal, total, dan status. Buka satu invoice untuk detailnya — ubah status di sana, unduh PDF A4, atau kirim ke WhatsApp customer.',
+          'Setiap baris menampilkan nomor, pelanggan, tanggal, total, dan status. Buka satu invoice untuk detailnya — ubah status di sana, unduh PDF A4, atau kirim ke WhatsApp pelanggan.',
         side: 'top',
       },
     ],
@@ -101,7 +101,7 @@ export const TOURS: Record<string, TourDef> = {
         target: 'inv-tabs',
         title: 'Isi lewat tab',
         description:
-          'Invoice ini punya beberapa tab: Detail (customer), Barang (item), Kop, dan lainnya. Pindah tab untuk mengisi tiap bagian.',
+          'Invoice ini punya beberapa tab: Detail (pelanggan), Barang (item), Kop, dan lainnya. Pindah tab untuk mengisi tiap bagian.',
         side: 'bottom',
       },
       {
@@ -121,22 +121,22 @@ export const TOURS: Record<string, TourDef> = {
     ],
   },
 
-  /** Per-menu tour for customers. */
-  customers: {
-    id: 'customers',
+  /** Per-menu tour for pelanggan. */
+  pelanggan: {
+    id: 'pelanggan',
     steps: [
       {
         target: 'cust-form',
-        title: 'Tambah customer',
+        title: 'Tambah pelanggan',
         description:
           'Simpan nama, email, dan nomor WhatsApp supaya bisa dipakai ulang di invoice berikutnya.',
         side: 'bottom',
       },
       {
         target: 'cust-list',
-        title: 'Daftar customer kamu',
+        title: 'Daftar pelanggan kamu',
         description:
-          'Semua customer tercatat di sini. Cari, ubah datanya, atau gabungkan duplikat supaya daftar tetap rapi.',
+          'Semua pelanggan tercatat di sini. Cari, ubah datanya, atau gabungkan duplikat supaya daftar tetap rapi.',
         side: 'top',
       },
     ],

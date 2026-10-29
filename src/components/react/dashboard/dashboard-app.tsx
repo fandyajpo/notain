@@ -102,7 +102,7 @@ function DashboardContent() {
           actions={
             <Button href="/invoice/new" data-tour="dash-create">
               <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
-              Buat Invoice
+              Buat invoice
             </Button>
           }
         />
@@ -199,7 +199,7 @@ function SummarySection({
             <p className="text-sm text-muted">
               {usahaName}
               {hasStats &&
-                ` · ${(stats as DashboardStats).totalCustomers.toLocaleString('id-ID')} customer · ${(
+                ` · ${(stats as DashboardStats).totalCustomers.toLocaleString('id-ID')} pelanggan · ${(
                   stats as DashboardStats
                 ).totalTemplates.toLocaleString('id-ID')} template`}
             </p>

@@ -149,14 +149,14 @@ export const invoiceDraftSchema = z
     customerName: z
       .string()
       .trim()
-      .min(1, 'Masukkan nama customer terlebih dahulu.')
-      .max(INVOICE_LIMITS.customerName, 'Nama customer terlalu panjang.'),
+      .min(1, 'Masukkan nama pelanggan terlebih dahulu.')
+      .max(INVOICE_LIMITS.customerName, 'Nama pelanggan terlalu panjang.'),
     customerPhone: z
       .string()
       .trim()
       .optional()
       .refine((value) => !value || PHONE_PATTERN.test(value), {
-        message: 'Masukkan nomor WhatsApp customer yang valid.',
+        message: 'Masukkan nomor WhatsApp pelanggan yang valid.',
       })
       .transform((value) => value || undefined),
     // Optional contact from the directory. Length-bounded only, mirroring
@@ -164,7 +164,7 @@ export const invoiceDraftSchema = z
     customerEmail: z
       .string()
       .trim()
-      .max(INVOICE_LIMITS.customerEmail, 'Email customer terlalu panjang.')
+      .max(INVOICE_LIMITS.customerEmail, 'Email pelanggan terlalu panjang.')
       .optional()
       .transform((value) => value || undefined),
     discount: invoiceAdjustmentSchema,

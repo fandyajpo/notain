@@ -276,7 +276,7 @@ export function InvoiceBuilder({
             },
           });
         } catch {
-          toast('Invoice tersimpan, tapi customer belum masuk ke daftar. Coba lagi nanti.', {
+          toast('Invoice tersimpan, tapi pelanggan belum masuk ke daftar. Coba lagi nanti.', {
             variant: 'error',
           });
         }
@@ -501,7 +501,7 @@ export function InvoiceBuilder({
     // A blank phone would open `wa.me/?text=…` — a chat with no one on the
     // other end, which reads as a broken button. Guard it and say why instead.
     if (!values.customerPhone?.trim()) {
-      toast('Isi nomor WhatsApp customer dulu supaya invoice bisa dikirim.', {
+      toast('Isi nomor WhatsApp pelanggan dulu supaya invoice bisa dikirim.', {
         variant: 'error',
       });
       return;
@@ -554,7 +554,7 @@ export function InvoiceBuilder({
       >
         <header className="flex flex-col gap-1">
           <div className="flex items-start justify-between gap-3">
-            <h1 className="text-title">{isEditing ? 'Ubah Invoice' : 'Buat Invoice'}</h1>
+            <h1 className="text-title">{isEditing ? 'Ubah invoice' : 'Buat invoice'}</h1>
             <button
               type="button"
               onClick={() => setShortcutsOpen(true)}
@@ -571,7 +571,9 @@ export function InvoiceBuilder({
               </kbd>
             </button>
           </div>
-          <p className="text-sm text-muted">Isi customer dan barangnya, total dihitung otomatis.</p>
+          <p className="text-sm text-muted">
+            Isi pelanggan dan barangnya, total dihitung otomatis.
+          </p>
           <p className="text-sm text-muted">
             Dari:{' '}
             <span className="font-medium text-foreground">
@@ -701,8 +703,8 @@ export function InvoiceBuilder({
           <Section title="Untuk siapa invoice ini?">
             <Picker
               mode="customer"
-              label="Cari customer"
-              placeholder="Ketik nama customer…"
+              label="Cari pelanggan"
+              placeholder="Ketik nama pelanggan…"
               onPick={onPick}
             />
 
@@ -710,7 +712,7 @@ export function InvoiceBuilder({
               {(field) => (
                 <TextField
                   field={field}
-                  label="Nama customer"
+                  label="Nama pelanggan"
                   placeholder="Contoh: Budi"
                   required
                   showError={shouldShow(submissionAttempts, field.state.meta.isBlurred)}
@@ -722,7 +724,7 @@ export function InvoiceBuilder({
               {(field) => (
                 <TextField
                   field={field}
-                  label="Nomor WhatsApp customer (opsional)"
+                  label="Nomor WhatsApp pelanggan (opsional)"
                   placeholder="081234567890"
                   inputMode="tel"
                   hint="Dipakai untuk kirim invoice lewat WhatsApp."
@@ -735,7 +737,7 @@ export function InvoiceBuilder({
               {(field) => (
                 <TextField
                   field={field}
-                  label="Email customer (opsional)"
+                  label="Email pelanggan (opsional)"
                   placeholder="budi@email.com"
                   hint="Ikut tercetak di invoice dan ekspor Excel."
                   showError={shouldShow(submissionAttempts, field.state.meta.isBlurred)}
@@ -861,7 +863,7 @@ export function InvoiceBuilder({
         </div>
 
         <div hidden={activeSection !== 'catatan'} className="flex flex-col gap-6">
-          <Section title="Catatan untuk customer">
+          <Section title="Catatan untuk pelanggan">
             <form.Field name="notes">
               {(field) => (
                 <div className="flex flex-col gap-1.5">
@@ -1067,7 +1069,7 @@ export function InvoiceBuilder({
           </span>
           <h2 className="text-section">Invoice pertama jadi! 🎉</h2>
           <p className="text-sm text-muted">
-            {values.invoiceNumber} sudah tersimpan. Tinggal kirim ke customer lewat WhatsApp dari
+            {values.invoiceNumber} sudah tersimpan. Tinggal kirim ke pelanggan lewat WhatsApp dari
             halaman invoice — statusnya bisa ditandai Lunas begitu dibayar.
           </p>
         </div>

@@ -11,14 +11,14 @@ const STEPS = [
   {
     title: 'Buat invoice-nya',
     description:
-      'Tambah customer dan barang. Diskon, pajak, dan total dihitung otomatis. Mau ngebut? Ada pintasan keyboard di setiap kolom.',
+      'Tambah pelanggan dan barang. Diskon, pajak, dan total dihitung otomatis. Mau ngebut? Ada pintasan keyboard di setiap kolom.',
     detail: 'Hitungan selalu pas, tanpa kalkulator.',
   },
   {
     title: 'Download & kirim',
     description:
       'PDF profesional langsung turun ke perangkat kamu. Notain lalu menyiapkan pesan WhatsApp-nya. Tinggal lampir, kirim.',
-    detail: 'Sampai ke customer dalam hitungan detik.',
+    detail: 'Sampai ke pelanggan dalam hitungan detik.',
   },
 ];
 
