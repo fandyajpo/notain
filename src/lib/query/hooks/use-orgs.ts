@@ -13,7 +13,7 @@ import {
   type PendingInvite,
 } from '../../../app/orgs';
 import { getActiveOrgId, setActiveOrgId } from '../../../app/active-org';
-import { beginOrgSwitch } from '../../../app/org-switch';
+import { switchActiveOrg } from '../../../app/org-switch';
 import { queryPolicy } from '../policies';
 import { queryKeys } from '../keys';
 
@@ -124,9 +124,7 @@ export function useCreateOrg() {
 
       // The gate's switch handler clears per-org caches once this lands —
       // the new org's profile/stats/invoices must never show the old org's.
-      const previous = getActiveOrgId();
-      if (previous && previous !== org.id) beginOrgSwitch(previous, org.id, org.name);
-      setActiveOrgId(org.id);
+      switchActiveOrg(org.id, org.name);
     },
   });
 }

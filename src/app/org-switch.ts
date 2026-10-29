@@ -11,6 +11,8 @@
  * every fetch on the shared client has settled, and restores the previous org
  * if the switch fails.
  */
+import { getActiveOrgId, setActiveOrgId } from './active-org';
+
 export type OrgSwitch = {
   /** Organization the user was on when they initiated the switch. */
   from: string;
@@ -35,6 +37,29 @@ export function beginOrgSwitch(from: string, to: string, toName: string): void {
   if (from === to) return;
   pending = { from, to, toName, startedAt: Date.now() };
   notify();
+}
+
+/**
+ * The ONE way the active organization changes from user intent.
+ *
+ * The sidebar dropdown, the create flow's confirmation panel and the mutation
+ * that mints a new organization each used to inline their own copy of these
+ * three lines — which is exactly how entry points drift apart (one raising the
+ * blocking overlay, another flipping the selection bare and leaving the gate
+ * to blank the page with nothing covering it).
+ *
+ * The order is the contract and lives here: announce the switch BEFORE the
+ * selection changes, so `OrgGate` sees the flag on the very commit where it
+ * resets and can raise the overlay over that transition. Starting from a null
+ * selection (first organization, onboarding) announces nothing — there is no
+ * previous workspace to block — and a request for the current organization
+ * does nothing at all.
+ */
+export function switchActiveOrg(orgId: string, toName: string): void {
+  const previous = getActiveOrgId();
+  if (previous === orgId) return;
+  if (previous !== null) beginOrgSwitch(previous, orgId, toName);
+  setActiveOrgId(orgId);
 }
 
 /** End the current switch (success, failure or timeout). Idempotent. */

@@ -3,8 +3,8 @@ import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } fr
 import { createPortal } from 'react-dom';
 import { Building2, Check, ChevronsUpDown, Settings } from 'lucide-react';
 import { getShellClient } from '../../../lib/query/shell-client';
-import { getActiveOrgId, setActiveOrgId, subscribeActiveOrg } from '../../../app/active-org';
-import { beginOrgSwitch } from '../../../app/org-switch';
+import { getActiveOrgId, subscribeActiveOrg } from '../../../app/active-org';
+import { switchActiveOrg } from '../../../app/org-switch';
 import { useOrgs } from '../../../lib/query/hooks/use-orgs';
 import { cx, menuItemClass, popoverClass } from '../../../lib/ui/classes';
 
@@ -128,17 +128,19 @@ function OrgSwitcher() {
   if (!active) return null;
 
   function switchTo(orgId: string, toName: string): void {
-    const previous = getActiveOrgId();
-    if (orgId === previous) return;
+    // Clicking the org we are already in is not a switch: keep the menu as it
+    // is and leave the selection untouched.
+    if (orgId === getActiveOrgId()) return;
     setOpen(false);
     // Flag the switch as in-flight BEFORE changing the selection: `OrgGate`
     // reads the store, raises the blocking overlay and only clears it once the
     // target org's context and data are settled — or restores `previous` if
     // the switch fails. The target's name travels with the flag so the overlay
     // can name the destination even while the orgs cache is being reset.
-    if (previous) beginOrgSwitch(previous, orgId, toName);
-    // OrgGate sees the store change and clears the page's per-org caches.
-    setActiveOrgId(orgId);
+    // Shared by every entry point (dropdown, create confirmation, mutation):
+    // the flag is raised before the selection changes, and OrgGate — seeing the
+    // store change — clears the page's per-org caches for the new workspace.
+    switchActiveOrg(orgId, toName);
   }
 
   return (

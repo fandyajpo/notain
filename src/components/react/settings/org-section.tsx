@@ -1,7 +1,7 @@
 import { useSyncExternalStore, useState, type SyntheticEvent } from 'react';
 import { Check, Trash2, UserPlus } from 'lucide-react';
-import { getActiveOrgId, setActiveOrgId, subscribeActiveOrg } from '../../../app/active-org';
-import { beginOrgSwitch } from '../../../app/org-switch';
+import { getActiveOrgId, subscribeActiveOrg } from '../../../app/active-org';
+import { switchActiveOrg } from '../../../app/org-switch';
 import type { OrgView } from '../../../app/orgs';
 import { isAppError } from '../../../core/shared/errors';
 import { isBusinessSubtypeSlug } from '../../../core/business/taxonomy';
@@ -132,12 +132,14 @@ function OrgSectionContent({ orgId }: { orgId: string }) {
  * - **pending** — the primary action shows the spinner and dismissal is
  *   blocked, so a slow POST cannot be abandoned into a half-finished switch;
  * - **success** — a confirmation panel replaces the form before anything
- *   closes, naming the org that just landed in the sidebar dropdown (the
- *   mutation patches the shared cache, so it is already visible behind the
- *   dialog); its "Selesai" is what enters the new workspace, through the
- *   same blocking switch overlay the dropdown uses. Entering inside the
- *   mutation would unmount this panel mid-callback — the gate blanks its
- *   children while the active org changes — so the switch waits here.
+ *   closes, with TWO explicit outcomes: `Masuk` enters the new workspace
+ *   (through the same blocking switch overlay the dropdown uses), `Nanti` —
+ *   like Escape or the X — leaves the user where they are, with the new org
+ *   waiting in the dropdown (the mutation patched the shared cache, so it is
+ *   already visible behind the dialog). The switch cannot run any earlier:
+ *   changing the active org legitimately unmounts this whole subtree (the
+ *   gate's tenancy boundary), so the confirmation has to be dismissed BEFORE
+ *   the flip rather than surviving it.
  */
 function NewOrgButton() {
   const [open, setOpen] = useState(false);
@@ -165,16 +167,16 @@ function NewOrgModal({ onClose }: { onClose: () => void }) {
   };
 
   /**
-   * "Selesai": entering the new workspace is a real ORG SWITCH, so it runs
-   * the same path the sidebar dropdown does — raise the blocking overlay
-   * first, then flip the selection — and the gate's reset lands behind that
-   * overlay instead of blanking the page under the user's cursor.
+   * "Masuk": entering the new workspace is a real ORG SWITCH, so it runs the
+   * same path the sidebar dropdown does — raise the blocking overlay first,
+   * then flip the selection — and the gate's reset lands behind that overlay
+   * instead of blanking the page under the user's cursor. "Nanti" (and the
+   * X/Escape behind `onClose`) deliberately skip both: the org is already in
+   * the dropdown, so staying put loses nothing.
    */
   const enterCreated = () => {
     if (!created) return;
-    const previous = getActiveOrgId();
-    if (previous && previous !== created.id) beginOrgSwitch(previous, created.id, created.name);
-    setActiveOrgId(created.id);
+    switchActiveOrg(created.id, created.name);
     onClose();
   };
 
@@ -187,28 +189,27 @@ function NewOrgModal({ onClose }: { onClose: () => void }) {
     setError(undefined);
     try {
       // `switchTo: false` — the success panel below owns the switch, on
-      // "Selesai". Flipping the selection inside the hook would unmount this
+      // "Masuk". Flipping the selection inside the hook would unmount this
       // dialog mid-callback (the gate blanks its children while the active
       // org changes), so the confirmation would never be seen.
       const org = await create.mutateAsync({ name: trimmed, switchTo: false });
       setCreated(org);
-      // The shared cache was patched by the hook, so the new org is already
-      // in the sidebar dropdown behind this dialog — this is the confirmation.
-      toast(`Organisasi "${org.name}" dibuat.`, { variant: 'success' });
     } catch (cause) {
       // The server's own copy (duplicate name, quota, 403) is more precise
       // than anything invented here.
       setError(isAppError(cause) ? cause.message : 'Gagal membuat organisasi. Coba lagi.');
     }
   }
-
   if (created) {
     return (
       <Modal
         open
         onClose={onClose}
         title="Organisasi dibuat"
-        actions={[{ label: 'Selesai', onClick: enterCreated }]}
+        actions={[
+          { label: 'Nanti', variant: 'secondary', onClick: onClose },
+          { label: 'Masuk ke ruang kerja', onClick: enterCreated },
+        ]}
       >
         <div className="flex flex-col items-center gap-3 py-4 text-center">
           <span className="flex size-11 items-center justify-center rounded-full bg-success-soft text-success">
@@ -217,8 +218,9 @@ function NewOrgModal({ onClose }: { onClose: () => void }) {
           <div className="flex flex-col gap-1">
             <p className="font-medium text-foreground">{created.name}</p>
             <p className="text-sm text-muted">
-              Sudah muncul di daftar organisasi di sidebar. Tekan Selesai untuk masuk ke ruang kerja
-              baru ini.
+              Sudah masuk ke daftar organisasi kamu. Pilih{' '}
+              <span className="font-medium">Masuk ke ruang kerja</span> untuk langsung bekerja di
+              ruang baru ini, atau 'Nanti' dan buka kapan saja dari daftar organisasi.
             </p>
           </div>
         </div>
