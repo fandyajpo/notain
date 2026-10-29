@@ -107,14 +107,14 @@ function OrgSwitcher() {
   // the sidebar whenever it resolved — most noticeable on a first visit, where
   // the fetch lands seconds after the nav is already painted and the pop-in
   // coincides with the user's first navigation. Same geometry as the trigger
-  // (h-5 bar matches the text-sm line box → 32px tall), and `sidebar-label`
-  // keeps the collapsed rail's icon-only state identical — so when the real
-  // button replaces it, nothing moves.
+  // (h-5 bar matches the text-sm line box → 44px tall, py-3 on both), and
+  // `sidebar-label` keeps the collapsed rail's icon-only state identical — so
+  // when the real button replaces it, nothing moves.
   if (!data) {
     return (
       <div
         aria-hidden="true"
-        className="flex w-full min-w-0 items-center gap-2 rounded-control px-2 py-1.5 text-sm"
+        className="flex w-full min-w-0 items-center gap-2 rounded-control px-2 py-3 text-sm"
       >
         <Building2 size={16} className="shrink-0 text-muted opacity-40" />
         <span className="sidebar-label h-5 flex-1 animate-pulse rounded-full bg-background" />
@@ -132,14 +132,11 @@ function OrgSwitcher() {
     // is and leave the selection untouched.
     if (orgId === getActiveOrgId()) return;
     setOpen(false);
-    // Flag the switch as in-flight BEFORE changing the selection: `OrgGate`
-    // reads the store, raises the blocking overlay and only clears it once the
-    // target org's context and data are settled — or restores `previous` if
-    // the switch fails. The target's name travels with the flag so the overlay
-    // can name the destination even while the orgs cache is being reset.
     // Shared by every entry point (dropdown, create confirmation, mutation):
-    // the flag is raised before the selection changes, and OrgGate — seeing the
-    // store change — clears the page's per-org caches for the new workspace.
+    // the flag is raised before the selection changes — so `OrgGate` sees it on
+    // the very commit it resets on and raises the blocking overlay, naming the
+    // destination from here while the orgs cache is still settling — and the
+    // gate then clears the page's per-org caches for the new workspace.
     switchActiveOrg(orgId, toName);
   }
 
@@ -152,7 +149,7 @@ function OrgSwitcher() {
         aria-expanded={open}
         aria-label={`Organisasi aktif: ${active.name}. Ganti organisasi`}
         onClick={() => setOpen((value) => !value)}
-        className="flex w-full min-w-0 items-center gap-2 rounded-control px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-background focus-ring"
+        className="flex w-full min-w-0 items-center gap-2 rounded-control px-2 py-3 text-sm text-foreground transition-colors hover:bg-background focus-ring"
       >
         <Building2 size={16} className="shrink-0 text-muted" aria-hidden="true" />
         <span className="sidebar-label min-w-0 flex-1 truncate text-left font-medium">

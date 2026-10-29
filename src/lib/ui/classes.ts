@@ -93,7 +93,10 @@ export function popoverClass(className?: string): string {
 }
 
 const BASE_ROW =
-  'flex w-full items-center gap-2.5 rounded-item px-2.5 py-2 text-left text-sm transition-colors focus-ring';
+  // py-3 → 44px row (text-sm line box 20px + 24px): every menu and listbox
+  // option is a primary selection target, so it carries the full WCAG 2.5.5
+  // touch size rather than the 36px the old py-2 gave it.
+  'flex w-full items-center gap-2.5 rounded-item px-2.5 py-3 text-left text-sm transition-colors focus-ring';
 
 /**
  * A row inside a menu or listbox.

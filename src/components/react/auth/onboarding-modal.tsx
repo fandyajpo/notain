@@ -144,7 +144,7 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
       footer={
         <>
           {step === 1 ? (
-            <Button variant="ghost" size="sm" onClick={() => setStep(0)} disabled={submitting}>
+            <Button variant="ghost" size="md" onClick={() => setStep(0)} disabled={submitting}>
               <ArrowLeft size={16} aria-hidden="true" />
               Kembali
             </Button>
@@ -159,12 +159,12 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
           )}
 
           {isLast ? (
-            <Button size="sm" loading={submitting} onClick={() => void handleComplete()}>
+            <Button size="md" loading={submitting} onClick={() => void handleComplete()}>
               <Check size={16} aria-hidden="true" />
               {createMode ? 'Buat dan mulai' : 'Selesai'}
             </Button>
           ) : (
-            <Button size="sm" disabled={!canAdvance} onClick={() => setStep(1)}>
+            <Button size="md" disabled={!canAdvance} onClick={() => setStep(1)}>
               Lanjut
               <ArrowRight size={16} aria-hidden="true" />
             </Button>

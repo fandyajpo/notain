@@ -194,7 +194,11 @@ export function Modal({
         <Button
           key={index}
           variant={action.variant ?? 'primary'}
-          size="sm"
+          // `md` = 44px: a dialog's footer buttons are THE confirmation targets
+          // of the whole app, so they carry the full WCAG 2.5.5 touch size
+          // instead of the 40px `sm` used for inline page actions. They also
+          // sit next to `md` inputs in the forms above them.
+          size="md"
           loading={action.loading}
           disabled={action.disabled}
           onClick={action.onClick}
@@ -296,9 +300,14 @@ function CloseButton({ onClick }: { onClick: () => void }) {
       type="button"
       onClick={onClick}
       aria-label="Tutup"
-      className="-m-1 shrink-0 rounded-control p-1.5 text-muted transition-colors hover:bg-background hover:text-foreground focus-ring"
+      // size-11 (44px) hit target with a 20px glyph: the old p-1.5 + 16px box
+      // was 28px, under the 44px touch target. `-mr-3` pulls the box out so the
+      // glyph's centre lands exactly where the smaller button's did — the
+      // header's optical alignment is unchanged, only the invisible padding
+      // grew.
+      className="-mr-3 flex size-11 shrink-0 items-center justify-center rounded-control text-muted transition-colors hover:bg-background hover:text-foreground focus-ring"
     >
-      <X size={16} aria-hidden="true" />
+      <X size={20} aria-hidden="true" />
     </button>
   );
 }

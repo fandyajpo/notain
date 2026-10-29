@@ -64,18 +64,18 @@ export function BusinessTypeField({ value, onChange, description }: Props) {
             <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <Button
                 variant="ghost"
-                size="sm"
+                size="md"
                 disabled={draft === null}
                 onClick={() => setDraft(null)}
               >
                 Tanpa jenis
               </Button>
               <div className="flex gap-2">
-                <Button variant="secondary" size="sm" onClick={() => setOpen(false)}>
+                <Button variant="secondary" size="md" onClick={() => setOpen(false)}>
                   Batal
                 </Button>
                 <Button
-                  size="sm"
+                  size="md"
                   onClick={() => {
                     onChange?.(draft);
                     setOpen(false);
