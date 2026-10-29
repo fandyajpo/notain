@@ -140,8 +140,64 @@ describe('POST /api/orgs — create', () => {
     expect(fake.rows.size).toBe(0);
   });
 
+  it('refuses a second organization on the free plan', async () => {
+    fake = appwriteFake({ teamMemberships: 0 });
+    seedOrg('org_aaaaaaaaaaaaaaaa');
+    seedMembership('org_aaaaaaaaaaaaaaaa', OWNER.$id, { role: 'owner' });
+
+    const response = await handle(orgsOnRequest, req('POST', '/api/orgs', { name: 'Kedua' }));
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'forbidden',
+      message: expect.stringContaining('1 organisasi'),
+    });
+    // The refusal happens before any write: the one seeded org is all there is.
+    expect([...fake.rows.keys()].filter((key) => key.startsWith('organizations/'))).toHaveLength(1);
+  });
+
+  it('allows a second organization once an owned org is on an active paid plan', async () => {
+    fake = appwriteFake({ teamMemberships: 0 });
+    seedOrg('org_aaaaaaaaaaaaaaaa');
+    seedMembership('org_aaaaaaaaaaaaaaaa', OWNER.$id, { role: 'owner' });
+    // No expiry = never expires; `isSubscriptionActive` treats that as active.
+    fake.rows.get('organizations/org_aaaaaaaaaaaaaaaa')!.plan = 'pro';
+
+    const response = await handle(orgsOnRequest, req('POST', '/api/orgs', { name: 'Kedua' }));
+
+    expect(response.status).toBe(201);
+  });
+
+  it('still refuses when the paid plan has expired', async () => {
+    fake = appwriteFake({ teamMemberships: 0 });
+    seedOrg('org_aaaaaaaaaaaaaaaa');
+    seedMembership('org_aaaaaaaaaaaaaaaa', OWNER.$id, { role: 'owner' });
+    const org = fake.rows.get('organizations/org_aaaaaaaaaaaaaaaa')!;
+    org.plan = 'pro';
+    org.planExpiresAt = new Date('2026-01-01T00:00:00.000Z').toISOString(); // well in the past
+
+    const response = await handle(orgsOnRequest, req('POST', '/api/orgs', { name: 'Kedua' }));
+
+    expect(response.status).toBe(403);
+  });
+
+  it('lets an admin skip the plan gate entirely — limits are for customers', async () => {
+    fake = appwriteFake(); // the fake's default caller IS on the admins team
+    seedOrg('org_aaaaaaaaaaaaaaaa');
+    seedMembership('org_aaaaaaaaaaaaaaaa', OWNER.$id, { role: 'owner' });
+
+    const response = await handle(orgsOnRequest, req('POST', '/api/orgs', { name: 'Kedua' }));
+
+    expect(response.status).toBe(201);
+  });
+
   it('rate-fences creation per the hourly org-create budget', async () => {
-    fake = appwriteFake();
+    fake = appwriteFake({ teamMemberships: 0 });
+    // Seed an owner's active paid org so the plan gate passes on every attempt:
+    // this test is about the fence, not the gate.
+    seedOrg('org_aaaaaaaaaaaaaaaa');
+    seedMembership('org_aaaaaaaaaaaaaaaa', OWNER.$id, { role: 'owner' });
+    fake.rows.get('organizations/org_aaaaaaaaaaaaaaaa')!.plan = 'pro';
     const limitedEnv = {
       ...APPWRITE_ENV,
       QUOTA_LIMIT_ORG_CREATE_PER_HOUR: '2',

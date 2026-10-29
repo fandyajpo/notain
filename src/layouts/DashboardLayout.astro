@@ -3,6 +3,7 @@ import { Menu, PanelLeft, X } from 'lucide-react';
 import { SignOutIsland } from '../components/react/auth/sign-out-island';
 import { AdminNavGroup } from '../components/react/auth/admin-nav-link';
 import { OrgSwitcherIsland } from '../components/react/orgs/org-switcher-island';
+import { QuotaMeter } from '../components/react/dashboard/quota-meter';
 import { ShortcutsIsland, ShortcutsTrigger } from '../components/react/ui/shortcuts';
 import { NAV_GROUPS, UTILITIES_GROUP_LABEL, drawerStagger } from '../lib/nav';
 import { navLinkClass } from '../lib/ui/classes';
@@ -112,6 +113,11 @@ const stagger = drawerStagger();
             <div style={`--nav-i:${stagger.get('admin') ?? 0}`}>
               <AdminNavGroup client:only="react" />
             </div>
+            {/* The free plan's invoice allowance — same cached query as the
+                builder's meter, so the two numbers always agree. */}
+            <div class="mt-2">
+              <QuotaMeter client:only="react" />
+            </div>
             <div class="mt-2">
               <p class={GROUP_LABEL}>{UTILITIES_GROUP_LABEL}</p>
               <div class="flex flex-col gap-0.5">
@@ -199,6 +205,12 @@ const stagger = drawerStagger();
           {/* Utilities sits at the foot of the column: Pintasan and Keluar stay
               reachable without scrolling and never compete with the nav for
               attention, and the whole block collapses to icons with the rail. */}
+          {/* The free plan's invoice allowance, above the utilities so it is
+              always visible without competing with the nav. The whole block
+              carries `sidebar-label`, so the collapsed rail drops it too. */}
+          <div class="mt-4 px-2">
+            <QuotaMeter client:only="react" />
+          </div>
           <div class="sidebar-foot mt-auto pt-4">
             <p class={GROUP_LABEL}>{UTILITIES_GROUP_LABEL}</p>
             <div class="flex flex-col gap-1">

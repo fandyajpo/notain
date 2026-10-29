@@ -1,5 +1,6 @@
 import { apiError, json } from '../../_lib/http';
 import { enforceLimit } from '../../_lib/quota';
+import { orgHasPaidPlan, TEMPLATE_PRO_MESSAGE } from '../../_lib/plan-gate';
 import {
   createRow,
   deleteRow,
@@ -294,6 +295,14 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     data.orgId = orgId;
     data.ownerId = session.userId;
 
+    // Plan gate: creating a custom template IS the Pro "branding sendiri"
+    // feature. Free orgs keep the three built-ins (and any template they
+    // already own stays readable and usable) — they just cannot author new
+    // ones. Admins pass through `orgHasPaidPlan` like every other gate.
+    if (resource === 'templates' && !(await orgHasPaidPlan(auth, orgId, session.userId, env))) {
+      return apiError(402, 'plan_required', TEMPLATE_PRO_MESSAGE);
+    }
+
     let rowId = 'unique()';
     if (config.fixedId) {
       rowId = orgId;
@@ -342,6 +351,12 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     const existing = await getRow(auth, config.table, rowId, env);
     if (!existing || existing.orgId !== orgId) {
       return apiError(404, 'not_found', 'Data tidak ditemukan.');
+    }
+    // Same plan gate as create — editing a template's blocks/colors/branding
+    // is the Pro feature. The row must already exist (checked above), so a
+    // free org's existing template degrades to read-only, never to a 404.
+    if (resource === 'templates' && !(await orgHasPaidPlan(auth, orgId, session.userId, env))) {
+      return apiError(402, 'plan_required', TEMPLATE_PRO_MESSAGE);
     }
     if (!(await patchRow(auth, config.table, rowId, data))) {
       return apiError(503, 'unavailable', 'Gagal menyimpan data. Coba lagi.');

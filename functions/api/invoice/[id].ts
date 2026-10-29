@@ -11,6 +11,7 @@ import { isBusinessSubtypeSlug } from '../../../src/core/business/taxonomy';
 import { getRow, tableAuth } from '../../_lib/rows';
 import { apiError, json } from '../../_lib/http';
 import { isSubscriptionActive } from '../../../src/core/billing/plans';
+import { isAdminUser } from '../../_lib/admin';
 import type { Env, PagesFunction } from '../../_lib/types';
 
 /**
@@ -66,8 +67,20 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
   // Free (or expired) organizations get a 402 with actionable copy; the
   // signed-in builder and dashboard never come through this endpoint, so
   // nothing the org does inside the app is affected.
-  const org = orgRow as { plan?: string | null; planExpiresAt?: string | null } | null;
-  if (!isSubscriptionActive(org?.plan ?? 'free', org?.planExpiresAt ?? null)) {
+  //
+  // The request itself is anonymous (a capability URL the owner handed over),
+  // so an admin exemption can only key off the ORG'S OWNER: an operator's own
+  // links keep working even while their org sits on the free plan.
+  const org = orgRow as {
+    plan?: string | null;
+    planExpiresAt?: string | null;
+    ownerId?: string | null;
+  } | null;
+  const ownerIsAdmin =
+    typeof org?.ownerId === 'string' && org.ownerId !== ''
+      ? await isAdminUser(org.ownerId, env)
+      : false;
+  if (!ownerIsAdmin && !isSubscriptionActive(org?.plan ?? 'free', org?.planExpiresAt ?? null)) {
     return apiError(
       402,
       'plan_required',

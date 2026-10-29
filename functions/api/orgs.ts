@@ -2,6 +2,7 @@ import { writeAudit } from '../_lib/audit';
 import { verifySession } from '../_lib/appwrite';
 import { apiError, json } from '../_lib/http';
 import { enforceLimit } from '../_lib/quota';
+import { isAdminUser } from '../_lib/admin';
 import { createRow, deleteRow, getRow, listRows, tableAuth } from '../_lib/rows';
 import { isSubscriptionActive } from '../../src/core/billing/plans';
 import { businessSubtypeSlugSchema } from '../../src/core/business/schema';
@@ -19,9 +20,11 @@ import type { Env, PagesFunction } from '../_lib/types';
  * `/api/orgs/<id>` to `functions/api/orgs/[id].ts` — keeping list/create
  * together mirrors how the app treats "my organizations" as one view.
  *
- * Writes cost three rows (org + membership + profile) and the product has no
- * per-month cap on organizations, so the only fence is `org-create`
- * (10/hour/user) — enough for any human setup flow, useless as a mint cannon.
+ * Writes cost three rows (org + membership + profile). Organizations are
+ * capped by PLAN: one per owner on the free tier, any number once an org the
+ * caller owns carries an active paid plan (see the plan gate below), plus a
+ * loose `org-create` rate fence (10/hour/user) against being used as a mint
+ * cannon.
  *
  * Every row is created with permissions `[]`: tenanted rows are API-key-only
  * in this architecture, and membership — not row permissions — is the gate.
@@ -142,6 +145,56 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const name = typeof body.name === 'string' ? body.name.trim() : '';
   if (name === '' || name.length > NAME_MAX) {
     return apiError(400, 'validation', 'Nama organisasi wajib diisi (maksimal 128 karakter).');
+  }
+
+  // Plan gate — one organization on the free tier, a second one only on an
+  // active paid plan (the pricing page's "Buat lebih dari 1 organisasi" is a
+  // product fact, so the server refuses instead of the client hiding a
+  // button). The FIRST org is always allowed: that is the forced onboarding
+  // screen, and it must never be blocked by billing. An existing multi-org
+  // account keeps every org it has — this only stops the next creation.
+  // Admins skip the gate entirely: limits are for customers, not operators.
+  const admin = await isAdminUser(session.userId, env);
+  const ownedMemberships = admin
+    ? []
+    : await listRows(
+        auth,
+        'memberships',
+        [
+          { method: 'equal', attribute: 'userId', values: [session.userId] },
+          { method: 'equal', attribute: 'status', values: ['active'] },
+          { method: 'equal', attribute: 'role', values: ['owner'] },
+          { method: 'limit', values: [100] },
+        ],
+        env,
+      );
+  if (ownedMemberships === null) {
+    return apiError(503, 'unavailable', 'Organisasi belum bisa dibuat. Coba lagi.');
+  }
+  if (ownedMemberships.length > 0) {
+    let hasPaidOrg = false;
+    for (const membership of ownedMemberships) {
+      const ownedOrgId = typeof membership.orgId === 'string' ? membership.orgId : '';
+      if (!ORG_ID_PATTERN.test(ownedOrgId)) continue;
+      const ownedOrg = await getRow(auth, 'organizations', ownedOrgId, env);
+      if (
+        ownedOrg &&
+        isSubscriptionActive(
+          typeof ownedOrg.plan === 'string' ? ownedOrg.plan : 'free',
+          typeof ownedOrg.planExpiresAt === 'string' ? ownedOrg.planExpiresAt : null,
+        )
+      ) {
+        hasPaidOrg = true;
+        break;
+      }
+    }
+    if (!hasPaidOrg) {
+      return apiError(
+        403,
+        'forbidden',
+        'Plan gratis hanya mendukung 1 organisasi. Upgrade ke Pro untuk membuat organisasi lain.',
+      );
+    }
   }
 
   const orgId = newOrgId();

@@ -24,12 +24,35 @@ export const PLAN_TAGLINES: Record<PlanTier, string> = {
 export const PLAN_BADGES: Record<PlanTier, string | null> = {
   free: null,
   pro: 'Paling direkomendasikan',
-  business: null,
+  business: 'Segera hadir',
 };
+
+/**
+ * Tiers that exist in the product but cannot be bought yet — Business is
+ * announced, not sold. One flag drives every surface: the pricing page's CTA,
+ * the billing page's plan choice, and the landing preview's badge, so no
+ * screen can offer a checkout the server would refuse. `planChoice`
+ * (`core/billing/plan-availability`) and the checkout API both read this
+ * family of rules, and the server enforces the final say.
+ */
+export const PLAN_COMING_SOON: Record<PlanTier, boolean> = {
+  free: false,
+  pro: false,
+  business: true,
+};
+
+/** The one label shown wherever a tier cannot be bought yet. */
+export const PLAN_COMING_SOON_LABEL = 'Segera hadir';
+
+/** Whether this tier is announced but not yet purchasable. */
+export function isPlanComingSoon(tier: PlanTier): boolean {
+  return PLAN_COMING_SOON[tier];
+}
 
 export const PLAN_BENEFITS: Record<PlanTier, readonly string[]> = {
   free: [
     `${FREE_PLAN_LIMITS.invoicesPerMonth} invoice baru per bulan`,
+    '1 organisasi (workspace)',
     'Kalkulator otomatis: diskon, pajak, pembulatan',
     'PDF A4 siap cetak',
     'Kelola pelanggan',
@@ -39,10 +62,10 @@ export const PLAN_BENEFITS: Record<PlanTier, readonly string[]> = {
   ],
   pro: [
     'Semua fitur Free',
-    'Template premium',
-    'Warna dan branding sendiri di setiap nota',
-    'Invoice link untuk pelanggan',
+    'Buat lebih dari 1 organisasi (workspace)',
     'Invoice tanpa batas dengan kebijakan penggunaan wajar',
+    'Invoice link untuk pelanggan',
+    'Template kustom sendiri: urutan blok, warna, dan branding di setiap nota',
     'Dukungan prioritas',
   ],
   business: [

@@ -12,6 +12,7 @@ import { EmptyState, ErrorState, LoadingState } from '../ui/state';
 import { TemplateCard } from './template-picker';
 import { toast } from '../../../lib/ui/toast';
 import { useDeleteTemplate, useTemplatesPage } from '../../../lib/query/hooks/use-templates';
+import { useAdminMembership } from '../../../lib/query/hooks/use-admin';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
 import { useOrgs } from '../../../lib/query/hooks/use-orgs';
 import { getActiveOrgId } from '../../../app/active-org';
@@ -40,6 +41,11 @@ function TemplatesContent() {
   const { data: profile } = useProfile();
   const { data: orgs } = useOrgs();
   const org = orgs?.orgs.find((candidate) => candidate.id === getActiveOrgId()) ?? null;
+  const { data: isAdmin } = useAdminMembership();
+  // Custom templates (own block order, colors, branding) are the Pro feature;
+  // the server 402s every write, so the UI must say so BEFORE a save attempt.
+  // Admins skip the gate server-side, so they skip the lock here too.
+  const canCustomize = Boolean(isAdmin) || Boolean(org?.active);
   const issuer = toBusinessIssuer(profile, org);
   const logoUrl = profile?.logoUrl ?? null;
   const remove = useDeleteTemplate();
@@ -75,12 +81,26 @@ function TemplatesContent() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Template invoice"
-        description="Atur urutan blok, warna, dan teks default sekali, dipakai tiap kali invoice baru dibuat."
+        description={
+          canCustomize
+            ? 'Atur urutan blok, warna, dan teks default sekali, dipakai tiap kali invoice baru dibuat.'
+            : 'Plan gratis memakai template bawaan. Template kustom — urutan blok, warna, dan branding di setiap nota — adalah fitur Pro.'
+        }
         actions={
-          <Button onClick={() => window.location.assign('/templates/new')}>
-            <Plus size={16} aria-hidden="true" />
-            Template baru
-          </Button>
+          canCustomize ? (
+            <Button onClick={() => window.location.assign('/templates/new')}>
+              <Plus size={16} aria-hidden="true" />
+              Template baru
+            </Button>
+          ) : (
+            <Button
+              href="/pricing"
+              variant="secondary"
+              title="Template kustom adalah fitur plan Pro"
+            >
+              Lihat plan Pro
+            </Button>
+          )
         }
       />
 
@@ -128,10 +148,26 @@ function TemplatesContent() {
                 logoUrl={logoUrl}
                 business={issuer}
                 actions={
-                  <Button href={`/templates/new?from=${template.id}`} variant="secondary" size="sm">
-                    <Copy size={13} aria-hidden="true" />
-                    Duplikat
-                  </Button>
+                  canCustomize ? (
+                    <Button
+                      href={`/templates/new?from=${template.id}`}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      <Copy size={13} aria-hidden="true" />
+                      Duplikat
+                    </Button>
+                  ) : (
+                    <Button
+                      href="/pricing"
+                      variant="secondary"
+                      size="sm"
+                      title="Template kustom adalah fitur plan Pro"
+                    >
+                      <Copy size={13} aria-hidden="true" />
+                      Duplikat (Pro)
+                    </Button>
+                  )
                 }
               />
             ))}
@@ -157,12 +193,25 @@ function TemplatesContent() {
         ) : mine.length === 0 ? (
           <EmptyState
             title="Belum ada template sendiri"
-            description="Duplikat salah satu template bawaan, lalu sesuaikan urutan blok dan warnanya."
+            description={
+              canCustomize
+                ? 'Duplikat salah satu template bawaan, lalu sesuaikan urutan blok dan warnanya.'
+                : 'Template kustom adalah fitur Pro. Plan gratis memakai template bawaan — pilih langsung saat membuat invoice.'
+            }
             action={
-              <Button variant="secondary" onClick={() => window.location.assign('/templates/new')}>
-                <Plus size={16} aria-hidden="true" />
-                Template baru
-              </Button>
+              canCustomize ? (
+                <Button
+                  variant="secondary"
+                  onClick={() => window.location.assign('/templates/new')}
+                >
+                  <Plus size={16} aria-hidden="true" />
+                  Template baru
+                </Button>
+              ) : (
+                <Button href="/pricing" variant="secondary">
+                  Lihat plan Pro
+                </Button>
+              )
             }
           />
         ) : filteredMine.length === 0 ? (
@@ -178,10 +227,22 @@ function TemplatesContent() {
                   business={issuer}
                   actions={
                     <>
-                      <Button href={`/templates/${template.id}`} variant="secondary" size="sm">
-                        <Pencil size={13} aria-hidden="true" />
-                        Ubah
-                      </Button>
+                      {canCustomize ? (
+                        <Button href={`/templates/${template.id}`} variant="secondary" size="sm">
+                          <Pencil size={13} aria-hidden="true" />
+                          Ubah
+                        </Button>
+                      ) : (
+                        <Button
+                          href="/pricing"
+                          variant="secondary"
+                          size="sm"
+                          title="Ubah template adalah fitur plan Pro"
+                        >
+                          <Pencil size={13} aria-hidden="true" />
+                          Ubah (Pro)
+                        </Button>
+                      )}
                       <Button
                         variant="danger-soft"
                         size="sm"

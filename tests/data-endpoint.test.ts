@@ -312,3 +312,96 @@ describe('DELETE /api/data/<resource> — delete isolation', () => {
     expect(response.status).toBe(404);
   });
 });
+
+describe('templates — the custom-template plan gate', () => {
+  function templates(path: string, init?: RequestInit): Promise<Response> {
+    return handle(
+      dataOnRequest,
+      new Request(`https://notain.pages.dev${path}`, {
+        ...init,
+        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+      }),
+      { resource: 'templates' },
+    );
+  }
+
+  /** The plan the gate reads lives on the ORGANIZATION row, not the membership. */
+  function seedOrgRow(orgId: string, plan: string, planExpiresAt: string | null = null): void {
+    fake!.rows.set(`organizations/${orgId}`, {
+      $id: orgId,
+      name: 'Organisasi',
+      ownerId: OWNER.$id,
+      plan,
+      planExpiresAt,
+    } as Row);
+  }
+
+  const createBody = JSON.stringify({ data: { name: 'Kustom', blocks: [], theme: {} } });
+
+  it('refuses a free org creating a custom template', async () => {
+    fake = appwriteFake({ teamMemberships: 0 });
+    seedMembership(A, OWNER.$id);
+    seedOrgRow(A, 'free');
+
+    const response = await templates(`/api/data/templates?orgId=${A}`, {
+      method: 'POST',
+      body: createBody,
+    });
+
+    expect(response.status).toBe(402);
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'plan_required',
+      message: expect.stringContaining('fitur plan Pro'),
+    });
+    // The refusal is before any write.
+    expect([...fake.rows.keys()].filter((key) => key.startsWith('templates/'))).toHaveLength(0);
+  });
+
+  it('lets a paid org create one', async () => {
+    fake = appwriteFake({ teamMemberships: 0 });
+    seedMembership(A, OWNER.$id);
+    seedOrgRow(A, 'pro');
+
+    const response = await templates(`/api/data/templates?orgId=${A}`, {
+      method: 'POST',
+      body: createBody,
+    });
+
+    expect(response.status).toBe(201);
+  });
+
+  it('lets an admin create one even on the free plan', async () => {
+    fake = appwriteFake(); // the fake's default caller IS on the admins team
+    seedMembership(A, OWNER.$id);
+    seedOrgRow(A, 'free');
+
+    const response = await templates(`/api/data/templates?orgId=${A}`, {
+      method: 'POST',
+      body: createBody,
+    });
+
+    expect(response.status).toBe(201);
+  });
+
+  it('refuses a free org editing a template it already owns — read-only, never a 404', async () => {
+    fake = appwriteFake({ teamMemberships: 0 });
+    seedMembership(A, OWNER.$id);
+    seedOrgRow(A, 'free');
+    fake.rows.set('templates/tpl_mine', {
+      $id: 'tpl_mine',
+      orgId: A,
+      ownerId: OWNER.$id,
+      name: 'Lama',
+      blocks: '[]',
+      theme: '{}',
+    } as Row);
+
+    const response = await templates(`/api/data/templates?orgId=${A}&rowId=tpl_mine`, {
+      method: 'PATCH',
+      body: JSON.stringify({ data: { name: 'Baru' } }),
+    });
+
+    expect(response.status).toBe(402);
+    expect(fake.rows.get('templates/tpl_mine')?.name).toBe('Lama'); // untouched
+  });
+});

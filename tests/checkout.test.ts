@@ -240,11 +240,18 @@ describe('POST /api/payments/checkout', () => {
     expect(dokuCalls).toEqual([]);
   });
 
-  it('still allows a same-plan renewal and an upgrade', async () => {
+  it('allows a same-plan renewal and refuses Business, which is not sold yet', async () => {
     seedOrg({ plan: 'pro', planExpiresAt: '2999-01-01T00:00:00.000Z' });
 
     await expect(handle(post({ plan: 'pro' }))).resolves.toMatchObject({ status: 200 });
-    await expect(handle(post({ plan: 'business' }))).resolves.toMatchObject({ status: 200 });
+    const callsAfterRenewal = dokuCalls.length;
+
+    // Business is announced (`PLAN_COMING_SOON`), not sold: the server
+    // refuses it before auth or any provider call, so no order and no
+    // payment row can ever exist for that tier.
+    const response = await handle(post({ plan: 'business' }));
+    expect(response.status).toBe(400);
+    expect(dokuCalls).toHaveLength(callsAfterRenewal);
   });
 
   it('retires a stranded row (creation failed earlier) and starts a fresh one', async () => {

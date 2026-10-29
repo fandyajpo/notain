@@ -74,7 +74,23 @@ function CheckoutContent() {
         message="Plan Free gratis selamanya. Langsung buat akun dan mulai bikin invoice."
         action={
           <Button href="/register" size="sm">
-            Buat Invoice Gratis
+            Buat invoice gratis
+          </Button>
+        }
+      />
+    );
+  }
+
+  // Business is announced, not sold: landing here directly (an old link, a
+  // shared URL) must not render a checkout the server would refuse anyway.
+  if (planParam === 'business') {
+    return (
+      <ErrorState
+        title="Plan Business sedang disiapkan"
+        message="Business belum bisa dibeli — tim kami masih menyelesaikannya. Kalau butuh fitur lebih sekarang, plan Pro sudah tersedia."
+        action={
+          <Button href="/pricing" size="sm">
+            Lihat harga
           </Button>
         }
       />
@@ -85,7 +101,7 @@ function CheckoutContent() {
     return (
       <ErrorState
         title="Plan tidak dikenali"
-        message="Pilih plan Pro atau Business dari halaman harga."
+        message="Pilih plan Pro dari halaman harga."
         action={
           <Button href="/pricing" size="sm">
             Lihat harga

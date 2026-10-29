@@ -6,8 +6,10 @@ import { Aurora } from './aurora';
 import {
   PLAN_BADGES,
   PLAN_BENEFITS,
+  PLAN_COMING_SOON_LABEL,
   PLAN_PRICES,
   PLAN_TAGLINES,
+  isPlanComingSoon,
   yearlySavingNote,
   type PlanTier,
 } from '../../../core/billing/plan-benefits';
@@ -33,7 +35,7 @@ const PLANS: readonly Plan[] = [
     id: 'free',
     name: 'Free',
     badge: PLAN_BADGES.free ?? undefined,
-    cta: { href: '/register', label: 'Buat Invoice Gratis' },
+    cta: { href: '/register', label: 'Buat invoice gratis' },
   },
   {
     id: 'pro',
@@ -55,9 +57,12 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
   const { amount, period } = PLAN_PRICES[plan.id];
   const tagline = PLAN_TAGLINES[plan.id];
   const benefits = PLAN_BENEFITS[plan.id];
+  // Announced, not sold (Business): no annual alternative either — there is
+  // nothing to buy in any period yet.
+  const comingSoon = isPlanComingSoon(plan.id);
   // A paid tier also shows the annual alternative. Derived, so the saving can
   // never disagree with the monthly price printed a few pixels above it.
-  const yearly = plan.id === 'free' ? null : yearlySavingNote(plan.id);
+  const yearly = plan.id === 'free' || comingSoon ? null : yearlySavingNote(plan.id);
 
   return (
     <motion.article
@@ -90,7 +95,16 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
       <p className="mt-3 text-sm leading-relaxed text-muted">{tagline}</p>
 
       <div className="mt-6">
-        {primary ? (
+        {comingSoon ? (
+          // Not a link: a coming-soon tier must never look (or be) clickable
+          // into checkout. The badge above already announces it.
+          <span
+            aria-disabled="true"
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-control border border-dashed border-border bg-background px-5 text-base font-medium text-muted"
+          >
+            {PLAN_COMING_SOON_LABEL}
+          </span>
+        ) : primary ? (
           <MagneticButton
             href={plan.cta.href}
             className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-control bg-accent px-5 text-base font-medium text-accent-foreground shadow-accent transition-colors hover:bg-accent/90 focus-ring"
@@ -135,7 +149,7 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
   );
 }
 
-/** Pricing section: three plan cards (Free forever, Pro for growing businesses, Business for API access). */
+/** Pricing section: three plan cards — Free forever, Pro today, Business announced as coming soon. */
 export function PricingPlans() {
   return (
     <MotionConfig reducedMotion="user">
@@ -160,8 +174,8 @@ export function PricingPlans() {
           </motion.span>
 
           <h1 className="mx-auto mt-6 max-w-2xl text-[clamp(2.25rem,5.5vw,3.25rem)] font-semibold leading-[1.06] tracking-[-0.03em]">
-            Mulai gratis. <span className="text-accent">Naik ke Pro</span> atau Business kalau
-            butuh.
+            Mulai gratis. <span className="text-accent">Naik ke Pro</span> kalau butuh lebih.
+            Business menyusul.
           </h1>
 
           <motion.p
@@ -171,8 +185,8 @@ export function PricingPlans() {
             className="mx-auto mt-5 max-w-xl text-lead text-muted"
           >
             Fitur inti gratis selamanya, tanpa kartu kredit dan tanpa masa trial. Pro membuka
-            template premium dan laporan bisnis; Business menambah akses API untuk tim dan
-            developer.
+            template premium, invoice tanpa batas, dan laporan bisnis. Business — akses API,
+            webhook, dan rate limit lebih tinggi — sedang disiapkan dan belum bisa dibeli.
           </motion.p>
         </div>
 
@@ -188,9 +202,9 @@ export function PricingPlans() {
           transition={{ duration: 0.6, delay: 0.55, ease: EASE }}
           className="mx-auto mt-8 max-w-xl text-center text-sm leading-relaxed text-muted"
         >
-          Pembayaran plan Pro dan Business diproses lewat DOKU, dan plan aktif otomatis setelah
-          pembayaran terkonfirmasi. Tidak ada biaya di luar harga yang tertera, dan kamu bisa
-          berhenti kapan saja.
+          Pembayaran plan Pro diproses lewat DOKU, dan plan aktif otomatis setelah pembayaran
+          terkonfirmasi. Tidak ada biaya di luar harga yang tertera, dan kamu bisa berhenti kapan
+          saja.
         </motion.p>
 
         <p className="mx-auto mt-4 max-w-xl text-center text-sm leading-relaxed text-muted">

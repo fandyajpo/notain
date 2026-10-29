@@ -14,6 +14,29 @@ export type AdminRequest = {
 };
 
 /**
+ * Is this account a member of the Appwrite `admins` team? The one fact that
+ * exempts an operator from every plan gate — plan limits are a product
+ * boundary for customers, not for the people running the product. Shared by
+ * the quota endpoints, the org-create gate, and the invoice-link gate (where
+ * the caller is anonymous, so the ORG'S OWNER is what gets checked).
+ *
+ * Fails closed: missing config or an unreachable endpoint answers `false`,
+ * so an outage degrades an admin to the normal free plan, never the reverse.
+ */
+export async function isAdminUser(userId: string, env: Env): Promise<boolean> {
+  const endpoint = env.PUBLIC_APPWRITE_ENDPOINT?.replace(/\/+$/, '');
+  const projectId = env.PUBLIC_APPWRITE_PROJECT_ID;
+  const apiKey = env.APPWRITE_API_KEY;
+  if (!endpoint || !projectId || !apiKey) return false;
+  return checkAdmin(
+    endpoint,
+    { 'X-Appwrite-Project': projectId, 'X-Appwrite-Key': apiKey },
+    userId,
+    env,
+  );
+}
+
+/**
  * The shared auth wall for `/api/admin/*`: a real session (JWT → `GET
  * /account`), complete server config, and membership in the `admins` team.
  *
@@ -140,7 +163,7 @@ export async function primaryOrgIds(
  * row also carries `read("team:admins")` permissions Appwrite re-checks with
  * the API key's own authority.
  */
-async function checkAdmin(
+export async function checkAdmin(
   endpoint: string,
   headers: Record<string, string>,
   userId: string,

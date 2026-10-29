@@ -2,8 +2,10 @@ import {
   claimInvoiceQuota,
   INVOICE_QUOTA_MESSAGE,
   readInvoiceQuota,
+  type InvoiceQuota,
 } from '../../_lib/invoice-quota';
 import { requireOrg } from '../../_lib/orgs';
+import { isAdminUser } from '../../_lib/admin';
 import { apiError, json } from '../../_lib/http';
 import { enforceLimit } from '../../_lib/quota';
 import type { Env, PagesFunction } from '../../_lib/types';
@@ -42,6 +44,21 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   const limited = enforceLimit('invoice-quota', session.userId, env);
   if (limited) return limited;
+
+  // Admins (the Appwrite `admins` team) are operators, not customers: plan
+  // limits are the product's boundary, not theirs. One read keeps `used` and
+  // `resetsAt` truthful; `remaining: null` is the same "unlimited" answer a
+  // paid org gets, which is exactly what hides the meter on both surfaces.
+  if (await isAdminUser(session.userId, env)) {
+    const quota = await readInvoiceQuota(auth, gate.access.orgId, env);
+    if (quota === null) {
+      return apiError(503, 'unavailable', 'Kuota belum bisa dibaca. Coba lagi beberapa saat lagi.');
+    }
+    const unlimited: InvoiceQuota = { ...quota, remaining: null };
+    return request.method === 'GET'
+      ? json(200, unlimited)
+      : json(200, { ok: true, quota: unlimited });
+  }
 
   if (request.method === 'GET') {
     const quota = await readInvoiceQuota(auth, gate.access.orgId, env);

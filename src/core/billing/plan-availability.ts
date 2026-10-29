@@ -1,5 +1,5 @@
 import { PAID_PLANS, planRank } from './plans';
-import type { PlanTier } from './plan-benefits';
+import { PLAN_COMING_SOON_LABEL, isPlanComingSoon, type PlanTier } from './plan-benefits';
 
 /**
  * Which plan tiers the account can move to *right now*, derived from the same
@@ -38,6 +38,11 @@ export function planChoice(tier: PlanTier, current: { plan: string; active: bool
       : 'free';
 
   if (tier === effective) return { kind: 'current', label: 'Plan saat ini' };
+  // Announced but not sold yet (Business): never render a checkout control
+  // for it — the server refuses the same tier, so the two agree by
+  // construction. Checked before the rank rule so the label reads "Segera
+  // hadir" instead of a purchase hint that cannot succeed.
+  if (isPlanComingSoon(tier)) return { kind: 'unavailable', label: PLAN_COMING_SOON_LABEL };
   if (tier === 'free' || planRank(tier) < planRank(effective)) {
     return { kind: 'unavailable', label: PLAN_SWITCH_HINT };
   }

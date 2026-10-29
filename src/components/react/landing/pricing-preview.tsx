@@ -1,6 +1,12 @@
 import { motion, MotionConfig } from 'motion/react';
 import { ArrowRight, Check } from 'lucide-react';
-import { PLAN_PRICES, PLAN_TAGLINES, PLAN_TIER_IDS } from '../../../core/billing/plan-benefits';
+import {
+  PLAN_COMING_SOON_LABEL,
+  PLAN_PRICES,
+  PLAN_TAGLINES,
+  PLAN_TIER_IDS,
+  isPlanComingSoon,
+} from '../../../core/billing/plan-benefits';
 import { FREE_PLAN_LIMITS } from '../../../core/billing/plans';
 import { EASE, Reveal, SectionHeading } from './reveal';
 
@@ -52,9 +58,16 @@ export function PricingPreview() {
                       : 'border-border bg-card shadow-card'
                   }`}
                 >
-                  <p className="text-sm font-semibold uppercase tracking-wide text-muted">
-                    {TIER_NAMES[tier]}
-                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold uppercase tracking-wide text-muted">
+                      {TIER_NAMES[tier]}
+                    </p>
+                    {isPlanComingSoon(tier) && (
+                      <span className="rounded-pill border border-border bg-sunken px-2 py-0.5 text-[11px] font-medium text-muted">
+                        {PLAN_COMING_SOON_LABEL}
+                      </span>
+                    )}
+                  </div>
                   <p className="mt-4 flex items-baseline gap-1.5">
                     <span className="text-2xl font-semibold tracking-[-0.03em]">
                       {price.amount}
@@ -97,9 +110,9 @@ export function PricingPreview() {
                 />
               </motion.a>
               <p className="max-w-xl text-center text-xs leading-relaxed text-muted">
-                Pembayaran Pro dan Business diproses lewat DOKU dan plan aktif otomatis setelah
-                pembayaran terkonfirmasi. Tidak ada biaya di luar harga yang tertera, dan kamu bisa
-                berhenti kapan saja.
+                Pembayaran plan Pro diproses lewat DOKU dan plan aktif otomatis setelah pembayaran
+                terkonfirmasi. Tidak ada biaya di luar harga yang tertera, dan kamu bisa berhenti
+                kapan saja.
               </p>
             </div>
           </Reveal>

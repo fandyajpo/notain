@@ -33,7 +33,10 @@ function seedOrg(options: { plan?: string; planExpiresAt?: string | null } = {})
 }
 
 beforeEach(() => {
-  fake = appwriteFake();
+  // teamMemberships: 0 — the gate tests are about a FREE org's link; the
+  // fake's default caller is on the admins team, whose owner-exemption below
+  // would skip the 402 entirely.
+  fake = appwriteFake({ teamMemberships: 0 });
   fake.rows.set(`invoices/${INVOICE_ID}`, {
     $id: INVOICE_ID,
     orgId: ORG,
@@ -88,6 +91,17 @@ describe('GET /api/invoice/<id> plan gate', () => {
 
     const response = await handle(get());
     expect(response.status).toBe(402);
+  });
+
+  it("serves a free org's link when its owner is on the admins team", async () => {
+    seedOrg({ plan: 'free', planExpiresAt: null });
+    fake.teamMemberships = 1; // the org's OWNER joins the admins team
+
+    const response = await handle(get());
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { invoice: { invoiceNumber: string } };
+    expect(body.invoice.invoiceNumber).toBe('INV-001');
   });
 
   it('treats a missing org row as free', async () => {

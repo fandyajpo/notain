@@ -54,7 +54,9 @@ function thisMonthInvoice(count: number): Row[] {
 }
 
 function seed(org: Record<string, unknown>, invoices: Row[]): void {
-  fake = appwriteFake();
+  // teamMemberships: 0 — these tests are about the FREE plan's behaviour, and
+  // the fake's default caller is on the admins team (who skips every gate).
+  fake = appwriteFake({ teamMemberships: 0 });
   // Plan lives on the organization row; the membership is what the gate reads.
   fake.rows.set('organizations/' + ORG, { $id: ORG, ...org });
   fake.rows.set('memberships/mem_' + ORG, {
@@ -129,6 +131,22 @@ describe('GET /api/quota/invoices', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ remaining: null, limit: 10 });
   });
+
+  it('reports an unlimited meter to an admin on the free plan', async () => {
+    seed({ plan: 'free', planExpiresAt: null }, thisMonthInvoice(10));
+    fake!.teamMemberships = 1; // the caller joins the admins team
+
+    const response = await handle('GET');
+
+    expect(response.status).toBe(200);
+    // Same "unlimited" answer a paid org gets — which is what hides the meter
+    // on the sidebar and in the builder, while `used` stays truthful.
+    await expect(response.json()).resolves.toMatchObject({
+      remaining: null,
+      used: 10,
+      limit: 10,
+    });
+  });
 });
 
 describe('POST /api/quota/invoices', () => {
@@ -155,6 +173,19 @@ describe('POST /api/quota/invoices', () => {
     expect(String(body.message)).toContain('Kuota invoice gratis');
     expect(body.quota).toMatchObject({ remaining: 0, used: 10, limit: 10 });
     expect(response.headers.get('cache-control')).toBe('no-store');
+  });
+
+  it('lets an admin claim past the limit — the plan gate is for customers', async () => {
+    seed({ plan: 'free', planExpiresAt: null }, thisMonthInvoice(10));
+    fake!.teamMemberships = 1; // the caller joins the admins team
+
+    const response = await handle('POST');
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: true,
+      quota: { remaining: null, used: 10, limit: 10 },
+    });
   });
 
   it('never counts a paid account, however many invoices it made', async () => {

@@ -87,7 +87,19 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   }
   const plan = body?.plan;
   if (!body || !isPaidPlan(plan)) {
-    return apiError(400, 'validation', 'Plan tidak valid. Pilih plan Pro atau Business.');
+    return apiError(400, 'validation', 'Plan tidak valid. Pilih plan Pro.');
+  }
+  // Business is announced but not sold yet (`PLAN_COMING_SOON` in the shared
+  // display copy): refused here, before auth or any provider call, so no
+  // order can be created — and no money taken — for a tier the product
+  // cannot deliver. The pricing page and billing page read the same flag and
+  // never render this control in the first place.
+  if (plan === 'business') {
+    return apiError(
+      400,
+      'validation',
+      'Plan Business sedang disiapkan dan belum bisa dibeli. Pilih plan Pro dulu.',
+    );
   }
 
   const gate = await requireOrg(request, env, body.orgId);
