@@ -219,9 +219,7 @@ function ResourceTable({
               <Td className="text-muted">{text(row.phone ?? '—')}</Td>
               <Td className="text-muted">{text(row.email ?? '—')}</Td>
               <Td className="text-muted">
-                {row.lastUsedAt
-                  ? new Date(text(row.lastUsedAt)).toLocaleDateString('id-ID')
-                  : '—'}
+                {row.lastUsedAt ? new Date(text(row.lastUsedAt)).toLocaleDateString('id-ID') : '—'}
               </Td>
             </tr>
           ))}

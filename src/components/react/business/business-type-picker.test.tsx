@@ -29,10 +29,10 @@ function rows(): HTMLElement[] {
 async function typeQuery(value: string) {
   const input = document.querySelector<HTMLInputElement>('input[type="text"]');
   expect(input).toBeTruthy();
-  Object.getOwnPropertyDescriptor(
-    window.HTMLInputElement.prototype,
-    'value',
-  )?.set?.call(input, value);
+  Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(
+    input,
+    value,
+  );
   await act(async () => {
     input?.dispatchEvent(new Event('input', { bubbles: true }));
   });

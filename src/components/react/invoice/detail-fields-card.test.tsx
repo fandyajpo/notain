@@ -60,10 +60,10 @@ describe('DetailFieldsCard', () => {
 
     const input = container.querySelector<HTMLInputElement>('input');
     await act(async () => {
-      Object.getOwnPropertyDescriptor(
-        window.HTMLInputElement.prototype,
-        'value',
-      )?.set?.call(input, 'Avanza');
+      Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(
+        input,
+        'Avanza',
+      );
       input?.dispatchEvent(new Event('input', { bubbles: true }));
     });
 
@@ -82,10 +82,10 @@ describe('DetailFieldsCard', () => {
 
     const input = container.querySelectorAll<HTMLInputElement>('input')[1];
     await act(async () => {
-      Object.getOwnPropertyDescriptor(
-        window.HTMLInputElement.prototype,
-        'value',
-      )?.set?.call(input, '');
+      Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(
+        input,
+        '',
+      );
       input?.dispatchEvent(new Event('input', { bubbles: true }));
     });
 

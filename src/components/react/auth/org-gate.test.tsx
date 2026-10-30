@@ -319,10 +319,10 @@ describe('OrgGate', () => {
         );
         expect(input, `input "${placeholder}" must render`).toBeTruthy();
         // Native setter + input event, so React's controlled value keeps up.
-        Object.getOwnPropertyDescriptor(
-          window.HTMLInputElement.prototype,
-          'value',
-        )?.set?.call(input, value);
+        Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(
+          input,
+          value,
+        );
         input?.dispatchEvent(new Event('input', { bubbles: true }));
       });
 
