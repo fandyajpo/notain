@@ -272,7 +272,7 @@ async function listUsers(
   return json(200, {
     users: entries,
     total: usersData.total,
-    nextCursor: hasMore && page.length > 0 ? page[page.length - 1].$id : null,
+    nextCursor: hasMore && page.length > 0 ? (page[page.length - 1]?.$id ?? null) : null,
   });
 }
 

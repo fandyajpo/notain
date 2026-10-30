@@ -299,6 +299,7 @@ async function listResource(
   return json(200, {
     rows,
     total: data.total,
-    nextCursor: rows.length === limit && rows.length > 0 ? rows[rows.length - 1].id : null,
+    nextCursor:
+      rows.length === limit && rows.length > 0 ? (rows[rows.length - 1]?.id ?? null) : null,
   });
 }

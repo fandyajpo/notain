@@ -38,7 +38,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "smoke": "vp test run --config vitest.smoke.config.ts",
-    "typecheck": "astro check"
+    "typecheck": "astro check && tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@astrojs/react": "^7.0.1",

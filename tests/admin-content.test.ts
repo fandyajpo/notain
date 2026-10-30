@@ -167,10 +167,10 @@ describe('POST /api/admin/content — invoices', () => {
     expect(response.status).toBe(200);
     const patches = writes('invoices');
     expect(patches).toHaveLength(1);
-    expect(patches[0].method).toBe('PATCH');
+    expect(patches[0]?.method).toBe('PATCH');
     // The lifecycle column is structurally absent from a content save.
-    expect(patches[0].data).not.toHaveProperty('status');
-    expect(patches[0].data?.customerName).toBe('Sudah Diperbarui');
+    expect(patches[0]?.data).not.toHaveProperty('status');
+    expect(patches[0]?.data?.customerName).toBe('Sudah Diperbarui');
   });
 
   it('refuses a create whose number is already taken', async () => {

@@ -1,5 +1,17 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"]
+  "exclude": ["dist"],
+  "compilerOptions": {
+    // Beyond Astro's `strict`: index access returns `T | undefined` (a typo'd
+    // or out-of-range index becomes a compile error instead of `any`), switch
+    // cases must not fall through, every override is marked, and unreachable
+    // code is an error rather than a comment-shaped lie.
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowUnreachableCode": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  }
 }

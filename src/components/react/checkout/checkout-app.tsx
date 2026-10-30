@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import { getActiveOrgId, subscribeActiveOrg } from '../../../app/active-org';
+import { useOrgs } from '../../../lib/query/hooks/use-orgs';
 import { useSession } from '../../../lib/query/hooks/use-session';
 import { useStartCheckout } from '../../../lib/query/hooks/use-payment';
 import { isPaidPlan, PAID_PLANS, planAmount, type PaidPlan } from '../../../core/billing/plans';
@@ -53,6 +55,12 @@ function CheckoutContent() {
 
   const { data: session, isLoading } = useSession();
   const checkout = useStartCheckout();
+  // The order is stamped for the ACTIVE organization (see `startCheckout`),
+  // and only its owner may place it — the same rule `requireOrgOwner` enforces
+  // on the server. Resolved here so a member is told before any DOKU session
+  // exists, not after they come back from one.
+  const activeOrgId = useSyncExternalStore(subscribeActiveOrg, getActiveOrgId, () => null);
+  const { data: orgs, isLoading: orgsLoading } = useOrgs();
 
   // Signed-out visitors keep their plan through the auth detour: the login
   // page redirects back to this exact URL (same-origin path, `?next=`).
@@ -105,6 +113,40 @@ function CheckoutContent() {
         action={
           <Button href="/pricing" size="sm">
             Lihat harga
+          </Button>
+        }
+      />
+    );
+  }
+
+  if (activeOrgId === null || orgsLoading || !orgs) {
+    return <LoadingState label="Memeriksa organisasi…" />;
+  }
+
+  const activeOrg = orgs.orgs.find((org) => org.id === activeOrgId) ?? null;
+
+  if (!activeOrg) {
+    return (
+      <ErrorState
+        title="Organisasi tidak ditemukan"
+        message="Organisasi aktif tidak bisa dimuat. Muat ulang halaman, atau pilih organisasi lain di sidebar."
+        action={
+          <Button href="/dashboard" size="sm">
+            Ke dashboard
+          </Button>
+        }
+      />
+    );
+  }
+
+  if (!activeOrg.isOwner) {
+    return (
+      <ErrorState
+        title="Hanya owner yang bisa berlangganan"
+        message={`Plan dibayar untuk organisasi, jadi hanya owner ${activeOrg.name} yang boleh membeli atau memperpanjangnya. Minta owner-nya melakukan upgrade, atau pindah ke organisasi yang kamu pegang sendiri.`}
+        action={
+          <Button href="/dashboard" size="sm">
+            Ke dashboard
           </Button>
         }
       />

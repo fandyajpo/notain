@@ -129,7 +129,7 @@ describe('InvoicePreview block layout', () => {
 
   it('renders blocks in the order the template declares', async () => {
     const { business, draft } = setup();
-    const template = clone(BUILTIN_TEMPLATES[0]);
+    const template = clone(BUILTIN_TEMPLATES[0]!);
     template.layout.reverse();
 
     await render(<InvoicePreview business={business} invoice={draft} template={template} />);
@@ -148,7 +148,7 @@ describe('InvoicePreview block layout', () => {
 
   it('omits blocks the template switched off', async () => {
     const { business, draft } = setup();
-    const template = clone(BUILTIN_TEMPLATES[0]);
+    const template = clone(BUILTIN_TEMPLATES[0]!);
     template.layout = template.layout.filter((block) => block.type !== 'notes');
 
     await render(<InvoicePreview business={business} invoice={draft} template={template} />);
@@ -173,7 +173,7 @@ describe('InvoicePreview block layout', () => {
 
   it('honours horizontal alignment', async () => {
     const { business, draft } = setup();
-    const template = clone(BUILTIN_TEMPLATES[0]);
+    const template = clone(BUILTIN_TEMPLATES[0]!);
     const totals = template.layout.find((block) => block.type === 'totals');
     expect(totals?.align).toBe('right');
 
@@ -231,7 +231,7 @@ describe('InvoicePreview block width and wallpaper', () => {
 
   it('shrinks a narrow block and hugs the side it is aligned to', async () => {
     const { business, draft } = setup();
-    const template = clone(BUILTIN_TEMPLATES[0]);
+    const template = clone(BUILTIN_TEMPLATES[0]!);
     const totals = template.layout.find((block) => block.type === 'totals');
     expect(totals).toBeDefined();
     totals!.width = 'narrow';
@@ -245,7 +245,7 @@ describe('InvoicePreview block width and wallpaper', () => {
 
   it('paints the wallpaper behind the card', async () => {
     const { business, draft } = setup();
-    const template = clone(BUILTIN_TEMPLATES[0]);
+    const template = clone(BUILTIN_TEMPLATES[0]!);
     template.theme = {
       ...template.theme,
       wallpaper: { kind: 'gradient', from: '#112233', to: '#ffffff', angle: 135 },

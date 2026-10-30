@@ -196,14 +196,14 @@ function tokenize(html: string): Token[] {
     // text to a browser, and treating it as a tag would swallow real content.
     const close = /^<\/([a-zA-Z][^\s/>]*)\s*>/.exec(rest);
     if (close) {
-      tokens.push({ kind: 'close', name: close[1].toLowerCase() });
+      tokens.push({ kind: 'close', name: (close[1] ?? '').toLowerCase() });
       index = lt + close[0].length;
       continue;
     }
 
     const open = /^<([a-zA-Z][^\s/>]*)((?:"[^"]*"|'[^']*'|[^>"'])*)>/.exec(rest);
     if (open) {
-      tokens.push({ kind: 'open', name: open[1].toLowerCase(), attrs: open[2] ?? '' });
+      tokens.push({ kind: 'open', name: (open[1] ?? '').toLowerCase(), attrs: open[2] ?? '' });
       index = lt + open[0].length;
       continue;
     }
@@ -225,7 +225,7 @@ function parseAttrs(raw: string): Array<{ name: string; value: string }> {
     if (value.length >= 2 && (value[0] === '"' || value[0] === "'")) {
       value = value.slice(1, -1);
     }
-    found.push({ name: match[1].toLowerCase(), value: decodeEntities(value) });
+    found.push({ name: (match[1] ?? '').toLowerCase(), value: decodeEntities(value) });
   }
 
   return found;

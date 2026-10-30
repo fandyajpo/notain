@@ -77,7 +77,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     total: data.total,
     nextCursor:
       data.documents.length === limit && limit > 0
-        ? data.documents[data.documents.length - 1].$id
+        ? (data.documents[data.documents.length - 1]?.$id ?? null)
         : null,
   });
 };

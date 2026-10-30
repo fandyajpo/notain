@@ -73,7 +73,8 @@ export async function readFileRows(file: File): Promise<SheetRow[]> {
   const XLSX = await loadXlsx();
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: 'array' });
-  const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+  const firstName = workbook.SheetNames[0];
+  const firstSheet = firstName ? workbook.Sheets[firstName] : undefined;
   if (!firstSheet) return [];
 
   const rows = XLSX.utils.sheet_to_json<string[]>(firstSheet, {

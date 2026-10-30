@@ -49,7 +49,7 @@ function Eyebrow({ delay }: { delay: number }) {
  * landing page shows is exactly what the picker offers.
  */
 function PreviewStage() {
-  const [templateId, setTemplateId] = useState(BUILTIN_TEMPLATES[0].id);
+  const [templateId, setTemplateId] = useState(BUILTIN_TEMPLATES[0]?.id ?? '');
   const sample = useMemo(() => createSampleInvoice(new Date(Date.UTC(2026, 9, 8))), []);
 
   return (

@@ -1,4 +1,7 @@
 import { CalendarClock, CreditCard, Receipt } from 'lucide-react';
+import { useSyncExternalStore } from 'react';
+import { getActiveOrgId, subscribeActiveOrg } from '../../../app/active-org';
+import { useOrgs } from '../../../lib/query/hooks/use-orgs';
 import { usePortalSession } from '../../../lib/query/hooks/use-payment';
 import { PAID_PLANS, type PaidPlan } from '../../../core/billing/plans';
 import { formatTanggal } from '../../../core/shared/dates';
@@ -37,6 +40,11 @@ const STATUS_BADGES: Record<
  */
 export function PlanStatusCard() {
   const portal = usePortalSession();
+  // Renewal is a checkout, and checkout is owner-only (server + page). Hiding
+  // the button for members keeps the UI honest with the API they'd hit.
+  const activeOrgId = useSyncExternalStore(subscribeActiveOrg, getActiveOrgId, () => null);
+  const { data: orgs } = useOrgs();
+  const canManage = orgs?.orgs.find((org) => org.id === activeOrgId)?.isOwner ?? false;
 
   return (
     <Card data-tour="billing-status">
@@ -71,13 +79,13 @@ export function PlanStatusCard() {
           />
         </div>
       ) : (
-        <PlanSummary session={portal.data} />
+        <PlanSummary session={portal.data} canManage={canManage} />
       )}
     </Card>
   );
 }
 
-function PlanSummary({ session }: { session: PortalSession }) {
+function PlanSummary({ session, canManage }: { session: PortalSession; canManage: boolean }) {
   const paid = session.plan !== 'free';
   const info = paid ? PAID_PLANS[session.plan as PaidPlan] : null;
 
@@ -119,24 +127,24 @@ function PlanSummary({ session }: { session: PortalSession }) {
         </Notice>
       )}
 
+      {paid && session.active && canManage && (
+        <Button
+          href={`/checkout?plan=${session.plan}`}
+          variant="secondary"
+          size="sm"
+          className="mt-4"
+        >
+          <CreditCard size={14} aria-hidden="true" />
+          Perpanjang 30 hari
+        </Button>
+      )}
       {paid && session.active && (
-        <>
-          <Button
-            href={`/checkout?plan=${session.plan}`}
-            variant="secondary"
-            size="sm"
-            className="mt-4"
-          >
-            <CreditCard size={14} aria-hidden="true" />
-            Perpanjang 30 hari
-          </Button>
-          <Notice variant="accent" className="mt-3">
-            Plan ini dibayar untuk 30 hari dan{' '}
-            <span className="font-medium">tidak diperpanjang otomatis</span> — karena itu tidak ada
-            tombol batal langganan: langganan berhenti dengan sendirinya di tanggal berakhir di
-            atas. Turun ke plan lebih rendah baru bisa dipilih setelah masa aktif itu selesai.
-          </Notice>
-        </>
+        <Notice variant="accent" className="mt-3">
+          Plan ini dibayar untuk 30 hari dan{' '}
+          <span className="font-medium">tidak diperpanjang otomatis</span> — karena itu tidak ada
+          tombol batal langganan: langganan berhenti dengan sendirinya di tanggal berakhir di atas.
+          Turun ke plan lebih rendah baru bisa dipilih setelah masa aktif itu selesai.
+        </Notice>
       )}
     </>
   );

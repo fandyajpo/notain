@@ -110,7 +110,7 @@ export function OrgGate({ children, fallback }: Props) {
         switchState !== null &&
         switchState.to === activeOrgId &&
         orgs.some((org) => org.id === switchState.from);
-      setActiveOrgId(restore ? switchState.from : orgs[0].id);
+      setActiveOrgId(restore ? switchState.from : (orgs[0]?.id ?? activeOrgId));
     }
   }, [data, activeOrgId, isFetching]);
 

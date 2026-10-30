@@ -184,10 +184,10 @@ describe('revenueByMonth', () => {
       '2026-09',
       '2026-10',
     ]);
-    expect(points[0].revenue).toBe(40_000);
-    expect(points[1].revenue).toBe(0);
-    expect(points[5].revenue).toBe(20_000);
-    expect(points[0].label).toBe('Mei');
+    expect(points[0]?.revenue).toBe(40_000);
+    expect(points[1]?.revenue).toBe(0);
+    expect(points[5]?.revenue).toBe(20_000);
+    expect(points[0]?.label).toBe('Mei');
   });
 });
 
@@ -206,9 +206,9 @@ describe('attentionItems', () => {
     );
 
     expect(items.map((item) => item.entry.id)).toEqual(['b', 'a', 'c', 'd']);
-    expect(items[0].overdueDays).toBe(14);
-    expect(items[1].overdueDays).toBe(4);
-    expect(items[2].overdueDays).toBeNull();
+    expect(items[0]?.overdueDays).toBe(14);
+    expect(items[1]?.overdueDays).toBe(4);
+    expect(items[2]?.overdueDays).toBeNull();
   });
 
   it('honours the limit', () => {

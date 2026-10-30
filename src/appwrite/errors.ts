@@ -27,7 +27,11 @@ export function toAppError(error: unknown): AppError {
     // `user_blocked` answers with 401, but the *reason* is a permanent state,
     // not an expired token — key off the type, not the status.
     if (type === 'user_blocked') {
-      return new AppError(ERROR_CODES.SUSPENDED, AUTH_MESSAGES.user_blocked, { cause: error });
+      return new AppError(
+        ERROR_CODES.SUSPENDED,
+        AUTH_MESSAGES.user_blocked ?? 'Akun kamu dinonaktifkan.',
+        { cause: error },
+      );
     }
     const code = mapStatusCode(error.code);
 

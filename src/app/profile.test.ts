@@ -78,7 +78,9 @@ describe('uploadLogo', () => {
     });
     // The row must already point at the new file before the old one goes —
     // deleting first would break the invoice header if the save failed.
-    expect(save.mock.invocationCallOrder[0]).toBeLessThan(removeAsset.mock.invocationCallOrder[0]);
+    expect(save.mock.invocationCallOrder[0]!).toBeLessThan(
+      removeAsset.mock.invocationCallOrder[0]!,
+    );
   });
 
   it('leaves storage alone when there is no previous logo', async () => {
@@ -170,7 +172,9 @@ describe('removeLogo', () => {
 
     expect(result.logoFileId).toBeUndefined();
     expect(removeAsset).toHaveBeenCalledWith('logos_old');
-    expect(save.mock.invocationCallOrder[0]).toBeLessThan(removeAsset.mock.invocationCallOrder[0]);
+    expect(save.mock.invocationCallOrder[0]!).toBeLessThan(
+      removeAsset.mock.invocationCallOrder[0]!,
+    );
   });
 
   it('does nothing when there is no logo', async () => {

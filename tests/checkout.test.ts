@@ -180,7 +180,7 @@ describe('POST /api/payments/checkout', () => {
     // The row and the DOKU request both carry the catalog price.
     const created = paymentWrites().find((write) => write.method === 'POST');
     expect(created?.data.amount).toBe(49_000);
-    const dokuBody = JSON.parse(String(dokuCalls[0].init.body));
+    const dokuBody = JSON.parse(String(dokuCalls[0]!.init.body));
     expect(dokuBody.order.amount).toBe(49_000);
     expect(dokuBody.order.invoice_number).toBe(created?.id);
     expect(dokuBody.additional_info.override_notification_url).toBe(
@@ -192,7 +192,7 @@ describe('POST /api/payments/checkout', () => {
   it('signs the DOKU request with the documented headers', async () => {
     await handle(post({ plan: 'pro' }));
 
-    const headers = dokuCalls[0].init.headers as Record<string, string>;
+    const headers = dokuCalls[0]!.init.headers as Record<string, string>;
     expect(headers['Client-Id']).toBe(CLIENT_ID);
     expect(headers['Request-Id']).toBeTypeOf('string');
     expect(headers['Request-Timestamp']).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);

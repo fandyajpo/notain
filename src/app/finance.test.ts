@@ -103,7 +103,7 @@ describe('getDashboardFinance', () => {
 
     expect(listFinanceEntries).toHaveBeenCalledTimes(2);
     // The cursor rides the last row's id.
-    expect(listFinanceEntries.mock.calls[1][1].cursorAfter).toBe('row-99');
+    expect(listFinanceEntries.mock.calls[1]?.[1]?.cursorAfter).toBe('row-99');
     expect(finance.summary.invoiceCount).toBe(101);
     expect(finance.truncated).toBe(false);
   });

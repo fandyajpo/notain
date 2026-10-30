@@ -38,15 +38,15 @@ const PLAN_LABELS: Record<string, string> = {
 };
 
 const PLAN_OPTIONS = [
-  { value: 'free', label: PLAN_LABELS.free },
-  { value: 'pro', label: PLAN_LABELS.pro },
-  { value: 'business', label: PLAN_LABELS.business },
+  { value: 'free', label: PLAN_LABELS.free! },
+  { value: 'pro', label: PLAN_LABELS.pro! },
+  { value: 'business', label: PLAN_LABELS.business! },
 ];
 
 /** Quick subscribe only offers the paid tiers (free is the "Lepas" outcome). */
 const SUBSCRIBE_PLAN_OPTIONS = [
-  { value: 'pro', label: PLAN_LABELS.pro },
-  { value: 'business', label: PLAN_LABELS.business },
+  { value: 'pro', label: PLAN_LABELS.pro! },
+  { value: 'business', label: PLAN_LABELS.business! },
 ];
 
 /**

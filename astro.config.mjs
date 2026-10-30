@@ -25,7 +25,7 @@ import tailwindcss from '@tailwindcss/vite';
  */
 const ID_SEGMENT = /^[A-Za-z0-9_-]{1,64}$/;
 
-/** @type {Record<string, { reserved: Set<string>, shell: string }>} */
+/**  {{ invoice: { reserved: Set<string>, shell: string }, templates: { reserved: Set<string>, shell: string } }} */
 const EDIT_ROUTE_SHELLS = {
   invoice: { reserved: new Set(['new', 'print', 'edit']), shell: '/invoice/edit' },
   templates: { reserved: new Set(['new']), shell: '/templates/new' },
@@ -87,14 +87,14 @@ function editRouteFallback() {
         (req, _res, next) => {
           const url = req.url;
           if (typeof url !== 'string') return next();
-          const [path, query = ''] = url.split('?', 2);
+          const [path = '', query = ''] = url.split('?', 2);
 
           // `/invoice/print/<id>` — the customer-facing print link. Same
           // trick as the edit route below, but the shell is the print page
           // and the id is read by the app from the address bar.
           const printMatch = /^\/invoice\/print\/([^/]+)\/?$/.exec(path);
           if (printMatch) {
-            if (ID_SEGMENT.test(printMatch[1])) req.url = '/invoice/print';
+            if (ID_SEGMENT.test(printMatch[1] ?? '')) req.url = '/invoice/print';
             return next();
           }
 
@@ -103,7 +103,7 @@ function editRouteFallback() {
           // `/site/` or any deeper path goes to the dev server untouched.
           const siteMatch = /^\/site\/([^/]+)\/?$/.exec(path);
           if (siteMatch) {
-            if (ID_SEGMENT.test(siteMatch[1])) req.url = '/site';
+            if (ID_SEGMENT.test(siteMatch[1] ?? '')) req.url = '/site';
             return next();
           }
 
@@ -129,8 +129,9 @@ function editRouteFallback() {
             // answers and the app explains that the link is incomplete.
           }
 
-          const route = EDIT_ROUTE_SHELLS[match[1]];
-          const segment = match[2];
+          const route =
+            match[1] === 'templates' ? EDIT_ROUTE_SHELLS.templates : EDIT_ROUTE_SHELLS.invoice;
+          const segment = match[2] ?? '';
           if (route.reserved.has(segment) || !ID_SEGMENT.test(segment)) return next();
           // The query is dropped from the rewrite, exactly as the function
           // drops it when it fetches the shell; the browser keeps its own, and

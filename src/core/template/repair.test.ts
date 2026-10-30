@@ -32,7 +32,7 @@ describe('repairTemplateContent', () => {
 
   it('re-mints duplicate block ids without touching the blocks themselves', () => {
     const layout = base.layout.map((block, index) =>
-      index > 0 ? { ...block, id: base.layout[0].id } : { ...block },
+      index > 0 ? { ...block, id: base.layout[0]!.id } : { ...block },
     );
     const { template, repaired } = repairTemplateContent({ ...base, layout });
     expect(repaired).toContain('ID blok duplikat diganti.');
@@ -47,7 +47,7 @@ describe('repairTemplateContent', () => {
     );
     const { template, repaired } = repairTemplateContent({ ...base, layout });
     expect(repaired).toContain('Blok wajib yang disembunyikan ditampilkan kembali.');
-    expect(blocksOf(template, 'letterhead')[0].visible).toBe(true);
+    expect(blocksOf(template, 'letterhead')[0]!.visible).toBe(true);
   });
 
   it('appends a required block that went missing, from the classic built-in', () => {
@@ -56,8 +56,8 @@ describe('repairTemplateContent', () => {
     expect(repaired).toContain('Blok wajib yang hilang ditambahkan kembali.');
     const totals = blocksOf(template, 'totals');
     expect(totals).toHaveLength(1);
-    expect(totals[0].id).toBe('totals-repair');
-    expect(totals[0].visible).toBe(true);
+    expect(totals[0]!.id).toBe('totals-repair');
+    expect(totals[0]!.visible).toBe(true);
   });
 
   it('names an empty template rather than leaving it unsaveable', () => {

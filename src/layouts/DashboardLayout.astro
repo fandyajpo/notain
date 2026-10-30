@@ -5,7 +5,7 @@ import { AdminNavGroup } from '../components/react/auth/admin-nav-link';
 import { OrgSwitcherIsland } from '../components/react/orgs/org-switcher-island';
 import { QuotaMeter } from '../components/react/dashboard/quota-meter';
 import { ShortcutsIsland, ShortcutsTrigger } from '../components/react/ui/shortcuts';
-import { NAV_GROUPS, UTILITIES_GROUP_LABEL, drawerStagger } from '../lib/nav';
+import { NAV_GROUPS, UTILITIES_GROUP_LABEL } from '../lib/nav';
 import { navLinkClass } from '../lib/ui/classes';
 import Layout from './Layout.astro';
 
@@ -24,7 +24,6 @@ const is_active = (href: string) => path === href || path.startsWith(`${href}/`)
 // icon column drops them too.
 const GROUP_LABEL =
   'sidebar-label px-3 pb-1 pt-1 text-[11px] font-medium uppercase tracking-wider text-muted';
-const stagger = drawerStagger();
 ---
 
 <Layout title={title} description={description}>
@@ -56,7 +55,7 @@ const stagger = drawerStagger();
             type="button"
             id="mobile-nav-toggle"
             aria-expanded="false"
-            aria-controls="mobile-nav-drawer"
+            aria-controls="app-sidebar"
             aria-label="Buka menu navigasi"
             class="relative inline-flex h-9 w-9 items-center justify-center rounded-control text-foreground transition-colors hover:bg-accent-soft focus-ring"
           >
@@ -70,69 +69,15 @@ const stagger = drawerStagger();
           <SignOutIsland client:only="react" />
         </div>
       </div>
-      <div
-        id="mobile-nav-drawer"
-        data-open="false"
-        inert
-        class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-smooth lg:hidden"
-      >
-        <div class="overflow-hidden">
-          <nav
-            class="flex flex-col gap-0.5 border-t border-border px-2 py-2"
-            aria-label="Navigasi utama"
-          >
-            {/* Which workspace am I in — first thing in the drawer, before any
-                page link, so the org context reads before the data does. */}
-            <div class="mb-1">
-              <OrgSwitcherIsland client:only="react" />
-            </div>
-            {NAV_GROUPS.map((group, groupIndex) => (
-              <div class:list={['flex flex-col gap-0.5', groupIndex > 0 && 'mt-2']}>
-                <p class={GROUP_LABEL}>{group.label}</p>
-                {group.items.map(({ href, label, Icon }) => (
-                  <a
-                    href={href}
-                    data-astro-prefetch
-                    data-nav-link
-                    aria-label={label}
-                    title={label}
-                    style={`--nav-i:${stagger.get(href) ?? 0}`}
-                    class:list={[
-                      'flex items-center gap-2.5 rounded-control px-3 py-2.5 text-sm transition-colors',
-                      navLinkClass(is_active(href)),
-                    ]}
-                  >
-                    <Icon size={16} aria-hidden="true" />
-                    {label}
-                  </a>
-                ))}
-              </div>
-            ))}
-            {/* The three islands sit in their own wrappers so each inherits the
-                `--nav-i` its position in the drawer asks for. */}
-            <div style={`--nav-i:${stagger.get('admin') ?? 0}`}>
-              <AdminNavGroup client:only="react" />
-            </div>
-            {/* The free plan's invoice allowance — same cached query as the
-                builder's meter, so the two numbers always agree. */}
-            <div class="mt-2">
-              <QuotaMeter client:only="react" />
-            </div>
-            <div class="mt-2">
-              <p class={GROUP_LABEL}>{UTILITIES_GROUP_LABEL}</p>
-              <div class="flex flex-col gap-0.5">
-                <div style={`--nav-i:${stagger.get('shortcuts') ?? 0}`}>
-                  <ShortcutsTrigger client:only="react" variant="drawer" />
-                </div>
-                <div style={`--nav-i:${stagger.get('sign-out') ?? 0}`}>
-                  <SignOutIsland client:only="react" />
-                </div>
-              </div>
-            </div>
-          </nav>
-        </div>
-      </div>
     </header>
+
+    {/* Off-canvas backdrop for the mobile/tablet sidebar. */}
+    <div
+      id="sidebar-backdrop"
+      data-open="false"
+      aria-hidden="true"
+      class="pointer-events-none fixed inset-0 z-30 bg-foreground/40 opacity-0 transition-opacity duration-300 lg:hidden"
+    ></div>
 
     {/* Desktop: a persistent sidebar beside the content. The aside stretches
         to the full row so its border runs the whole height; the sticky inner
@@ -143,9 +88,10 @@ const stagger = drawerStagger();
       <aside
         id="app-sidebar"
         transition:persist="sidebar"
-        class="hidden border-r border-border bg-card lg:block"
+        data-open="false"
+        class="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] -translate-x-full overflow-y-auto border-r border-border bg-card transition-transform duration-300 ease-smooth lg:static lg:z-auto lg:h-screen lg:w-auto lg:max-w-none lg:translate-x-0 lg:overflow-visible lg:transition-none"
       >
-        <div class="sticky top-0 flex h-screen flex-col p-4">
+        <div class="flex min-h-full flex-col p-4 lg:sticky lg:top-0 lg:h-screen">
           <div class="flex items-center justify-between gap-2 px-2">
             <a
               href="/dashboard"
@@ -215,7 +161,12 @@ const stagger = drawerStagger();
             <p class={GROUP_LABEL}>{UTILITIES_GROUP_LABEL}</p>
             <div class="flex flex-col gap-1">
               <ShortcutsTrigger client:only="react" variant="sidebar" />
-              <SignOutIsland client:only="react" />
+              {/* Sign-out lives in the top navbar on mobile & tablet (and its
+                  presence there is why it is hidden here): no second exit at
+                  the foot of the off-canvas panel. */}
+              <div class="hidden lg:block">
+                <SignOutIsland client:only="react" />
+              </div>
             </div>
           </div>
         </div>
@@ -270,46 +221,75 @@ const stagger = drawerStagger();
 
   document.addEventListener('astro:page-load', syncNav);
 
-  // --- Mobile nav drawer -------------------------------------------------
-  const drawer = document.getElementById('mobile-nav-drawer');
+  // --- Off-canvas sidebar (mobile & tablet) ------------------------------
+  // Below `lg` there is no room for the pinned rail, so the SAME sidebar
+  // becomes a slide-in panel: the hamburger toggles it, a backdrop dims the
+  // page, and every dismissal path (link, Escape, outside tap, backdrop)
+  // closes it. At `lg` the rail is static again and all of this stays inert.
+  const sidebar = document.getElementById('app-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
   const navToggle = document.getElementById('mobile-nav-toggle');
   const mobileHeader = navToggle?.closest('header');
 
+  const isMobile = () => window.innerWidth < 1024;
+
   function setNavOpen(open: boolean) {
-    if (!drawer || !navToggle) return;
-    drawer.dataset.open = String(open);
-    // `inert` keeps the collapsed drawer out of the tab order and hit-testing.
-    drawer.toggleAttribute('inert', !open);
+    if (!sidebar || !navToggle) return;
+    sidebar.dataset.open = String(open);
+    // `inert` keeps the closed panel out of the tab order and hit-testing —
+    // but only on mobile: the desktop rail is always live, so it is cleared
+    // whenever the viewport is at the sidebar breakpoint.
+    sidebar.toggleAttribute('inert', isMobile() && !open);
+    // Not `toggleAttribute`: that writes an empty value (`data-open=""`),
+    // which the `[data-open='true']` CSS never matches.
+    if (backdrop) backdrop.dataset.open = String(open);
     navToggle.setAttribute('aria-expanded', String(open));
     navToggle.setAttribute('aria-label', open ? 'Tutup menu navigasi' : 'Buka menu navigasi');
     mobileHeader?.toggleAttribute('data-nav-open', open);
+    document.body.classList.toggle('overflow-hidden', open && isMobile());
   }
 
+  // The SSR markup ships the panel closed; on a desktop viewport it must be
+  // interactive immediately (no `inert`), which is the natural state anyway.
+  setNavOpen(false);
+
   navToggle?.addEventListener('click', () => {
-    setNavOpen(drawer?.dataset.open !== 'true');
+    setNavOpen(sidebar?.dataset.open !== 'true');
   });
 
-  // Picking any link (nav item or admin) closes the drawer.
-  drawer?.addEventListener('click', (event) => {
+  // Picking any link (nav, admin, utilities) closes the panel.
+  sidebar?.addEventListener('click', (event) => {
     if ((event.target as HTMLElement).closest('a')) setNavOpen(false);
   });
 
+  backdrop?.addEventListener('click', () => setNavOpen(false));
+
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && drawer?.dataset.open === 'true') {
+    if (event.key === 'Escape' && sidebar?.dataset.open === 'true') {
       setNavOpen(false);
       navToggle?.focus();
     }
   });
 
   document.addEventListener('pointerdown', (event) => {
-    if (drawer?.dataset.open !== 'true' || !mobileHeader) return;
-    if (!mobileHeader.contains(event.target as Node)) setNavOpen(false);
+    if (sidebar?.dataset.open !== 'true' || !mobileHeader) return;
+    const target = event.target as Node;
+    if (!mobileHeader.contains(target) && !sidebar.contains(target)) setNavOpen(false);
   });
 
-  // Growing past the sidebar breakpoint hides the header; reset so the drawer
-  // does not reappear still-open when the viewport shrinks back.
+  // Width crossings both ways: shrinking in closes the panel AND re-marks it
+  // `inert` (the initial pass runs at load time, which may have been desktop —
+  // without this the parked panel's links stay in the tab order off-screen);
+  // growing past the breakpoint restores the pinned rail, never `inert`.
   window.addEventListener('resize', () => {
-    if (window.innerWidth >= 1024 && drawer?.dataset.open === 'true') setNavOpen(false);
+    if (isMobile()) {
+      if (sidebar?.dataset.open === 'true') setNavOpen(false);
+      else sidebar?.toggleAttribute('inert', true);
+    } else {
+      sidebar?.removeAttribute('inert');
+      backdrop?.removeAttribute('data-open');
+      document.body.classList.remove('overflow-hidden');
+    }
   });
 
   // --- Desktop sidebar collapse ------------------------------------------
@@ -357,25 +337,16 @@ const stagger = drawerStagger();
     scroll-padding-top: 7rem;
   }
 
-  /* --- Mobile nav drawer ------------------------------------------------ */
-  #mobile-nav-drawer[data-open='true'] {
-    grid-template-rows: 1fr;
+  /* --- Off-canvas sidebar (mobile & tablet) ----------------------------- */
+  /* Tailwind v4's `-translate-x-full` writes the `translate` PROPERTY, not
+     `transform` — so the open state must override `translate` (an `#id` rule
+     outranks the utility class) or the panel stays parked off-screen. */
+  #app-sidebar[data-open='true'] {
+    translate: 0 !important;
   }
-  #mobile-nav-drawer a {
-    transition:
-      opacity 0.25s ease,
-      transform 0.25s ease;
-  }
-  #mobile-nav-drawer[data-open='false'] a {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  /* Staggered entrance so the list cascades in instead of popping as a block.
-     The index rides on each row as `--nav-i`, set in the markup from the
-     drawer's flat order — a plain `nth-child` chain cannot count across the
-     section wrappers the grouped menu is built from. */
-  #mobile-nav-drawer[data-open='true'] a {
-    transition-delay: calc(var(--nav-i, 0) * 0.04s);
+  #sidebar-backdrop[data-open='true'] {
+    opacity: 1;
+    pointer-events: auto;
   }
   #mobile-nav-toggle .nav-icon-menu,
   #mobile-nav-toggle .nav-icon-x {
@@ -388,37 +359,40 @@ const stagger = drawerStagger();
     opacity: 1;
   }
 
-  /* --- Desktop sidebar collapse ----------------------------------------- */
+  /* --- Desktop sidebar collapse ------------------------------------------ */
+  /* Scoped to the rail breakpoint: the same `.sidebar-label` / link classes
+     are also the off-canvas panel's markup below `lg`, where the rail is not
+     collapsed and these rules would blank the labels out. */
   @media (min-width: 1024px) {
     .app-shell {
       transition: grid-template-columns 0.3s var(--ease-smooth);
     }
-  }
-  html[data-sidebar='closed'] .app-shell {
-    grid-template-columns: 4.5rem 1fr;
-  }
-  html[data-sidebar='closed'] .sidebar-label {
-    display: none;
-  }
-  html[data-sidebar='closed'] .sidebar-link,
-  html[data-sidebar='closed'] aside nav a {
-    justify-content: center;
-    padding-left: 0;
-    padding-right: 0;
-  }
-  html[data-sidebar='closed'] .sidebar-foot button {
-    width: 100%;
-    justify-content: center;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-  }
-  html[data-sidebar='closed'] .app-main {
-    max-width: none;
-  }
-  #sidebar-toggle svg {
-    transition: transform 0.3s var(--ease-smooth);
-  }
-  html[data-sidebar='closed'] #sidebar-toggle svg {
-    transform: rotate(180deg);
+    html[data-sidebar='closed'] .app-shell {
+      grid-template-columns: 4.5rem 1fr;
+    }
+    html[data-sidebar='closed'] .sidebar-label {
+      display: none;
+    }
+    html[data-sidebar='closed'] .sidebar-link,
+    html[data-sidebar='closed'] aside nav a {
+      justify-content: center;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    html[data-sidebar='closed'] .sidebar-foot button {
+      width: 100%;
+      justify-content: center;
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+    html[data-sidebar='closed'] .app-main {
+      max-width: none;
+    }
+    #sidebar-toggle svg {
+      transition: transform 0.3s var(--ease-smooth);
+    }
+    html[data-sidebar='closed'] #sidebar-toggle svg {
+      transform: rotate(180deg);
+    }
   }
 </style>

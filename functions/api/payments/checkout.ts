@@ -1,5 +1,5 @@
 import { getRow, patchRow } from '../../_lib/rows';
-import { requireOrg } from '../../_lib/orgs';
+import { requireOrgOwner } from '../../_lib/orgs';
 import { apiError, fetchUpstream as fetch, json } from '../../_lib/http';
 import { writeAudit } from '../../_lib/audit';
 import {
@@ -102,7 +102,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     );
   }
 
-  const gate = await requireOrg(request, env, body.orgId);
+  // Owner only: billing is an organization-level decision, so a plain member
+  // can never put their org on a paid plan (403 with the standard copy).
+  const gate = await requireOrgOwner(request, env, body.orgId);
   if (!gate.ok) return gate.response;
   const { session, auth } = gate.access;
   const orgId = gate.access.orgId;

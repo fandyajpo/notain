@@ -4,7 +4,7 @@ export const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export function isIsoDate(value: unknown): value is string {
   if (typeof value !== 'string' || !ISO_DATE_PATTERN.test(value)) return false;
-  const [year, month, day] = value.split('-').map(Number);
+  const [year = NaN, month = NaN, day = NaN] = value.split('-').map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
   return (
     date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
@@ -19,7 +19,7 @@ export function todayIsoDate(now: Date = new Date()): string {
 }
 
 export function addDaysIsoDate(isoDate: string, days: number): string {
-  const [year, month, day] = isoDate.split('-').map(Number);
+  const [year = NaN, month = NaN, day = NaN] = isoDate.split('-').map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
@@ -34,7 +34,7 @@ function toUtcMidnight(value: string | Date): number {
   if (value instanceof Date) {
     return Date.UTC(value.getFullYear(), value.getMonth(), value.getDate());
   }
-  const [year, month, day] = value.split('-').map(Number);
+  const [year = NaN, month = NaN, day = NaN] = value.split('-').map(Number);
   return Date.UTC(year, month - 1, day);
 }
 

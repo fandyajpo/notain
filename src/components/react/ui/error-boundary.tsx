@@ -17,13 +17,13 @@ type State = { error: Error | null };
  * losing the customer, line items, totals and the save button together.
  */
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { error: null };
+  override state: State = { error: null };
 
   static getDerivedStateFromError(error: Error): State {
     return { error };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo): void {
+  override componentDidCatch(error: Error, info: ErrorInfo): void {
     if (this.props.onError) {
       this.props.onError(error, info);
       return;
@@ -37,7 +37,7 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ error: null });
   };
 
-  render(): ReactNode {
+  override render(): ReactNode {
     const { error } = this.state;
     if (error) return this.props.fallback(error, this.reset);
     return this.props.children;

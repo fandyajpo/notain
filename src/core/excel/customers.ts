@@ -53,7 +53,7 @@ export function parseCustomerImportRows(rows: SheetRow[]): CustomerImportResult 
 
   if (rows.length === 0) return { customers, issues };
 
-  const header = rows[0].map((cell) => String(cell).trim().toLowerCase());
+  const header = (rows[0] ?? []).map((cell) => String(cell).trim().toLowerCase());
   const nameIdx = findColumn(header, NAME_ALIASES);
   const emailIdx = findColumn(header, EMAIL_ALIASES);
   const phoneIdx = findColumn(header, PHONE_ALIASES);
@@ -65,6 +65,7 @@ export function parseCustomerImportRows(rows: SheetRow[]): CustomerImportResult 
 
   for (let r = 1; r < rows.length; r += 1) {
     const row = rows[r];
+    if (!row) continue;
     if (row.every((cell) => String(cell).trim() === '')) continue;
 
     const parsed = customerDraftSchema.safeParse({

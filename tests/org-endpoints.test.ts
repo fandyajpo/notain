@@ -292,43 +292,37 @@ describe('POST /api/orgs/accept', () => {
 });
 
 describe('members — invite, list, remove', () => {
-  it('invites by email as a pending row; re-invite is idempotent; a member is a 409', async () => {
+  it('holds invites behind coming-soon: 503 for the owner, 403 for a member', async () => {
     fake = appwriteFake();
     seedOrg('org_aaaaaaaaaaaaaaaa');
     seedMembership('org_aaaaaaaaaaaaaaaa', OWNER.$id, { role: 'owner', email: OWNER.email });
 
+    // The owner clears the ownership gate, but the invitation EMAIL is not
+    // wired up yet — so the endpoint refuses loudly instead of half-inviting.
     const invite = await handle(
       membersOnRequest,
       req('POST', '/api/orgs/org_aaaaaaaaaaaaaaaa/members', { email: 'Teman@Example.COM' }),
       { id: 'org_aaaaaaaaaaaaaaaa' },
     );
-    expect(invite.status).toBe(201);
-    const created = (await invite.json()) as { invite: { email: string; status: string } };
-    expect(created.invite).toMatchObject({ email: 'teman@example.com', status: 'pending' });
+    expect(invite.status).toBe(503);
+    const body = (await invite.json()) as { message?: string };
+    expect(body.message).toContain('segera hadir');
 
-    // Same address again → same single invitation, not a duplicate row.
-    const again = await handle(
-      membersOnRequest,
-      req('POST', '/api/orgs/org_aaaaaaaaaaaaaaaa/members', { email: 'teman@example.com' }),
-      { id: 'org_aaaaaaaaaaaaaaaa' },
-    );
-    expect(again.status).toBe(200);
+    // Nothing was written: there is no half-created invitation to clean up.
     const pendingRows = [...fake.rows.values()].filter(
       (row) => row.orgId === 'org_aaaaaaaaaaaaaaaa' && row.inviteEmail === 'teman@example.com',
     );
-    expect(pendingRows).toHaveLength(1);
+    expect(pendingRows).toHaveLength(0);
 
-    // An already-active member is a real conflict, not a no-op.
-    seedMembership('org_aaaaaaaaaaaaaaaa', 'user-9', {
-      status: 'active',
-      email: 'aktif@example.com',
-    });
-    const conflict = await handle(
+    // A plain member never reaches the invite path at all.
+    seedMembership('org_aaaaaaaaaaaaaaaa', STRANGER.$id, { email: STRANGER.email });
+    signInAs(STRANGER);
+    const denied = await handle(
       membersOnRequest,
-      req('POST', '/api/orgs/org_aaaaaaaaaaaaaaaa/members', { email: 'aktif@example.com' }),
+      req('POST', '/api/orgs/org_aaaaaaaaaaaaaaaa/members', { email: 'siapasaja@example.com' }),
       { id: 'org_aaaaaaaaaaaaaaaa' },
     );
-    expect(conflict.status).toBe(409);
+    expect(denied.status).toBe(403);
   });
 
   it('refuses invites from a plain member and from an outsider', async () => {

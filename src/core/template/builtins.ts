@@ -73,4 +73,4 @@ export function getBuiltinTemplate(id: string): InvoiceTemplate | undefined {
 }
 
 /** Builtin to hand out when nothing else resolves — the safest default. */
-export const FALLBACK_TEMPLATE = BUILTIN_TEMPLATES[0];
+export const FALLBACK_TEMPLATE = BUILTIN_TEMPLATES[0]!;

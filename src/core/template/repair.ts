@@ -90,6 +90,7 @@ function repairLayout(layout: TemplateBlock[], repaired: string[]): TemplateBloc
     // template saveable in the first place.
     for (let index = result.length - 1; index >= 0; index -= 1) {
       const block = result[index];
+      if (!block) continue;
       if (dropped < overflow && !required.has(block.type)) {
         dropped += 1;
         continue;

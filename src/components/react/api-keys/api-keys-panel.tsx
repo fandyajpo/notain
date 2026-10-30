@@ -1,36 +1,23 @@
 import { KeyRound } from 'lucide-react';
 import { Button } from '../ui/button';
 import { EmptyState } from '../ui/state';
-import { Notice } from '../ui/notice';
 
 /**
- * API Keys page body — deliberately a stub. The Business plan's headline
- * benefit is API access (see the pricing card), so this panel sells the
- * upgrade instead of showing an empty table that reads like a broken feature.
+ * API Keys page body — deliberately a stub. The feature is not built yet, so
+ * the page says exactly that: one clear "segera hadir" state instead of an
+ * empty table that reads like a broken feature or a teaser for a paid plan.
  */
 export function ApiKeysPanel() {
   return (
-    <div className="flex flex-col gap-6">
-      <Notice variant="accent">
-        Halaman Integration akan menampung API Keys, dan fitur itu akan tersedia di plan{' '}
-        <span className="font-medium">Business</span>. Kalau kamu butuh akses API untuk integrasi
-        sendiri, intip dulu detailnya di halaman harga.
-      </Notice>
-      <EmptyState
-        icon={KeyRound}
-        title="API Keys belum tersedia"
-        description="Fitur ini sedang disiapkan dan akan dibuka khusus untuk plan Business — buat key, atur scope, dan pantau pemakaian API kamu di sini."
-        action={
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <Button href="/pricing" variant="primary" size="sm">
-              Lihat plan Business
-            </Button>
-            <Button href="/developers" variant="secondary" size="sm">
-              Halaman developer
-            </Button>
-          </div>
-        }
-      />
-    </div>
+    <EmptyState
+      icon={KeyRound}
+      title="API Keys segera hadir"
+      description="Fitur API masih disiapkan. Nanti kamu bisa membuat key, mengatur scope, dan memantau pemakaian API langsung di halaman ini."
+      action={
+        <Button href="/developers" variant="secondary" size="sm">
+          Pelajari rencana API
+        </Button>
+      }
+    />
   );
 }

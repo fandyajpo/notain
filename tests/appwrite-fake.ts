@@ -296,7 +296,7 @@ function route(fake: AppwriteFake, method: string, url: string): Response {
   // The admin content API checks the *target* user exists before writing.
   const userMatch = /\/users\/([^/]+)$/.exec(parsed.pathname);
   if (userMatch) {
-    const user = fake.users.get(userMatch[1]);
+    const user = fake.users.get(userMatch[1] ?? '');
     return user
       ? json(200, user)
       : json(404, { message: 'User not found', type: 'user_not_found' });
@@ -307,7 +307,7 @@ function route(fake: AppwriteFake, method: string, url: string): Response {
     parsed.pathname,
   );
   if (!match) return json(404, { message: `unrouted: ${method} ${url}` });
-  const table = match[1];
+  const table = match[1] ?? '';
   const id = match[2];
 
   if (id === undefined) {

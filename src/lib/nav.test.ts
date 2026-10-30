@@ -29,7 +29,7 @@ describe('NAV_GROUPS', () => {
 
   it('lists the workspace and account items in navigation order', () => {
     const strip = (index: number) =>
-      NAV_GROUPS[index].items.map(({ href, label }) => ({ href, label }));
+      NAV_GROUPS[index]!.items.map(({ href, label }) => ({ href, label }));
 
     expect(strip(0)).toEqual(WORKSPACE);
     expect(strip(1)).toEqual(ACCOUNT);

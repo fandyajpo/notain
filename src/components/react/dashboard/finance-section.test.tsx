@@ -156,7 +156,7 @@ describe('FinanceSection', () => {
 
     const waLinks = [...container.querySelectorAll('a[href^="https://wa.me/"]')];
     expect(waLinks).toHaveLength(1);
-    expect(decodeURIComponent(waLinks[0].getAttribute('href') ?? '')).toContain('INV-2026-001');
+    expect(decodeURIComponent(waLinks[0]?.getAttribute('href') ?? '')).toContain('INV-2026-001');
     expect(container.textContent).toContain('Terlambat 9 hari');
   });
 

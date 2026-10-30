@@ -40,7 +40,7 @@ describe('invoiceTemplateSchema', () => {
 
   it('rejects duplicate block ids', () => {
     const layout = createDefaultLayout();
-    layout[1].id = layout[0].id;
+    layout[1]!.id = layout[0]!.id;
     expect(parse({ layout }).success).toBe(false);
   });
 

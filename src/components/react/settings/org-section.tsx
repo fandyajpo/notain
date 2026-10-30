@@ -1,5 +1,5 @@
 import { useSyncExternalStore, useState, type SyntheticEvent } from 'react';
-import { Check, Trash2, UserPlus } from 'lucide-react';
+import { Check, Trash2 } from 'lucide-react';
 import { getActiveOrgId, subscribeActiveOrg } from '../../../app/active-org';
 import { switchActiveOrg } from '../../../app/org-switch';
 import type { OrgView } from '../../../app/orgs';
@@ -8,7 +8,6 @@ import { isBusinessSubtypeSlug } from '../../../core/business/taxonomy';
 import {
   useCreateOrg,
   useDeleteOrg,
-  useInviteOrgMember,
   useOrgMembers,
   useOrgs,
   useRemoveOrgMember,
@@ -351,7 +350,18 @@ function MembersCard({ orgId, isOwner }: { orgId: string; isOwner: boolean }) {
           <p className="text-sm text-muted">Belum ada anggota.</p>
         )}
 
-        {isOwner && <InviteForm orgId={orgId} />}
+        {/* Invite-by-email stays behind "coming soon": the server answers 501
+            until the email provider is wired up, so the panel says that plainly
+            instead of offering a form that can only fail. */}
+        {isOwner && (
+          <div className="border-t border-border pt-4">
+            <p className="text-sm font-medium">Undang anggota — segera hadir</p>
+            <p className="text-sm text-muted">
+              Undangan lewat email belum aktif karena layanan emailnya belum terpasang. Kamu tetap
+              bisa mengelola anggota yang sudah bergabung di daftar atas.
+            </p>
+          </div>
+        )}
       </div>
     </Card>
   );
@@ -442,58 +452,6 @@ function MemberRow({
           </Button>
         ))}
     </li>
-  );
-}
-
-function InviteForm({ orgId }: { orgId: string }) {
-  const invite = useInviteOrgMember(orgId);
-  const [email, setEmail] = useState('');
-  const ids = useFieldIds(`invite-${orgId}`);
-
-  async function handleInvite(event: SyntheticEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
-    const trimmed = email.trim().toLowerCase();
-    if (trimmed === '') return;
-    try {
-      await invite.mutateAsync(trimmed);
-      setEmail('');
-      // The invitee accepts automatically on their next sign-in — this is the
-      // whole join flow from the owner's side.
-      toast(`Undangan dikirim ke ${trimmed}.`, { variant: 'success' });
-    } catch (error) {
-      // 409 ("already a member") and validation errors carry the server's own
-      // copy — the message is more precise than anything invented here.
-      toast(isAppError(error) ? error.message : 'Undangan gagal dikirim.', { variant: 'error' });
-    }
-  }
-
-  return (
-    <form
-      className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-end"
-      onSubmit={(event) => void handleInvite(event)}
-    >
-      <div className="flex-1">
-        <FieldShell
-          label="Undang lewat email"
-          htmlFor={ids.id}
-          hint="Undangan aktif otomatis saat pemilik email masuk ke Notain."
-        >
-          <Input
-            id={ids.id}
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="nama@contoh.com"
-            autoComplete="email"
-            maxLength={320}
-          />
-        </FieldShell>
-      </div>
-      <Button type="submit" variant="secondary" size="sm" loading={invite.isPending}>
-        <UserPlus size={15} aria-hidden="true" />
-        Kirim undangan
-      </Button>
-    </form>
   );
 }
 

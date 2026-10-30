@@ -81,7 +81,7 @@ export function inRange(isoDate: string, range: DateRange): boolean {
  * summary would show money the business cannot have received yet.
  */
 export function weekRange(now: string = todayIsoDate()): DateRange {
-  const [year, month, day] = now.split('-').map(Number);
+  const [year = NaN, month = NaN, day = NaN] = now.split('-').map(Number);
   const weekday = (new Date(Date.UTC(year, month - 1, day)).getUTCDay() + 6) % 7; // Mon=0
   return { from: addDaysIsoDate(now, -weekday), to: now };
 }
@@ -122,7 +122,7 @@ export function periodRange(
  * months before the current one.
  */
 export function chartStart(now: string = todayIsoDate()): string {
-  const [year, month] = now.split('-').map(Number);
+  const [year = NaN, month = NaN] = now.split('-').map(Number);
   const date = new Date(Date.UTC(year, month - 1 - (CHART_MONTHS - 1), 1));
   return date.toISOString().slice(0, 10);
 }
@@ -220,7 +220,7 @@ export function revenueByMonth(
   }
 
   const points: ChartPoint[] = [];
-  const [year, month] = now.split('-').map(Number);
+  const [year = NaN, month = NaN] = now.split('-').map(Number);
   for (let offset = CHART_MONTHS - 1; offset >= 0; offset -= 1) {
     const date = new Date(Date.UTC(year, month - 1 - offset, 1));
     const key = date.toISOString().slice(0, 7);
