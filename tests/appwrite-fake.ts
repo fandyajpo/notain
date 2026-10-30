@@ -1,4 +1,5 @@
 import { vi } from 'vite-plus/test';
+import { text } from '../src/core/shared/text';
 
 /**
  * A tiny in-memory stand-in for the Appwrite REST surface the payments
@@ -67,7 +68,7 @@ export function appwriteFake(
   if (options.writeFailureFor) {
     const marker = options.writeFailureFor;
     fake.fetch.mockImplementation(async (input: RequestInfo | URL, init: RequestInit = {}) => {
-      const url = String(input);
+      const url = requestUrl(input);
       const method = (init.method ?? 'GET').toUpperCase();
       fake.calls.push({ method, url, body: init.body });
       if ((method === 'POST' || method === 'PATCH') && url.includes(marker)) {
@@ -80,7 +81,7 @@ export function appwriteFake(
   }
 
   fake.fetch.mockImplementation(async (input: RequestInfo | URL, init: RequestInit = {}) => {
-    const url = String(input);
+    const url = requestUrl(input);
     const method = (init.method ?? 'GET').toUpperCase();
     const body = typeof init.body === 'string' ? safeJson(init.body) : undefined;
     fake.calls.push({ method, url, body });
@@ -95,11 +96,21 @@ export function appwriteFake(
   return fake;
 }
 
-function safeJson(text: string): unknown {
+/**
+ * The URL a `fetch` was pointed at. `RequestInfo | URL` is a union of
+ * objects, so `String(input)` would stringify a `Request` to
+ * `[object Object]` instead of its URL.
+ */
+export function requestUrl(input: RequestInfo | URL): string {
+  if (typeof input === 'string') return input;
+  return input instanceof URL ? input.href : input.url;
+}
+
+function safeJson(raw: string): unknown {
   try {
-    return JSON.parse(text);
+    return JSON.parse(raw);
   } catch {
-    return text;
+    return raw;
   }
 }
 
@@ -150,17 +161,17 @@ function matchesFilter(row: Row, query: ParsedQuery): boolean {
     case 'isNotNull':
       return rowValue(row, attribute) != null;
     case 'startsWith': {
-      const prefix = String(values[0] ?? '');
-      return String(rowValue(row, attribute) ?? '').startsWith(prefix);
+      const prefix = text(values[0]);
+      return text(rowValue(row, attribute)).startsWith(prefix);
     }
     case 'greaterThanEqual':
-      return String(rowValue(row, attribute) ?? '') >= String(values[0] ?? '');
+      return text(rowValue(row, attribute)) >= text(values[0]);
     case 'lessThanEqual':
-      return String(rowValue(row, attribute) ?? '') <= String(values[0] ?? '');
+      return text(rowValue(row, attribute)) <= text(values[0]);
     case 'search': {
-      const needle = String(values[0] ?? '').toLowerCase();
+      const needle = text(values[0]).toLowerCase();
       const field = rowValue(row, attribute);
-      const haystack = Array.isArray(field) ? field.join(' ') : String(field ?? '');
+      const haystack = Array.isArray(field) ? field.join(' ') : text(field);
       return haystack.toLowerCase().includes(needle);
     }
     case 'or':
@@ -234,11 +245,11 @@ function applyQueries(url: URL, input: Row[]): { rows: Row[]; total: number } {
 
   for (const query of queries) {
     if (query.method === 'cursorAfter') {
-      const id = String(query.values?.[0] ?? '');
+      const id = text(query.values?.[0]);
       const at = rows.findIndex((row) => row.$id === id);
       if (at >= 0) rows = rows.slice(at + 1);
     } else if (query.method === 'cursorBefore') {
-      const id = String(query.values?.[0] ?? '');
+      const id = text(query.values?.[0]);
       const at = rows.findIndex((row) => row.$id === id);
       if (at >= 0) rows = rows.slice(0, at);
     } else if (query.method === 'limit') {

@@ -227,9 +227,17 @@ const GROUP_LABEL =
   // page, and every dismissal path (link, Escape, outside tap, backdrop)
   // closes it. At `lg` the rail is static again and all of this stays inert.
   const sidebar = document.getElementById('app-sidebar');
-  const backdrop = document.getElementById('sidebar-backdrop');
   const navToggle = document.getElementById('mobile-nav-toggle');
   const mobileHeader = navToggle?.closest('header');
+
+  // The backdrop is intentionally NOT `transition:persist`: the ClientRouter
+  // replaces it on every soft navigation, which would orphan any listener
+  // bound to the element and leave `setNavOpen` writing to a detached node.
+  // Re-resolving it per use plus a delegated document listener keeps the
+  // behaviour correct across swaps (docs: view-transitions → script behaviour).
+  function backdropNow(): HTMLElement | null {
+    return document.getElementById('sidebar-backdrop');
+  }
 
   const isMobile = () => window.innerWidth < 1024;
 
@@ -242,6 +250,7 @@ const GROUP_LABEL =
     sidebar.toggleAttribute('inert', isMobile() && !open);
     // Not `toggleAttribute`: that writes an empty value (`data-open=""`),
     // which the `[data-open='true']` CSS never matches.
+    const backdrop = backdropNow();
     if (backdrop) backdrop.dataset.open = String(open);
     navToggle.setAttribute('aria-expanded', String(open));
     navToggle.setAttribute('aria-label', open ? 'Tutup menu navigasi' : 'Buka menu navigasi');
@@ -262,7 +271,11 @@ const GROUP_LABEL =
     if ((event.target as HTMLElement).closest('a')) setNavOpen(false);
   });
 
-  backdrop?.addEventListener('click', () => setNavOpen(false));
+  // Delegated so it works on whatever backdrop node the current page has.
+  document.addEventListener('click', (event) => {
+    if (sidebar?.dataset.open !== 'true') return;
+    if ((event.target as HTMLElement).closest('#sidebar-backdrop')) setNavOpen(false);
+  });
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && sidebar?.dataset.open === 'true') {
@@ -287,7 +300,7 @@ const GROUP_LABEL =
       else sidebar?.toggleAttribute('inert', true);
     } else {
       sidebar?.removeAttribute('inert');
-      backdrop?.removeAttribute('data-open');
+      backdropNow()?.removeAttribute('data-open');
       document.body.classList.remove('overflow-hidden');
     }
   });

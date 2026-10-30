@@ -1,4 +1,4 @@
-import { getAccount } from '../appwrite/client';
+import { mintJwt } from '../appwrite/client';
 import { appErrorFromStatus } from '../app/errors';
 import { getActiveOrgId } from './active-org';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
@@ -31,7 +31,7 @@ export type PaymentStatusView = {
 async function bearerFetch(path: string, init: RequestInit = {}): Promise<Response> {
   let jwt: string;
   try {
-    ({ jwt } = await getAccount().createJWT());
+    jwt = await mintJwt();
   } catch (error) {
     // No session to mint from: the caller is effectively signed out.
     throw new AppError(ERROR_CODES.UNAUTHENTICATED, 'Silakan masuk terlebih dahulu.', {
@@ -39,10 +39,12 @@ async function bearerFetch(path: string, init: RequestInit = {}): Promise<Respon
     });
   }
   try {
-    return await fetch(path, {
-      ...init,
-      headers: { ...init.headers, Authorization: `Bearer ${jwt}` },
-    });
+    // `Headers`, not a spread: `init.headers` may be a `Headers` instance or
+    // a [name, value] list, and spreading either produces indices, not
+    // headers. Set the bearer after, so it survives whatever came in.
+    const headers = new Headers(init.headers);
+    headers.set('Authorization', `Bearer ${jwt}`);
+    return await fetch(path, { ...init, headers });
   } catch {
     throw new AppError(
       ERROR_CODES.NETWORK,

@@ -6,7 +6,7 @@ import { onRequest as statusOnRequest } from '../functions/api/payments/status';
 import { onRequest as portalOnRequest } from '../functions/api/payments/portal';
 import { onRequest as adminContentOnRequest } from '../functions/api/admin/content';
 import { onRequest as adminQuotaOnRequest } from '../functions/api/admin/quota';
-import { appwriteFake, type AppwriteFake } from './appwrite-fake';
+import { appwriteFake, requestUrl, type AppwriteFake } from './appwrite-fake';
 import type { Env } from '../functions/_lib/types';
 
 /**
@@ -117,7 +117,7 @@ describe('POST /api/payments/checkout — breaker and budget', () => {
   beforeEach(() => {
     fake = appwriteFake({
       passthrough: (input) => {
-        const url = String(input);
+        const url = requestUrl(input);
         const calls = (fake as AppwriteFake & { dokuCalls?: string[] }).dokuCalls ?? [];
         calls.push(url);
         (fake as AppwriteFake & { dokuCalls?: string[] }).dokuCalls = calls;

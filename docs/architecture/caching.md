@@ -10,14 +10,20 @@ default **static**. Tidak ada `src/middleware.ts`, tidak ada endpoint di
 `src/pages/` selain `.astro`, dan tidak ada Redis atau cache server di
 `package.json`.
 
-Ada satu pengecualian: **Pages Function** `functions/api/logo.ts`, yang menjadi
-tunggangan bucket R2 privat. Ia hanya memindahkan berkas logo — tidak pernah
-melihat invoice, profile, maupun data tabel — jadi ia tidak bisa dipakai untuk
-menyimpan state atau membatasi request data.
+Yang ada sekarang adalah **Pages Functions** di `functions/api/**`: `/api/logo`
+(muat/simpan berkas di bucket R2 privat) plus lapisan data multi-tenancy
+(`/api/data/[resource]`, `/api/orgs`, `/api/payments/*`, `/api/admin/*` — lihat
+[multi-tenancy.md](multi-tenancy.md)). Semua Function itu **stateless pass-through**:
+mereka menegakkan gerbang sesi + membership lalu meneruskan ke Appwrite dengan API
+key, dan menjawab dengan `cache-control: no-store` (`functions/_lib/http.ts`). Tidak
+ada yang menyimpan state antar request, jadi tidak ada yang bisa menjadi cache server
+atau rate limiter sendiri — kesimpulan di bawah tetap berlaku untuk jalur data.
 
-Semua request data berjalan **langsung dari browser ke Appwrite Cloud**
-(`src/appwrite/client.ts` melempar error bila diakses di luar browser). Astro tidak
-pernah melihat invoice, profile, maupun auth request.
+Astro tidak pernah melihat invoice, profile, maupun auth request: ia tetap build
+statis tanpa adapter, dan `src/appwrite/client.ts` melempar error bila diakses di luar
+browser. Yang berubah sejak dokumen ini ditulis: baris bertenant kini melewati
+Functions (bukan selalu browser → Appwrite langsung), sehingga "tidak ada server"
+maknanya "tidak ada state", bukan "tidak ada endpoint".
 
 Konsekuensinya:
 
@@ -139,13 +145,13 @@ privat `notain`. Di sana:
 
 ### Yang tidak dilakukan, dan alasannya
 
-| Tidak dilakukan                       | Alasan                                                                                                       |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `src/middleware.ts` + rate limiter    | Astro static tidak menjalankan middleware; Pages Function yang ada hanya untuk `/api/logo`, bukan jalur data |
-| Redis / store bersama                 | Tidak ada instance server yang bisa berbagi state; menambah dependensi tanpa pemakaian                       |
-| Proxy ke Appwrite                     | Tidak mengamankan Appwrite (endpoint-nya publik), dan butuh host non-statis + API key                        |
-| Rate limit di pembuatan PDF           | PDF dibuat **di browser** lewat `window.print()`; tidak ada operasi server yang bisa dibatasi                |
-| Client-side throttle sebagai keamanan | Bisa dilewati pelaku; dipakai hanya sebagai kesopanan, bukan kontrol                                         |
+| Tidak dilakukan                       | Alasan                                                                                                                                                |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/middleware.ts` + rate limiter    | Astro static tidak menjalankan middleware; Functions (`functions/api/**`) memang jalur data, tapi stateless — rate limit otoritatif tetap di Appwrite |
+| Redis / store bersama                 | Tidak ada instance server yang bisa berbagi state; menambah dependensi tanpa pemakaian                                                                |
+| Proxy ke Appwrite                     | Tidak mengamankan Appwrite (endpoint-nya publik), dan butuh host non-statis + API key                                                                 |
+| Rate limit di pembuatan PDF           | PDF dibuat **di browser** lewat `window.print()`; tidak ada operasi server yang bisa dibatasi                                                         |
+| Client-side throttle sebagai keamanan | Bisa dilewati pelaku; dipakai hanya sebagai kesopanan, bukan kontrol                                                                                  |
 
 ## HTTP caching
 
@@ -156,9 +162,10 @@ tidak perlu diubah.
 Halaman HTML harus selalu segar (mengandung island dan session shell), dan
 di-host sebagai `index.html` statis sehingga tidak ikut ter-cache panjang.
 
-**Privasi:** respons invoice, profile, dan data auth tidak pernah melewati host
-aplikasi ini, sehingga tidak berisiko masuk shared cache buatan sendiri. Proteksi
-sesungguhnya ada di permission per-baris Appwrite.
+**Privasi:** respons data bertenant melewati Pages Functions, dan semua Function
+mengirim `cache-control: no-store` — tidak ada yang masuk shared cache. Otorisasi
+sesungguhnya tetap di gerbang sesi + membership tiap request (`requireOrg`) dan di
+permission per-baris Appwrite, bukan di cache mana pun.
 
 ## Cara memverifikasi
 

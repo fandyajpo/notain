@@ -5,6 +5,9 @@ import { AppError, ERROR_CODES, GENERIC_ERROR_MESSAGE } from '../core/shared/err
 const AUTH_MESSAGES: Record<string, string> = {
   user_already_exists: 'Email ini sudah terdaftar. Silakan masuk.',
   invalid_credentials: 'Email atau kata sandi salah.',
+  // The type Appwrite actually sends on a failed email/password session.
+  // Without this key a wrong password fell through to the generic message.
+  user_invalid_credentials: 'Email atau kata sandi salah.',
   user_not_found: 'Email belum terdaftar.',
   invalid_password: 'Kata sandi minimal 8 karakter.',
   password_is_weak: 'Kata sandi terlalu lemah. Gunakan minimal 8 karakter.',

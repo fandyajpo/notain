@@ -100,8 +100,10 @@ async function type(placeholder: string, value: string): Promise<void> {
   await act(async () => {
     const input = container.querySelector<HTMLInputElement>(`input[placeholder="${placeholder}"]`);
     expect(input, `input "${placeholder}" must render`).toBeTruthy();
-    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
-    setter?.call(input, value);
+    Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(
+      input,
+      value,
+    );
     input?.dispatchEvent(new Event('input', { bubbles: true }));
   });
 }

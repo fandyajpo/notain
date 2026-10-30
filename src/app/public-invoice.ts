@@ -4,7 +4,7 @@ import { invoiceTemplateShapeSchema } from '../core/template/schema';
 import { businessSubtypeSlugSchema } from '../core/business/schema';
 import { prepareProofFile } from '../lib/payment-proof';
 import { appErrorFromStatus, toAppError } from '../app/errors';
-import { getAccount } from '../appwrite/client';
+import { mintJwt } from '../appwrite/client';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 import type { InvoiceDraft, InvoicePaymentProof } from '../core/invoice/model';
 import type { InvoiceTemplate } from '../core/template/model';
@@ -133,7 +133,7 @@ export async function uploadOwnerPaymentProof(
 
   let response: Response;
   try {
-    const { jwt } = await getAccount().createJWT();
+    const jwt = await mintJwt();
     response = await fetch(`/api/invoice/${encodeURIComponent(invoiceId)}/proof`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${jwt}` },
@@ -169,7 +169,7 @@ export async function uploadOwnerPaymentProof(
  */
 export async function deletePaymentProof(key: string): Promise<void> {
   try {
-    const { jwt } = await getAccount().createJWT();
+    const jwt = await mintJwt();
     const response = await fetch(`/api/proof/${encodeURIComponent(key)}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${jwt}` },

@@ -1,4 +1,4 @@
-import { getAccount } from '../appwrite/client';
+import { mintJwt } from '../appwrite/client';
 import { appErrorFromStatus } from './errors';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 
@@ -48,17 +48,19 @@ export type ListResult<T extends DataRow = DataRow> = {
 async function bearerFetch(path: string, init: RequestInit = {}): Promise<Response> {
   let jwt: string;
   try {
-    ({ jwt } = await getAccount().createJWT());
+    jwt = await mintJwt();
   } catch (error) {
     throw new AppError(ERROR_CODES.UNAUTHENTICATED, 'Silakan masuk terlebih dahulu.', {
       cause: error,
     });
   }
   try {
-    return await fetch(path, {
-      ...init,
-      headers: { ...init.headers, Authorization: `Bearer ${jwt}` },
-    });
+    // `Headers`, not a spread: `init.headers` may be a `Headers` instance or
+    // a [name, value] list, and spreading either produces indices, not
+    // headers. Set ours after, so the bearer survives whatever came in.
+    const headers = new Headers(init.headers);
+    headers.set('Authorization', `Bearer ${jwt}`);
+    return await fetch(path, { ...init, headers });
   } catch {
     throw new AppError(
       ERROR_CODES.NETWORK,

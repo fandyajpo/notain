@@ -4,9 +4,16 @@ import { confettiBurst, confettiFromElement, prefersReducedMotion } from './conf
 
 type FakeAnimation = { finished: Promise<void>; cancel: () => void };
 
+/**
+ * The stub behind the last `stubAnimate()`. The assertions keep hold of the
+ * spy instead of reading it back off `Element.prototype`, which would be an
+ * unbound method reference.
+ */
+let animateSpy: ReturnType<typeof vi.fn<typeof Element.prototype.animate>> | undefined;
+
 function stubAnimate(): FakeAnimation[] {
   const animations: FakeAnimation[] = [];
-  Element.prototype.animate = vi.fn(() => {
+  animateSpy = vi.fn<typeof Element.prototype.animate>(() => {
     let resolve!: () => void;
     const finished = new Promise<void>((r) => {
       resolve = r;
@@ -15,6 +22,7 @@ function stubAnimate(): FakeAnimation[] {
     animations.push(entry);
     return entry as unknown as ReturnType<typeof Element.prototype.animate>;
   });
+  Element.prototype.animate = animateSpy;
   return animations;
 }
 
@@ -61,7 +69,7 @@ describe('confettiBurst', () => {
     stubAnimate();
     confettiBurst({ x: 10, y: 10 }, { count: 20 });
     expect(overlay()).toBeNull();
-    expect(Element.prototype.animate).not.toHaveBeenCalled();
+    expect(animateSpy).not.toHaveBeenCalled();
   });
 
   it('flings one piece per count into a single overlay', () => {

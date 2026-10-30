@@ -1,4 +1,4 @@
-import { getAccount } from '../appwrite/client';
+import { mintJwt } from '../appwrite/client';
 import { appErrorFromStatus } from './errors';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 
@@ -55,7 +55,7 @@ const DELETE_MAX_ROUNDS = 200;
 async function bearerFetch(path: string, init: RequestInit = {}): Promise<Response> {
   let jwt: string;
   try {
-    ({ jwt } = await getAccount().createJWT());
+    jwt = await mintJwt();
   } catch (error) {
     throw new AppError(ERROR_CODES.UNAUTHENTICATED, 'Silakan masuk terlebih dahulu.', {
       cause: error,

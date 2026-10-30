@@ -1,5 +1,6 @@
 import { container } from '../infra/container';
 import { ERROR_CODES, AppError } from '../core/shared/errors';
+import { clearMintedJwt } from '../appwrite/client';
 import type { SessionUser } from '../ports/auth-repository';
 
 let cached: SessionUser | null = null;
@@ -51,6 +52,9 @@ export async function requireSession(): Promise<SessionUser> {
 export function rememberSession(user: SessionUser): SessionUser {
   epoch += 1;
   cached = user;
+  // The bearer every `/api/*` call carries is scoped to ONE session: a token
+  // minted for the account we just left must never authenticate the next one.
+  clearMintedJwt();
   // Any lookup already running is asking about the previous account.
   inFlight = null;
   return user;
@@ -60,4 +64,5 @@ export function forgetSession(): void {
   epoch += 1;
   cached = null;
   inFlight = null;
+  clearMintedJwt();
 }

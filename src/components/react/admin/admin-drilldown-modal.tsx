@@ -8,6 +8,7 @@ import { ErrorState, LoadingState } from '../ui/state';
 import { TableShell, Th, Td, TBODY_ROW, THEAD_ROW } from '../ui/table';
 import { useAdminUserDrilldown } from '../../../lib/query/hooks/use-admin';
 import { businessSubtypeLabel } from '../../../core/business/taxonomy';
+import { text } from '../../../core/shared/text';
 import {
   isDrillOverview,
   type AdminDrillOverview,
@@ -179,19 +180,19 @@ function ResourceTable({
         <tbody>
           {rows.map((row) => (
             <tr key={row.id} className={TBODY_ROW}>
-              <Td className="font-mono text-xs">{String(row.invoiceNumber ?? '—')}</Td>
-              <Td>{String(row.customerName ?? '—')}</Td>
+              <Td className="font-mono text-xs">{text(row.invoiceNumber ?? '—')}</Td>
+              <Td>{text(row.customerName ?? '—')}</Td>
               <Td>
                 <Badge
                   variant={
                     row.status === 'paid' ? 'success' : row.status === 'void' ? 'danger' : 'neutral'
                   }
                 >
-                  {String(row.status ?? '—')}
+                  {text(row.status ?? '—')}
                 </Badge>
               </Td>
               <Td className="text-muted">
-                {row.date ? new Date(String(row.date)).toLocaleDateString('id-ID') : '—'}
+                {row.date ? new Date(text(row.date)).toLocaleDateString('id-ID') : '—'}
               </Td>
             </tr>
           ))}
@@ -214,12 +215,12 @@ function ResourceTable({
         <tbody>
           {rows.map((row) => (
             <tr key={row.id} className={TBODY_ROW}>
-              <Td>{String(row.name ?? '—')}</Td>
-              <Td className="text-muted">{String(row.phone ?? '—')}</Td>
-              <Td className="text-muted">{String(row.email ?? '—')}</Td>
+              <Td>{text(row.name ?? '—')}</Td>
+              <Td className="text-muted">{text(row.phone ?? '—')}</Td>
+              <Td className="text-muted">{text(row.email ?? '—')}</Td>
               <Td className="text-muted">
                 {row.lastUsedAt
-                  ? new Date(String(row.lastUsedAt)).toLocaleDateString('id-ID')
+                  ? new Date(text(row.lastUsedAt)).toLocaleDateString('id-ID')
                   : '—'}
               </Td>
             </tr>
@@ -239,7 +240,7 @@ function ResourceTable({
       <tbody>
         {rows.map((row) => (
           <tr key={row.id} className={TBODY_ROW}>
-            <Td>{String(row.name ?? '—')}</Td>
+            <Td>{text(row.name ?? '—')}</Td>
           </tr>
         ))}
       </tbody>

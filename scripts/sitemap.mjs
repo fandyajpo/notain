@@ -57,7 +57,7 @@ for (const page of pages) {
   urls.add(canonical);
 }
 
-const sorted = [...urls].sort();
+const sorted = [...urls].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 const body = sorted.map((loc) => `  <url><loc>${escapeXml(loc)}</loc></url>`).join('\n');
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>

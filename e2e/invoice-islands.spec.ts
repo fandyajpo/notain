@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
-import { signIn } from './support';
+import { AUTH_STATE, signIn } from './support';
+
+test.use({ storageState: AUTH_STATE });
 
 test('invoice form mounts its three lazy custom elements', async ({ page }) => {
   const errors: string[] = [];

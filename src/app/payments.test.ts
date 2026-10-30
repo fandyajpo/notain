@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
+import { text } from '../core/shared/text';
 
 const { createJWT } = vi.hoisted(() => ({ createJWT: vi.fn() }));
 
 vi.mock('../appwrite/client', () => ({
   getAccount: () => ({ createJWT }),
+  // The module now caches this; the mock keeps minting so each test sees a
+  // fresh token (and its own rejection) exactly as before.
+  mintJwt: async () => (await createJWT()).jwt,
 }));
 
 const { fetchPaymentStatus, readPortalSession, startCheckout } = await import('./payments');
@@ -43,8 +47,10 @@ describe('startCheckout', () => {
     expect(init.method).toBe('POST');
     // `orgId` is the server's `requireOrg` hint, re-verified against the
     // membership row — the amount still never crosses the wire.
-    expect(JSON.parse(String(init.body))).toEqual({ plan: 'pro', orgId: ORG });
-    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer jwt-token');
+    expect(JSON.parse(text(init.body))).toEqual({ plan: 'pro', orgId: ORG });
+    // Read through `Headers`: the module normalises whatever header shape
+    // the caller passed into a real `Headers` instance.
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer jwt-token');
   });
 
   it('fails locally before any request when no organization is active', async () => {
@@ -170,7 +176,9 @@ describe('readPortalSession', () => {
     });
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe(`/api/payments/portal?orgId=${ORG}`);
-    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer jwt-token');
+    // Read through `Headers`: the module normalises whatever header shape
+    // the caller passed into a real `Headers` instance.
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer jwt-token');
   });
 
   it('fails locally before any request when no organization is active', async () => {

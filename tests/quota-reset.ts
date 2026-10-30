@@ -1,5 +1,6 @@
 import { beforeEach } from 'vite-plus/test';
 import { resetQuotaState } from '../functions/_lib/quota';
+import { clearMintedJwt } from '../src/appwrite/client';
 
 /**
  * Registered as `setupFiles` in `vitest.config.ts`.
@@ -17,4 +18,7 @@ import { resetQuotaState } from '../functions/_lib/quota';
  */
 beforeEach(() => {
   resetQuotaState();
+  // The browser-side JWT cache is isolate-local for the same reason: a token
+  // minted by one test would otherwise authenticate the next one's requests.
+  clearMintedJwt();
 });

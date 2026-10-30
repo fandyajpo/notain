@@ -124,7 +124,9 @@ describe('derivePickerOptions', () => {
     ]);
 
     expect(options.products).toHaveLength(2);
-    expect(options.products.map((product) => product.unitPrice).sort()).toEqual([10_000, 15_000]);
+    expect(options.products.map((product) => product.unitPrice).sort((a, b) => a - b)).toEqual([
+      10_000, 15_000,
+    ]);
   });
 
   it('counts a repeated line within one invoice only once', () => {

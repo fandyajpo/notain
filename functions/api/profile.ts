@@ -1,5 +1,5 @@
 import { profileSchema } from '../../src/core/profile/model';
-import { requireOrg } from '../_lib/orgs';
+import { readOrg, requireOrg } from '../_lib/orgs';
 import { apiError, json } from '../_lib/http';
 import { createRow, getRow, patchRow } from '../_lib/rows';
 import type { Env, PagesFunction } from '../_lib/types';
@@ -36,13 +36,31 @@ import type { Env, PagesFunction } from '../_lib/types';
 const editableProfileSchema = profileSchema.omit({ plan: true, planExpiresAt: true });
 
 /**
+ * The plan pair the response carries.
+ *
+ * Read from the ORGANIZATION row, never from `profiles`: since
+ * multi-tenancy, `payment-settle` and the admin API patch
+ * `organizations.plan` / `organizations.planExpiresAt` — the vestigial
+ * columns on the profile row still say `free` for customers who paid, and
+ * every entitlement that reads the profile (`hasProAccess`) was denying Pro
+ * to them. The client's shape is unchanged, so no reader had to move.
+ */
+type PlanColumns = { plan: string; planExpiresAt: string | null };
+
+function planColumns(org: Record<string, unknown> | null): PlanColumns {
+  const plan = typeof org?.plan === 'string' && org.plan !== '' ? org.plan : 'free';
+  const raw = org?.planExpiresAt;
+  return { plan, planExpiresAt: typeof raw === 'string' && raw !== '' ? raw : null };
+}
+
+/**
  * The response shape of this endpoint: exactly the personal columns the
  * domain mapper reads. Legacy rows still physically carry `businessName`
  * and `businessType` from before the split — echoing the row would make
  * those look authoritative again, so every response goes through this
  * projection instead.
  */
-function profileView(row: Record<string, unknown>) {
+function profileView(row: Record<string, unknown>, plan: PlanColumns) {
   const str = (value: unknown): string => (typeof value === 'string' ? value : '');
   const opt = (value: unknown): string | null =>
     typeof value === 'string' && value !== '' ? value : null;
@@ -52,8 +70,8 @@ function profileView(row: Record<string, unknown>) {
     address: opt(row.address),
     email: opt(row.email),
     logoFileId: opt(row.logoFileId),
-    plan: typeof row.plan === 'string' && row.plan !== '' ? row.plan : 'free',
-    planExpiresAt: opt(row.planExpiresAt),
+    plan: plan.plan,
+    planExpiresAt: plan.planExpiresAt,
   };
 }
 
@@ -68,13 +86,15 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const gate = await requireOrg(request, env, orgId);
   if (!gate.ok) return gate.response;
   const { auth } = gate.access;
+  // The plan is the ORGANIZATION's; read once and project onto both responses.
+  const plan = planColumns(await readOrg(auth, gate.access.orgId, env));
 
   if (request.method === 'GET') {
     const row = await getRow(auth, 'profiles', gate.access.orgId, env);
     if (!row) return apiError(404, 'not_found', 'Profil tidak ditemukan.');
     // Personalised to the org's members; never a shared cache. The row is
     // projected — never echoed — so legacy business columns cannot leak.
-    return json(200, profileView(row), { 'cache-control': 'no-store' });
+    return json(200, profileView(row, plan), { 'cache-control': 'no-store' });
   }
 
   let body: unknown;
@@ -109,15 +129,17 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (existing) {
     // Patch, not upsert: absent keys keep their stored value, so the vestigial
     // plan columns survive every settings save untouched — only checkout and
-    // the admin API (both on the API key) ever move a row between plans.
+    // the admin API (both on the API key) ever move an ORGANIZATION between
+    // plans, and that plan is what this endpoint projects.
     if (!(await patchRow(auth, 'profiles', gate.access.orgId, data))) {
       return apiError(500, 'validation', 'Gagal menyimpan profil.');
     }
     // `existing` is every column the row holds and `data` is exactly the set
     // the patch just wrote, so their merge *is* the saved row — a third
-    // Appwrite round trip would only fetch those same columns back. The
-    // projection keeps plan columns (checkout moves them) and nothing else.
-    return json(200, profileView({ ...existing, ...data }));
+    // Appwrite round trip would only fetch those same columns back. The plan
+    // is projected from the organization above; the row's own plan columns
+    // are vestigial and never surface.
+    return json(200, profileView({ ...existing, ...data }, plan));
   }
 
   const created = await createRow(
@@ -138,5 +160,5 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (!created) {
     return apiError(500, 'validation', 'Gagal menyimpan profil.');
   }
-  return json(201, profileView(created));
+  return json(201, profileView(created, plan));
 };

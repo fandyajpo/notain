@@ -34,3 +34,6 @@ pnpm-debug.log*
 # wrangler local state (dev server, deploy cache)
 .wrangler/
 .vitest/
+
+# e2e shared session (one login per run, written by e2e/global-setup.ts)
+/.auth/

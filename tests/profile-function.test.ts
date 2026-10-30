@@ -219,6 +219,30 @@ describe('GET /api/profile', () => {
     );
     expect(response.status).toBe(404);
   });
+
+  it('reports the ORGANIZATION plan, so entitlements follow billing', async () => {
+    // Payment settle patches `organizations` — the profile row keeps the
+    // `free` it was created with. Every entitlement on the client reads this
+    // response, so projecting the stale column here is what kept paying
+    // customers on the free-tier gates.
+    fake.rows.set(`profiles/${ORG}`, storedProfile());
+    fake.rows.set(`organizations/${ORG}`, {
+      $id: ORG,
+      name: 'Bengkel Budi',
+      plan: 'pro',
+      planExpiresAt: '2030-06-01',
+    } as Row);
+
+    const response = await handle(
+      new Request(PROFILE_URL, { headers: { authorization: 'Bearer jwt-token' } }),
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { plan: string; planExpiresAt: string };
+    expect(body.plan).toBe('pro');
+    expect(body.planExpiresAt).toBe('2030-06-01');
+    expect(writes()).toEqual([]);
+  });
 });
 
 describe('PUT /api/profile — create', () => {
@@ -268,9 +292,18 @@ describe('PUT /api/profile — update', () => {
       `profiles/${ORG}`,
       storedProfile({ plan: 'business', planExpiresAt: '2030-01-01' }),
     );
+    // The plan is the ORGANIZATION's since multi-tenancy: payment-settle and
+    // the admin API patch this row, and the profile row's own plan columns are
+    // vestigial. The response must project THIS one.
+    fake.rows.set(`organizations/${ORG}`, {
+      $id: ORG,
+      name: 'Bengkel Budi',
+      plan: 'pro',
+      planExpiresAt: '2030-06-01',
+    } as Row);
   });
 
-  it('keeps the stored plan even when the body claims a different one', async () => {
+  it('reports the organization plan even when the body claims a different one', async () => {
     const response = await handle(put(bodyWithPlan({ plan: 'free', planExpiresAt: null })));
 
     expect(response.status).toBe(200);
@@ -281,8 +314,10 @@ describe('PUT /api/profile — update', () => {
 
     const body = (await response.json()) as { name: string; plan: string; planExpiresAt: string };
     expect(body.name).toBe('Budi');
-    expect(body.plan).toBe('business');
-    expect(body.planExpiresAt).toBe('2030-01-01');
+    // The organization's plan wins over BOTH the body's claim and the
+    // profile row's vestigial copy.
+    expect(body.plan).toBe('pro');
+    expect(body.planExpiresAt).toBe('2030-06-01');
 
     const patch = patchBody();
     expect(patch.data).not.toHaveProperty('plan');

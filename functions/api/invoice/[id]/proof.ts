@@ -5,6 +5,7 @@ import {
   paymentProofExtension,
 } from '../../../../src/core/invoice/payment-proof';
 import { ID_SEGMENT_PATTERN } from '../../../../src/lib/edit-route';
+import { text } from '../../../../src/core/shared/text';
 import { checkTurnstile } from '../../../_lib/turnstile';
 import { verifySession } from '../../../_lib/appwrite';
 import { getRow, patchRow, tableAuth } from '../../../_lib/rows';
@@ -100,7 +101,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
       return apiError(400, 'validation', 'File bukti pembayaran belum dipilih.');
     }
     file = entry;
-    turnstileToken = form.get('turnstileToken')?.toString() ?? '';
+    const token = form.get('turnstileToken');
+    turnstileToken = typeof token === 'string' ? token : '';
   } catch {
     return apiError(400, 'validation', 'Berkas yang dikirim tidak bisa dibaca.');
   }
@@ -125,7 +127,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
   if (!row) return apiError(404, 'not_found', 'Invoice tidak ditemukan.');
 
   if (owner) {
-    if (String(row.ownerId ?? '') !== owner.userId) {
+    if (text(row.ownerId) !== owner.userId) {
       return apiError(403, 'unauthenticated', 'Kamu tidak punya akses ke invoice ini.');
     }
   } else {
@@ -151,7 +153,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
   const uploadedAt = new Date().toISOString();
   await env.LOGOS.put(key, file.stream(), {
     httpMetadata: { contentType },
-    customMetadata: { owner: String(row.ownerId ?? ''), invoice: id },
+    customMetadata: { owner: text(row.ownerId), invoice: id },
   });
 
   // The row is what the one-shot check reads, so it is written after the

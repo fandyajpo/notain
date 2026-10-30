@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
-import { signIn } from './support';
+import { AUTH_STATE, signIn } from './support';
+
+test.use({ storageState: AUTH_STATE });
 
 /**
  * The desktop sidebar collapses via `html[data-sidebar]`, a preference kept in

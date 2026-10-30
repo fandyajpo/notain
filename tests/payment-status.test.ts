@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { inReconcileWindow, onRequest } from '../functions/api/payments/status';
-import { appwriteFake, type AppwriteFake, type Row } from './appwrite-fake';
+import { appwriteFake, requestUrl, type AppwriteFake, type Row } from './appwrite-fake';
 import type { Env } from '../functions/_lib/types';
 
 const CLIENT_ID = 'MCH-0001-10791114622547';
@@ -65,7 +65,7 @@ beforeEach(() => {
   fake = appwriteFake({
     passthrough: (input, init) => {
       const call: DokuCall = {
-        url: String(input),
+        url: requestUrl(input),
         method: (init.method ?? 'GET').toUpperCase(),
         headers: Object.fromEntries(new Headers(init.headers as HeadersInit).entries()),
       };

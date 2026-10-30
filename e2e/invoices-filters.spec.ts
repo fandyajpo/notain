@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
-import { signIn } from './support';
+import { AUTH_STATE, signIn } from './support';
+
+test.use({ storageState: AUTH_STATE });
 
 /**
  * The `/invoices` toolbar keeps every filter and the sort in the query string
@@ -40,7 +42,7 @@ async function ensureInvoiceExists(page: Page): Promise<void> {
   // The builder mounts a second tour (invoice-create) on top of the pick step.
   await page.waitForTimeout(1_500);
   await closeTour(page);
-  await page.getByLabel('Nama customer *').fill('Smoke Filters');
+  await page.getByLabel('Nama pelanggan *').fill('Smoke Filters');
   await page.getByRole('button', { name: 'Simpan invoice' }).first().click();
   await page.waitForURL('**/dashboard', { timeout: 20_000 });
 }

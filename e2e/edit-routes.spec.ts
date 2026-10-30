@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
-import { signIn } from './support';
+import { AUTH_STATE, signIn } from './support';
+
+test.use({ storageState: AUTH_STATE });
 
 /**
  * `/invoice/<id>` and `/templates/<id>` have no server route behind them: a

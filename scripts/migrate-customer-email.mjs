@@ -56,15 +56,18 @@ if (!apiKey) {
 
 async function api(method, path, body) {
   for (let attempt = 1; ; attempt += 1) {
-    const response = await fetch(`${endpoint}${path}`, {
+    const options = {
       method,
       headers: {
         'X-Appwrite-Project': projectId,
         'X-Appwrite-Key': apiKey,
         ...(body ? { 'content-type': 'application/json' } : {}),
       },
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    };
+    // A GET carries no payload — Appwrite reads path + query only, and fetch
+    // rejects a body on GET in some runtimes.
+    if (method !== 'GET' && body) options.body = JSON.stringify(body);
+    const response = await fetch(`${endpoint}${path}`, options);
 
     if (response.status === 429 && attempt < 6) {
       const retryAfter = Number(response.headers.get('retry-after'));

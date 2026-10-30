@@ -1,4 +1,4 @@
-import { getAccount } from '../appwrite/client';
+import { mintJwt } from '../appwrite/client';
 import { appErrorFromStatus } from './errors';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 import { getActiveOrgId } from './active-org';
@@ -35,7 +35,7 @@ export type InvoiceQuota = {
 async function bearerFetch(path: string, init: { method?: string } = {}): Promise<Response> {
   let jwt: string;
   try {
-    ({ jwt } = await getAccount().createJWT());
+    jwt = await mintJwt();
   } catch (error) {
     throw new AppError(ERROR_CODES.UNAUTHENTICATED, 'Silakan masuk terlebih dahulu.', {
       cause: error,

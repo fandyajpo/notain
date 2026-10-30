@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { signIn } from './support';
+import { AUTH_STATE, signIn } from './support';
+
+test.use({ storageState: AUTH_STATE });
 
 /**
  * The dashboard's money screen against the dev backend: the finance section

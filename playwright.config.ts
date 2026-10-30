@@ -15,9 +15,15 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
+  globalSetup: './e2e/global-setup.ts',
   fullyParallel: true,
   reporter: 'list',
-  timeout: 30_000,
+  // A spec's budget covers its `beforeEach` sign-in AND its whole flow, and
+  // those flows are real: several gated navigations, a saved invoice and
+  // Appwrite round trips through the dev proxy. At 30 s the longest two specs
+  // were dying on the clock with a perfectly healthy page on screen; 45 s
+  // measures the behaviour instead of the machine.
+  timeout: 45_000,
   use: {
     baseURL: 'http://localhost:4321',
     trace: 'retain-on-failure',

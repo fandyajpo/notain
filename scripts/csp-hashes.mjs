@@ -58,7 +58,9 @@ if (!headers.includes(PLACEHOLDER)) {
   process.exit(1);
 }
 
-const stamped = [...hashes].sort().join(' ');
+const stamped = [...hashes]
+  .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+  .join(' ');
 await writeFile(headersPath, headers.replaceAll(PLACEHOLDER, stamped));
 
 console.log(`csp-hashes: ${hashes.size} hash inline script di-stamp di dist/_headers`);

@@ -71,8 +71,9 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>,
     );
     expect(onError).toHaveBeenCalledTimes(1);
-    expect(onError.mock.calls[0]?.[0]).toBeInstanceOf(Error);
-    expect((onError.mock.calls[0]?.[0] as Error).message).toBe('meledak');
+    const emitted = onError.mock.calls[0]?.[0];
+    expect(emitted).toBeInstanceOf(Error);
+    expect((emitted as Error).message).toBe('meledak');
   });
 
   it('re-renders the children after reset, so a retry can succeed', async () => {

@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vite-plus/test';
 import { onRequest } from '../functions/api/payments/checkout';
-import { appwriteFake, type AppwriteFake } from './appwrite-fake';
+import { appwriteFake, requestUrl, type AppwriteFake } from './appwrite-fake';
 import type { Env } from '../functions/_lib/types';
+import { text } from '../src/core/shared/text';
 
 const CLIENT_ID = 'MCH-0001-10791114622547';
 const SECRET = 'sandbox-secret-key';
@@ -40,7 +41,7 @@ beforeEach(() => {
     });
   fake = appwriteFake({
     passthrough: (input, init) => {
-      dokuCalls.push({ url: String(input), init });
+      dokuCalls.push({ url: requestUrl(input), init });
       return dokuAnswer();
     },
   });
@@ -180,7 +181,7 @@ describe('POST /api/payments/checkout', () => {
     // The row and the DOKU request both carry the catalog price.
     const created = paymentWrites().find((write) => write.method === 'POST');
     expect(created?.data.amount).toBe(49_000);
-    const dokuBody = JSON.parse(String(dokuCalls[0]!.init.body));
+    const dokuBody = JSON.parse(text(dokuCalls[0]!.init.body));
     expect(dokuBody.order.amount).toBe(49_000);
     expect(dokuBody.order.invoice_number).toBe(created?.id);
     expect(dokuBody.additional_info.override_notification_url).toBe(

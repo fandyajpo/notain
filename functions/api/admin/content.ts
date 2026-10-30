@@ -26,6 +26,7 @@ import { invoiceDocumentId, nextInvoiceNumber } from '../../../src/core/invoice/
 import { invoiceContentFingerprint } from '../../../src/core/invoice/fingerprint';
 import { invoiceTemplateSchema } from '../../../src/core/template/schema';
 import { BUILTIN_TEMPLATE_IDS, getBuiltinTemplate } from '../../../src/core/template/builtins';
+import { text } from '../../../src/core/shared/text';
 
 const DATABASE_ID = 'notain_db';
 const LIST_DEFAULT_LIMIT = 10;
@@ -350,20 +351,20 @@ async function listContent(
     resource === 'templates'
       ? {
           id: doc.$id,
-          ownerId: String(doc.ownerId ?? userId),
-          name: String(doc.name ?? ''),
+          ownerId: text(doc.ownerId ?? userId),
+          name: text(doc.name ?? ''),
           businessType: typeof doc.businessType === 'string' ? doc.businessType : null,
-          createdAt: String(doc.$createdAt ?? ''),
-          updatedAt: String(doc.$updatedAt ?? ''),
+          createdAt: text(doc.$createdAt),
+          updatedAt: text(doc.$updatedAt),
         }
       : {
           id: doc.$id,
-          ownerId: String(doc.ownerId ?? userId),
-          invoiceNumber: String(doc.invoiceNumber ?? ''),
-          customerName: String(doc.customerName ?? ''),
+          ownerId: text(doc.ownerId ?? userId),
+          invoiceNumber: text(doc.invoiceNumber),
+          customerName: text(doc.customerName),
           customerPhone: typeof doc.customerPhone === 'string' ? doc.customerPhone : '',
           customerEmail: typeof doc.customerEmail === 'string' ? doc.customerEmail : '',
-          date: String(doc.date ?? ''),
+          date: text(doc.date),
           dueDate: typeof doc.dueDate === 'string' ? doc.dueDate : '',
           // Stored as '' for "Belum dikirim" — normalise once, here, so the
           // screen never has to know the column's empty-state encoding.
@@ -752,10 +753,10 @@ async function createDocument(
     };
   }
   if (!response.ok) {
-    const text = await response.text().catch(() => '');
+    const body = await response.text().catch(() => '');
     return {
       ok: false,
-      response: apiError(500, 'validation', `Gagal menyimpan data: ${text.slice(0, 200)}`),
+      response: apiError(500, 'validation', `Gagal menyimpan data: ${body.slice(0, 200)}`),
     };
   }
   const row = (await response.json()) as { $id?: string };

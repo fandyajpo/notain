@@ -1,4 +1,4 @@
-import { getAccount } from '../appwrite/client';
+import { mintJwt } from '../appwrite/client';
 import type { InvoiceDraft, InvoiceStatus } from '../core/invoice/model';
 import type { AuthoredTemplate } from '../core/template/model';
 import { appErrorFromStatus } from './errors';
@@ -95,15 +95,13 @@ export type AdminDrillPage = {
 const DRILL_LIMIT = 20;
 
 async function adminFetch(path: string, init?: RequestInit): Promise<Response> {
-  const { jwt } = await getAccount().createJWT();
-  return fetch(path, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${jwt}`,
-      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
-      ...init?.headers,
-    },
-  });
+  const jwt = await mintJwt();
+  // `Headers`, not a spread: `init.headers` may be a `Headers` instance or a
+  // [name, value] list, and spreading either produces indices, not headers.
+  const headers = new Headers(init?.headers);
+  headers.set('Authorization', `Bearer ${jwt}`);
+  if (init?.body) headers.set('content-type', 'application/json');
+  return fetch(path, { ...init, headers });
 }
 
 async function parseAdminResponse<T>(response: Response): Promise<T> {

@@ -84,7 +84,7 @@ for (const page of pages) {
   if (hrefs.size === 0) continue;
 
   const tags = [...hrefs]
-    .sort()
+    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
     .map((href) => `<link rel="modulepreload" href="${href}">`)
     .join('');
 

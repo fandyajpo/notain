@@ -179,6 +179,13 @@ export default defineConfig({
       alias: [{ find: /^vue$/, replacement: 'vue/dist/vue.runtime.esm-bundler.js' }],
     },
     optimizeDeps: {
+      // Built eagerly, not left to scan-time discovery: this module backs the
+      // builder's keyboard shortcuts, and a missing file in `.vite/deps` made
+      // the invoice islands' dynamic import 404 — the page shell rendered
+      // with an empty `<main>` and every hydration failed with "Failed to
+      // fetch dynamically imported module". Pinning it makes the optimizer
+      // produce it on every fresh server start regardless of scan timing.
+      include: ['@tanstack/react-hotkeys'],
       // Without this the dev toolbar's entrypoint (`/@id/astro/runtime/client/
       // dev-toolbar/entrypoint.js`) answers 504 "Outdated Optimize Dep" after
       // every re-optimization: the optimizer replaces its metadata when it
