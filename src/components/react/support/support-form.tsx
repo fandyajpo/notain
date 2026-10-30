@@ -190,10 +190,10 @@ export function SupportForm({ source }: { source: SupportSource }) {
         <span>
           Kami balas lewat email dalam 1–2 hari kerja. Butuh jawaban cepat? Email langsung ke{' '}
           <a
-            href="mailto:halo@notain.my.id"
+            href="mailto:notaindevs@gmail.com"
             className="font-medium text-foreground underline underline-offset-2"
           >
-            halo@notain.my.id
+            notaindevs@gmail.com
           </a>
           .
         </span>

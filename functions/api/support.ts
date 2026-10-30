@@ -121,7 +121,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     return apiError(
       500,
       'validation',
-      'Pengiriman pesan belum aktif. Kabari kami lewat email halo@notain.my.id.',
+      'Pengiriman pesan belum aktif. Kabari kami lewat email notaindevs@gmail.com.',
     );
   }
   if (!response.ok) {
