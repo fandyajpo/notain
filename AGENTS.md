@@ -27,6 +27,23 @@ The Cloudflare dashboard always shows "Automatic deployments paused" plus a `git
 
 Secrets are not in `wrangler.toml` (it is committed): put them in `.dev.vars` at the repo root — gitignored — which wrangler loads automatically. The minimum for the admin routes is `APPWRITE_API_KEY` (the API key the Functions use server-side; without it `requireAdmin` answers 500). `TURNSTILE_SECRET_KEY` and the `DOKU_*` credentials are only needed when exercising the contact form or the payment Functions. Smoke-test a route with e.g. `curl -s localhost:8788/api/admin/content` — a JSON error, not an HTML 404, means the Function compiled and answered.
 
+## Appwrite proxy (and why the browser SDK must use it)
+
+`src/appwrite/client.ts` points the browser SDK at `/api/appwrite`, never at
+`PUBLIC_APPWRITE_ENDPOINT`. `functions/api/appwrite/[[path]].ts` relays that path
+to Appwrite and rewrites each `Set-Cookie` to be host-only. Appwrite's session
+cookie is scoped to `sgp.cloud.appwrite.io`; from our origin it is a third-party
+cookie, and Brave/Safari/Firefox drop it — sign-in looks fine and the next
+request is anonymous. Pointing the SDK back at Appwrite's domain reintroduces
+that bug.
+
+Two calls deliberately bypass the proxy: the OAuth **start**
+(`startGoogleOAuth`) goes straight to Appwrite because the `a_oauth2_*` state
+cookie it sets must live on Appwrite's domain for its callback to read it, and
+Google sign-in finishes on `/auth/callback`, which exchanges the returned
+`userId`/`secret` for a session (`account.createSession`) — Appwrite's token
+flow returns credentials, not a session, so that exchange is mandatory.
+
 ## Documentation
 
 Full documentation: https://docs.astro.build

@@ -1,6 +1,7 @@
 import { type AnyFieldApi, useForm } from '@tanstack/react-form';
 import { Link } from 'lucide-react';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { signInWithGoogle } from '../../../app/auth';
 import {
   forgotPasswordSchema,
   resetPasswordSchema,
@@ -126,7 +127,7 @@ function useCaptchaGate() {
 function SignInForm({ redirectTo }: { redirectTo: string }) {
   const signIn = useSignIn();
   const captcha = useCaptchaGate();
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(() => readOauthFailure());
 
   const form = useForm({
     defaultValues: { email: '', password: '' },
@@ -149,6 +150,7 @@ function SignInForm({ redirectTo }: { redirectTo: string }) {
       serverError={serverError}
       submitLabel="Masuk"
       redirectTo={redirectTo}
+      oauthSlot={<GoogleAuthSlot redirectTo={redirectTo} label="Masuk dengan Google" />}
       altPrompt="Belum punya akun?"
       altLabel="Daftar gratis"
       altHref="/register"
@@ -227,6 +229,7 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
       serverError={serverError}
       submitLabel="Buat akun"
       redirectTo={redirectTo}
+      oauthSlot={<GoogleAuthSlot redirectTo={redirectTo} label="Daftar dengan Google" />}
       altPrompt="Sudah punya akun?"
       altLabel="Masuk"
       altHref="/login"
@@ -490,6 +493,8 @@ type FormShellProps = {
   altHref: string;
   onSubmit: () => void;
   fields: ReactNode;
+  /** Optional block between the submit button and the alt link (social auth). */
+  oauthSlot?: ReactNode;
 };
 
 /** Shared chrome for both auth forms: the fields carry the rest of the markup. */
@@ -503,6 +508,7 @@ function FormShell({
   altHref,
   onSubmit,
   fields,
+  oauthSlot,
 }: FormShellProps) {
   return (
     <form
@@ -521,6 +527,8 @@ function FormShell({
         {submitLabel}
       </Button>
 
+      {oauthSlot}
+
       <p className="text-center text-sm text-muted">
         {altPrompt}{' '}
         <a
@@ -533,6 +541,79 @@ function FormShell({
       </p>
     </form>
   );
+}
+
+/**
+ * Divider + Google button under the email submit on both auth forms.
+ *
+ * The click starts a full-page OAuth hop (`signInWithGoogle`), so the page
+ * unloads before any pending state could matter — no spinner, no disabled
+ * window. Google creates the account on first sign-in, which is why the same
+ * slot serves both the sign-in and the sign-up form.
+ */
+function GoogleAuthSlot({ redirectTo, label }: { redirectTo: string; label: string }) {
+  return (
+    <>
+      <div className="flex items-center gap-3 text-xs uppercase tracking-wider text-muted">
+        <span className="h-px flex-1 bg-border" aria-hidden="true" />
+        <span>atau</span>
+        <span className="h-px flex-1 bg-border" aria-hidden="true" />
+      </div>
+      <button
+        type="button"
+        onClick={() => signInWithGoogle(redirectTo)}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-control border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent-soft focus-ring"
+      >
+        <GoogleGIcon />
+        {label}
+      </button>
+    </>
+  );
+}
+
+/** The four-colour Google mark — lucide ships no brand icons. */
+function GoogleGIcon() {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true" className="h-4 w-4 shrink-0">
+      <path
+        fill="#EA4335"
+        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+      />
+      <path
+        fill="#4285F4"
+        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+      />
+      <path
+        fill="#34A853"
+        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+      />
+    </svg>
+  );
+}
+
+/**
+ * Reads the reason Appwrite dropped the user back on this page after a Google
+ * round trip.
+ *
+ * Two very different landings produce `/login`: Appwrite's own `failure`
+ * redirect (tagged `google_fail=1`, possibly with `error`/`error_description`
+ * appended — Appwrite's query handling varies, so any of the three counts),
+ * and a bare visit to /login, which carries neither and stays silent. The
+ * session-gate bounce always arrives as `?next=…` and must NOT read as an
+ * OAuth failure — that one means the round trip succeeded but the session
+ * cookie did not reach the SDK.
+ */
+function readOauthFailure(): string | null {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has('google_fail') && !params.has('error')) return null;
+  const detail = params.get('error_description') || params.get('error');
+  const base = 'Masuk dengan Google gagal. Coba lagi, atau masuk dengan email dan kata sandi.';
+  return detail ? `${base} (${detail})` : base;
 }
 
 function toErrorMessage(error: unknown): string {

@@ -8,12 +8,30 @@ import { APPWRITE } from './config';
 
 let client: Client | null = null;
 
+/**
+ * The SDK talks to the same-origin proxy, never to Appwrite's domain directly.
+ *
+ * Appwrite authenticates with a cookie scoped to its own host; from this origin
+ * that cookie is third-party, and every browser that blocks third-party cookies
+ * (Brave, Safari, Firefox) drops it — sign-in appears to succeed and the next
+ * request is anonymous. `functions/api/appwrite/[[path]].ts` relays the API and
+ * rewrites the cookie to be host-only here, which is the fix Appwrite documents
+ * for browser apps ("add a custom domain as your API endpoint").
+ *
+ * The one call that must NOT go through the proxy is the OAuth start: Appwrite
+ * sets a short-lived state cookie on its own domain that its callback reads,
+ * so `startGoogleOAuth` builds that URL against `APPWRITE.endpoint` directly.
+ */
+const PROXY_PATH = '/api/appwrite';
+
 function ensureClient(): Client {
   if (client) return client;
   if (typeof window === 'undefined') {
     throw new Error('Appwrite client accessed outside the browser.');
   }
-  client = new Client().setEndpoint(APPWRITE.endpoint).setProject(APPWRITE.projectId);
+  client = new Client()
+    .setEndpoint(`${window.location.origin}${PROXY_PATH}`)
+    .setProject(APPWRITE.projectId);
   return client;
 }
 

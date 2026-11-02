@@ -1,11 +1,14 @@
-import { AppwriteException, ID } from 'appwrite';
+import { AppwriteException, ID, OAuthProvider } from 'appwrite';
 import type {
   AuthRepository,
   CredentialsWithEmail,
+  OAuthCompletion,
+  OAuthRedirects,
   RecoveryCompletion,
   SessionUser,
   SignUpInput,
 } from '../ports/auth-repository';
+import { APPWRITE } from '../appwrite/config';
 import { getAccount } from '../appwrite/client';
 import { toAppError } from '../appwrite/errors';
 import type { Models } from 'appwrite';
@@ -103,6 +106,50 @@ export class AppwriteAuthRepository implements AuthRepository {
   async completeRecovery(input: RecoveryCompletion): Promise<void> {
     try {
       await getAccount().updateRecovery(input);
+    } catch (error) {
+      throw toAppError(error);
+    }
+  }
+
+  /**
+   * Hands the browser to Google (OAuth2 token flow). This returns immediately —
+   * the navigation leaves the page.
+   *
+   * The URL is assembled by hand for two reasons. The SDK's
+   * `createOAuth2Token` has no `state` parameter, and without one the success
+   * URL cannot prove which tab started the round trip. And the request must go
+   * to Appwrite's own endpoint, not the same-origin proxy: Appwrite sets a
+   * short-lived state cookie on its domain that its callback reads back, so
+   * proxying the start would put that cookie somewhere the callback never looks.
+   * A top-level navigation is never treated as a third-party request, so this
+   * hop works in every browser.
+   *
+   * No Turnstile token is spent here: the round trip is a redirect, not a
+   * session-creating call, and Appwrite rate-limits the OAuth endpoint itself.
+   */
+  startGoogleOAuth({ success, failure, state }: OAuthRedirects): void {
+    const url = new URL(
+      `${APPWRITE.endpoint}/account/tokens/oauth2/${encodeURIComponent(OAuthProvider.Google)}`,
+    );
+    url.searchParams.set('project', APPWRITE.projectId);
+    url.searchParams.set('success', success);
+    url.searchParams.set('failure', failure);
+    url.searchParams.set('state', state);
+    window.location.assign(url.toString());
+  }
+
+  /**
+   * Trades the success URL's `userId`/`secret` for a session.
+   *
+   * This is the half of the token flow the app was missing: Appwrite redirects
+   * back with credentials, not a cookie, and the session only exists once the
+   * client exchanges them. `createSession` answers with the session cookie,
+   * which through the proxy is first-party and therefore actually stored.
+   */
+  async completeGoogleOAuth({ userId, secret }: OAuthCompletion): Promise<SessionUser> {
+    try {
+      await getAccount().createSession({ userId, secret });
+      return toSessionUser(await getAccount().get());
     } catch (error) {
       throw toAppError(error);
     }

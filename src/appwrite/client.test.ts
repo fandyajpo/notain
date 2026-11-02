@@ -22,7 +22,11 @@ beforeEach(() => {
   // `ensureClient()` refuses to build outside a browser, and the SDK reads a
   // couple of browser globals on the way to its request. The request itself
   // is stubbed, so no network is involved.
-  vi.stubGlobal('window', { location: { href: 'http://localhost:4321/' } });
+  // `origin` matters: the SDK endpoint is built from it so requests stay
+  // same-origin (the `/api/appwrite` proxy), never cross-site to Appwrite.
+  vi.stubGlobal('window', {
+    location: { href: 'http://localhost:4321/', origin: 'http://localhost:4321' },
+  });
   vi.stubGlobal('document', { cookie: '' });
   mint = vi.fn(async () => Response.json({ jwt: token(900) }));
   vi.stubGlobal('fetch', mint);
@@ -38,6 +42,9 @@ describe('mintJwt', () => {
     // Without the cache every /api/* call spent one mint against Appwrite's
     // POST /account/jwts quota — the 429 that blanked the org gate.
     expect(mint).toHaveBeenCalledTimes(1);
+    // The mint rides the same-origin proxy: talking to Appwrite directly is
+    // what lost the session cookie in browsers that block third-party cookies.
+    expect(new URL(String(mint.mock.calls[0]?.[0])).pathname).toBe('/api/appwrite/account/jwts');
   });
 
   it('shares a single mint across concurrent callers', async () => {
