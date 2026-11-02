@@ -54,10 +54,18 @@ import {
 import { useProfile } from '../../../lib/query/hooks/use-profile';
 import { useTemplates } from '../../../lib/query/hooks/use-templates';
 import { toast } from '../../../lib/ui/toast';
+import { setManyInScope, useSelection } from '../../../lib/selection';
+import {
+  exportRows,
+  resolveSelected,
+  useSelectionScope,
+} from '../../../lib/query/hooks/use-selection';
+import { listAllInvoices } from '../../../app/invoices';
+import { toAppError } from '../../../app/errors';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { CARD_ROW } from '../ui/card';
-import { ExportButtons } from '../excel/export-buttons';
+import { SelectionToolbar, hasSelection } from '../excel/selection-toolbar';
+import { SelectAllMenu } from '../ui/select-all-menu';
 import { Menu } from '../ui/menu';
 import { Modal } from '../ui/modal';
 import { Notice } from '../ui/notice';
@@ -65,7 +73,7 @@ import { SearchField } from '../ui/search-field';
 import { Select } from '../ui/select';
 import { StatusBadge } from '../ui/status-badge';
 import { EmptyState, ErrorState, LoadingState } from '../ui/state';
-import { TABLE, TABLE_SHELL, TBODY_ROW, THEAD_ROW, tdClass, thClass } from '../ui/table';
+import { TABLE, TableFrame, TBODY_ROW, THEAD_ROW, tdClass, thClass } from '../ui/table';
 import { useFieldIds } from '../ui/field';
 
 const features = tableFeatures({
@@ -114,6 +122,13 @@ type TableParams = {
   sorting: SortingState;
 };
 
+/** Snapshot criteria for "select all that match" — the filters the table sends. */
+type InvoiceCriteria = {
+  search: string;
+  status?: InvoiceStatus | null;
+  templateId?: string;
+};
+
 function readParams(): TableParams {
   if (typeof window === 'undefined') {
     return { keyword: '', status: undefined, template: undefined, sorting: [] };
@@ -156,16 +171,26 @@ export function InvoiceTable() {
   const [sorting, setSorting] = useState<SortingState>(initial.sorting);
   const [pendingDelete, setPendingDelete] = useState<Invoice | null>(null);
   /**
-   * Row checkboxes, keyed by invoice id (TanStack's `RowSelectionState`).
-   *
-   * Selection persists across "Muat lebih banyak" because the ids outlive the
-   * pages, but it is wiped whenever the *filters* change: the checked ids may
-   * refer to rows the new filter hides, and a bulk delete must never touch
-   * something the user cannot currently see.
+   * Global, id-based selection (see `lib/selection`). TanStack's
+   * `rowSelection` is derived from this per render — never an independent
+   * copy — so ids outlive "Muat lebih banyak", refetches, sorting *and*
+   * filter changes: ticking a row never gets undone by the table doing its
+   * job, and every action revalidates against the source before it runs.
    */
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const selection = useSelection<InvoiceCriteria>('invoices');
+  const snapshot = selection.getSnapshot();
+  /** Full-dataset and matching-filter walks for count, export and bulk delete. */
+  const invoiceLoaders = useMemo(
+    () => ({
+      all: () => listAllInvoices(),
+      matching: (criteria: InvoiceCriteria) => listAllInvoices(criteria),
+    }),
+    [],
+  );
   /** The bulk-delete confirmation modal's open flag. */
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  /** True while the selection is being resolved to records (a network walk). */
+  const [resolving, setResolving] = useState(false);
   /** Whose uploaded proof to show full-size in the viewer modal. */
   const [proofView, setProofView] = useState<Invoice | null>(null);
   /** Whose uploaded proof the owner is about to delete (one-shot reset). */
@@ -174,12 +199,8 @@ export function InvoiceTable() {
   const proofUpload = useRef<Invoice | null>(null);
   const proofFileRef = useRef<HTMLInputElement>(null);
 
-  // A filter change invalidates the selection — see the state's comment above.
-  useEffect(() => {
-    setRowSelection({});
-  }, [search, statusFilter, templateFilter]);
-
-  // Mirror the visible state into the query string. Unknown params (an auth
+  // A filter change deliberately does NOT touch the selection (see its state
+  // comment); this effect only mirrors the visible filters into the URL. Unknown params (an auth
   // token, a tour flag) are preserved — this only owns its own five keys.
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
@@ -253,18 +274,28 @@ export function InvoiceTable() {
 
   /** The bulk action behind the selection bar's "Hapus" button. */
   async function confirmBulkDelete() {
-    const ids = Object.keys(rowSelection);
-    if (ids.length === 0) {
-      setBulkDeleteOpen(false);
-      return;
-    }
+    setResolving(true);
     try {
-      await deleteInvoices.mutateAsync(ids);
-      toast(`${ids.length} invoice berhasil dihapus.`, { variant: 'success' });
-    } catch {
-      toast('Sebagian invoice gagal dihapus. Coba lagi.', { variant: 'error' });
+      // Resolve the global selection first: it may name rows another tab
+      // deleted, and the success toast must count what actually went.
+      const rows = await resolveSelected({
+        snapshot: selection.getSnapshot(),
+        loaders: invoiceLoaders,
+        noun: 'invoice',
+      });
+      const ids = rows.map((row) => row.id);
+      if (ids.length === 0) return;
+      try {
+        await deleteInvoices.mutateAsync(ids);
+        selection.clear();
+        toast(`${ids.length} invoice berhasil dihapus.`, { variant: 'success' });
+      } catch {
+        toast('Sebagian invoice gagal dihapus. Coba lagi.', { variant: 'error' });
+      }
+    } catch (error) {
+      toast(toAppError(error).message, { variant: 'error' });
     } finally {
-      setRowSelection({});
+      setResolving(false);
       setBulkDeleteOpen(false);
     }
   }
@@ -326,20 +357,96 @@ export function InvoiceTable() {
   }
 
   const invoices = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
-  /**
-   * The currently-checked rows, in table order.
-   *
-   * Intersected with the loaded rows rather than read straight off
-   * `rowSelection`: a refetch can drop a row the user had checked, and the
-   * count, the export and the bulk delete must all agree on the same set.
-   */
-  const selectedInvoices = useMemo(
-    () => invoices.filter((invoice) => rowSelection[invoice.id]),
-    [invoices, rowSelection],
-  );
   // `statusFilter !== undefined` rather than truthiness: the unset filter is
   // `null`, which is falsy but still an active filter.
   const anyFilter = Boolean(search) || statusFilter !== undefined || Boolean(templateFilter);
+
+  // The server reports `total` for the *current query*: it is the dataset size
+  // only while no filter narrows it. With a filter active the dataset scope
+  // walks the source instead (the hook's own fallback).
+  const datasetTotal = anyFilter ? null : (data?.pages[0]?.total ?? null);
+  const scopeView = useSelectionScope('invoices', snapshot.all, invoiceLoaders, datasetTotal);
+  /** The global count — `null` while an all-scope walk is still resolving. */
+  const selectionCount = selection.count(scopeView.size);
+  /** Whether one id is currently selected, under the active scope (or plain). */
+  const isSelected = (id: string) => selection.isSelected(id, scopeView.has(id));
+
+  /**
+   * TanStack's `rowSelection`, derived fresh from the store each render:
+   * loaded rows only — all the feature needs — with everything outside the
+   * current page left to the store. One source of truth, nothing to drift.
+   */
+  const rowSelection: RowSelectionState = {};
+  for (const invoice of invoices) {
+    if (isSelected(invoice.id)) rowSelection[invoice.id] = true;
+  }
+
+  /**
+   * Translates TanStack's selection updates (a row tick, "select this page")
+   * back into store operations for the loaded ids; rows the current page
+   * never showed keep whatever the store already holds for them.
+   */
+  function applyRowSelectionChange(
+    updater: RowSelectionState | ((old: RowSelectionState) => RowSelectionState),
+  ) {
+    const next = typeof updater === 'function' ? updater(rowSelection) : updater;
+    const addInside: string[] = [];
+    const addOutside: string[] = [];
+    const dropInside: string[] = [];
+    const dropOutside: string[] = [];
+    for (const invoice of invoices) {
+      const inScope = scopeView.has(invoice.id);
+      const wanted = Boolean(next[invoice.id]);
+      if (wanted === isSelected(invoice.id)) continue;
+      let bucket: string[];
+      if (wanted) bucket = inScope ? addInside : addOutside;
+      else bucket = inScope ? dropInside : dropOutside;
+      bucket.push(invoice.id);
+    }
+    if (addInside.length) selection.setMany(addInside, true, true);
+    if (addOutside.length) selection.setMany(addOutside, true, false);
+    if (dropInside.length) selection.setMany(dropInside, false, true);
+    if (dropOutside.length) selection.setMany(dropOutside, false, false);
+  }
+
+  /** Export getter: resolves the complete selection, revalidating first. */
+  async function exportSelectedRows() {
+    const rows = await exportRows({
+      snapshot: selection.getSnapshot(),
+      loaders: invoiceLoaders,
+      noun: 'invoice',
+    });
+    return toInvoiceRows(rows);
+  }
+
+  /**
+   * The header's scope menu — built here so it closes over this render's
+   * filters, store and scope; the column defs memo on it below.
+   */
+  const selectAllMenu = (
+    <SelectAllMenu
+      noun="invoice"
+      pageCount={invoices.length}
+      onSelectPage={() =>
+        setManyInScope(
+          selection,
+          invoices.map((invoice) => invoice.id),
+          true,
+          scopeView.has,
+        )
+      }
+      onSelectFiltered={
+        anyFilter
+          ? () =>
+              selection.selectScope({
+                kind: 'filtered',
+                criteria: { search, status: statusFilter, templateId: templateFilter },
+              })
+          : undefined
+      }
+      onSelectDataset={() => selection.selectScope({ kind: 'dataset' })}
+    />
+  );
 
   const debouncedSearch = useDebouncedCallback((value: string) => setSearch(value), {
     wait: SEARCH_WAIT,
@@ -353,23 +460,28 @@ export function InvoiceTable() {
         // why sorting is skipped for it — display columns have no accessor.
         columnHelper.display({
           id: 'select',
-          size: 44,
+          size: 96,
           header: ({ table }) => (
-            <input
-              type="checkbox"
-              checked={table.getIsAllPageRowsSelected()}
-              ref={(element) => {
-                // Block body (not a concise arrow): React 19 treats a
-                // returned non-function as a ref-cleanup error, and this
-                // assignment is a side effect, not a return value.
-                if (element) {
-                  element.indeterminate = table.getIsSomePageRowsSelected();
-                }
-              }}
-              onChange={table.getToggleAllPageRowsSelectedHandler()}
-              aria-label="Pilih semua invoice yang dimuat"
-              className="h-4 w-4 accent-accent"
-            />
+            // The checkbox toggles what is on screen; the menu beside it
+            // offers the wider scopes (this page / this filter / everything).
+            <span className="flex items-center gap-1">
+              <input
+                type="checkbox"
+                checked={table.getIsAllPageRowsSelected()}
+                ref={(element) => {
+                  // Block body (not a concise arrow): React 19 treats a
+                  // returned non-function as a ref-cleanup error, and this
+                  // assignment is a side effect, not a return value.
+                  if (element) {
+                    element.indeterminate = table.getIsSomePageRowsSelected();
+                  }
+                }}
+                onChange={table.getToggleAllPageRowsSelectedHandler()}
+                aria-label="Pilih semua invoice yang dimuat"
+                className="h-4 w-4 accent-accent"
+              />
+              {selectAllMenu}
+            </span>
           ),
           cell: ({ row }) => (
             // The invoice-number cell's stretched link `::after` overlays the
@@ -545,7 +657,11 @@ export function InvoiceTable() {
           },
         }),
       ]),
-    [],
+    // `selectAllMenu` is rebuilt every render (it closes over the live store
+    // and filters) and `publicLinkReady` flips when the profile lands —
+    // recreating the defs keeps both truthful. Column ids are stable, so
+    // sizing and other column state are unaffected.
+    [selectAllMenu, publicLinkReady],
   );
 
   const table = useTable({
@@ -554,7 +670,7 @@ export function InvoiceTable() {
     columns,
     state: { sorting, rowSelection },
     onSortingChange: setSorting,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: applyRowSelectionChange,
     // Stable ids so a checked row stays checked when a later page loads and
     // the row index shifts underneath it.
     getRowId: (invoice) => invoice.id,
@@ -653,39 +769,33 @@ export function InvoiceTable() {
         </Notice>
       )}
 
-      {/* Appears the moment a checkbox is ticked: the count, an export of
-          exactly that set, the bulk delete, and a way out. */}
-      {selectedInvoices.length > 0 && (
-        <div className={CARD_ROW}>
-          <p className="text-sm text-muted">
-            <span className="font-medium text-foreground">{selectedInvoices.length}</span> invoice
-            dipilih
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <ExportButtons
-              filename="invoice-terpilih"
-              sheetName="Invoice"
-              getRows={() => toInvoiceRows(selectedInvoices)}
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setRowSelection({})}
-              disabled={deleteInvoices.isPending}
-            >
-              Batalkan pilihan
-            </Button>
+      {/* Appears the moment anything is ticked: the count, an export of the
+          COMPLETE selection (revalidated across every page), the bulk delete,
+          and a way out. */}
+      {hasSelection(selectionCount) && (
+        <SelectionToolbar
+          count={selectionCount}
+          noun="invoice"
+          onClear={() => selection.clear()}
+          clearDisabled={deleteInvoices.isPending || resolving}
+          exportOptions={{
+            filename: 'invoice-terpilih',
+            sheetName: 'Invoice',
+            getRows: exportSelectedRows,
+            pdfTitle: 'Invoice Terpilih',
+          }}
+          actions={
             <Button
               variant="danger"
               size="sm"
               onClick={() => setBulkDeleteOpen(true)}
-              disabled={deleteInvoices.isPending}
+              disabled={deleteInvoices.isPending || resolving}
             >
               <Trash2 size={15} aria-hidden="true" />
-              Hapus {selectedInvoices.length}
+              Hapus {selectionCount ?? 0}
             </Button>
-          </div>
-        </div>
+          }
+        />
       )}
 
       {isError && invoices.length === 0 ? (
@@ -718,7 +828,7 @@ export function InvoiceTable() {
           }
         />
       ) : (
-        <div data-tour="invoices-table" className={TABLE_SHELL} aria-busy={isFetching}>
+        <TableFrame data-tour="invoices-table" aria-busy={isFetching}>
           <table className={TABLE} style={{ minWidth: '640px' }}>
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -787,7 +897,7 @@ export function InvoiceTable() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableFrame>
       )}
 
       {invoices.length > 0 && hasNextPage && !isPlaceholderData && (
@@ -844,17 +954,15 @@ export function InvoiceTable() {
         size="sm"
         ariaLabelledBy="bulk-delete-dialog-title"
         title={
-          <span id="bulk-delete-dialog-title">
-            Hapus {selectedInvoices.length} invoice terpilih?
-          </span>
+          <span id="bulk-delete-dialog-title">Hapus {selectionCount ?? 0} invoice terpilih?</span>
         }
         actions={[
           { label: 'Batal', variant: 'secondary', onClick: () => setBulkDeleteOpen(false) },
           {
             label: 'Hapus',
             variant: 'danger',
-            loading: deleteInvoices.isPending,
-            onClick: confirmBulkDelete,
+            loading: deleteInvoices.isPending || resolving,
+            onClick: () => void confirmBulkDelete(),
           },
         ]}
       >

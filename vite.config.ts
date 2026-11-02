@@ -18,7 +18,18 @@ export default defineConfig({
       browser: true,
       node: true,
     },
-    ignorePatterns: ['dist/', '.astro/', 'node_modules/', 'coverage/', '.wrangler/'],
+    // `.ci-tmp` is a scratch checkout and `.cloud-attachments` holds imported
+    // chat attachments — both are local-only, never committed, and their
+    // copies of `src/` would otherwise be linted as if they were the project.
+    ignorePatterns: [
+      'dist/',
+      '.astro/',
+      'node_modules/',
+      'coverage/',
+      '.wrangler/',
+      '.ci-tmp/',
+      '.cloud-attachments/',
+    ],
     rules: {
       'constructor-super': 'error',
       'for-direction': 'error',
@@ -205,6 +216,8 @@ export default defineConfig({
       'package-lock.json',
       'coverage/',
       '*.svelte',
+      '.ci-tmp/',
+      '.cloud-attachments/',
     ],
   },
 });

@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Check, Merge, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
 import { Button } from '../ui/button';
-import { CARD_ROW, cardClass } from '../ui/card';
+import { cardClass } from '../ui/card';
 import { LoadMore } from '../ui/load-more';
 import { Modal } from '../ui/modal';
 import { PageHeader } from '../ui/page-header';
@@ -12,7 +12,7 @@ import { FieldShell, useFieldIds } from '../ui/field';
 import { Input } from '../ui/input';
 import { SearchField } from '../ui/search-field';
 import { EmptyState, ErrorState, LoadingState } from '../ui/state';
-import { TABLE, TABLE_SHELL, TBODY_ROW, THEAD_ROW, Td, Th } from '../ui/table';
+import { TABLE, TableFrame, TBODY_ROW, THEAD_ROW, Td, Th } from '../ui/table';
 import { usePageTour } from '../../../lib/tour/use-tour';
 import {
   useCreateCustomer,
@@ -22,16 +22,40 @@ import {
   useMergeCustomers,
   useUpdateCustomer,
 } from '../../../lib/query/hooks/use-customers';
+import {
+  exportRows,
+  resolveSelected,
+  useSelectionScope,
+} from '../../../lib/query/hooks/use-selection';
+import { setManyInScope, useSelection } from '../../../lib/selection';
 import { listCustomers } from '../../../app/customers';
 import { formatTanggal, formatTanggalRelatif } from '../../../core/shared/dates';
 import { toCustomerRows } from '../../../core/excel';
 import { takeFieldErrors, toAppError } from '../../../app/errors';
 import { toast } from '../../../lib/ui/toast';
 import type { Customer, CustomerDraft } from '../../../core/customer/model';
-import { ExportButtons } from '../excel/export-buttons';
+import { SelectionToolbar, hasSelection } from '../excel/selection-toolbar';
+import { SelectAllMenu } from '../ui/select-all-menu';
 import { CustomerImportPanel } from './customer-import';
 
 const EMPTY_DRAFT: CustomerDraft = { name: '', email: '', phone: '' };
+
+/** Snapshot criteria for "select all that match" — the same search the table applies. */
+type CustomerCriteria = { query: string };
+
+/**
+ * The table's client-side narrowing, shared verbatim by the selection scope's
+ * matching walk so "select everything matching" is the same predicate the
+ * user is looking at, not a second interpretation of it.
+ */
+function filterCustomers(rows: Customer[], query: string): Customer[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return rows;
+  return rows.filter(
+    (c) =>
+      c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.phone.includes(q),
+  );
+}
 
 /** The `/customers` island: the saved-customer directory, editable in place. */
 export function CustomersApp() {
@@ -82,12 +106,29 @@ function CustomersContent() {
   // Merge mode state.
   const [mergeMode, setMergeMode] = useState(false);
   /**
-   * Checked row ids — same contract as the invoice table's selection: it
-   * survives "Muat lebih banyak" (the ids outlive the pages) but is wiped
-   * whenever the search changes, so a bulk action can never touch a row the
-   * user can no longer see.
+   * Global, id-based selection (see `lib/selection`): ids, never indexes, in
+   * a module-scoped store — so it survives "Muat lebih banyak", refetches,
+   * sorting, remounts of this island, *and* search/filter changes. Nothing
+   * clears it but the user, an action that consumed it, or a merge round-trip.
    */
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const selection = useSelection<CustomerCriteria>('customers');
+  const snapshot = selection.getSnapshot();
+  /** Full-dataset and matching-filter walks, shared by count, export and merge. */
+  const loaders = useMemo(
+    () => ({
+      all: () => listCustomers(),
+      matching: ({ query: q }: CustomerCriteria) =>
+        listCustomers().then((rows) => filterCustomers(rows, q)),
+    }),
+    [],
+  );
+  const scopeView = useSelectionScope('customers', snapshot.all, loaders, data ? total : null);
+  /** The global count — `null` while an all-scope walk is still resolving. */
+  const selectionCount = selection.count(scopeView.size);
+  /** The records behind a merge in progress — they may span pages no table has loaded. */
+  const [mergeSources, setMergeSources] = useState<Customer[]>([]);
+  /** True while the selection is being resolved to records (a network walk). */
+  const [resolving, setResolving] = useState(false);
   const [mergeOpen, setMergeOpen] = useState(false);
   const [mergeChoices, setMergeChoices] = useState<CustomerDraft>(EMPTY_DRAFT);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -104,32 +145,19 @@ function CustomersContent() {
   const phoneIds = useFieldIds();
   const searchIds = useFieldIds();
 
-  const selectedCustomers = useMemo(
-    () => customers.filter((c) => selected.has(c.id)),
-    [customers, selected],
-  );
-
   // Client-side filter over the pages loaded so far (the search box narrows
-  // what is on screen; "Muat lebih banyak" pulls the rest).
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return customers;
-    return customers.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        c.email.toLowerCase().includes(q) ||
-        c.phone.includes(q),
-    );
-  }, [customers, query]);
+  // what is on screen; "Muat lebih banyak" pulls the rest). No effect clears
+  // the selection when this changes — filtering must not silently drop what
+  // the user ticked; the checkboxes simply read as unticked for rows the new
+  // search hides, and the count stays honest.
+  const filtered = useMemo(() => filterCustomers(customers, query), [customers, query]);
 
-  // A search change invalidates the selection — see the state's comment above.
-  useEffect(() => {
-    setSelected(new Set());
-  }, [query]);
+  /** Whether one id is currently selected, under the active scope (or plain). */
+  const isSelected = (id: string) => selection.isSelected(id, scopeView.has(id));
 
   /** Every currently-visible row is checked — what the select-all box reads. */
-  const allFilteredSelected = filtered.length > 0 && filtered.every((c) => selected.has(c.id));
-  const someFilteredSelected = filtered.some((c) => selected.has(c.id));
+  const allFilteredSelected = filtered.length > 0 && filtered.every((c) => isSelected(c.id));
+  const someFilteredSelected = filtered.some((c) => isSelected(c.id));
 
   function handleAdd() {
     const trimmed = name.trim();
@@ -183,25 +211,17 @@ function CustomersContent() {
   }
 
   function toggleSelected(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    selection.toggle(id, scopeView.has(id));
   }
 
   /** Checks every visible row, or unchecks them all if they already were. */
   function toggleSelectAll() {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (allFilteredSelected) {
-        for (const customer of filtered) next.delete(customer.id);
-      } else {
-        for (const customer of filtered) next.add(customer.id);
-      }
-      return next;
-    });
+    setManyInScope(
+      selection,
+      filtered.map((c) => c.id),
+      !allFilteredSelected,
+      scopeView.has,
+    );
   }
 
   function confirmDelete() {
@@ -221,50 +241,107 @@ function CustomersContent() {
 
   function exitMergeMode() {
     setMergeMode(false);
-    setSelected(new Set());
+    selection.clear();
     setMergeOpen(false);
   }
 
-  /** The bulk action behind the selection bar's "Hapus" button. */
-  function confirmBulkDelete() {
-    const ids = [...selected];
-    if (ids.length === 0) {
+  /**
+   * The bulk action behind the selection bar's "Hapus" button.
+   *
+   * The global selection is resolved to live records first — ids may name
+   * rows deleted minutes ago on another tab, and the success toast must count
+   * what actually went. `resolveSelected` reports the skipped ones itself.
+   */
+  async function confirmBulkDelete() {
+    setResolving(true);
+    try {
+      const rows = await resolveSelected({
+        snapshot: selection.getSnapshot(),
+        loaders,
+        noun: 'pelanggan',
+      });
+      const ids = rows.map((row) => row.id);
+      if (ids.length === 0) {
+        setBulkDeleteOpen(false);
+        return;
+      }
+      deleteCustomers.mutate(ids, {
+        onSuccess: () => {
+          selection.clear();
+          setBulkDeleteOpen(false);
+          toast(`${ids.length} pelanggan berhasil dihapus.`, { variant: 'success' });
+        },
+        onError: (error) => {
+          setBulkDeleteOpen(false);
+          toast(toAppError(error).message, { variant: 'error' });
+        },
+      });
+    } catch (error) {
       setBulkDeleteOpen(false);
-      return;
+      toast(toAppError(error).message, { variant: 'error' });
+    } finally {
+      setResolving(false);
     }
-    deleteCustomers.mutate(ids, {
-      onSuccess: () => {
-        setSelected(new Set());
-        setBulkDeleteOpen(false);
-        toast(`${ids.length} pelanggan berhasil dihapus.`, { variant: 'success' });
-      },
-      onError: (error) => {
-        setBulkDeleteOpen(false);
-        toast(toAppError(error).message, { variant: 'error' });
-      },
-    });
   }
 
-  function openMergeDialog() {
-    // Seed each field with the first non-empty value across the selection, so
-    // a radio is always checked whenever any value exists. Seeding from
-    // `selectedCustomers[0]` alone would leave a field un-checked when the
-    // first row left it blank but a later row has a value — and confirming
-    // then would save empty and drop the real value when the sources are
-    // deleted.
-    const firstWith = (field: keyof CustomerDraft) =>
-      selectedCustomers.find((c) => c[field].trim())?.[field].trim() ?? '';
-
-    setMergeChoices({
-      name: firstWith('name'),
-      email: firstWith('email'),
-      phone: firstWith('phone'),
+  /**
+   * The export getter: resolves the complete selection (revalidating against
+   * the directory, so a deleted row is skipped with a toast instead of
+   * landing in the file) and maps it to sheet rows.
+   */
+  async function exportSelectedRows() {
+    const rows = await exportRows({
+      snapshot: selection.getSnapshot(),
+      loaders,
+      noun: 'pelanggan',
     });
-    setMergeOpen(true);
+    return toCustomerRows(rows);
+  }
+
+  /**
+   * Opens the merge dialog over the *resolved* selection.
+   *
+   * The selection is global: it can span pages this table never loaded, so
+   * the records are fetched here rather than read off what happens to be on
+   * screen. Fewer than two live records means there is nothing to merge — a
+   * stale tick, or a row another tab already deleted.
+   */
+  async function openMergeDialog() {
+    setResolving(true);
+    try {
+      const rows = await resolveSelected({
+        snapshot: selection.getSnapshot(),
+        loaders,
+        noun: 'pelanggan',
+      });
+      if (rows.length < 2) {
+        toast('Pilih minimal 2 pelanggan untuk digabungkan.', { variant: 'error' });
+        return;
+      }
+      // Seed each field with the first non-empty value across the selection, so
+      // a radio is always checked whenever any value exists. Seeding from
+      // `rows[0]` alone would leave a field un-checked when the first row
+      // left it blank but a later row has a value — and confirming then would
+      // save empty and drop the real value when the sources are deleted.
+      const firstWith = (field: keyof CustomerDraft) =>
+        rows.find((c) => c[field].trim())?.[field].trim() ?? '';
+
+      setMergeSources(rows);
+      setMergeChoices({
+        name: firstWith('name'),
+        email: firstWith('email'),
+        phone: firstWith('phone'),
+      });
+      setMergeOpen(true);
+    } catch (error) {
+      toast(toAppError(error).message, { variant: 'error' });
+    } finally {
+      setResolving(false);
+    }
   }
 
   function handleConfirmMerge() {
-    const [target, ...sources] = selectedCustomers;
+    const [target, ...sources] = mergeSources;
     if (!target || sources.length === 0) return;
 
     mergeCustomers.mutate(
@@ -284,7 +361,7 @@ function CustomersContent() {
   /** Distinct non-empty values for one field across the selected customers. */
   function distinctValues(field: keyof CustomerDraft): string[] {
     const seen = new Set<string>();
-    for (const c of selectedCustomers) {
+    for (const c of mergeSources) {
       const value = c[field].trim();
       if (value) seen.add(value);
     }
@@ -306,12 +383,12 @@ function CustomersContent() {
                 </Button>
                 <Button
                   size="sm"
-                  disabled={selectedCustomers.length < 2}
-                  loading={mergeCustomers.isPending}
-                  onClick={openMergeDialog}
+                  disabled={(selectionCount ?? 0) < 2}
+                  loading={resolving || mergeCustomers.isPending}
+                  onClick={() => void openMergeDialog()}
                 >
                   <Merge size={15} aria-hidden="true" />
-                  Gabung {selectedCustomers.length > 0 ? selectedCustomers.length : ''}
+                  Gabung {selectionCount && selectionCount > 0 ? selectionCount : ''}
                 </Button>
               </>
             ) : (
@@ -321,22 +398,13 @@ function CustomersContent() {
                 disabled={customers.length < 2}
                 onClick={() => {
                   setMergeMode(true);
-                  setSelected(new Set());
+                  selection.clear();
                 }}
               >
                 <Merge size={15} aria-hidden="true" />
                 Gabungkan
               </Button>
             )}
-            <ExportButtons
-              filename="customer-notain"
-              sheetName="Customer"
-              // The export always ships the whole directory, not just the pages
-              // loaded on screen — `getRows` may return a promise for exactly
-              // this reason.
-              getRows={async () => toCustomerRows(await listCustomers())}
-              disabled={customers.length === 0}
-            />
           </div>
         }
       />
@@ -471,68 +539,90 @@ function CustomersContent() {
             )}
           </div>
 
-          {/* Appears the moment a checkbox is ticked: the count, an export of
-              exactly that set, the bulk delete, and a way out. Merge mode has
-              its own action bar up top, so this one stays out of the way. */}
-          {!mergeMode && selectedCustomers.length > 0 && (
-            <div className={CARD_ROW}>
-              <p className="text-sm text-muted">
-                <span className="font-medium text-foreground">{selectedCustomers.length}</span>{' '}
-                pelanggan dipilih
-              </p>
-              <div className="flex flex-wrap items-center gap-2">
-                <ExportButtons
-                  filename="customer-terpilih"
-                  sheetName="Customer"
-                  getRows={() => toCustomerRows(selectedCustomers)}
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelected(new Set())}
-                  disabled={deleteCustomers.isPending}
-                >
-                  Batalkan pilihan
-                </Button>
+          {/* Appears the moment anything is ticked: the count, Merge, an export
+              of exactly the complete selection, the bulk delete, and a way out.
+              Merge mode has its own action bar up top, so this one stays out of
+              the way while it is active. */}
+          {!mergeMode && hasSelection(selectionCount) && (
+            <SelectionToolbar
+              count={selectionCount}
+              noun="pelanggan"
+              onClear={() => selection.clear()}
+              clearDisabled={deleteCustomers.isPending}
+              merge={{
+                onClick: () => void openMergeDialog(),
+                disabled: (selectionCount ?? 0) < 2 || resolving,
+                loading: resolving || mergeCustomers.isPending,
+              }}
+              exportOptions={{
+                filename: 'customer-terpilih',
+                sheetName: 'Customer',
+                getRows: exportSelectedRows,
+                pdfTitle: 'Daftar Customer Terpilih',
+              }}
+              actions={
                 <Button
                   variant="danger"
                   size="sm"
                   onClick={() => setBulkDeleteOpen(true)}
-                  disabled={deleteCustomers.isPending}
+                  disabled={deleteCustomers.isPending || resolving}
                 >
                   <Trash2 size={15} aria-hidden="true" />
-                  Hapus {selectedCustomers.length}
+                  Hapus {selectionCount ?? 0}
                 </Button>
-              </div>
-            </div>
+              }
+            />
           )}
 
           {filtered.length === 0 ? (
             <EmptyState title="Tidak ada pelanggan yang cocok." />
           ) : (
-            <div data-tour="cust-list" className={TABLE_SHELL}>
+            <TableFrame data-tour="cust-list">
               <table className={TABLE} style={{ minWidth: '640px' }}>
                 <thead>
                   <tr className={THEAD_ROW}>
                     {/* Select-all sits in the header, above the column it
-                        governs — the invoice table's arrangement. */}
-                    <Th className="w-11">
-                      <input
-                        type="checkbox"
-                        checked={allFilteredSelected}
-                        ref={(element) => {
-                          // Block body (not a concise arrow): React 19 treats a
-                          // returned non-function as a ref-cleanup error, and this
-                          // assignment is a side effect, not a return value.
-                          if (element) {
-                            element.indeterminate = someFilteredSelected && !allFilteredSelected;
+                        governs — the invoice table's arrangement. The checkbox
+                        toggles what is on screen; the menu beside it offers the
+                        wider scopes (this page / this filter / everything). */}
+                    <Th className="w-24">
+                      <span className="flex items-center gap-1">
+                        <input
+                          type="checkbox"
+                          checked={allFilteredSelected}
+                          ref={(element) => {
+                            // Block body (not a concise arrow): React 19 treats a
+                            // returned non-function as a ref-cleanup error, and this
+                            // assignment is a side effect, not a return value.
+                            if (element) {
+                              element.indeterminate = someFilteredSelected && !allFilteredSelected;
+                            }
+                          }}
+                          onChange={toggleSelectAll}
+                          aria-label="Pilih semua pelanggan yang dimuat"
+                          className="h-4 w-4 accent-accent"
+                          disabled={filtered.length === 0}
+                        />
+                        <SelectAllMenu
+                          noun="pelanggan"
+                          pageCount={filtered.length}
+                          onSelectPage={() =>
+                            setManyInScope(
+                              selection,
+                              filtered.map((c) => c.id),
+                              true,
+                              scopeView.has,
+                            )
                           }
-                        }}
-                        onChange={toggleSelectAll}
-                        aria-label="Pilih semua pelanggan yang dimuat"
-                        className="h-4 w-4 accent-accent"
-                        disabled={filtered.length === 0}
-                      />
+                          onSelectFiltered={
+                            query.trim()
+                              ? () =>
+                                  selection.selectScope({ kind: 'filtered', criteria: { query } })
+                              : undefined
+                          }
+                          onSelectDataset={() => selection.selectScope({ kind: 'dataset' })}
+                        />
+                      </span>
                     </Th>
                     <Th>Customer</Th>
                     <Th>Kontak</Th>
@@ -550,7 +640,7 @@ function CustomersContent() {
                         <Td className="w-11">
                           <input
                             type="checkbox"
-                            checked={selected.has(customer.id)}
+                            checked={isSelected(customer.id)}
                             onChange={() => toggleSelected(customer.id)}
                             aria-label={`Pilih ${customer.name}`}
                             className="h-4 w-4 accent-accent"
@@ -606,7 +696,7 @@ function CustomersContent() {
                   })}
                 </tbody>
               </table>
-            </div>
+            </TableFrame>
           )}
 
           <LoadMore
@@ -774,7 +864,7 @@ function CustomersContent() {
         ariaLabelledBy="bulk-delete-customer-title"
         title={
           <span id="bulk-delete-customer-title">
-            Hapus {selectedCustomers.length} pelanggan terpilih?
+            Hapus {selectionCount ?? 0} pelanggan terpilih?
           </span>
         }
         actions={[
@@ -782,8 +872,8 @@ function CustomersContent() {
           {
             label: 'Hapus',
             variant: 'danger',
-            loading: deleteCustomers.isPending,
-            onClick: confirmBulkDelete,
+            loading: deleteCustomers.isPending || resolving,
+            onClick: () => void confirmBulkDelete(),
           },
         ]}
       >

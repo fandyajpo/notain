@@ -84,14 +84,32 @@ const GROUP_LABEL =
         column is what actually stays in view while the page scrolls. The
         `html[data-sidebar]` attribute (set from localStorage before paint)
         collapses it to an icon rail to widen the view. */}
-    <div class="app-shell lg:grid lg:min-h-screen lg:grid-cols-[15rem_1fr]">
+    {/* `minmax(0,1fr)` not plain `1fr`: `1fr` implies an `auto` minimum, so
+        a wide admin table (min-width 840–860px) could grow the content column
+        past the viewport at 1024–1150px and make the whole page scroll
+        sideways — taking the rail off the left edge with it. With a zero
+        minimum the column never exceeds its track and the table's own
+        `overflow-x-auto` shell does the scrolling instead. */}
+    <div class="app-shell lg:grid lg:min-h-screen lg:grid-cols-[15rem_minmax(0,1fr)]">
+      {/* The aside carries NO explicit height at `lg`: it must stretch to the
+          full grid row (so its border runs the whole page height), which is
+          exactly the room the sticky inner column needs to stay pinned while
+          a long page scrolls — an `h-screen` here would cap it at 100vh and
+          the rail would scroll away with the content. The inner column takes
+          the viewport height instead, scrolling internally if the nav ever
+          grows taller than the window. */}
       <aside
         id="app-sidebar"
         transition:persist="sidebar"
         data-open="false"
-        class="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] -translate-x-full overflow-y-auto border-r border-border bg-card transition-transform duration-300 ease-smooth lg:static lg:z-auto lg:h-screen lg:w-auto lg:max-w-none lg:translate-x-0 lg:overflow-visible lg:transition-none"
+        class="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] -translate-x-full overflow-y-auto border-r border-border bg-card transition-transform duration-300 ease-smooth lg:static lg:z-auto lg:w-auto lg:max-w-none lg:translate-x-0 lg:overflow-visible lg:transition-none"
       >
-        <div class="flex min-h-full flex-col p-4 lg:sticky lg:top-0 lg:h-screen">
+        {/* `min-h-full` fills the off-canvas panel below `lg`; at `lg` the
+          aside is as tall as the whole page, so it must be dropped or it
+          would stretch the sticky column to the page height too (a sticky
+          box as tall as its container never moves). The column then owns
+          exactly the viewport and scrolls internally if the nav is taller. */}
+        <div class="flex min-h-full flex-col p-4 lg:sticky lg:top-0 lg:h-screen lg:min-h-0 lg:overflow-y-auto">
           <div class="flex items-center justify-between gap-2 px-2">
             <a
               href="/dashboard"
@@ -381,7 +399,7 @@ const GROUP_LABEL =
       transition: grid-template-columns 0.3s var(--ease-smooth);
     }
     html[data-sidebar='closed'] .app-shell {
-      grid-template-columns: 4.5rem 1fr;
+      grid-template-columns: 4.5rem minmax(0, 1fr);
     }
     html[data-sidebar='closed'] .sidebar-label {
       display: none;

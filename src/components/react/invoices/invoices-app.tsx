@@ -5,9 +5,6 @@ import { IslandBoundary } from '../ui/island-boundary';
 import { Button } from '../ui/button';
 import { PageHeader } from '../ui/page-header';
 import { InvoiceTable } from '../dashboard/invoice-table';
-import { ExportButtons } from '../excel/export-buttons';
-import { listAllInvoices } from '../../../app/invoices';
-import { toInvoiceRows } from '../../../core/excel';
 import { usePageTour } from '../../../lib/tour/use-tour';
 
 /** The `/invoices` island: the full invoice history, moved off the dashboard. */
@@ -31,20 +28,13 @@ function InvoicesContent() {
         title="Invoice"
         description="Semua invoice yang pernah kamu buat."
         actions={
-          <>
-            <ExportButtons
-              filename="invoice-notain"
-              sheetName="Invoice"
-              getRows={async () => toInvoiceRows(await listAllInvoices())}
-            />
-            <Button
-              onClick={() => window.location.assign('/invoice/new')}
-              data-tour="invoices-create"
-            >
-              <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
-              Buat invoice
-            </Button>
-          </>
+          <Button
+            onClick={() => window.location.assign('/invoice/new')}
+            data-tour="invoices-create"
+          >
+            <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
+            Buat invoice
+          </Button>
         }
       />
 

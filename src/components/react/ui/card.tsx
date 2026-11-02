@@ -19,7 +19,7 @@ export function cardClass(padding: Padding = 'md', className = ''): string {
 /**
  * The action row three list pages open with: one card laid out
  * `justify-between`. Named so the pager, the toolbar and the bulk bar stay in
- * step instead of each retyping the surface (the same idea as `TABLE_SHELL`).
+ * step instead of each retyping the surface (the same idea as `TableFrame`).
  */
 export const CARD_ROW =
   'flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-card px-4 py-3 shadow-card';

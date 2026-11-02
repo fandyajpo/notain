@@ -57,19 +57,28 @@ export async function listPickerHistory(limit?: number): Promise<InvoiceHistoryE
 }
 
 /**
- * Every invoice, walking past the first page.
+ * Every invoice, walking past the first page — optionally narrowed by the
+ * same filters the table sends.
  *
- * The dashboard list is deliberately paginated so a large account never ships
- * every row on load, but an explicit "export all" is the one moment the whole
- * set is what the user asked for — so it walks the cursor here instead.
+ * The list is deliberately paginated so a large account never ships every row
+ * on load, but two moments need the whole set: an explicit "export all", and
+ * the selection store's *select all matching / select everything* snapshot,
+ * which must cover rows no page has loaded yet. Both walk the cursor here
+ * instead; the filters ride along so "all matching this view" is answered by
+ * the server rather than approximated against what happens to be loaded.
  */
-export async function listAllInvoices(): Promise<Invoice[]> {
+export async function listAllInvoices(
+  options?: Pick<ListInvoicesOptions, 'search' | 'status' | 'templateId'>,
+): Promise<Invoice[]> {
   const user = await requireSession();
   const all: Invoice[] = [];
   let cursorAfter: string | undefined;
 
   for (;;) {
-    const page: InvoicePage = await container.invoices.listByOwner(user.id, { cursorAfter });
+    const page: InvoicePage = await container.invoices.listByOwner(user.id, {
+      ...options,
+      cursorAfter,
+    });
     all.push(...page.items);
     if (!page.nextCursor) break;
     cursorAfter = page.nextCursor;

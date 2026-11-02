@@ -104,6 +104,7 @@ describe('QUERY_POLICIES', () => {
         'portalSession',
         'profile',
         'publicSite',
+        'selectionScope',
         'session',
         'stats',
         'templates',

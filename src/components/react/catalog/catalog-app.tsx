@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Package, Pencil, Plus, Trash2 } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
 import { Button } from '../ui/button';
-import { CARD_ROW, cardClass } from '../ui/card';
+import { cardClass } from '../ui/card';
 import { LoadMore } from '../ui/load-more';
 import { Modal } from '../ui/modal';
 import { PageHeader } from '../ui/page-header';
@@ -13,7 +13,7 @@ import { Input } from '../ui/input';
 import { Select } from '../ui/select';
 import { SearchField } from '../ui/search-field';
 import { EmptyState, ErrorState, LoadingState } from '../ui/state';
-import { TABLE, TABLE_SHELL, TBODY_ROW, THEAD_ROW, Td, Th } from '../ui/table';
+import { TABLE, TableFrame, TBODY_ROW, THEAD_ROW, Td, Th } from '../ui/table';
 import { usePageTour } from '../../../lib/tour/use-tour';
 import {
   useCatalogPage,
@@ -34,7 +34,14 @@ import {
   type CatalogItem,
   type CatalogKind,
 } from '../../../core/catalog/model';
-import { ExportButtons } from '../excel/export-buttons';
+import {
+  exportRows,
+  resolveSelected,
+  useSelectionScope,
+} from '../../../lib/query/hooks/use-selection';
+import { setManyInScope, useSelection } from '../../../lib/selection';
+import { SelectionToolbar, hasSelection } from '../excel/selection-toolbar';
+import { SelectAllMenu } from '../ui/select-all-menu';
 
 const KIND_OPTIONS = [
   { value: 'barang', label: CATALOG_KIND_LABELS.barang },
@@ -44,6 +51,20 @@ const KIND_OPTIONS = [
 type FormState = { name: string; kind: CatalogKind; unit: string; price: string };
 
 const EMPTY_FORM: FormState = { name: '', kind: 'barang', unit: '', price: '' };
+
+/** Snapshot criteria for "select all that match" — the same search the table applies. */
+type CatalogCriteria = { query: string };
+
+/**
+ * The table's client-side narrowing, shared verbatim by the selection scope's
+ * matching walk so "select everything matching" is the same predicate the
+ * user is looking at, not a second interpretation of it.
+ */
+function filterCatalog(rows: CatalogItem[], query: string): CatalogItem[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return rows;
+  return rows.filter((item) => item.name.toLowerCase().includes(q));
+}
 
 /** `'20.000'` → `20000`; blank or unparseable counts as zero. */
 function toPrice(value: string): number {
@@ -102,9 +123,28 @@ function CatalogContent() {
   const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM);
   const [editFieldErrors, setEditFieldErrors] = useState<Record<string, string>>({});
 
-  // Selection for the bulk delete. Wiped whenever the search changes so a bulk
-  // action can never touch a row the user can no longer see.
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  /**
+   * Global, id-based selection (see `lib/selection`): ids in a module-scoped
+   * store, so it survives "Muat lebih banyak", refetches, sorting, remounts
+   * *and* search changes. Nothing clears it but the user or an action that
+   * consumed it.
+   */
+  const selection = useSelection<CatalogCriteria>('catalog');
+  const snapshot = selection.getSnapshot();
+  /** Full-dataset and matching-filter walks, shared by count, export and delete. */
+  const loaders = useMemo(
+    () => ({
+      all: () => listCatalog(),
+      matching: ({ query: q }: CatalogCriteria) =>
+        listCatalog().then((rows) => filterCatalog(rows, q)),
+    }),
+    [],
+  );
+  const scopeView = useSelectionScope('catalog', snapshot.all, loaders, data ? total : null);
+  /** The global count — `null` while an all-scope walk is still resolving. */
+  const selectionCount = selection.count(scopeView.size);
+  /** True while the selection is being resolved to records (a network walk). */
+  const [resolving, setResolving] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   // List filter.
@@ -122,23 +162,16 @@ function CatalogContent() {
   const editUnitIds = useFieldIds('edit-catalog-unit');
   const editKindIds = useFieldIds('edit-catalog-kind');
 
-  const selectedItems = useMemo(
-    () => items.filter((item) => selected.has(item.id)),
-    [items, selected],
-  );
+  // Client-side filter over the pages loaded so far. No effect clears the
+  // selection when this changes — filtering must not silently drop what the
+  // user ticked; hidden rows simply read as unticked and the count stays exact.
+  const filtered = useMemo(() => filterCatalog(items, query), [items, query]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((item) => item.name.toLowerCase().includes(q));
-  }, [items, query]);
+  /** Whether one id is currently selected, under the active scope (or plain). */
+  const isSelected = (id: string) => selection.isSelected(id, scopeView.has(id));
 
-  useEffect(() => {
-    setSelected(new Set());
-  }, [query]);
-
-  const allFilteredSelected = filtered.length > 0 && filtered.every((c) => selected.has(c.id));
-  const someFilteredSelected = filtered.some((c) => selected.has(c.id));
+  const allFilteredSelected = filtered.length > 0 && filtered.every((c) => isSelected(c.id));
+  const someFilteredSelected = filtered.some((c) => isSelected(c.id));
 
   function handleAdd() {
     if (!form.name.trim()) return;
@@ -188,24 +221,16 @@ function CatalogContent() {
   }
 
   function toggleSelected(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    selection.toggle(id, scopeView.has(id));
   }
 
   function toggleSelectAll() {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (allFilteredSelected) {
-        for (const item of filtered) next.delete(item.id);
-      } else {
-        for (const item of filtered) next.add(item.id);
-      }
-      return next;
-    });
+    setManyInScope(
+      selection,
+      filtered.map((item) => item.id),
+      !allFilteredSelected,
+      scopeView.has,
+    );
   }
 
   function confirmDelete() {
@@ -223,23 +248,50 @@ function CatalogContent() {
     });
   }
 
-  function confirmBulkDelete() {
-    const ids = [...selected];
-    if (ids.length === 0) {
+  /**
+   * The export getter: resolves the complete selection (revalidating against
+   * the catalog, so a deleted row is skipped with a toast instead of landing
+   * in the file) and maps it to sheet rows.
+   */
+  async function exportSelectedRows() {
+    const rows = await exportRows({ snapshot: selection.getSnapshot(), loaders, noun: 'entri' });
+    return toCatalogRows(rows);
+  }
+
+  /**
+   * The bulk action behind the selection bar's "Hapus" button — resolved to
+   * live records first so the success toast counts what actually went.
+   */
+  async function confirmBulkDelete() {
+    setResolving(true);
+    try {
+      const rows = await resolveSelected({
+        snapshot: selection.getSnapshot(),
+        loaders,
+        noun: 'entri',
+      });
+      const ids = rows.map((row) => row.id);
+      if (ids.length === 0) {
+        setBulkDeleteOpen(false);
+        return;
+      }
+      deleteItems.mutate(ids, {
+        onSuccess: () => {
+          selection.clear();
+          setBulkDeleteOpen(false);
+          toast(`${ids.length} barang/jasa dihapus.`, { variant: 'success' });
+        },
+        onError: (error) => {
+          setBulkDeleteOpen(false);
+          toast(toAppError(error).message, { variant: 'error' });
+        },
+      });
+    } catch (error) {
       setBulkDeleteOpen(false);
-      return;
+      toast(toAppError(error).message, { variant: 'error' });
+    } finally {
+      setResolving(false);
     }
-    deleteItems.mutate(ids, {
-      onSuccess: () => {
-        setSelected(new Set());
-        setBulkDeleteOpen(false);
-        toast(`${ids.length} barang/jasa dihapus.`, { variant: 'success' });
-      },
-      onError: (error) => {
-        setBulkDeleteOpen(false);
-        toast(toAppError(error).message, { variant: 'error' });
-      },
-    });
   }
 
   return (
@@ -247,14 +299,6 @@ function CatalogContent() {
       <PageHeader
         title="Katalog"
         description="Simpan barang dan jasa tetap kamu sekali, lalu ambil dari katalog saat membuat invoice."
-        actions={
-          <ExportButtons
-            filename="katalog-notain"
-            sheetName="Katalog"
-            getRows={async () => toCatalogRows(await listCatalog())}
-            disabled={items.length === 0}
-          />
-        }
       />
 
       <form
@@ -388,60 +432,76 @@ function CatalogContent() {
             )}
           </div>
 
-          {selectedItems.length > 0 && (
-            <div className={CARD_ROW}>
-              <p className="text-sm text-muted">
-                <span className="font-medium text-foreground">{selectedItems.length}</span> entri
-                dipilih
-              </p>
-              <div className="flex flex-wrap items-center gap-2">
-                <ExportButtons
-                  filename="katalog-terpilih"
-                  sheetName="Katalog"
-                  getRows={() => toCatalogRows(selectedItems)}
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelected(new Set())}
-                  disabled={deleteItems.isPending}
-                >
-                  Batalkan pilihan
-                </Button>
+          {/* Appears the moment anything is ticked: the count, an export of
+              exactly that set across every page, the bulk delete, and a way out. */}
+          {hasSelection(selectionCount) && (
+            <SelectionToolbar
+              count={selectionCount}
+              noun="entri"
+              onClear={() => selection.clear()}
+              clearDisabled={deleteItems.isPending || resolving}
+              exportOptions={{
+                filename: 'katalog-terpilih',
+                sheetName: 'Katalog',
+                getRows: exportSelectedRows,
+                pdfTitle: 'Katalog Terpilih',
+              }}
+              actions={
                 <Button
                   variant="danger"
                   size="sm"
                   onClick={() => setBulkDeleteOpen(true)}
-                  disabled={deleteItems.isPending}
+                  disabled={deleteItems.isPending || resolving}
                 >
                   <Trash2 size={15} aria-hidden="true" />
-                  Hapus {selectedItems.length}
+                  Hapus {selectionCount ?? 0}
                 </Button>
-              </div>
-            </div>
+              }
+            />
           )}
 
           {filtered.length === 0 ? (
             <EmptyState title="Tidak ada yang cocok." />
           ) : (
-            <div data-tour="catalog-list" className={TABLE_SHELL}>
+            <TableFrame data-tour="catalog-list">
               <table className={TABLE} style={{ minWidth: '720px' }}>
                 <thead>
                   <tr className={THEAD_ROW}>
-                    <Th className="w-11">
-                      <input
-                        type="checkbox"
-                        checked={allFilteredSelected}
-                        ref={(element) => {
-                          if (element) {
-                            element.indeterminate = someFilteredSelected && !allFilteredSelected;
+                    <Th className="w-24">
+                      <span className="flex items-center gap-1">
+                        <input
+                          type="checkbox"
+                          checked={allFilteredSelected}
+                          ref={(element) => {
+                            if (element) {
+                              element.indeterminate = someFilteredSelected && !allFilteredSelected;
+                            }
+                          }}
+                          onChange={toggleSelectAll}
+                          aria-label="Pilih semua entri yang dimuat"
+                          className="h-4 w-4 accent-accent"
+                          disabled={filtered.length === 0}
+                        />
+                        <SelectAllMenu
+                          noun="entri"
+                          pageCount={filtered.length}
+                          onSelectPage={() =>
+                            setManyInScope(
+                              selection,
+                              filtered.map((item) => item.id),
+                              true,
+                              scopeView.has,
+                            )
                           }
-                        }}
-                        onChange={toggleSelectAll}
-                        aria-label="Pilih semua entri yang dimuat"
-                        className="h-4 w-4 accent-accent"
-                        disabled={filtered.length === 0}
-                      />
+                          onSelectFiltered={
+                            query.trim()
+                              ? () =>
+                                  selection.selectScope({ kind: 'filtered', criteria: { query } })
+                              : undefined
+                          }
+                          onSelectDataset={() => selection.selectScope({ kind: 'dataset' })}
+                        />
+                      </span>
                     </Th>
                     <Th>Nama</Th>
                     <Th className="w-24">Jenis</Th>
@@ -459,7 +519,7 @@ function CatalogContent() {
                       <Td className="w-11">
                         <input
                           type="checkbox"
-                          checked={selected.has(item.id)}
+                          checked={isSelected(item.id)}
                           onChange={() => toggleSelected(item.id)}
                           aria-label={`Pilih ${item.name}`}
                           className="h-4 w-4 accent-accent"
@@ -514,7 +574,7 @@ function CatalogContent() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </TableFrame>
           )}
 
           <LoadMore
@@ -637,15 +697,15 @@ function CatalogContent() {
         size="sm"
         ariaLabelledBy="bulk-delete-catalog-title"
         title={
-          <span id="bulk-delete-catalog-title">Hapus {selectedItems.length} entri terpilih?</span>
+          <span id="bulk-delete-catalog-title">Hapus {selectionCount ?? 0} entri terpilih?</span>
         }
         actions={[
           { label: 'Batal', variant: 'secondary', onClick: () => setBulkDeleteOpen(false) },
           {
             label: 'Hapus',
             variant: 'danger',
-            loading: deleteItems.isPending,
-            onClick: confirmBulkDelete,
+            loading: deleteItems.isPending || resolving,
+            onClick: () => void confirmBulkDelete(),
           },
         ]}
       >

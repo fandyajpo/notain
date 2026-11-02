@@ -24,7 +24,7 @@ import { useDashboardStats } from '../../../lib/query/hooks/use-dashboard-stats'
 import { useInvoices } from '../../../lib/query/hooks/use-invoices';
 import { usePageTour } from '../../../lib/tour/use-tour';
 import { cx } from '../../../lib/ui/classes';
-import { TABLE, TABLE_SHELL, TBODY_ROW, THEAD_ROW, tdClass, thClass } from '../ui/table';
+import { TABLE, TableFrame, TBODY_ROW, THEAD_ROW, tdClass, thClass } from '../ui/table';
 import type { Invoice } from '../../../core/invoice/model';
 
 /**
@@ -215,7 +215,7 @@ function SummarySection({
           ) : null}
         </div>
 
-        <div className={TABLE_SHELL}>
+        <TableFrame>
           <table className={TABLE}>
             <thead>
               <tr className={THEAD_ROW}>
@@ -267,7 +267,7 @@ function SummarySection({
               </tfoot>
             ) : null}
           </table>
-        </div>
+        </TableFrame>
       </section>
 
       <section data-tour="dash-recent" className="flex flex-col gap-4">

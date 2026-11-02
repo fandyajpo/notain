@@ -43,6 +43,18 @@ export const queryKeys = {
   templatesPage: ['templates-page'] as const,
   template: (id: string) => ['templates', id] as const,
   customers: ['customers'] as const,
+  /**
+   * Rows matching an active "select all" scope of a selection store — walked
+   * once per scope so the toolbar's count and the checkboxes' membership stay
+   * exact without re-fetching on every render. The scope object itself is the
+   * discriminator: it carries the snapshot criteria, so a changed filter is a
+   * different cache entry, never a mutation of this one.
+   */
+  selectionScope: (entity: string, scope: unknown): readonly unknown[] => [
+    'selection-scope',
+    entity,
+    scope,
+  ],
   /** Paginated `/customers` list — separate from the full `customers` list the picker uses. */
   customersPage: ['customers-page'] as const,
   customerCount: ['customer-count'] as const,

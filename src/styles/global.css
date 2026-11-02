@@ -161,35 +161,51 @@
     scroll-behavior: smooth;
     /* Anchor jumps clear the 4rem sticky header instead of landing under it. */
     scroll-padding-top: 5rem;
-    /* Custom scrollbar — thin and themed to the tokens, replacing the platform
-       default. Firefox reads the two standard properties; WebKit reads the
-       pseudo-elements further below. */
-    scrollbar-width: thin;
-    scrollbar-color: var(--color-border) transparent;
+  }
+
+  /* No scrollbars anywhere: the document, the sidebar rail, tables and
+     dialogs all still scroll by wheel, trackpad, keyboard and touch — none
+     of them draws a thumb, a track or a gutter. Firefox reads
+     `scrollbar-width`; WebKit reads the pseudo-element rule below. */
+  *,
+  *::before,
+  *::after {
+    scrollbar-width: none;
   }
 
   ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    display: none;
   }
 
-  ::-webkit-scrollbar-track {
-    background: transparent;
+  /* --- Table edge fades ------------------------------------------------- */
+  /* With no scrollbar left, a table wider than its card still has to say
+     "there is more to the right". `TableFrame` measures its own scroller and
+     carries `data-scroll-hint` with `start`, `end` or both; only the matching
+     edge fades into the card, and a table that fits carries no attribute —
+     no fade. Decorative: `pointer-events: none`, hidden from assistive tech. */
+  .table-hint {
+    position: absolute;
+    inset-block: 0;
+    width: 2.5rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 10;
   }
 
-  ::-webkit-scrollbar-thumb {
-    background-color: var(--color-border);
-    border-radius: 9999px;
-    border: 2px solid transparent;
-    background-clip: content-box;
+  .table-hint-start {
+    left: 0;
+    background: linear-gradient(to right, var(--color-card), transparent);
   }
 
-  ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--color-muted);
+  .table-hint-end {
+    right: 0;
+    background: linear-gradient(to left, var(--color-card), transparent);
   }
 
-  ::-webkit-scrollbar-corner {
-    background: transparent;
+  [data-scroll-hint~='start'] .table-hint-start,
+  [data-scroll-hint~='end'] .table-hint-end {
+    opacity: 1;
   }
 
   body {

@@ -58,6 +58,21 @@ describe('createSessionExpiryHandler', () => {
     expect(assign).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps its hands off the DOM when the window is gone by the time verification settles', async () => {
+    // jsdom is torn down the instant its test file finishes, which can happen
+    // while verifySession() is still in flight. The entry guard cannot see
+    // that; without a second check after the await, `window.location` throws
+    // into the void and the unhandled rejection fails the whole run.
+    const handle = createSessionExpiryHandler(async () => {
+      vi.stubGlobal('window', undefined);
+      return false;
+    });
+
+    await expect(handle(new QueryClient(), unauthenticated())).resolves.toBeUndefined();
+
+    vi.unstubAllGlobals();
+  });
+
   it('ignores errors that are not an expired session', async () => {
     const client = new QueryClient();
     client.setQueryData(queryKeys.session, { id: 'u1', email: 'a@example.com', name: 'A' });

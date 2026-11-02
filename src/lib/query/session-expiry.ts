@@ -69,6 +69,15 @@ export function createSessionExpiryHandler(
     forgetSession();
     client.setQueryData(queryKeys.session, null);
 
+    // The page can be torn down while verification is in flight — jsdom ends
+    // a test the instant its file does, and a real tab can go away the same
+    // way. The entry guard cannot see that, so re-check before anything below
+    // reads `window`, and release the guard so a later call may start over.
+    if (typeof window === 'undefined') {
+      handling = false;
+      return;
+    }
+
     const next = window.location.pathname + window.location.search;
     toast('Sesi kamu berakhir. Masuk lagi untuk melanjutkan.', { variant: 'info' });
 

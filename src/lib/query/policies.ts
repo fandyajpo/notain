@@ -109,6 +109,12 @@ export const QUERY_POLICIES = {
   // invalidate this key explicitly, so staleTime only has to absorb ordinary
   // navigation between settings visits.
   portalSession: { staleTime: 30_000, gcTime: 5 * 60_000 },
+  // Rows matching an active "select all" scope — only the selection toolbar's
+  // exact count and the header checkboxes' membership read from here; every
+  // export re-walks the source fresh through `resolveSelection`, so a stale
+  // cache can never leak into a file. A short window absorbs the tick-to-tick
+  // re-renders after a scope is chosen.
+  selectionScope: { staleTime: 15_000, gcTime: 5 * 60_000 },
 } as const;
 
 export type QueryPolicyName = keyof typeof QUERY_POLICIES;
