@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getUserIdentity, saveUserIdentity } from '../../app/user-profile';
-import type { UserIdentity, UserIdentityInput } from '../../app/user-profile';
+import { getUserIdentity, saveUserIdentity } from '../../../app/user-profile';
+import type { UserIdentity, UserIdentityInput } from '../../../app/user-profile';
 import { queryPolicy } from '../policies';
 import { queryKeys } from '../keys';
 
