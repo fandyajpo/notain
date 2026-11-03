@@ -247,37 +247,34 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
    * cross-isolate duplicate-submission guard (see the header comment).
    */
   const createOrderRow = (documentId: string): Promise<Response> =>
-    fetch(
-      `${auth.endpoint}/databases/${DATABASE_ID}/collections/${PAYMENTS_TABLE_ID}/documents`,
-      {
-        method: 'POST',
-        headers: { ...auth.headers, 'content-type': 'application/json' },
-        body: JSON.stringify({
-          documentId,
-          data: {
-            // Who the plan is FOR (tenancy) vs who initiated the order (audit,
-            // status-endpoint ownership). Settle activates the org row.
-            orgId,
-            ownerId: session.userId,
-            plan,
-            amount,
-            currency: 'IDR',
-            status: 'pending',
-            invoiceNumber: documentId,
-            checkoutUrl: null,
-            dokuExpiredAt: null,
-            paidAt: null,
-            // Frozen at checkout: settlement computes the new expiry from
-            // THIS baseline, so two isolates settling the same order race to
-            // write the SAME value instead of compounding an extension.
-            planAtCheckout: currentPlan,
-            planExpiresAtSnapshot: currentExpiresAt,
-            createdAt: new Date(now).toISOString(),
-          },
-          permissions: [],
-        }),
-      },
-    );
+    fetch(`${auth.endpoint}/databases/${DATABASE_ID}/collections/${PAYMENTS_TABLE_ID}/documents`, {
+      method: 'POST',
+      headers: { ...auth.headers, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        documentId,
+        data: {
+          // Who the plan is FOR (tenancy) vs who initiated the order (audit,
+          // status-endpoint ownership). Settle activates the org row.
+          orgId,
+          ownerId: session.userId,
+          plan,
+          amount,
+          currency: 'IDR',
+          status: 'pending',
+          invoiceNumber: documentId,
+          checkoutUrl: null,
+          dokuExpiredAt: null,
+          paidAt: null,
+          // Frozen at checkout: settlement computes the new expiry from
+          // THIS baseline, so two isolates settling the same order race to
+          // write the SAME value instead of compounding an extension.
+          planAtCheckout: currentPlan,
+          planExpiresAtSnapshot: currentExpiresAt,
+          createdAt: new Date(now).toISOString(),
+        },
+        permissions: [],
+      }),
+    });
 
   const CONFLICT_MESSAGE = 'Pembayaran sedang diproses. Tunggu sebentar lalu coba lagi.';
   let rowId = deterministicInvoiceNumber(plan, orgId, { now: new Date(now) });

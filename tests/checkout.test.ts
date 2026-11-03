@@ -356,8 +356,13 @@ describe('POST /api/payments/checkout', () => {
     const response = await handle(post({ plan: 'pro' })); // renewal, same month
 
     expect(response.status).toBe(200);
-    const created = paymentWrites().find((write) => write.method === 'POST');
-    expect(created?.id).not.toBe(taken);
+    // Two create attempts: the deterministic slot 409s against the paid row,
+    // then the random-id fallback carries the order.
+    const attempts = paymentWrites().filter((write) => write.method === 'POST');
+    expect(attempts).toHaveLength(2);
+    expect(attempts[0]?.id).toBe(taken);
+    expect(attempts[1]?.id).not.toBe(taken);
+    expect(attempts[1]?.data.status).toBe('pending');
     expect(dokuCalls).toHaveLength(1);
   });
 });
