@@ -1,13 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSyncExternalStore } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toAppError } from '../../../app/errors';
-import {
-  getOrgContact,
-  updateOrgContact,
-  uploadOrgLogo,
-  type OrgContact,
-} from '../../../app/org-contact';
+import { updateOrgContact, uploadOrgLogo } from '../../../app/org-contact';
 import { getActiveOrgId, subscribeActiveOrg } from '../../../app/active-org';
+import { queryKeys } from '../../../lib/query/keys';
 import { useOrgs } from '../../../lib/query/hooks/use-orgs';
 import { toast } from '../../../lib/ui/toast';
 import { Button } from '../ui/button';
@@ -34,12 +31,12 @@ type FieldKey = 'email' | 'phone' | 'website' | 'address' | 'taxId';
 
 export function OrgContactEditor() {
   const orgId = useSyncExternalStore(subscribeActiveOrg, getActiveOrgId, () => null);
-  const { data: orgs } = useOrgs();
-  const isOwner = orgs?.orgs.find((org) => org.id === orgId)?.isOwner === true;
+  const { data: orgs, isLoading: orgsLoading, isError: orgsError, refetch } = useOrgs();
+  const queryClient = useQueryClient();
 
-  const [contact, setContact] = useState<OrgContact | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
+  const current = orgs?.orgs.find((org) => org.id === orgId) ?? null;
+  const isOwner = current?.isOwner === true;
+
   const [serverError, setServerError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -53,39 +50,22 @@ export function OrgContactEditor() {
   });
   const hydratedFor = useRef<string | null>(null);
 
+  // Hydrate from the org row the switcher already loaded — no second request
+  // and no private loading/error state: `useOrgs` owns both.
   useEffect(() => {
-    if (!orgId) return;
-    let cancelled = false;
-    setIsLoading(true);
-    setLoadError(false);
-    getOrgContact(orgId)
-      .then((loaded) => {
-        if (cancelled) return;
-        setContact(loaded);
-        setLogoUrl(
-          loaded.logoFileId ? `/api/logo/${encodeURIComponent(loaded.logoFileId)}` : undefined,
-        );
-        setFields((current) => ({ ...current }));
-        setHydratedFor.current = null;
-        setFields({
-          email: loaded.email ?? '',
-          phone: loaded.phone ?? '',
-          website: loaded.website ?? '',
-          address: loaded.address ?? '',
-          taxId: loaded.taxId ?? '',
-        });
-        setHydratedFor.current = orgId;
-      })
-      .catch(() => {
-        if (!cancelled) setLoadError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [orgId]);
+    if (!current || hydratedFor.current === current.id) return;
+    hydratedFor.current = current.id;
+    setFields({
+      email: current.email ?? '',
+      phone: current.phone ?? '',
+      website: current.website ?? '',
+      address: current.address ?? '',
+      taxId: current.taxId ?? '',
+    });
+    setLogoUrl(
+      current.logoFileId ? `/api/logo/${encodeURIComponent(current.logoFileId)}` : undefined,
+    );
+  }, [current]);
 
   const emailIds = useFieldIds();
   const phoneIds = useFieldIds();
@@ -120,6 +100,9 @@ export function OrgContactEditor() {
         address: fields.address.trim() || null,
         taxId: fields.taxId.trim() || null,
       });
+      // The org list is the read model for this form — refresh it so the card
+      // and the public-page link show the saved values.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.orgs });
       toast('Kontak organisasi tersimpan.', { variant: 'success' });
     } catch (error) {
       setServerError(toAppError(error).message);
@@ -136,6 +119,7 @@ export function OrgContactEditor() {
       const fileId = await uploadOrgLogo(file);
       await updateOrgContact(orgId, { logoFileId: fileId });
       setLogoUrl(`/api/logo/${encodeURIComponent(fileId)}`);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.orgs });
       toast('Logo organisasi diperbarui.', { variant: 'success' });
     } catch (error) {
       toast(toAppError(error).message, { variant: 'error' });
@@ -145,18 +129,18 @@ export function OrgContactEditor() {
     }
   }
 
-  if (!orgId || isLoading) {
+  if (orgsLoading) {
     return <LoadingState label="Memuat kontak organisasi…" />;
   }
 
-  if (loadError) {
+  if (orgsError || !current) {
     return (
       <div className="flex flex-col items-start gap-3">
         <p className="text-sm text-danger">
           Kontak organisasi gagal dimuat. Periksa koneksi internet kamu.
         </p>
-        <Button variant="secondary" size="sm" onClick={() => window.location.reload()}>
-          Muat ulang halaman
+        <Button variant="secondary" size="sm" onClick={() => void refetch()}>
+          Coba lagi
         </Button>
       </div>
     );

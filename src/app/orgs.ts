@@ -30,6 +30,14 @@ export type OrgView = {
   active: boolean;
   /** The org's business-type slug (taxonomy), or `null` when never chosen. */
   businessType: string | null;
+  /** Contact identity, read straight off the org row so Settings needs no extra call. */
+  slug: string | null;
+  email: string | null;
+  phone: string | null;
+  website: string | null;
+  address: string | null;
+  taxId: string | null;
+  logoFileId: string | null;
 };
 
 /** An invitation addressed to this account's email, still unaccepted. */

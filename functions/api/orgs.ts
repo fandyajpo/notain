@@ -76,6 +76,15 @@ function orgView(row: Record<string, unknown>, role: string, isOwner: boolean) {
       typeof row.planExpiresAt === 'string' ? row.planExpiresAt : null,
     ),
     businessType: type.success ? type.data : null,
+    // The org's contact identity rides along so Settings never needs a second
+    // request (or its own loading/error state) to render the contact form.
+    slug: typeof row.slug === 'string' ? row.slug : null,
+    email: typeof row.email === 'string' ? row.email : null,
+    phone: typeof row.phone === 'string' ? row.phone : null,
+    website: typeof row.website === 'string' ? row.website : null,
+    address: typeof row.address === 'string' ? row.address : null,
+    taxId: typeof row.taxId === 'string' ? row.taxId : null,
+    logoFileId: typeof row.logoFileId === 'string' ? row.logoFileId : null,
   };
 }
 
