@@ -37,3 +37,9 @@ pnpm-debug.log*
 
 # e2e shared session (one login per run, written by e2e/global-setup.ts)
 /.auth/
+
+# local scratch, never committed
+#   .ci-tmp             sandbox copy of the repo used to run CI checks
+#   .cloud-attachments  imported chat transcript (private)
+.ci-tmp/
+.cloud-attachments/
