@@ -4,6 +4,7 @@ import {
   createAdminTemplate,
   deleteAdminContent,
   getAdminInvoiceDetail,
+  getAdminMembership,
   getAdminNextInvoiceNumber,
   getAdminTemplateDetail,
   getAdminUserDrilldown,
@@ -23,7 +24,6 @@ import {
 } from '../../../app/admin';
 import type { InvoiceDraft, InvoiceStatus } from '../../../core/invoice/model';
 import type { AuthoredTemplate } from '../../../core/template/model';
-import { getTeams } from '../../../appwrite/client';
 import { queryPolicy } from '../policies';
 import { queryKeys } from '../keys';
 
@@ -129,18 +129,21 @@ export function useAdminUserDrilldown(
 }
 
 /**
- * Whether the signed-in user is a member of the `admins` team.
+ * Whether the signed-in user is a platform admin (a member of the server-side
+ * `admins` team).
  *
- * Succeeds for members (they can list the team) and fails with 403/404 for
- * non-members, which we treat as `false` rather than surfacing an error.
+ * Asked through our own Function (`/api/me/admin`), which answers
+ * `200 { isAdmin: false }` for everyone else. Asking Appwrite directly meant
+ * every ordinary account got a `404 team_not_found` in the console on every
+ * page load — Appwrite hides team existence from non-members by design.
+ *
+ * Organizations do not use Appwrite Teams; their membership is the
+ * `memberships` collection, enforced server-side per request.
  */
 export function useAdminMembership(enabled = true) {
   return useQuery({
     queryKey: queryKeys.adminMembership,
-    queryFn: async () => {
-      await getTeams().listMemberships({ teamId: 'admins' });
-      return true;
-    },
+    queryFn: () => getAdminMembership(),
     enabled,
     retry: false,
     ...queryPolicy('adminMembership'),

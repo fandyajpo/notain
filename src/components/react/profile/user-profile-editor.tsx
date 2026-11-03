@@ -17,8 +17,8 @@ import { LoadingState } from '../ui/state';
  *
  * The login email renders read-only from the session: it is owned by the
  * Appwrite account and no settings flow can modify it. What an invoice
- * PRINTS (business name, logo, header/footer, contact block) is the
- * organization's letterhead — edited in Kelola Organisasi, not here.
+ * PRINTS (business name, logo, contact block) belongs to the ORGANIZATION and
+ * is edited in Kelola Organisasi, not here.
  */
 const phonePattern = /^(?:\+?62|0)8\d{7,12}$/;
 

@@ -11,11 +11,12 @@ test('invoice form mounts its three lazy custom elements', async ({ page }) => {
   page.on('pageerror', (error) => errors.push(String(error)));
   const bad: string[] = [];
   page.on('response', (response) => {
-    // The admin-nav link probes team membership on every page load, and
-    // Appwrite answers 404 for anyone outside the `admins` team — it hides
-    // team existence from non-members by design, so a normal account always
-    // sees exactly this one. It is expected behaviour, not a breakage; every
-    // other failed request still fails the test.
+    // Older clients probed Appwrite's `admins` team directly on every page
+    // load, and a normal account always got a 404 there (Appwrite hides team
+    // existence from non-members). The current client asks `/api/me/admin`,
+    // which answers 200 with `{ isAdmin: false }`; the whitelist stays so a
+    // cached bundle cannot fail the run. Every other failed request still
+    // fails the test.
     if (response.status() >= 400 && !response.url().endsWith('/teams/admins/memberships')) {
       bad.push(`${response.status()} ${response.url()}`);
     }

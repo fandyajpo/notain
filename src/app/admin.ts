@@ -124,6 +124,21 @@ async function parseAdminResponse<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
+/**
+ * Whether the signed-in account is a platform admin (a member of the
+ * server-side `admins` team). Asked over our own Function so a normal account
+ * gets `200 { isAdmin: false }` instead of Appwrite's `404 team_not_found`,
+ * which Appwrite answers for any team the caller cannot see.
+ *
+ * Organization membership is unrelated: that is the `memberships` collection,
+ * re-checked per request by the org-gated endpoints.
+ */
+export async function getAdminMembership(): Promise<boolean> {
+  const response = await adminFetch('/api/me/admin');
+  const body = await parseAdminResponse<{ isAdmin?: unknown }>(response);
+  return body.isAdmin === true;
+}
+
 /** One page of the admin user list (cursor-paginated, newest first). */
 export async function listAdminUsers(
   params: { cursorAfter?: string } = {},
