@@ -5,6 +5,12 @@ export const queryKeys = {
   session: ['session'] as const,
   profile: ['profile'] as const,
   /**
+   * The SHARED user identity (username + phone) — user-scoped, NOT org-scoped,
+   * so it survives org switches and works while the account has zero
+   * organizations (the endpoint is session-gated, not org-gated).
+   */
+  userProfile: ['user-profile'] as const,
+  /**
    * The caller's organizations plus pending invites — the org gate's query
    * and the switcher's data. User-scoped (not org-scoped): it lists every
    * org the account belongs to, so it survives an org switch unchanged.

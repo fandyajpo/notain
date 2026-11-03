@@ -7,6 +7,7 @@ import { isAppError } from '../../../core/shared/errors';
 import { EMPTY_PROFILE } from '../../../core/profile/model';
 import { getActiveOrgId } from '../../../app/active-org';
 import { renameOrg } from '../../../app/orgs';
+import { saveUserIdentity } from '../../../app/user-profile';
 import { queryKeys } from '../../../lib/query/keys';
 import { Button } from '../ui/button';
 import { useFieldIds } from '../ui/field';
@@ -99,6 +100,13 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
         }
       }
       await saveProfile.mutateAsync({ ...(profile ?? EMPTY_PROFILE), name: trimmedName });
+      // The username is the SHARED account identity (`userProfiles/<userId>`):
+      // written here so it exists even before the first workspace does (in
+      // create mode), and kept in sync whenever the name changes. Kelola
+      // Profil edits it later alongside the phone. A failure lands in the
+      // catch below — retrying skips the org (`orgCreated`), re-saves the
+      // profile harmlessly, and retries this write.
+      await saveUserIdentity({ username: trimmedName });
       // Profile persisted — queue the welcome tour so it starts once the
       // dashboard mounts (it only mounts now that the profile is complete).
       scheduleTour('welcome');

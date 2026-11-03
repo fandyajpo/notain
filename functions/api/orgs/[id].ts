@@ -55,6 +55,32 @@ const PHONE_PATTERN = /^(?:\+?62|0)8\d{7,12}$/;
 export const onRequest: PagesFunction<Env> = async ({ request, env, params }) => {
   const orgId = typeof params.id === 'string' ? params.id : '';
 
+  // Member-readable identity read — the Settings contact editor needs the
+  // current values; the gate is requireOrg (any member), while the PATCH
+  // below stays owner-only.
+  if (request.method === 'GET') {
+    const gate = await requireOrgOwner(request, env, orgId);
+    if (!gate.ok) return gate.response;
+    const org = await getRow(gate.access.auth, 'organizations', orgId, env);
+    if (!org) return apiError(404, 'not_found', 'Organisasi tidak ditemukan.');
+    const str = (key: string): string | null =>
+      typeof org[key] === 'string' && (org[key] as string) !== ''
+        ? (org[key] as string)
+        : null;
+    return json(200, {
+      id: orgId,
+      name: str('name') ?? '',
+      slug: str('slug'),
+      email: str('email'),
+      phone: str('phone'),
+      website: str('website'),
+      address: str('address'),
+      taxId: str('taxId'),
+      logoFileId: str('logoFileId'),
+      businessType: str('businessType'),
+    });
+  }
+
   if (request.method === 'PATCH') {
     const gate = await requireOrgOwner(request, env, orgId);
     if (!gate.ok) return gate.response;

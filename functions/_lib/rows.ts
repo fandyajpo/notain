@@ -28,8 +28,7 @@ export type TableId =
   | 'audit_logs'
   | 'organizations'
   | 'memberships'
-  | 'userProfiles'
-  | 'letterheads';
+  | 'userProfiles';
 
 /** API-key headers against Appwrite, or `null` when the env is incomplete. */
 export type TableAuth = { endpoint: string; headers: Record<string, string> };

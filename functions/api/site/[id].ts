@@ -67,6 +67,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
   ]);
   if (!orgRow) return apiError(404, 'not_found', 'Halaman usaha tidak ditemukan.');
 
+  // The owner's SHARED identity (userProfiles/<userId>) supplies the person
+  // line; the org row supplies the business identity. One extra read, bounded
+  // by the org's ownerId — never a scan.
+  const ownerId = typeof orgRow.ownerId === 'string' ? orgRow.ownerId : '';
+  const ownerRow = ownerId ? await getRow(auth, 'userProfiles', ownerId, env) : null;
+  const ownerName = typeof ownerRow?.username === 'string' ? ownerRow.username : '';
+
   // No business name, no page: every template leads with it, and a blank org
   // row is the state of an account that never set itself up.
   const businessName = typeof orgRow.name === 'string' ? orgRow.name.trim() : '';
@@ -114,7 +121,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
 
   return json(
     200,
-    { site: publicSiteFromOrg(orgRow, profile), items },
+    { site: publicSiteFromOrg(orgRow, profile, ownerName), items },
     // The owner edits this data and re-checks the page; a stale copy would
     // look like a save that silently failed. Same rule as the invoice read.
     { 'cache-control': 'no-store' },
@@ -124,23 +131,33 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
 /** How many catalog rows one page load may pull — the cost ceiling per hit. */
 const SITE_ITEMS_LIMIT = 100;
 
-/** The display-only org view the templates render. */
+/**
+ * The display-only org view the templates render. The ORGANIZATION row is the
+ * source of truth for the business identity (name + contact block + logo, per
+ * the two-entity model); the legacy profile row only fills fields the org's
+ * contact columns don't carry yet, and the owner name comes from the shared
+ * `userProfiles` row.
+ */
 function publicSiteFromOrg(
   orgRow: Record<string, unknown> & { $id: string },
   profile: ReturnType<typeof profileRowToDomain> | null,
+  ownerName: string,
 ) {
+  const orgStr = (key: string): string => (typeof orgRow[key] === 'string' ? (orgRow[key] as string) : '');
+  const phone = orgStr('phone') || profile?.phone || '';
+  const address = orgStr('address') || profile?.address || '';
+  const email = orgStr('email') || profile?.email || '';
+  const logoFileId = orgStr('logoFileId') || profile?.logoFileId || '';
   return {
     businessName: typeof orgRow.name === 'string' ? orgRow.name : '',
-    ownerName: profile?.name ?? '',
-    ...(profile?.phone ? { phone: profile.phone } : {}),
-    ...(profile?.address ? { address: profile.address } : {}),
-    ...(profile?.email ? { email: profile.email } : {}),
+    ownerName: ownerName || profile?.name || '',
+    ...(phone ? { phone } : {}),
+    ...(address ? { address } : {}),
+    ...(email ? { email } : {}),
     businessType: orgBusinessType(orgRow),
     // Plan details and the raw R2 id stay server-side; only the URL the
     // browser fetches the image from is handed over.
-    ...(profile?.logoFileId
-      ? { logoUrl: `/api/logo/${encodeURIComponent(profile.logoFileId)}` }
-      : {}),
+    ...(logoFileId ? { logoUrl: `/api/logo/${encodeURIComponent(logoFileId)}` } : {}),
   };
 }
 

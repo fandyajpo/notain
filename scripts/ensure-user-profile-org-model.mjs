@@ -11,14 +11,6 @@
  *     settings). Permissions are empty: only the `/api/profile/user`
  *     Function, gated by the session JWT, reads or writes this row.
  *
- *   letterheads — what an invoice prints, one row per organization:
- *     $id is the orgId; businessName (what the header leads with), logoFileId
- *     (the R2 object printed in the letterhead), headerTitle, footerText,
- *     primaryColor + secondaryColor, and the contact block (address, phone,
- *     email, website). Separate from `organizations` so the workspace's
- *     identity fields and the printed page can evolve independently, the same
- *     way the taxonomy split the org name from its type.
- *
  *   organizations — NEW contact-identity columns only (additive):
  *     slug (unique, server-generated from the name — the future public URL
  *     key), email, phone, website, address, taxId, logoFileId. Existing
@@ -65,25 +57,6 @@ const TABLES = [
     stringAttributes: [
       { key: 'username', size: 128 },
       { key: 'phone', size: 32 },
-    ],
-    integerAttributes: [],
-    indexes: [],
-  },
-  {
-    id: 'letterheads',
-    name: 'Organization Letterheads',
-    stringAttributes: [
-      { key: 'businessName', size: 128 },
-      { key: 'logoFileId', size: 64 },
-      { key: 'headerTitle', size: 128 },
-      { key: 'address', size: 512 },
-      { key: 'phone', size: 32 },
-      { key: 'email', size: 320 },
-      { key: 'website', size: 320 },
-      { key: 'footerText', size: 512 },
-      { key: 'primaryColor', size: 16 },
-      { key: 'secondaryColor', size: 16 },
-      { key: 'updatedAt', size: 32 },
     ],
     integerAttributes: [],
     indexes: [],
@@ -310,6 +283,10 @@ try {
       if (email !== null) orgPatch.email = email;
       const phone = fillIfEmpty(org, 'phone', profile?.phone ?? null);
       if (phone !== null) orgPatch.phone = phone;
+      const address = fillIfEmpty(org, 'address', profile?.address ?? null);
+      if (address !== null) orgPatch.address = address;
+      const logoFileId = fillIfEmpty(org, 'logoFileId', profile?.logoFileId ?? null);
+      if (logoFileId !== null) orgPatch.logoFileId = logoFileId;
       if (Object.keys(orgPatch).length > 0) {
         const res = await apiSafe('PATCH', doc('organizations', orgId), { data: orgPatch });
         console.log(
@@ -319,32 +296,7 @@ try {
         );
       }
 
-      // 2. letterheads/<orgId>: the printed page, seeded from org + profile.
-      const letterhead = {
-        businessName: typeof org.name === 'string' && org.name !== '' ? org.name : '',
-        updatedAt: new Date().toISOString(),
-        ...(profile?.address ? { address: profile.address } : {}),
-        ...(profile?.phone ? { phone: profile.phone } : {}),
-        ...(profile?.email ? { email: profile.email } : {}),
-        ...(profile?.logoFileId ? { logoFileId: profile.logoFileId } : {}),
-      };
-      const patched = await apiSafe('PATCH', doc('letterheads', orgId), { data: letterhead });
-      if (!patched.ok) {
-        const created = await apiSafe(
-          'POST',
-          `/databases/${databaseId}/collections/letterheads/documents`,
-          { documentId: orgId, data: letterhead, permissions: [] },
-        );
-        console.log(
-          created.ok
-            ? `  ✔ letterheads/${orgId} dibuat`
-            : `  ⚠ letterheads/${orgId} gagal: ${created.status}`,
-        );
-      } else {
-        console.log(`  ✔ letterheads/${orgId} diperbarui`);
-      }
-
-      // 3. userProfiles/<ownerId>: shared identity, only-empty-wins.
+      // 2. userProfiles/<ownerId>: shared identity, only-empty-wins.
       const ownerId = typeof org.ownerId === 'string' ? org.ownerId : '';
       if (ownerId === '') continue;
       const existingRes = await apiSafe('GET', doc('userProfiles', ownerId));

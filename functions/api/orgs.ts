@@ -354,32 +354,6 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     console.error(`org.create: profile row failed for ${orgId}`);
   }
 
-  // The letterhead row ($id = orgId) backs what this org's invoices print.
-  // Non-fatal: GET/PUT /api/orgs/<id>/letterhead creates it on demand, and
-  // the ensure script backfills orgs that predate this table.
-  const letterhead = await createRow(
-    auth,
-    'letterheads',
-    orgId,
-    {
-      businessName: name,
-      logoFileId: null,
-      headerTitle: '',
-      address: null,
-      phone: '',
-      email: session.email,
-      website: '',
-      footerText: '',
-      primaryColor: '',
-      secondaryColor: '',
-      updatedAt: now,
-    },
-    [],
-  );
-  if (!letterhead) {
-    console.error(`org.create: letterhead row failed for ${orgId}`);
-  }
-
   await writeAudit(env, {
     actorId: session.userId,
     actorEmail: session.email,

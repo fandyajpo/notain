@@ -22,5 +22,4 @@ export const APPWRITE = {
   statsTableId: 'stats',
   auditTableId: 'audit_logs',
   userProfilesTableId: 'userProfiles',
-  letterheadsTableId: 'letterheads',
 } as const;
