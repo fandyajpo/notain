@@ -1,6 +1,7 @@
 import { isAdminUser } from '../../_lib/admin';
-import { verifySession } from '../../_lib/appwrite';
+import { querySearch, verifySession } from '../../_lib/appwrite';
 import { apiError, json } from '../../_lib/http';
+import { fetchUpstream as fetch } from '../../_lib/http';
 import type { Env, PagesFunction } from '../../_lib/types';
 
 /**
@@ -33,6 +34,35 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   const session = await verifySession(request, env);
   if (!session) return apiError(401, 'unauthenticated', 'Silakan masuk terlebih dahulu.');
+
+  const endpoint = env.PUBLIC_APPWRITE_ENDPOINT?.replace(/\/+$/, '');
+  const projectId = env.PUBLIC_APPWRITE_PROJECT_ID;
+  const header = request.headers.get('authorization') ?? '';
+  const token = header.toLowerCase().startsWith('bearer ') ? header.slice(7).trim() : '';
+
+  // Ask with the CALLER'S OWN JWT first — exactly what the browser SDK used to
+  // do, so it needs no extra API-key scope and cannot be blocked by a key that
+  // only carries documents/users scopes. Only when that path cannot answer (no
+  // token, or a refused probe) fall back to the API-key check, which is what
+  // the anonymous/cross-user gates use.
+  //
+  // Deliberately NOT routed through `checkAdmin`: that helper caches its
+  // answer per userId for a minute, and a JWT-shaped denial would poison the
+  // fallback that runs right after it.
+  if (endpoint && projectId && token) {
+    try {
+      const response = await fetch(
+        `${endpoint}/teams/admins/memberships?${querySearch('equal', [session.userId], 'userId')}`,
+        { headers: { 'X-Appwrite-Project': projectId, 'X-Appwrite-JWT': token } },
+      );
+      if (response.ok) {
+        const data = (await response.json()) as { total?: number };
+        if ((data.total ?? 0) > 0) return json(200, { isAdmin: true });
+      }
+    } catch {
+      // Fall through to the API-key check.
+    }
+  }
 
   return json(200, { isAdmin: await isAdminUser(session.userId, env) });
 };
