@@ -55,9 +55,9 @@ const PHONE_PATTERN = /^(?:\+?62|0)8\d{7,12}$/;
 export const onRequest: PagesFunction<Env> = async ({ request, env, params }) => {
   const orgId = typeof params.id === 'string' ? params.id : '';
 
-  // Member-readable identity read — the Settings contact editor needs the
-  // current values; the gate is requireOrg (any member), while the PATCH
-  // below stays owner-only.
+  // Owner-only identity read, same gate as the PATCH below: the Settings
+  // contact editor disables its form for members, and the server enforces
+  // that here rather than trusting the disabled inputs.
   if (request.method === 'GET') {
     const gate = await requireOrgOwner(request, env, orgId);
     if (!gate.ok) return gate.response;

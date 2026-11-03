@@ -58,6 +58,14 @@ vi.mock('../../../app/profile', () => ({
   removeLogo: vi.fn(),
 }));
 
+// Onboarding now also writes the SHARED account identity. Stub it so the tests
+// stay offline: the real module mints a JWT against Appwrite, which would throw
+// before the welcome tour is ever queued.
+vi.mock('../../../app/user-profile', () => ({
+  getUserIdentity: vi.fn(async () => ({ username: '', phone: '' })),
+  saveUserIdentity: vi.fn(async () => ({ username: '', phone: '' })),
+}));
+
 vi.mock('../../../lib/tour/tour-store', () => ({
   scheduleTour: mocks.scheduleTour,
 }));
