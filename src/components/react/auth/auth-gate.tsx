@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
 import { Ban } from 'lucide-react';
 import { useSession, useSignOut } from '../../../lib/query/hooks/use-session';
 import { useProfile } from '../../../lib/query/hooks/use-profile';
+import { useUserIdentity } from '../../../lib/query/hooks/use-user-profile';
 import { useOrgs } from '../../../lib/query/hooks/use-orgs';
 import { getActiveOrgId, subscribeActiveOrg } from '../../../app/active-org';
 import { toast } from '../../../lib/ui/toast';
@@ -49,6 +50,13 @@ export function AuthGate({ children, fallback }: Props) {
   // The business name is the ORGANIZATION's name, not a profile field, so the
   // onboarding gate also needs the org list to know whether it is filled in.
   const { data: orgs } = useOrgs(Boolean(session));
+  // The person's name has two homes during the migration: the SHARED identity
+  // (`userProfiles`, written by onboarding and Kelola Profil) and the legacy
+  // per-org profile row older accounts were onboarded into. Either one is
+  // enough to consider the person named — reading both keeps a legacy account
+  // from being sent back through onboarding, and lets the shared identity take
+  // over as the source of truth going forward.
+  const { data: identity } = useUserIdentity(Boolean(session));
 
   useEffect(() => {
     // Only a completed query that answers "no session" may redirect. An error
@@ -82,6 +90,7 @@ export function AuthGate({ children, fallback }: Props) {
         fallback={fallback}
         profile={profile}
         pending={profilePending}
+        identityName={identity?.username ?? ''}
         businessName={orgs?.orgs.find((org) => org.id === orgId)?.name ?? ''}
       >
         {children}
@@ -96,12 +105,15 @@ function ProfileStage({
   fallback,
   profile,
   pending,
+  identityName,
   businessName,
 }: {
   children: ReactNode;
   fallback?: ReactNode;
   profile: ReturnType<typeof useProfile>['data'];
   pending: boolean;
+  /** The shared identity's username (`userProfiles`), when it exists. */
+  identityName: string;
   /** The active org's name — the business name the profile form never holds. */
   businessName: string;
 }) {
@@ -113,7 +125,8 @@ function ProfileStage({
   // Onboarding incomplete: block the children entirely. The modal is the only
   // interactive element; deleting it from the DOM just reveals the blocked
   // state because `children` was never mounted.
-  const onboarded = profile != null && profile.name.trim() !== '' && businessName.trim() !== '';
+  const personName = (identityName ?? '').trim() || (profile?.name ?? '').trim();
+  const onboarded = personName !== '' && businessName.trim() !== '';
 
   if (!onboarded) {
     return (

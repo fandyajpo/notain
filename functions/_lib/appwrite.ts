@@ -2,7 +2,7 @@ import { cacheGet, cacheSet, quotaPolicy, singleFlight } from './quota';
 import { fetchUpstream as fetch } from './http';
 import type { Env } from './types';
 
-export type Session = { userId: string; email: string };
+export type Session = { userId: string; email: string; name: string };
 
 /**
  * Resolves the Appwrite session a request carries.
@@ -54,11 +54,16 @@ export async function verifySession(request: Request, env: Env): Promise<Session
         headers: { 'X-Appwrite-Project': projectId, 'X-Appwrite-JWT': token },
       });
       if (!response.ok) return null;
-      const account = (await response.json()) as { $id?: unknown; email?: unknown };
+      const account = (await response.json()) as {
+        $id?: unknown;
+        email?: unknown;
+        name?: unknown;
+      };
       if (typeof account.$id !== 'string' || account.$id === '') return null;
       const session = {
         userId: account.$id,
         email: typeof account.email === 'string' ? account.email : '',
+        name: typeof account.name === 'string' ? account.name : '',
       };
       if (policy.sessionCacheTtlMs > 0) {
         cacheSet(`session:${tokenKey}`, session, policy.sessionCacheTtlMs);

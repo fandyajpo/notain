@@ -1,6 +1,14 @@
 import { verifySession } from '../../_lib/appwrite';
 import { apiError, json } from '../../_lib/http';
-import { createRow, getRow, patchRow, tableAuth } from '../../_lib/rows';
+import {
+  createRow,
+  getRow,
+  listRows,
+  patchRow,
+  tableAuth,
+  type ListQuery,
+  type TableAuth,
+} from '../../_lib/rows';
 import { fetchUpstream as fetch } from '../../_lib/http';
 import type { Env, PagesFunction } from '../../_lib/types';
 
@@ -41,6 +49,27 @@ function identityView(row: Record<string, unknown> | null): UserIdentity {
   };
 }
 
+/**
+ * The name an account gave BEFORE `userProfiles` existed: onboarding wrote it
+ * to the per-org profile row (whose id IS the org id) of the organization it
+ * created. One membership read plus one row read, and only for accounts that
+ * have neither a shared identity nor an account name — a brand-new account
+ * never pays for this.
+ */
+async function legacyUsername(auth: TableAuth, userId: string, env: Env): Promise<string> {
+  const queries: ListQuery[] = [
+    { method: 'equal', attribute: 'userId', values: [userId] },
+    { method: 'equal', attribute: 'status', values: ['active'] },
+    { method: 'orderDesc', attribute: 'createdAt', values: [] },
+    { method: 'limit', values: [1] },
+  ];
+  const memberships = await listRows(auth, 'memberships', queries, env);
+  const orgId = memberships?.[0]?.orgId;
+  if (typeof orgId !== 'string' || orgId === '') return '';
+  const row = await getRow(auth, 'profiles', orgId, env);
+  return typeof row?.name === 'string' ? row.name : '';
+}
+
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method !== 'GET' && request.method !== 'PUT') {
     return apiError(405, 'method_not_allowed', 'Gunakan GET atau PUT.', { allow: 'GET, PUT' });
@@ -55,7 +84,17 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const current = await getRow(auth, 'userProfiles', session.userId, env);
 
   if (request.method === 'GET') {
-    return json(200, identityView(current));
+    const identity = identityView(current);
+    // Accounts that onboarded BEFORE this row existed have no `userProfiles`
+    // document, so the shared identity would render blank even though they
+    // already told us their name. Two read-only fallbacks, in order of
+    // freshness — neither is persisted from here, so the first save still
+    // creates the row properly.
+    if (identity.username === '') {
+      const fallback = session.name || (await legacyUsername(auth, session.userId, env));
+      if (fallback !== '') return json(200, { ...identity, username: fallback });
+    }
+    return json(200, identity);
   }
 
   let body: Record<string, unknown> | null = null;

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useProfile, useSaveProfile } from '../../../lib/query/hooks/use-profile';
+import { useUserIdentity } from '../../../lib/query/hooks/use-user-profile';
 import { useCreateOrg, useOrgs } from '../../../lib/query/hooks/use-orgs';
 import { isAppError } from '../../../core/shared/errors';
 import { EMPTY_PROFILE } from '../../../core/profile/model';
@@ -39,6 +40,7 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
   const createMode = createOrg;
   // No org yet → no profile row to read; the create submit seeds it.
   const { data: profile } = useProfile(!createMode);
+  const { data: identity } = useUserIdentity();
   const { data: orgs } = useOrgs(!createMode);
   const saveProfile = useSaveProfile();
   const createWorkspace = useCreateOrg();
@@ -54,9 +56,12 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
   const nameIds = useFieldIds();
   const businessIds = useFieldIds();
 
-  // Pre-fill from whatever already exists. The business name is the active
-  // org's name — never a profile field.
-  const currentName = name || profile?.name || '';
+  // Pre-fill from whatever already exists. The account name prefers the
+  // SHARED identity (what onboarding writes and Kelola Profil edits); the
+  // legacy per-org profile row is the fallback for accounts onboarded before
+  // that row existed. The business name is the active org's name — never a
+  // profile field.
+  const currentName = name || identity?.username || profile?.name || '';
   const activeOrg = orgs?.orgs.find((candidate) => candidate.id === getActiveOrgId()) ?? null;
   const orgName = activeOrg?.name ?? '';
   // Only the OWNER may rename the org (the server answers 403 otherwise), so
@@ -111,8 +116,10 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
       // dashboard mounts (it only mounts now that the profile is complete).
       scheduleTour('welcome');
       // Invalidate so AuthGate sees the fresh profile/org and mounts the
-      // dashboard.
+      // dashboard — and so Kelola Profil opens on the identity just written
+      // instead of a stale empty cache.
       void queryClient.invalidateQueries({ queryKey: queryKeys.profile });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.userProfile });
       void queryClient.invalidateQueries({ queryKey: queryKeys.orgs });
     } catch (cause) {
       // After a successful create the retry path saves the profile only —
