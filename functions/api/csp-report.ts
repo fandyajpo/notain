@@ -21,11 +21,11 @@ interface CspReport {
 /**
  * `POST /api/csp-report` — collect Content-Security-Policy violations.
  *
- * The site sends its CSP as Content-Security-Policy-Report-Only (see
- * `public/_headers`), so nothing is blocked yet: the browser only reports what
- * *would* have been blocked. This Function is where those reports land, which
- * makes "does this policy break sign-in?" a question the logs can answer
- * before the policy is flipped to enforcing.
+ * The site's CSP ships ENFORCING (see `public/_headers`, proven Report-Only
+ * first), so every violation this Function receives was actually blocked. It
+ * is where the browser's reports land, which makes "did this policy break
+ * something?" a question the logs can answer — flip the header name in
+ * `_headers` back to Report-Only to return to watching without blocking.
  *
  * It always answers 204 on a readable report — a report endpoint that errors
  * makes browsers drop reporting. Reports arrive without credentials from any

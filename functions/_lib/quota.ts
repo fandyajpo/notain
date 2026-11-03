@@ -60,6 +60,7 @@ export type LimitName =
   | 'logo-upload'
   | 'checkout'
   | 'invoice-quota'
+  | 'invoice-read'
   | 'org-create'
   | 'org-invite'
   | 'data-write'
@@ -90,6 +91,11 @@ const DEFAULT_LIMITS: Record<LimitName, { limit: number; windowMs: number }> = {
   // second is either a bug or a probe. The limit sits above the page's own
   // debounce so a slow double-click never trips it.
   'invoice-quota': { limit: 60, windowMs: MINUTE },
+  // The public invoice read is unauthenticated and costs 3–5 Appwrite reads
+  // per hit (invoice + org + profile + template). Same fence shape as
+  // `site`: 60/min per IP is far above any real visitor's page load, and it
+  // stops an anonymous loop over guessed ids from burning read quota.
+  'invoice-read': { limit: 60, windowMs: MINUTE },
   // Creating an organization is free-tier-unlimited by product rule, but each
   // one costs an org row + a membership row + a profile row. 10/hour is far
   // above any real setup flow ("make a second workspace" a handful of times)
@@ -120,6 +126,7 @@ const LIMIT_ENV_OVERRIDES: Record<LimitName, string> = {
   'logo-upload': 'QUOTA_LIMIT_LOGO_PER_HOUR',
   checkout: 'QUOTA_LIMIT_CHECKOUT_PER_HOUR',
   'invoice-quota': 'QUOTA_LIMIT_INVOICE_QUOTA_PER_MINUTE',
+  'invoice-read': 'QUOTA_LIMIT_INVOICE_READ_PER_MINUTE',
   'org-create': 'QUOTA_LIMIT_ORG_CREATE_PER_HOUR',
   'org-invite': 'QUOTA_LIMIT_ORG_INVITE_PER_HOUR',
   'data-write': 'QUOTA_LIMIT_DATA_WRITE_PER_MINUTE',

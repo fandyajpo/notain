@@ -74,7 +74,11 @@ export async function requireAdmin(
 
   const isAdmin = await checkAdmin(endpoint, headers, session.userId, env);
   if (!isAdmin) {
-    return { ok: false, response: apiError(403, 'unauthenticated', 'Kamu bukan admin.') };
+    // `forbidden`, not `unauthenticated`: the session is real, the role is
+    // not. The client's session-expiry handler signs the user out on any
+    // `unauthenticated` error — a de-promoted admin must see a denial, not a
+    // forced logout.
+    return { ok: false, response: apiError(403, 'forbidden', 'Kamu bukan admin.') };
   }
 
   return { ok: true, admin: { session, endpoint, headers } };

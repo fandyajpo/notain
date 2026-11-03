@@ -1,4 +1,8 @@
-import { freeInvoiceBudget, monthKey } from '../../src/core/billing/plans';
+import {
+  freeInvoiceBudget,
+  isSubscriptionActive,
+  monthKey,
+} from '../../src/core/billing/plans';
 import { getRow, listRows, type ListQuery, type TableAuth } from './rows';
 import type { Env } from './types';
 
@@ -31,8 +35,12 @@ import type { Env } from './types';
  *   inside every invoice create — a per-save paginated walk against Appwrite
  *   read quota — which this project has deliberately not paid for.
  *
- * Both endpoints are cheap by construction: one organization row (document id
- * == orgId) plus one projected list page of `$createdAt` strings.
+ * Both endpoints stay cheap by construction: one organization row (document
+ * id == orgId), and — for a free org, whose history is bounded by its tiny
+ * monthly allowance — one projected list page of `$createdAt` strings. An
+ * active paid org skips the count walk entirely: its meter never renders and
+ * its `used` is quoted nowhere, so walking its (unbounded) history would
+ * only burn read quota for a number nobody displays.
  */
 
 /** What both endpoints answer with. `remaining: null` means unlimited. */
@@ -137,19 +145,32 @@ async function resolve(
   env: Env | undefined,
   now: Date,
 ): Promise<{ quota: InvoiceQuota; withinLimit: boolean } | null> {
-  const [org, counts] = await Promise.all([
-    readOrg(auth, orgId, env),
-    monthlyInvoiceCounts(auth, orgId, env),
-  ]);
+  const org = await readOrg(auth, orgId, env);
   // A missing org row is a gate that already passed but whose org was deleted
-  // mid-flight, and an unreadable count is an outage — both fail closed here
-  // rather than inventing a zero.
-  if (org === null || counts === null) return null;
+  // mid-flight — fail closed rather than inventing a zero.
+  if (org === null) return null;
+
+  const plan = typeof org.plan === 'string' ? org.plan : 'free';
+  const planExpiresAt = typeof org.planExpiresAt === 'string' ? org.planExpiresAt : null;
+
+  // A paid org is unlimited, so its meter never renders and its `used` is
+  // quoted nowhere: `freeInvoiceBudget` returns `remaining: null` for an
+  // active paid plan without consulting the counts. Counting a paid org
+  // would walk its ENTIRE invoice history — a paginated Appwrite read of
+  // every row, up to MAX_PAGES pages — on every meter load, which is the
+  // single biggest read-quota amplifier on this endpoint. Skip the walk.
+  const counts = isSubscriptionActive(plan, planExpiresAt, now)
+    ? {}
+    : await monthlyInvoiceCounts(auth, orgId, env);
+  // An unreadable count is an outage — fail closed rather than inventing a
+  // zero (which would let a free account create unlimited invoices during an
+  // Appwrite incident).
+  if (counts === null) return null;
 
   const budget = freeInvoiceBudget(
     {
-      plan: typeof org.plan === 'string' ? org.plan : 'free',
-      planExpiresAt: typeof org.planExpiresAt === 'string' ? org.planExpiresAt : null,
+      plan,
+      planExpiresAt,
       monthlyCounts: counts,
     },
     now,

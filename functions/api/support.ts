@@ -125,8 +125,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     );
   }
   if (!response.ok) {
-    const detail = (await response.text().catch(() => '')).slice(0, 200);
-    return apiError(500, 'validation', `Gagal mengirim pesan: ${detail}`);
+    // The upstream body can carry collection names and provider internals —
+    // log it, never echo it to the client.
+    const detail = await response.text().catch(() => '');
+    console.error('support: write failed:', detail.slice(0, 200));
+    return apiError(500, 'validation', 'Gagal mengirim pesan. Coba lagi sebentar lagi.');
   }
 
   return json(200, { success: true });

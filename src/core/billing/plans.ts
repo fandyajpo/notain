@@ -169,3 +169,31 @@ export function makeInvoiceNumber(
   // NOTAIN-P-<time36>-<hex8> ≤ 27 chars.
   return `${INVOICE_PREFIX}-${initial}-${time}-${randomHex}`;
 }
+
+/**
+ * A DETERMINISTIC invoice number for one (org, plan, month): the atomic
+ * duplicate-submission guard at checkout. Two concurrent checkouts for the
+ * same org and plan — a double-click racing across isolates — derive the same
+ * id, so Appwrite's unique-document-id 409 (not a query-then-create race)
+ * decides the winner: one order exists, and the loser reads the winner's
+ * pending row to reuse its checkout URL or stand down. Renewals and retries
+ * within the same month fall back to {@link makeInvoiceNumber}'s random form,
+ * which lives in a disjoint id space, so the deterministic slot can never be
+ * held hostage by a paid row.
+ *
+ * Same constraints as {@link makeInvoiceNumber}: ≤30 characters, alphanumeric
+ * plus dashes only (the tightest documented acquirer limit). `orgId` must
+ * match `org_<16 hex>` (the checkout gate validates it); prefix + plan letter
+ * + the 16-hex org body + a 4-digit `YYMM` lands at exactly 29 characters.
+ */
+export function deterministicInvoiceNumber(
+  plan: PaidPlan,
+  orgId: string,
+  options: { now?: Date } = {},
+): string {
+  const now = options.now ?? new Date();
+  const initial = plan === 'business' ? 'B' : 'P';
+  // `YYYY-MM` → drop the century and the dash → `YYMM`.
+  const yymm = monthKey(now).slice(2).replace('-', '');
+  return `${INVOICE_PREFIX}-${initial}-${orgId.slice(4)}${yymm}`;
+}

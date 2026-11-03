@@ -18,6 +18,7 @@ import {
   utcTimestamp,
 } from '../../../src/core/billing/doku';
 import {
+  deterministicInvoiceNumber,
   isPaidPlan,
   makeInvoiceNumber,
   planAmount,
@@ -60,18 +61,31 @@ type PendingRow = {
  *   per org, so one member's checkout upgrades (and downgrades are blocked
  *   for) the whole organization.
  *
- * Duplicate-submission guard: one pending row per org+plan. A fresh row
- * without a checkout URL is an creation still in flight — a second click gets
- * 409 rather than a second DOKU order. An older stranded row is abandoned and
- * replaced; an unexpired row with a URL is reused so the same checkout page
- * comes back instead of stacking orders.
+ * Duplicate-submission guard, two layers.
+ * (1) One pending row per org+plan. A fresh row without a checkout URL is a
+ *     creation still in flight — a second click gets 409 rather than a second
+ *     DOKU order. An older stranded row is abandoned and replaced; an
+ *     unexpired row with a URL is reused so the same checkout page comes back
+ *     instead of stacking orders.
+ * (2) The atomic backstop: the payment row's $id (which IS the
+ *     invoice_number) is DETERMINISTIC per org+plan+month
+ *     (`deterministicInvoiceNumber`), so two checkouts racing on different
+ *     isolates derive the same id and Appwrite's unique-document-id 409 —
+ *     not a query race — picks the winner. The loser reads the winner's
+ *     pending row and either returns its checkout URL or stands down. A
+ *     non-pending occupant (a renewal or retry earlier the same month) falls
+ *     back to a random id in a disjoint space, keeping today's renewal and
+ *     retry behaviour intact.
  *
  * The payment row is written *before* DOKU is called, so every order DOKU
  * ever notifies us about already exists locally (its $id IS the
  * invoice_number, which makes the webhook lookup a single document read).
  * It is stamped with `orgId` (who the plan is for) and `ownerId` (who
  * initiated — the session, for audit and the status endpoint's ownership
- * check); `payment-settle.ts` activates the plan on the org row.
+ * check); `payment-settle.ts` activates the plan on the org row. The row
+ * also freezes the org's plan/expiry at checkout (`planAtCheckout`,
+ * `planExpiresAtSnapshot`) so settlement's expiry math runs off a baseline
+ * no racing settlement can move.
  */
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method !== 'POST') {
@@ -225,45 +239,99 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     }
   }
 
-  const invoiceNumber = makeInvoiceNumber(plan);
   const callbackOrigin = new URL(request.url).origin;
-  const callbackUrl = `${callbackOrigin}/payment/result?invoice=${encodeURIComponent(invoiceNumber)}`;
 
-  const created = await fetch(
-    `${auth.endpoint}/databases/${DATABASE_ID}/collections/${PAYMENTS_TABLE_ID}/documents`,
-    {
-      method: 'POST',
-      headers: { ...auth.headers, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        documentId: invoiceNumber,
-        data: {
-          // Who the plan is FOR (tenancy) vs who initiated the order (audit,
-          // status-endpoint ownership). Settle activates the org row.
-          orgId,
-          ownerId: session.userId,
-          plan,
-          amount,
-          currency: 'IDR',
-          status: 'pending',
-          invoiceNumber,
-          checkoutUrl: null,
-          dokuExpiredAt: null,
-          paidAt: null,
-          createdAt: new Date(now).toISOString(),
-        },
-        permissions: [],
-      }),
-    },
-  );
+  /**
+   * Creates the payment row whose $id IS the invoice number DOKU sees. The
+   * first attempt uses the deterministic per-org+plan+month id, which is the
+   * cross-isolate duplicate-submission guard (see the header comment).
+   */
+  const createOrderRow = (documentId: string): Promise<Response> =>
+    fetch(
+      `${auth.endpoint}/databases/${DATABASE_ID}/collections/${PAYMENTS_TABLE_ID}/documents`,
+      {
+        method: 'POST',
+        headers: { ...auth.headers, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          documentId,
+          data: {
+            // Who the plan is FOR (tenancy) vs who initiated the order (audit,
+            // status-endpoint ownership). Settle activates the org row.
+            orgId,
+            ownerId: session.userId,
+            plan,
+            amount,
+            currency: 'IDR',
+            status: 'pending',
+            invoiceNumber: documentId,
+            checkoutUrl: null,
+            dokuExpiredAt: null,
+            paidAt: null,
+            // Frozen at checkout: settlement computes the new expiry from
+            // THIS baseline, so two isolates settling the same order race to
+            // write the SAME value instead of compounding an extension.
+            planAtCheckout: currentPlan,
+            planExpiresAtSnapshot: currentExpiresAt,
+            createdAt: new Date(now).toISOString(),
+          },
+          permissions: [],
+        }),
+      },
+    );
+
+  const CONFLICT_MESSAGE = 'Pembayaran sedang diproses. Tunggu sebentar lalu coba lagi.';
+  let rowId = deterministicInvoiceNumber(plan, orgId, { now: new Date(now) });
+  let created = await createOrderRow(rowId);
   if (created.status === 409) {
-    // Unique $id raced with a concurrent identical request — that request is
-    // creating this exact order, so the in-flight answer applies.
-    return apiError(409, 'conflict', 'Pembayaran sedang diproses. Tunggu sebentar lalu coba lagi.');
+    // The deterministic slot is taken. Read it and decide: a live pending
+    // checkout is the concurrent winner — reuse or stand down; anything else
+    // frees the path to a fresh random id.
+    const existing = (await getRow(auth, 'payments', rowId)) as PendingRow | null;
+    if (existing?.status === 'pending') {
+      const createdAtMs = Date.parse(existing.createdAt ?? '') || now;
+      const unexpired =
+        existing.dokuExpiredAt == null ||
+        existing.dokuExpiredAt === '' ||
+        Date.parse(existing.dokuExpiredAt) > now;
+
+      if (existing.checkoutUrl && unexpired) {
+        // Another isolate won the race and holds a live checkout: hand back
+        // the same page instead of stacking a second DOKU order.
+        return json(200, { url: existing.checkoutUrl });
+      }
+      if (!existing.checkoutUrl && now - createdAtMs < IN_FLIGHT_GRACE_MS) {
+        // Another isolate is creating this checkout right now.
+        return apiError(409, 'conflict', CONFLICT_MESSAGE);
+      }
+      // Stranded (creation failed) or expired: retire it and fall through.
+      await patchRow(auth, 'payments', existing.$id, {
+        status: existing.checkoutUrl ? 'expired' : 'failed',
+      }).catch(() => false);
+    } else if (existing) {
+      // paid/expired/failed from earlier this month — a renewal or a retry.
+      // The fallback random id keeps a disjoint id space, so this month's
+      // deterministic slot never blocks a later purchase.
+    } else {
+      // The id is taken but the row is unreadable: refuse rather than guess.
+      return apiError(409, 'conflict', CONFLICT_MESSAGE);
+    }
+    rowId = makeInvoiceNumber(plan);
+    created = await createOrderRow(rowId);
+    if (created.status === 409) {
+      // The fallback id colliding too is astronomically unlikely; refuse.
+      return apiError(409, 'conflict', CONFLICT_MESSAGE);
+    }
   }
   if (!created.ok) {
+    // The upstream body may carry collection names and provider internals —
+    // it goes to the logs, never to the client.
     const detail = (await created.text().catch(() => '')).slice(0, 200).replace(/\s+/g, ' ');
-    return apiError(500, 'validation', `Gagal menyimpan pesanan pembayaran: ${detail}`);
+    console.error('payments: payment row write failed:', detail);
+    return apiError(500, 'validation', 'Gagal menyimpan pesanan pembayaran. Coba lagi.');
   }
+
+  const invoiceNumber = rowId;
+  const callbackUrl = `${callbackOrigin}/payment/result?invoice=${encodeURIComponent(invoiceNumber)}`;
 
   // --- DOKU sandbox create-checkout -------------------------------------
   const rawBody = buildCheckoutBody({

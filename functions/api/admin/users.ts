@@ -340,14 +340,14 @@ async function updateUserProfile(
       );
       if (!createResponse.ok) {
         const createBody = await createResponse.text().catch(() => '');
-        return apiError(
-          500,
-          'validation',
-          `Gagal membuat profil organisasi: ${createBody.slice(0, 200)}`,
-        );
+        // Upstream bodies carry provider internals — log, never echo.
+        console.error('admin.users: profile create failed:', createBody.slice(0, 200));
+        return apiError(500, 'validation', 'Gagal membuat profil organisasi.');
       }
     } else {
-      return apiError(500, 'validation', `Gagal update profil: ${errorBody.slice(0, 200)}`);
+      // Upstream bodies carry provider internals — log, never echo.
+      console.error('admin.users: profile update failed:', errorBody.slice(0, 200));
+      return apiError(500, 'validation', 'Gagal update profil.');
     }
   }
 
@@ -372,7 +372,8 @@ async function updateUserProfile(
   );
   if (!planResponse.ok) {
     const planBody = await planResponse.text().catch(() => '');
-    return apiError(500, 'validation', `Gagal update plan organisasi: ${planBody.slice(0, 200)}`);
+    console.error('admin.users: plan update failed:', planBody.slice(0, 200));
+    return apiError(500, 'validation', 'Gagal update plan organisasi.');
   }
 
   await writeAudit(env, {
