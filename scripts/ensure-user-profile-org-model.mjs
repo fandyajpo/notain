@@ -52,16 +52,6 @@ const apiKey = (process.env.APPWRITE_API_KEY ?? '').trim();
 /** Table-level permissions are empty on purpose: API key only. */
 const TABLES = [
   {
-    id: 'userProfiles',
-    name: 'User Profiles',
-    stringAttributes: [
-      { key: 'username', size: 128 },
-      { key: 'phone', size: 32 },
-    ],
-    integerAttributes: [],
-    indexes: [],
-  },
-  {
     // Only the NEW identity columns are listed — the loop skips everything
     // that already exists, so name/ownerId/plan/businessType are untouched.
     id: 'organizations',
@@ -298,43 +288,55 @@ try {
         );
       }
 
-      // 2. userProfiles/<ownerId>: shared identity, only-empty-wins.
+      // 2. profiles/<ownerId>: the account identity, in the SAME table the
+      // org identity uses (the two id spaces never collide: org ids start
+      // `org_`). `name` is the person here, the business name on an org row.
       const ownerId = typeof org.ownerId === 'string' ? org.ownerId : '';
       if (ownerId === '') continue;
-      const existingRes = await apiSafe('GET', doc('userProfiles', ownerId));
+      const existingRes = await apiSafe('GET', doc('profiles', ownerId));
       const existing = existingRes.ok ? existingRes.body : null;
-      const username = typeof profile?.name === 'string' ? profile.name : '';
+      const name = typeof profile?.name === 'string' ? profile.name : '';
       const hasProfileRow = existingRes.ok;
-      const usernameEmpty = !hasProfileRow || !existing?.username;
-      const phoneEmpty = !hasProfileRow || !existing?.phone;
-      if (!username && !phoneEmpty && !usernameEmpty) continue;
-      if (!usernameEmpty && !phoneEmpty) continue;
+      const nameMissing = !hasProfileRow || !existing?.name;
+      const phoneMissing = !hasProfileRow || !existing?.phone;
+      if (!name && !phoneMissing && !nameMissing) continue;
+      if (!nameMissing && !phoneMissing) continue;
 
       const upsert = {};
-      if (usernameEmpty && username) upsert.username = username;
-      if (phoneEmpty && profile?.phone) upsert.phone = profile.phone;
+      if (nameMissing && name) upsert.name = name;
+      if (phoneMissing && profile?.phone) upsert.phone = profile.phone;
       if (Object.keys(upsert).length === 0) continue;
       if (hasProfileRow) {
-        const res = await apiSafe('PATCH', doc('userProfiles', ownerId), { data: upsert });
+        const res = await apiSafe('PATCH', doc('profiles', ownerId), { data: upsert });
         console.log(
           res.ok
-            ? `  ✔ userProfiles/${ownerId} ← ${Object.keys(upsert).join(', ')}`
-            : `  ⚠ userProfiles/${ownerId} gagal: ${res.status}`,
+            ? `  ✔ profiles/${ownerId} ← ${Object.keys(upsert).join(', ')}`
+            : `  ⚠ profiles/${ownerId} gagal: ${res.status}`,
         );
       } else {
         const res = await apiSafe(
           'POST',
-          `/databases/${databaseId}/collections/userProfiles/documents`,
+          `/databases/${databaseId}/collections/profiles/documents`,
           {
             documentId: ownerId,
-            data: { username: upsert.username ?? '', phone: upsert.phone ?? '' },
+            // Same attribute set the org-create Function writes, so the row
+            // satisfies the table without inventing values for billing.
+            data: {
+              name: upsert.name ?? '',
+              phone: upsert.phone ?? '',
+              address: null,
+              email: '',
+              logoFileId: null,
+              plan: 'free',
+              planExpiresAt: null,
+            },
             permissions: [],
           },
         );
         console.log(
           res.ok
-            ? `  ✔ userProfiles/${ownerId} dibuat`
-            : `  ⚠ userProfiles/${ownerId} gagal: ${res.status}`,
+            ? `  ✔ profiles/${ownerId} dibuat`
+            : `  ⚠ profiles/${ownerId} gagal: ${res.status}`,
         );
       }
     }

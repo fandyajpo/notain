@@ -13,8 +13,9 @@ import { fetchUpstream as fetch } from '../../_lib/http';
 import type { Env, PagesFunction } from '../../_lib/types';
 
 /**
- * `GET /api/profile/user` — the SHARED user identity: username and phone,
- * one row per Appwrite account (`userProfiles/<userId>`).
+ * `GET /api/profile/user` — the account identity: username and phone, one row
+ * per Appwrite account in the SAME `profiles` table the organization identity
+ * uses (keyed by userId here, by orgId there — the id spaces never collide).
  * `PUT /api/profile/user` — updates either field.
  *
  * Deliberately NOT org-gated: this is the account's identity, shared across
@@ -28,11 +29,11 @@ import type { Env, PagesFunction } from '../../_lib/types';
  * never modifies authentication credentials.
  *
  * The username is also mirrored onto the Appwrite account's `name`
- * (best-effort — the `userProfiles` row is the source of truth; the mirror
+ * (best-effort — the `profiles` row is the source of truth; the mirror
  * exists so the admin panel and OAuth-imported names read the same identity).
  *
  * Row permissions are empty like every other table: only this Function,
- * through the server API key, touches `userProfiles`.
+ * through the server API key, touches `profiles`.
  */
 
 const USERNAME_MAX = 128;
@@ -44,17 +45,17 @@ type UserIdentity = { username: string; phone: string };
 
 function identityView(row: Record<string, unknown> | null): UserIdentity {
   return {
-    username: typeof row?.username === 'string' ? row.username : '',
+    username: typeof row?.name === 'string' ? row.name : '',
     phone: typeof row?.phone === 'string' ? row.phone : '',
   };
 }
 
 /**
- * The name an account gave BEFORE `userProfiles` existed: onboarding wrote it
- * to the per-org profile row (whose id IS the org id) of the organization it
- * created. One membership read plus one row read, and only for accounts that
- * have neither a shared identity nor an account name — a brand-new account
- * never pays for this.
+ * The name an account gave BEFORE its `profiles/<userId>` row existed:
+ * onboarding wrote it to the per-org profile row (whose id IS the org id) of
+ * the organization it created. One membership read plus one row read, and only
+ * for accounts that have neither a shared identity nor an account name — a
+ * brand-new account never pays for this.
  */
 async function legacyUsername(auth: TableAuth, userId: string, env: Env): Promise<string> {
   const queries: ListQuery[] = [
@@ -81,11 +82,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const auth = tableAuth(env);
   if (!auth) return apiError(503, 'unavailable', 'Layanan sedang tidak tersedia.');
 
-  const current = await getRow(auth, 'userProfiles', session.userId, env);
+  const current = await getRow(auth, 'profiles', session.userId, env);
 
   if (request.method === 'GET') {
     const identity = identityView(current);
-    // Accounts that onboarded BEFORE this row existed have no `userProfiles`
+    // Accounts that onboarded BEFORE this row existed have no account row,
     // document, so the shared identity would render blank even though they
     // already told us their name. Two read-only fallbacks, in order of
     // freshness — neither is persisted from here, so the first save still
@@ -147,14 +148,31 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     return json(200, data);
   }
 
+  // The account identity lives in the SAME `profiles` table the organization
+  // identity uses — keyed by userId here, by orgId there. The two id spaces
+  // never collide (org ids start `org_`), and this keeps exactly one profile
+  // table in the product.
+  const rowData = { name: data.username, phone: data.phone };
   const saved = current
-    ? (await patchRow(auth, 'userProfiles', session.userId, { ...data }))
+    ? (await patchRow(auth, 'profiles', session.userId, { ...rowData }))
       ? data
       : null
-    : ((await createRow(auth, 'userProfiles', session.userId, { ...data }, [])) as Record<
-        string,
-        unknown
-      > | null);
+    : ((await createRow(
+        auth,
+        'profiles',
+        session.userId,
+        {
+          ...rowData,
+          // Same attribute set the org-create Function writes, so the row
+          // satisfies the table without inventing billing values.
+          address: null,
+          email: session.email,
+          logoFileId: null,
+          plan: 'free',
+          planExpiresAt: null,
+        },
+        [],
+      )) as Record<string, unknown> | null);
   if (!saved) {
     return apiError(503, 'unavailable', 'Gagal menyimpan profil. Coba lagi.');
   }

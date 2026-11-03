@@ -67,12 +67,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
   ]);
   if (!orgRow) return apiError(404, 'not_found', 'Halaman usaha tidak ditemukan.');
 
-  // The owner's SHARED identity (userProfiles/<userId>) supplies the person
+  // The owner's account identity (a `profiles` row keyed by userId — the same
+  // table the org identity uses, in a different id space) supplies the person
   // line; the org row supplies the business identity. One extra read, bounded
   // by the org's ownerId — never a scan.
   const ownerId = typeof orgRow.ownerId === 'string' ? orgRow.ownerId : '';
-  const ownerRow = ownerId ? await getRow(auth, 'userProfiles', ownerId, env) : null;
-  const ownerName = typeof ownerRow?.username === 'string' ? ownerRow.username : '';
+  const ownerRow = ownerId ? await getRow(auth, 'profiles', ownerId, env) : null;
+  const ownerName = typeof ownerRow?.name === 'string' ? ownerRow.name : '';
 
   // No business name, no page: every template leads with it, and a blank org
   // row is the state of an account that never set itself up.
@@ -136,7 +137,7 @@ const SITE_ITEMS_LIMIT = 100;
  * source of truth for the business identity (name + contact block + logo, per
  * the two-entity model); the legacy profile row only fills fields the org's
  * contact columns don't carry yet, and the owner name comes from the shared
- * `userProfiles` row.
+ * `profiles/<ownerId>` row.
  */
 function publicSiteFromOrg(
   orgRow: Record<string, unknown> & { $id: string },
