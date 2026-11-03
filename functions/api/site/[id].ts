@@ -143,7 +143,8 @@ function publicSiteFromOrg(
   profile: ReturnType<typeof profileRowToDomain> | null,
   ownerName: string,
 ) {
-  const orgStr = (key: string): string => (typeof orgRow[key] === 'string' ? (orgRow[key] as string) : '');
+  const orgStr = (key: string): string =>
+    typeof orgRow[key] === 'string' ? (orgRow[key] as string) : '';
   const phone = orgStr('phone') || profile?.phone || '';
   const address = orgStr('address') || profile?.address || '';
   const email = orgStr('email') || profile?.email || '';

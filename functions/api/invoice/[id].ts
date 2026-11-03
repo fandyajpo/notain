@@ -67,10 +67,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
   // read in one parallel step — the profile serves the gate's fallback and
   // the letterhead below.
   const [orgRow, profileRow] = orgId
-    ? await Promise.all([
-        getRow(auth, 'organizations', orgId),
-        getRow(auth, 'profiles', orgId),
-      ])
+    ? await Promise.all([getRow(auth, 'organizations', orgId), getRow(auth, 'profiles', orgId)])
     : [null, null];
 
   // "Invoice link" is the headline Pro benefit on the pricing page — the
@@ -110,8 +107,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
   // The template falls back to a built-in on the client, the same way the
   // signed-in print view does.
   const profile = profileRow ? (profileRow as ProfileRow) : null;
-  const business =
-    profile || orgRow ? publicBusinessFrom(profile, orgRow) : null;
+  const business = profile || orgRow ? publicBusinessFrom(profile, orgRow) : null;
 
   const templateRow = invoice.templateId
     ? await getRow(auth, 'templates', invoice.templateId)
@@ -164,30 +160,27 @@ function omitFields<T extends Record<string, unknown>, K extends keyof T>(
  * two-entity model. The legacy profiles row is only the fallback for orgs
  * whose contact columns haven't been backfilled yet.
  */
- function publicBusinessFrom(
-   profile: ProfileRow | null,
-   orgRow: (Record<string, unknown> & { $id: string }) | null,
- ) {
-   const legacy = profile ? publicBusinessFromRow(profile, orgRow) : null;
-   const orgContact = (key: string): string | null =>
-     orgRow && typeof orgRow[key] === 'string'
-       ? (orgRow as Record<string, string>)[key]
-       : null;
-   const orgName = typeof orgRow?.name === 'string' ? orgRow.name : '';
+function publicBusinessFrom(
+  profile: ProfileRow | null,
+  orgRow: (Record<string, unknown> & { $id: string }) | null,
+) {
+  const legacy = profile ? publicBusinessFromRow(profile, orgRow) : null;
+  const orgContact = (key: string): string | null =>
+    orgRow && typeof orgRow[key] === 'string' ? (orgRow as Record<string, string>)[key] : null;
+  const orgName = typeof orgRow?.name === 'string' ? orgRow.name : '';
 
-   const businessName = orgContact('name') || orgName || legacy?.businessName || '';
-   const logoFileId =
-     orgContact('logoFileId') ??
-     (legacy?.logoUrl?.match(/\/api\/logo\/(.+)$/)?.[1] ?? null);
+  const businessName = orgContact('name') || orgName || legacy?.businessName || '';
+  const logoFileId =
+    orgContact('logoFileId') ?? legacy?.logoUrl?.match(/\/api\/logo\/(.+)$/)?.[1] ?? null;
 
-   return {
-     // The print view leads with the business name (now the org name).
-     name: businessName,
-     phone: orgContact('phone') ?? undefined ?? legacy?.phone,
-     address: orgContact('address') ?? undefined ?? legacy?.address,
-     email: orgContact('email') ?? undefined ?? legacy?.email,
-     businessName,
-     businessType: legacy?.businessType ?? null,
-     logoUrl: logoFileId ? `/api/logo/${logoFileId}` : undefined,
-   };
- }
+  return {
+    // The print view leads with the business name (now the org name).
+    name: businessName,
+    phone: orgContact('phone') ?? undefined ?? legacy?.phone,
+    address: orgContact('address') ?? undefined ?? legacy?.address,
+    email: orgContact('email') ?? undefined ?? legacy?.email,
+    businessName,
+    businessType: legacy?.businessType ?? null,
+    logoUrl: logoFileId ? `/api/logo/${logoFileId}` : undefined,
+  };
+}

@@ -4,11 +4,11 @@ Covers the refactor to the two-entity model requested after the codebase audit: 
 
 ## 1. Target architecture (as implemented)
 
-| Entity | Storage | Fields |
-|---|---|---|
-| **User** | Appwrite account (`$id`, `email`, `name`) + `userProfiles/<userId>` row | id, email (account, read-only in UI), username, phone. `created_at`/`updated_at` ride on the account and the document's `$createdAt`/`$updatedAt`. |
-| **Organization** | `organizations/<orgId>` row | id, name, slug (unique, server-generated), contact block (email, phone, website, address, taxId, logoFileId), `businessType`, `plan`/`planExpiresAt` (billing), `ownerId` (see §2), createdAt. `$updatedAt` is a system attribute. |
-| **OrganizationMembership** | `memberships/<random>` row | id, userId, orgId, role (`owner`/`member`), status (`active`/`pending`), inviteEmail, invitedBy, createdAt. Uniqueness on `(orgId, inviteEmail)`; role lives on the membership row, never on a profile. |
+| Entity                     | Storage                                                                 | Fields                                                                                                                                                                                                                             |
+| -------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **User**                   | Appwrite account (`$id`, `email`, `name`) + `userProfiles/<userId>` row | id, email (account, read-only in UI), username, phone. `created_at`/`updated_at` ride on the account and the document's `$createdAt`/`$updatedAt`.                                                                                 |
+| **Organization**           | `organizations/<orgId>` row                                             | id, name, slug (unique, server-generated), contact block (email, phone, website, address, taxId, logoFileId), `businessType`, `plan`/`planExpiresAt` (billing), `ownerId` (see §2), createdAt. `$updatedAt` is a system attribute. |
+| **OrganizationMembership** | `memberships/<random>` row                                              | id, userId, orgId, role (`owner`/`member`), status (`active`/`pending`), inviteEmail, invitedBy, createdAt. Uniqueness on `(orgId, inviteEmail)`; role lives on the membership row, never on a profile.                            |
 
 Relationship rules honored: many-to-many via `memberships`; one shared profile per account; ownership = membership role (+ `organizations.ownerId` as the anonymous-gate/deletion-continuation anchor — see §5); org data always `orgId`-scoped.
 
@@ -16,16 +16,16 @@ Relationship rules honored: many-to-many via `memberships`; one shared profile p
 
 ## 2. Dependency map (what consumed the old per-org profile)
 
-| Consumer | Before | After |
-|---|---|---|
-| Onboarding (first login) | wrote `profiles/<orgId>` + account placeholder name | unchanged + now also writes the shared `userProfiles` username |
-| Settings → Kelola Profil | per-org profile form | **shared identity editor** (`/api/profile/user`), login email read-only from session |
-| Settings → Kelola Organisasi | per-org profile form ("letterhead") | **org contact editor** (`PATCH /api/orgs/<id>`, owner-only) writing the org contact block |
-| Public invoice `GET /api/invoice/<id>` | profile row + org name | **org row directly** (name, email, phone, address, logo), legacy profile row only as backfill fallback; payload shape unchanged so the print client is untouched |
-| Public site `GET /api/site/<id>` | profile row contact fields | **org row contact columns** (profile fills gaps for un-backfilled orgs); `ownerName` now reads the owner's `userProfiles` username (profile-name fallback) |
-| Admin panel | profiles/<primaryOrg> join + PATCH writes profile row | **still on the legacy table** — the legacy row stays populated (nothing else writes it) so admin data does not go stale; migration listed as outstanding (§7) |
-| Invoice builder issuer defaults | `getProfile()` (`/api/profile`) | **still on the legacy endpoint** — works as-is; switch to org contact + user identity is outstanding (§7) |
-| Logo storage | R2 object ids referenced by the profile row | org contact editor reuses the same `/api/logo` Function; `logoFileId` now lives on the organization row |
+| Consumer                               | Before                                                | After                                                                                                                                                            |
+| -------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Onboarding (first login)               | wrote `profiles/<orgId>` + account placeholder name   | unchanged + now also writes the shared `userProfiles` username                                                                                                   |
+| Settings → Kelola Profil               | per-org profile form                                  | **shared identity editor** (`/api/profile/user`), login email read-only from session                                                                             |
+| Settings → Kelola Organisasi           | per-org profile form ("letterhead")                   | **org contact editor** (`PATCH /api/orgs/<id>`, owner-only) writing the org contact block                                                                        |
+| Public invoice `GET /api/invoice/<id>` | profile row + org name                                | **org row directly** (name, email, phone, address, logo), legacy profile row only as backfill fallback; payload shape unchanged so the print client is untouched |
+| Public site `GET /api/site/<id>`       | profile row contact fields                            | **org row contact columns** (profile fills gaps for un-backfilled orgs); `ownerName` now reads the owner's `userProfiles` username (profile-name fallback)       |
+| Admin panel                            | profiles/<primaryOrg> join + PATCH writes profile row | **still on the legacy table** — the legacy row stays populated (nothing else writes it) so admin data does not go stale; migration listed as outstanding (§7)    |
+| Invoice builder issuer defaults        | `getProfile()` (`/api/profile`)                       | **still on the legacy endpoint** — works as-is; switch to org contact + user identity is outstanding (§7)                                                        |
+| Logo storage                           | R2 object ids referenced by the profile row           | org contact editor reuses the same `/api/logo` Function; `logoFileId` now lives on the organization row                                                          |
 
 ## 3. What was added / removed
 
@@ -55,7 +55,7 @@ Every tenant read/write goes through Pages Functions (API-key backed, empty row 
 
 ## 7. Outstanding items (documented, not hidden)
 
-1. **Admin panel** still joins the legacy `profiles/<primaryOrg>` for contact fields (and writes them on admin PATCH). It remains *correct* (that table is now write-frozen by the UI) but should switch to `organizations` contact columns + `userProfiles` for the owner identity.
+1. **Admin panel** still joins the legacy `profiles/<primaryOrg>` for contact fields (and writes them on admin PATCH). It remains _correct_ (that table is now write-frozen by the UI) but should switch to `organizations` contact columns + `userProfiles` for the owner identity.
 2. **Signed-in invoice builder issuer defaults** still read `getProfile()` (`/api/profile`). The public invoice path is org-first; the builder should follow (org contact + user identity) so brand-new orgs get pre-filled issuer defaults.
 3. ~~**`/api/site/<id>` ownerName** still uses the profile row's name~~ — **done**: reads the owner's `userProfiles` username with a profile-name fallback.
 4. **Legacy `profiles` table retirement**: after items 1–2, stop reading it everywhere, keep the rows (data preservation), and optionally add a tombstone migration.
@@ -63,21 +63,21 @@ Every tenant read/write goes through Pages Functions (API-key backed, empty row 
 
 ## 8. Test scenarios (§13) — mapped
 
-| # | Scenario | Coverage |
-|---|---|---|
-| 1 | New user creates first org | `tests/org-endpoints.test.ts` (create → owner membership + profile row); manual: onboarding modal e2e |
-| 2 | Existing user, no duplicates | onboarding guard tests + org-create single-org rule (403 test in org-endpoints) |
-| 3 | Second organization | org-endpoints "allows a second organization once a paid plan is active" |
-| 4 | User owns multiple orgs | `GET /api/orgs` list test + switcher e2e |
-| 5 | Joins as member | invite accept flow (`orgs/accept` tests in org-endpoints) |
-| 6 | Switching orgs | `org-gate.test.tsx`, `org-switch.test.ts`, resetQueries cache isolation |
-| 7–9 | Cross-org invoice/customer/catalog access | `tests/data-endpoint.test.ts` foreign-org 404s per resource + row-in-tenant re-checks |
-| 10 | Member ≠ owner ops | `requireOrgOwner` 403 tests (rename/delete/invite) in org-endpoints + contact PATCH owner-only |
-| 11–12 | Owner deletes org; other orgs unaffected | cascade tests in org-endpoints (two-org seeding, "leaves org B untouched") |
-| 13 | No-org empty states | OrgGate onboarding render tests (`org-gate.test.tsx`) |
-| 14 | Profile without org | new: `GET/PUT /api/profile/user` is session-gated — scenario documented, endpoint test recommended |
-| 15 | Invoices/PDFs after Letterhead removal | public invoice payload shape unchanged (`invoice-link-gate.test.ts` still passes); fallback path covers un-backfilled orgs |
-| 16 | Historical data association | migration backfill is only-empty-wins and never re-keys rows; scenario = post-migration spot check in Appwrite console |
+| #     | Scenario                                  | Coverage                                                                                                                   |
+| ----- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| 1     | New user creates first org                | `tests/org-endpoints.test.ts` (create → owner membership + profile row); manual: onboarding modal e2e                      |
+| 2     | Existing user, no duplicates              | onboarding guard tests + org-create single-org rule (403 test in org-endpoints)                                            |
+| 3     | Second organization                       | org-endpoints "allows a second organization once a paid plan is active"                                                    |
+| 4     | User owns multiple orgs                   | `GET /api/orgs` list test + switcher e2e                                                                                   |
+| 5     | Joins as member                           | invite accept flow (`orgs/accept` tests in org-endpoints)                                                                  |
+| 6     | Switching orgs                            | `org-gate.test.tsx`, `org-switch.test.ts`, resetQueries cache isolation                                                    |
+| 7–9   | Cross-org invoice/customer/catalog access | `tests/data-endpoint.test.ts` foreign-org 404s per resource + row-in-tenant re-checks                                      |
+| 10    | Member ≠ owner ops                        | `requireOrgOwner` 403 tests (rename/delete/invite) in org-endpoints + contact PATCH owner-only                             |
+| 11–12 | Owner deletes org; other orgs unaffected  | cascade tests in org-endpoints (two-org seeding, "leaves org B untouched")                                                 |
+| 13    | No-org empty states                       | OrgGate onboarding render tests (`org-gate.test.tsx`)                                                                      |
+| 14    | Profile without org                       | new: `GET/PUT /api/profile/user` is session-gated — scenario documented, endpoint test recommended                         |
+| 15    | Invoices/PDFs after Letterhead removal    | public invoice payload shape unchanged (`invoice-link-gate.test.ts` still passes); fallback path covers un-backfilled orgs |
+| 16    | Historical data association               | migration backfill is only-empty-wins and never re-keys rows; scenario = post-migration spot check in Appwrite console     |
 
 ## 9. Acceptance status
 

@@ -101,10 +101,7 @@ export async function getOrgContact(orgId: string): Promise<OrgContact> {
   };
 }
 
-export async function updateOrgContact(
-  orgId: string,
-  patch: OrgContactPatch,
-): Promise<void> {
+export async function updateOrgContact(orgId: string, patch: OrgContactPatch): Promise<void> {
   assertOrgId(orgId);
   const response = await bearerFetch(`/api/orgs/${encodeURIComponent(orgId)}`, {
     method: 'PATCH',

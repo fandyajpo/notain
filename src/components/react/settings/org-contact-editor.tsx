@@ -173,9 +173,7 @@ export function OrgContactEditor() {
     >
       {serverError && <Notice variant="danger">{serverError}</Notice>}
       {!isOwner && (
-        <Notice variant="info">
-          Hanya owner yang bisa mengubah kontak organisasi ini.
-        </Notice>
+        <Notice variant="info">Hanya owner yang bisa mengubah kontak organisasi ini.</Notice>
       )}
 
       <FieldShell

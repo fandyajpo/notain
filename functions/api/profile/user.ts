@@ -112,13 +112,10 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     ? (await patchRow(auth, 'userProfiles', session.userId, { ...data }))
       ? data
       : null
-    : ((await createRow(
-        auth,
-        'userProfiles',
-        session.userId,
-        { ...data },
-        [],
-      )) as Record<string, unknown> | null);
+    : ((await createRow(auth, 'userProfiles', session.userId, { ...data }, [])) as Record<
+        string,
+        unknown
+      > | null);
   if (!saved) {
     return apiError(503, 'unavailable', 'Gagal menyimpan profil. Coba lagi.');
   }

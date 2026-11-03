@@ -64,9 +64,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     const org = await getRow(gate.access.auth, 'organizations', orgId, env);
     if (!org) return apiError(404, 'not_found', 'Organisasi tidak ditemukan.');
     const str = (key: string): string | null =>
-      typeof org[key] === 'string' && (org[key] as string) !== ''
-        ? (org[key] as string)
-        : null;
+      typeof org[key] === 'string' && (org[key] as string) !== '' ? (org[key] as string) : null;
     return json(200, {
       id: orgId,
       name: str('name') ?? '',

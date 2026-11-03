@@ -142,8 +142,8 @@ function OrgSettingsContent() {
             <div>
               <p className="font-medium">Kop surat invoice &amp; kontak usaha</p>
               <p className="text-sm text-muted">
-                Yang tercetak di kop surat invoice organisasi ini — terpisah dari identitas
-                akun di Kelola Profil.
+                Yang tercetak di kop surat invoice organisasi ini — terpisah dari identitas akun di
+                Kelola Profil.
               </p>
             </div>
             {isLoading ? (

@@ -208,7 +208,9 @@ try {
         continue;
       }
       if (!confirmed) {
-        console.log(`  + buat kolom \`${table.id}.${attribute.key}\` (string, size ${attribute.size})`);
+        console.log(
+          `  + buat kolom \`${table.id}.${attribute.key}\` (string, size ${attribute.size})`,
+        );
         continue;
       }
       await api(

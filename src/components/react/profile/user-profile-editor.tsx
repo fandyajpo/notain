@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toAppError } from '../../../app/errors';
-import {
-  useSaveUserIdentity,
-  useUserIdentity,
-} from '../../../lib/query/hooks/use-user-profile';
+import { useSaveUserIdentity, useUserIdentity } from '../../../lib/query/hooks/use-user-profile';
 import { useSession } from '../../../lib/query/hooks/use-session';
 import { toast } from '../../../lib/ui/toast';
 import { Button } from '../ui/button';
@@ -26,12 +23,7 @@ import { LoadingState } from '../ui/state';
 const phonePattern = /^(?:\+?62|0)8\d{7,12}$/;
 
 export function UserProfileEditor() {
-  const {
-    data: identity,
-    isLoading,
-    isError,
-    refetch,
-  } = useUserIdentity();
+  const { data: identity, isLoading, isError, refetch } = useUserIdentity();
   const { data: session } = useSession();
   const save = useSaveUserIdentity();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -59,9 +51,7 @@ export function UserProfileEditor() {
   if (isError) {
     return (
       <div className="flex flex-col items-start gap-3">
-        <p className="text-sm text-danger">
-          Profil gagal dimuat. Periksa koneksi internet kamu.
-        </p>
+        <p className="text-sm text-danger">Profil gagal dimuat. Periksa koneksi internet kamu.</p>
         <Button variant="secondary" size="sm" onClick={() => void refetch()}>
           Coba lagi
         </Button>
