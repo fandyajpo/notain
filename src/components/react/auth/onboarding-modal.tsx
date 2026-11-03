@@ -63,21 +63,24 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
   // submit that can never succeed.
   const canRenameOrg = createMode || activeOrg?.isOwner === true;
 
-  // Pre-fill ONCE, from whatever already exists: the account name prefers the
+  // Pre-fill from whatever already exists: the account name prefers the
   // shared identity (or the legacy org profile), the business name is the
-  // active org's name. It has to be copied into state rather than read through
-  // a fallback on every render — otherwise clearing the field would instantly
-  // re-fill it with the Google/OAuth name, and the input would not be free.
-  const prefilled = useRef(false);
+  // active org's name. Copied into state rather than read through a fallback
+  // on every render — otherwise clearing the field would instantly re-fill it
+  // with the Google/OAuth name. The `touched` refs are what keep it from
+  // re-filling a field the user deliberately emptied, while still letting data
+  // that arrives late (queries resolve after mount) land in an untouched one.
+  const nameTouched = useRef(false);
+  const businessTouched = useRef(false);
   useEffect(() => {
-    if (prefilled.current) return;
     const existingName = identity?.username || profile?.name || '';
     const existingBusiness = activeOrg?.name ?? '';
-    if (existingName !== '') setName((previous) => (previous === '' ? existingName : previous));
-    if (existingBusiness !== '') {
-      setBusinessName((previous) => (previous === '' ? existingBusiness : previous));
-    }
-    prefilled.current = true;
+    setName((previous) =>
+      nameTouched.current || previous !== '' ? previous : existingName || previous,
+    );
+    setBusinessName((previous) =>
+      businessTouched.current || previous !== '' ? previous : existingBusiness || previous,
+    );
   }, [identity, profile, activeOrg]);
 
   const currentName = name;
@@ -221,6 +224,7 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
               id={nameIds.id}
               value={currentName}
               onChange={(event) => {
+                nameTouched.current = true;
                 setName(event.target.value);
                 setError(null);
               }}
@@ -250,6 +254,7 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
               id={businessIds.id}
               value={currentBusiness}
               onChange={(event) => {
+                businessTouched.current = true;
                 setBusinessName(event.target.value);
                 setError(null);
               }}
