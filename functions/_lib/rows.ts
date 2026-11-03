@@ -27,7 +27,9 @@ export type TableId =
   | 'support'
   | 'audit_logs'
   | 'organizations'
-  | 'memberships';
+  | 'memberships'
+  | 'userProfiles'
+  | 'letterheads';
 
 /** API-key headers against Appwrite, or `null` when the env is incomplete. */
 export type TableAuth = { endpoint: string; headers: Record<string, string> };

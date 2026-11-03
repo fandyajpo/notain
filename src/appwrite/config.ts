@@ -21,4 +21,6 @@ export const APPWRITE = {
   catalogTableId: 'catalog',
   statsTableId: 'stats',
   auditTableId: 'audit_logs',
+  userProfilesTableId: 'userProfiles',
+  letterheadsTableId: 'letterheads',
 } as const;

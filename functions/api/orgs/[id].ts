@@ -49,6 +49,8 @@ const CASCADE_TABLES = [
 ] as const;
 
 const NAME_MAX = 128;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_PATTERN = /^(?:\+?62|0)8\d{7,12}$/;
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, params }) => {
   const orgId = typeof params.id === 'string' ? params.id : '';
@@ -88,13 +90,47 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
       }
     }
 
-    if (!hasName && !hasBusinessType) {
-      return apiError(400, 'validation', 'Tidak ada perubahan yang dikirim.');
-    }
-
     const data: Record<string, unknown> = {};
     if (hasName) data.name = name;
     if (hasBusinessType) data.businessType = businessType;
+
+    // The org's contact identity block (email, phone, website, address,
+    // taxId) — what the public page and the letterhead read. Same
+    // hasOwnProperty semantics as businessType: absent = untouched,
+    // null = clear, a value = set after validation.
+    const CONTACT_LIMITS = {
+      email: 320,
+      phone: 32,
+      website: 320,
+      address: 512,
+      taxId: 64,
+    } as const;
+    for (const field of Object.keys(CONTACT_LIMITS) as (keyof typeof CONTACT_LIMITS)[]) {
+      if (!Object.prototype.hasOwnProperty.call(body, field)) continue;
+      const raw = body[field];
+      if (raw === null || raw === '') {
+        data[field] = null;
+        continue;
+      }
+      if (typeof raw !== 'string') {
+        return apiError(400, 'validation', 'Isian kontak organisasi tidak valid.');
+      }
+      const value = raw.trim();
+      if (value.length > CONTACT_LIMITS[field]) {
+        return apiError(400, 'validation', `Isian ${field} terlalu panjang.`);
+      }
+      if (field === 'email' && value !== '' && !EMAIL_PATTERN.test(value)) {
+        return apiError(400, 'validation', 'Email organisasi tidak valid.');
+      }
+      if (field === 'phone' && value !== '' && !PHONE_PATTERN.test(value)) {
+        return apiError(400, 'validation', 'Nomor WhatsApp organisasi tidak valid.');
+      }
+      data[field] = value;
+    }
+
+    if (Object.keys(data).length === 0) {
+      return apiError(400, 'validation', 'Tidak ada perubahan yang dikirim.');
+    }
 
     if (!(await patchRow(gate.access.auth, 'organizations', orgId, data))) {
       return apiError(500, 'unavailable', 'Gagal menyimpan organisasi. Coba lagi.');

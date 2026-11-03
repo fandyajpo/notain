@@ -30,6 +30,25 @@ import type { Env, PagesFunction } from '../_lib/types';
  * in this architecture, and membership — not row permissions — is the gate.
  */
 
+/**
+ * Server-generated public-URL key: the ASCII slug of the org name plus a
+ * deterministic slice of the org id, so two orgs named alike (or identical
+ * names created concurrently) can never collide on the unique `bySlug` index.
+ * Kept in step with `scripts/ensure-user-profile-org-model.mjs`, which
+ * backfills the same rule for orgs created before this column existed.
+ */
+function slugFor(name: string, orgId: string): string {
+  const base =
+    name
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40) || 'org';
+  return `${base}-${orgId.slice(4, 8)}`;
+}
+
 const ORG_ID_PATTERN = /^org_[0-9a-f]{16}$/;
 const NAME_MAX = 128;
 
@@ -250,6 +269,15 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     {
       name,
       ownerId: session.userId,
+      // The org's contact identity block: the email seeds from the creator's
+      // login email, everything else starts empty and is owner-edited later.
+      slug: slugFor(name, orgId),
+      email: session.email,
+      phone: '',
+      website: '',
+      address: null,
+      taxId: null,
+      logoFileId: null,
       // Billing is per organization: every new org starts free. Nothing a
       // caller sends here can bootstrap a plan — only checkout/settlement
       // (API key, server-priced) ever writes these two columns.
@@ -324,6 +352,32 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     // profile Function creates the row on the first settings save. The owner
     // membership above is the part that must not fail, and it succeeded.
     console.error(`org.create: profile row failed for ${orgId}`);
+  }
+
+  // The letterhead row ($id = orgId) backs what this org's invoices print.
+  // Non-fatal: GET/PUT /api/orgs/<id>/letterhead creates it on demand, and
+  // the ensure script backfills orgs that predate this table.
+  const letterhead = await createRow(
+    auth,
+    'letterheads',
+    orgId,
+    {
+      businessName: name,
+      logoFileId: null,
+      headerTitle: '',
+      address: null,
+      phone: '',
+      email: session.email,
+      website: '',
+      footerText: '',
+      primaryColor: '',
+      secondaryColor: '',
+      updatedAt: now,
+    },
+    [],
+  );
+  if (!letterhead) {
+    console.error(`org.create: letterhead row failed for ${orgId}`);
   }
 
   await writeAudit(env, {
