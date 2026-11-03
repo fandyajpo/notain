@@ -87,11 +87,31 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (!gate.ok) return gate.response;
   const { auth } = gate.access;
   // The plan is the ORGANIZATION's; read once and project onto both responses.
-  const plan = planColumns(await readOrg(auth, gate.access.orgId, env));
+  const orgRow = await readOrg(auth, gate.access.orgId, env);
+  const plan = planColumns(orgRow);
 
   if (request.method === 'GET') {
     const row = await getRow(auth, 'profiles', gate.access.orgId, env);
-    if (!row) return apiError(404, 'not_found', 'Profil tidak ditemukan.');
+    // New organizations no longer carry a legacy profile row (org-create
+    // stopped seeding it): synthesize the view from the ORGANIZATION row —
+    // name + contact block + logo — so every org-scoped reader keeps working
+    // without a 404. `name` follows the business name; the person's identity
+    // lives on /api/profile/user. The org email is its own data and is never
+    // seeded from a login address.
+    if (!row) {
+      const str = (key: string): string | null =>
+        typeof orgRow?.[key] === 'string' && (orgRow[key] as string) !== ''
+          ? (orgRow[key] as string)
+          : null;
+      const synthesized = {
+        name: str('name') ?? '',
+        phone: str('phone') ?? '',
+        address: str('address'),
+        email: str('email'),
+        logoFileId: str('logoFileId'),
+      };
+      return json(200, profileView(synthesized, plan), { 'cache-control': 'no-store' });
+    }
     // Personalised to the org's members; never a shared cache. The row is
     // projected — never echoed — so legacy business columns cannot leak.
     return json(200, profileView(row, plan), { 'cache-control': 'no-store' });
