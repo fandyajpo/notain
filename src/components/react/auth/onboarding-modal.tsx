@@ -77,7 +77,7 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
     setBusinessName((previous) =>
       businessTouched.current || previous !== '' ? previous : existingBusiness || previous,
     );
-  }, [identity, profile, activeOrg]);
+  }, [identity, activeOrg]);
 
   const currentName = name;
   const currentBusiness = businessName;
