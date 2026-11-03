@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useProfile, useSaveProfile } from '../../../lib/query/hooks/use-profile';
@@ -56,19 +56,32 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
   const nameIds = useFieldIds();
   const businessIds = useFieldIds();
 
-  // Pre-fill from whatever already exists. The account name prefers the
-  // SHARED identity (what onboarding writes and Kelola Profil edits); the
-  // legacy per-org profile row is the fallback for accounts onboarded before
-  // that row existed. The business name is the active org's name — never a
-  // profile field.
-  const currentName = name || identity?.username || profile?.name || '';
   const activeOrg = orgs?.orgs.find((candidate) => candidate.id === getActiveOrgId()) ?? null;
   const orgName = activeOrg?.name ?? '';
   // Only the OWNER may rename the org (the server answers 403 otherwise), so
   // a member who reaches this screen gets a read-only field instead of a
   // submit that can never succeed.
   const canRenameOrg = createMode || activeOrg?.isOwner === true;
-  const currentBusiness = businessName || orgName;
+
+  // Pre-fill ONCE, from whatever already exists: the account name prefers the
+  // shared identity (or the legacy org profile), the business name is the
+  // active org's name. It has to be copied into state rather than read through
+  // a fallback on every render — otherwise clearing the field would instantly
+  // re-fill it with the Google/OAuth name, and the input would not be free.
+  const prefilled = useRef(false);
+  useEffect(() => {
+    if (prefilled.current) return;
+    const existingName = identity?.username || profile?.name || '';
+    const existingBusiness = activeOrg?.name ?? '';
+    if (existingName !== '') setName((previous) => (previous === '' ? existingName : previous));
+    if (existingBusiness !== '') {
+      setBusinessName((previous) => (previous === '' ? existingBusiness : previous));
+    }
+    prefilled.current = true;
+  }, [identity, profile, activeOrg]);
+
+  const currentName = name;
+  const currentBusiness = businessName;
 
   async function handleComplete() {
     const trimmedName = currentName.trim();
