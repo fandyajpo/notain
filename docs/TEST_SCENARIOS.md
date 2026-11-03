@@ -17,7 +17,7 @@ Priority legend: **P1** = do before next payment/launch milestone; **P2** = next
 
 ### TS-01 — Cross-user session confusion (SEC-001) · P1 · integration testing
 
-- **Related finding:** SEC-001 — `singleFlight(\`session:${token.slice(0,8)}\`)` in `functions/_lib/appwrite.ts:45` shares one in-flight verification across *different* tokens.
+- **Related finding:** SEC-001 — `singleFlight(\`session:${token.slice(0,8)}\`)`in`functions/_lib/appwrite.ts:45` shares one in-flight verification across _different_ tokens.
 - **Objective:** Prove (or refute) that two users verifying concurrently on a cold isolate receive their own sessions.
 - **Preconditions:** Two independent accounts (A, B), each owner of its own org with at least one invoice. Deployed site (multiple isolates in the fleet). A way to force cache misses: fresh isolate after a deploy, or tokens older than `QUOTA_SESSION_CACHE_TTL_MS` (60 s).
 - **Test steps:**
@@ -25,7 +25,7 @@ Priority legend: **P1** = do before next payment/launch milestone; **P2** = next
   2. From two machines (or two browser profiles), simultaneously (within the same network round trip) fire `GET /api/orgs` for account A and account B. Repeat the burst several times, varying which account fires first.
   3. Inspect each response: account A's org list must contain only A's orgs; likewise B.
   4. In a controlled variant on a single isolate (`wrangler pages dev` with a stub `GET /account` that logs the `X-Appwrite-JWT` per request), issue two concurrent `/api/orgs` calls with different JWTs and record which JWT the shared flight used.
-- **Expected result:** Each caller's response reflects only its own account. The controlled variant shows one upstream `GET /account` per *distinct* token — not one per *token prefix*.
+- **Expected result:** Each caller's response reflects only its own account. The controlled variant shows one upstream `GET /account` per _distinct_ token — not one per _token prefix_.
 - **Failure indicators:** Either response contains the other account's orgs; or the controlled variant shows both calls resolved from a single verification keyed by the shared `eyJ…` prefix (proving coalescence).
 - **Note:** Even a "clean" result must be treated carefully — the shared-key structure is confirmed by code; the scenario establishes whether the timing window is reachable in practice.
 
@@ -240,11 +240,11 @@ Priority legend: **P1** = do before next payment/launch milestone; **P2** = next
 
 ## Priority ordering
 
-| P1 (before payments go live / next deploy) | P2 | P3 |
-|---|---|---|
-| TS-01 session confusion | TS-02 revocation lag | TS-03, TS-18, TS-20, TS-22 |
-| TS-04 duplicate checkout | TS-08, TS-09, TS-10, TS-11 | |
-| TS-05 double settlement | TS-12, TS-13, TS-14, TS-16 | |
-| TS-06, TS-07 webhook correctness | TS-17, TS-21, TS-23 | |
+| P1 (before payments go live / next deploy) | P2                         | P3                         |
+| ------------------------------------------ | -------------------------- | -------------------------- |
+| TS-01 session confusion                    | TS-02 revocation lag       | TS-03, TS-18, TS-20, TS-22 |
+| TS-04 duplicate checkout                   | TS-08, TS-09, TS-10, TS-11 |                            |
+| TS-05 double settlement                    | TS-12, TS-13, TS-14, TS-16 |                            |
+| TS-06, TS-07 webhook correctness           | TS-17, TS-21, TS-23        |                            |
 
 All P1 scenarios are integration tests against a deployed Functions environment (preview deployment recommended); none require load-testing infrastructure except TS-09, which should stay on staging.
