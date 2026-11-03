@@ -1,8 +1,4 @@
-import {
-  freeInvoiceBudget,
-  isSubscriptionActive,
-  monthKey,
-} from '../../src/core/billing/plans';
+import { freeInvoiceBudget, isSubscriptionActive, monthKey } from '../../src/core/billing/plans';
 import { getRow, listRows, type ListQuery, type TableAuth } from './rows';
 import type { Env } from './types';
 
