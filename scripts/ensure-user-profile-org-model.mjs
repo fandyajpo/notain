@@ -271,8 +271,9 @@ try {
       const orgPatch = {};
       const slug = fillIfEmpty(org, 'slug', slugify(org.name ?? 'org', orgId));
       if (slug !== null) orgPatch.slug = slug;
-      const email = fillIfEmpty(org, 'email', profile?.email ?? null);
-      if (email !== null) orgPatch.email = email;
+      // Email is deliberately NOT backfilled: the legacy profile email was the
+      // creator's login address, and an organization's contact email is its own
+      // data, filled in by its owner in Settings.
       const phone = fillIfEmpty(org, 'phone', profile?.phone ?? null);
       if (phone !== null) orgPatch.phone = phone;
       const address = fillIfEmpty(org, 'address', profile?.address ?? null);

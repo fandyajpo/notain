@@ -281,7 +281,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       // The org's contact identity block: the email seeds from the creator's
       // login email, everything else starts empty and is owner-edited later.
       slug: slugFor(name, orgId),
-      email: session.email,
+      // The organization's contact email starts EMPTY: the owner's login email
+      // belongs to the person, not the business. Settings fills this in.
+      email: '',
       phone: '',
       website: '',
       address: null,
@@ -337,31 +339,10 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     return apiError(500, 'unavailable', 'Gagal membuat organisasi. Coba lagi.');
   }
 
-  // The business identity row, keyed by orgId (its document id IS the org).
-  // `name` seeds from the org name; everything else is filled in Settings.
-  // The org's name/type stay on the org row — this profile row only carries
-  // the contact fields, so the two can never drift.
-  const profile = await createRow(
-    auth,
-    'profiles',
-    orgId,
-    {
-      name,
-      phone: '',
-      address: null,
-      email: session.email,
-      logoFileId: null,
-      plan: 'free',
-      planExpiresAt: null,
-    },
-    [`read("user:${session.userId}")`],
-  );
-  if (!profile) {
-    // Non-fatal: an org without a profile row is still fully usable — the
-    // profile Function creates the row on the first settings save. The owner
-    // membership above is the part that must not fail, and it succeeded.
-    console.error(`org.create: profile row failed for ${orgId}`);
-  }
+  // No `profiles/<orgId>` row is created here on purpose: `Profiles` holds ONE
+  // row per ACCOUNT (keyed by userId). The organization's identity lives on
+  // this org row (name + contact block above), so creating a second profile
+  // row per org would show up as a duplicate person in the database.
 
   await writeAudit(env, {
     actorId: session.userId,

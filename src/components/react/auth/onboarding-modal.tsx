@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useProfile, useSaveProfile } from '../../../lib/query/hooks/use-profile';
 import { useUserIdentity } from '../../../lib/query/hooks/use-user-profile';
 import { useCreateOrg, useOrgs } from '../../../lib/query/hooks/use-orgs';
 import { isAppError } from '../../../core/shared/errors';
-import { EMPTY_PROFILE } from '../../../core/profile/model';
 import { getActiveOrgId } from '../../../app/active-org';
 import { renameOrg } from '../../../app/orgs';
 import { saveUserIdentity } from '../../../app/user-profile';
@@ -39,10 +37,8 @@ import { scheduleTour } from '../../../lib/tour/tour-store';
 export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) {
   const createMode = createOrg;
   // No org yet → no profile row to read; the create submit seeds it.
-  const { data: profile } = useProfile(!createMode);
   const { data: identity } = useUserIdentity();
   const { data: orgs } = useOrgs(!createMode);
-  const saveProfile = useSaveProfile();
   const createWorkspace = useCreateOrg();
   const orgCreated = useRef(false);
   const queryClient = useQueryClient();
@@ -73,7 +69,7 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
   const nameTouched = useRef(false);
   const businessTouched = useRef(false);
   useEffect(() => {
-    const existingName = identity?.username || profile?.name || '';
+    const existingName = identity?.username || '';
     const existingBusiness = activeOrg?.name ?? '';
     setName((previous) =>
       nameTouched.current || previous !== '' ? previous : existingName || previous,
@@ -120,7 +116,9 @@ export function OnboardingModal({ createOrg = false }: { createOrg?: boolean }) 
           await renameOrg(orgId, trimmedBusiness);
         }
       }
-      await saveProfile.mutateAsync({ ...(profile ?? EMPTY_PROFILE), name: trimmedName });
+      // The account name has ONE home: the shared identity below. No per-org
+      // profile row is written any more — that second row was why one sign-up
+      // showed up as two people in the database.
       // The username is the SHARED account identity (`userProfiles/<userId>`):
       // written here so it exists even before the first workspace does (in
       // create mode), and kept in sync whenever the name changes. Kelola

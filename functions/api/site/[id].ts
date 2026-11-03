@@ -148,7 +148,8 @@ function publicSiteFromOrg(
     typeof orgRow[key] === 'string' ? (orgRow[key] as string) : '';
   const phone = orgStr('phone') || profile?.phone || '';
   const address = orgStr('address') || profile?.address || '';
-  const email = orgStr('email') || profile?.email || '';
+  // The org's own contact email only — never the owner's login address.
+  const email = orgStr('email');
   const logoFileId = orgStr('logoFileId') || profile?.logoFileId || '';
   return {
     businessName: typeof orgRow.name === 'string' ? orgRow.name : '',
