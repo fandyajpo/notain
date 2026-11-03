@@ -216,4 +216,41 @@ describe('POST /api/payments/doku-notify', () => {
     // The money is recorded even though the upgrade needs manual resolution.
     expect(fake.rows.get('payments/' + INVOICE)?.status).toBe('paid');
   });
+
+  it('computes the expiry from the checkout-time snapshot, immune to interleaved settlements', async () => {
+    // The row carries what the ORGANIZATION looked like AT CHECKOUT: free,
+    // no expiry. The org row has since drifted (an admin grant, say) — if
+    // settlement read the live row it would start its 30 days on top of
+    // 2999, and a second settler landing after the first's patch would
+    // compound the extension again. The snapshot pins the baseline, so two
+    // racing settlements converge on the same value instead of stacking.
+    fake.rows.set('payments/' + INVOICE, {
+      $id: INVOICE,
+      orgId: ORG,
+      ownerId: 'user-1',
+      plan: 'pro',
+      amount: 29_000,
+      status: 'pending',
+      paidAt: null,
+      planAtCheckout: 'free',
+      planExpiresAtSnapshot: null,
+    });
+    fake.rows.set('organizations/' + ORG, {
+      $id: ORG,
+      name: 'Kopi Senja',
+      ownerId: 'user-1',
+      plan: 'pro',
+      planExpiresAt: '2999-01-01T00:00:00.000Z',
+    });
+
+    const response = await notify({ status: 'SUCCESS', amount: 29_000 });
+
+    expect(response.status).toBe(200);
+    const org = fake.rows.get('organizations/' + ORG);
+    const payment = fake.rows.get('payments/' + INVOICE);
+    const expiry = new Date(String(org?.planExpiresAt)).getTime();
+    const paidAt = new Date(String(payment?.paidAt)).getTime();
+    // A fresh 30-day period from payment time — NOT 30 days on top of 2999.
+    expect(expiry - paidAt).toBe(30 * 24 * 60 * 60 * 1000);
+  });
 });

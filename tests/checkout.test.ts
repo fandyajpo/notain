@@ -3,6 +3,7 @@ import { onRequest } from '../functions/api/payments/checkout';
 import { appwriteFake, requestUrl, type AppwriteFake } from './appwrite-fake';
 import type { Env } from '../functions/_lib/types';
 import { text } from '../src/core/shared/text';
+import { deterministicInvoiceNumber } from '../src/core/billing/plans';
 
 const CLIENT_ID = 'MCH-0001-10791114622547';
 const SECRET = 'sandbox-secret-key';
@@ -312,5 +313,51 @@ describe('POST /api/payments/checkout', () => {
 
     expect(response.status).toBe(500);
     expect(dokuCalls).toEqual([]);
+  });
+
+  it('stamps the checkout-time plan snapshot on the pending row', async () => {
+    seedOrg({ plan: 'pro', planExpiresAt: '2999-01-01T00:00:00.000Z' });
+
+    await handle(post({ plan: 'pro' }));
+
+    // Settlement must extend from THIS frozen baseline, not from whatever the
+    // org row says by the time the webhook lands — that frozen pair is what
+    // makes two racing settlements converge on one expiry instead of two.
+    const created = paymentWrites().find((write) => write.method === 'POST');
+    expect(created?.data.planAtCheckout).toBe('pro');
+    expect(created?.data.planExpiresAtSnapshot).toBe('2999-01-01T00:00:00.000Z');
+  });
+
+  it('uses a deterministic invoice number so concurrent checkouts collide on one id', async () => {
+    const response = await handle(post({ plan: 'pro' }));
+
+    expect(response.status).toBe(200);
+    // org + plan + month: two isolates racing derive the same id, and
+    // Appwrite's unique-id 409 — not a query race — picks the winner.
+    const created = paymentWrites().find((write) => write.method === 'POST');
+    expect(created?.id).toBe(deterministicInvoiceNumber('pro', ORG));
+  });
+
+  it('falls back to a fresh id when the deterministic slot holds a paid row', async () => {
+    // A renewal purchased earlier this month occupies the deterministic slot;
+    // the retry must not resurrect or reuse it — a disjoint random id keeps
+    // today's renewal behaviour intact.
+    const taken = deterministicInvoiceNumber('pro', ORG);
+    fake.rows.set(`payments/${taken}`, {
+      $id: taken,
+      orgId: ORG,
+      ownerId: 'user-1',
+      plan: 'pro',
+      amount: 49_000,
+      status: 'paid',
+      paidAt: '2026-11-01T00:00:00.000Z',
+    });
+
+    const response = await handle(post({ plan: 'pro' })); // renewal, same month
+
+    expect(response.status).toBe(200);
+    const created = paymentWrites().find((write) => write.method === 'POST');
+    expect(created?.id).not.toBe(taken);
+    expect(dokuCalls).toHaveLength(1);
   });
 });

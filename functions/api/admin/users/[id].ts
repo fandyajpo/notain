@@ -102,7 +102,9 @@ async function setUserStatus(
   }
   if (!response.ok) {
     const text = await response.text().catch(() => '');
-    return apiError(500, 'validation', `Gagal mengubah status user: ${text.slice(0, 200)}`);
+    // Upstream bodies carry provider internals — log, never echo.
+    console.error('admin.users: status change failed:', text.slice(0, 200));
+    return apiError(500, 'validation', 'Gagal mengubah status user.');
   }
 
   await writeAudit(env, {

@@ -37,12 +37,18 @@ export async function verifySession(request: Request, env: Env): Promise<Session
   if (!endpoint || !projectId) return null;
 
   const policy = quotaPolicy(env);
+  const tokenKey = await sha256Hex(token);
   if (policy.sessionCacheTtlMs > 0) {
-    const cached = cacheGet<Session>(`session:${await sha256Hex(token)}`);
+    const cached = cacheGet<Session>(`session:${tokenKey}`);
     if (cached) return cached;
   }
 
-  return singleFlight(`session:${token.slice(0, 8)}`, async () => {
+  // The single-flight key is the SAME token hash the cache uses — never a
+  // token prefix. Every JWT opens with the base64 of its header, so all
+  // tokens share their first characters: a prefix key would coalesce
+  // concurrent verifications of DIFFERENT users onto one flight and hand the
+  // first caller's session (its userId) to everyone else.
+  return singleFlight(`session:${tokenKey}`, async () => {
     try {
       const response = await fetch(`${endpoint}/account`, {
         headers: { 'X-Appwrite-Project': projectId, 'X-Appwrite-JWT': token },
@@ -55,7 +61,7 @@ export async function verifySession(request: Request, env: Env): Promise<Session
         email: typeof account.email === 'string' ? account.email : '',
       };
       if (policy.sessionCacheTtlMs > 0) {
-        cacheSet(`session:${await sha256Hex(token)}`, session, policy.sessionCacheTtlMs);
+        cacheSet(`session:${tokenKey}`, session, policy.sessionCacheTtlMs);
       }
       return session;
     } catch {

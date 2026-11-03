@@ -10,6 +10,7 @@ import { ID_SEGMENT_PATTERN } from '../../../src/lib/edit-route';
 import { isBusinessSubtypeSlug } from '../../../src/core/business/taxonomy';
 import { getRow, tableAuth } from '../../_lib/rows';
 import { apiError, json } from '../../_lib/http';
+import { enforceLimit, requestKey } from '../../_lib/quota';
 import { isSubscriptionActive } from '../../../src/core/billing/plans';
 import { isAdminUser } from '../../_lib/admin';
 import type { Env, PagesFunction } from '../../_lib/types';
@@ -38,6 +39,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
   if (request.method !== 'GET') {
     return apiError(405, 'method_not_allowed', 'Metode ini tidak didukung.', { allow: 'GET' });
   }
+
+  // Public + unauthenticated + 3–5 Appwrite reads per hit (invoice, org,
+  // profile, template): the same cost fence `GET /api/site/<id>` applies.
+  // 60/min per IP is far above any real visitor's page load; a loop over
+  // guessed ids must not burn the Appwrite read quota unbounded.
+  const limited = enforceLimit('invoice-read', requestKey(request), env);
+  if (limited) return limited;
 
   const id = typeof params.id === 'string' ? params.id : '';
   if (!ID_SEGMENT_PATTERN.test(id)) {

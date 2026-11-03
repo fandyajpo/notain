@@ -45,6 +45,17 @@ export type PaymentRow = {
   amount?: number | null;
   status?: string | null;
   paidAt?: string | null;
+  /**
+   * Frozen at checkout by the checkout Function: the ORGANIZATION's plan and
+   * expiry at order time. Settlement computes the new expiry from THIS
+   * baseline, so two isolates settling the same order race to write the SAME
+   * value (idempotent) instead of each reading the org after the other's
+   * patch and compounding the extension. Rows created before these columns
+   * existed simply lack them — the `in` check below falls back to the org's
+   * live values for those.
+   */
+  planAtCheckout?: string | null;
+  planExpiresAtSnapshot?: string | null;
 };
 
 export type OrgRow = {
@@ -159,9 +170,21 @@ export async function settlePayment(
     return { kind: 'org_missing', paidAt };
   }
 
+  // The expiry baseline is the checkout-time snapshot frozen on the payment
+  // row (see the type above), not the org's live state: two isolates settling
+  // the same order — the webhook and the Check-Status probe, or two webhook
+  // deliveries landing on different isolates — both compute the SAME expiry
+  // and their org patches converge on one value. Reading the org at settle
+  // time (the pre-snapshot behaviour, kept for legacy rows) is what allowed
+  // the second settler to extend on top of the first's write.
+  const hasSnapshot = 'planExpiresAtSnapshot' in payment;
+  const currentPlan = hasSnapshot ? (payment.planAtCheckout ?? 'free') : (org.plan ?? 'free');
+  const currentExpiresAt = hasSnapshot
+    ? (payment.planExpiresAtSnapshot ?? null)
+    : (org.planExpiresAt ?? null);
   const expiry = computePlanExpiry({
-    currentPlan: org.plan ?? 'free',
-    currentExpiresAt: org.planExpiresAt ?? null,
+    currentPlan,
+    currentExpiresAt,
     newPlan: plan,
     paidAt: new Date(paidAt),
   });

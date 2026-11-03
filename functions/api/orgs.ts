@@ -104,13 +104,56 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       return apiError(503, 'unavailable', 'Undangan belum bisa dibaca. Coba lagi.');
     }
 
-    // One org row per membership — bounded by the 100-membership cap above,
-    // so this is a handful of id lookups for any real account, never a scan.
+    // Every org id the two membership lists reference, read in BATCHES of one
+    // `equal $id IN […]` query (chunks ≤ Appwrite's 100-row page cap) instead
+    // of one document read per row — up to ~150 sequential reads per
+    // switcher load became two queries. A referenced org that comes back
+    // missing (deleted under a stale membership) is skipped, exactly as the
+    // old per-id read skipped it.
+    const referencedIds = new Set<string>();
+    for (const membership of memberships) {
+      const orgId = typeof membership.orgId === 'string' ? membership.orgId : '';
+      if (ORG_ID_PATTERN.test(orgId)) referencedIds.add(orgId);
+    }
+    for (const invite of pendingRows) {
+      const orgId = typeof invite.orgId === 'string' ? invite.orgId : '';
+      if (ORG_ID_PATTERN.test(orgId)) referencedIds.add(orgId);
+    }
+    const ids = [...referencedIds];
+    const orgById = new Map<string, Record<string, unknown> & { $id: string }>();
+    let batchFailed = false;
+    for (let start = 0; start < ids.length; start += 100) {
+      const chunk = ids.slice(start, start + 100);
+      const rows = await listRows(
+        auth,
+        'organizations',
+        [
+          { method: 'equal', attribute: '$id', values: chunk },
+          { method: 'limit', values: [chunk.length] },
+        ],
+        env,
+      );
+      if (rows === null) {
+        batchFailed = true;
+        break;
+      }
+      for (const row of rows) orgById.set(row.$id, row);
+    }
+    if (batchFailed) {
+      // Provider failure on the batched read: fall back to the per-id walk so
+      // one unreachable page degrades to "some orgs missing", not "no orgs".
+      for (const id of ids) {
+        if (orgById.has(id)) continue;
+        const org = await getRow(auth, 'organizations', id, env);
+        if (org) orgById.set(id, org);
+      }
+    }
+
     const orgs = [];
     for (const membership of memberships) {
       const orgId = typeof membership.orgId === 'string' ? membership.orgId : '';
       if (!ORG_ID_PATTERN.test(orgId)) continue;
-      const org = await getRow(auth, 'organizations', orgId, env);
+      const org = orgById.get(orgId);
       if (!org) continue; // org deleted under a stale membership row — skip it
       const role = membership.role === 'owner' ? 'owner' : 'member';
       orgs.push(orgView(org, role, role === 'owner'));
@@ -120,7 +163,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     for (const invite of pendingRows) {
       const orgId = typeof invite.orgId === 'string' ? invite.orgId : '';
       if (!ORG_ID_PATTERN.test(orgId)) continue;
-      const org = await getRow(auth, 'organizations', orgId, env);
+      const org = orgById.get(orgId);
       if (!org) continue;
       pending.push({ orgId, name: typeof org.name === 'string' ? org.name : 'Organisasi' });
     }
@@ -240,7 +283,20 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   );
   if (!membership) {
     // Never leave an ownerless org behind: it would be undeletable by anyone.
-    await deleteRow(auth, 'organizations', orgId, env);
+    // If the compensation delete itself fails, surface it loudly — the audit
+    // row is what lets an admin find and remove the orphan.
+    const removed = await deleteRow(auth, 'organizations', orgId, env);
+    if (!removed) {
+      console.error(`org.create: ownerless org ${orgId} could not be cleaned up`);
+      await writeAudit(env, {
+        actorId: session.userId,
+        actorEmail: session.email,
+        action: 'org.create.compensation-failed',
+        targetType: 'organization',
+        targetId: orgId,
+        orgId,
+      });
+    }
     return apiError(500, 'unavailable', 'Gagal membuat organisasi. Coba lagi.');
   }
 
