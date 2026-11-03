@@ -5,9 +5,3 @@ package-lock.json
 coverage/
 # No prettier-plugin-svelte installed; .svelte files are kept hand-formatted.
 *.svelte
-
-# Audit artifacts are point-in-time records: reflowing their prose and tables
-# on every format run is churn, not care. Hand-maintained.
-docs/CODEBASE_AUDIT.md
-docs/CODEBASE_REMEDIATION.md
-docs/TEST_SCENARIOS.md
