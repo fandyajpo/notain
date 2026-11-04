@@ -164,7 +164,8 @@ function OrgSettingsContent() {
             <div>
               <p className="font-medium">Kontak usaha</p>
               <p className="text-sm text-muted">
-                Kontak ini tercetak di nota dan tampil di halaman usahamu. Kontak akunmu diatur terpisah.
+                Kontak ini tercetak di nota dan tampil di halaman usahamu. Kontak akunmu diatur
+                terpisah.
               </p>
             </div>
             <OrgContactEditor />

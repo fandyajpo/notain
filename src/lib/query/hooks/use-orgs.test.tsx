@@ -111,7 +111,11 @@ function CreateHarness({ switchTo = true }: { switchTo?: boolean }) {
 
 function DeleteHarness() {
   const remove = useDeleteOrg();
-  return <button type="button" onClick={() => remove.mutate(ORG.id)}>Hapus</button>;
+  return (
+    <button type="button" onClick={() => remove.mutate(ORG.id)}>
+      Hapus
+    </button>
+  );
 }
 
 beforeEach(() => {

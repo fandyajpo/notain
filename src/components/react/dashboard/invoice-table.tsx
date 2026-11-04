@@ -334,12 +334,9 @@ export function InvoiceTable() {
     if (!file || !invoice) return;
 
     if (file.size > PAYMENT_PROOF_MAX_BYTES) {
-      toast(
-        'Ukuran file maksimal 5 MB. Foto akan dikompres otomatis setelah dipilih.',
-        {
-          variant: 'error',
-        },
-      );
+      toast('Ukuran file maksimal 5 MB. Foto akan dikompres otomatis setelah dipilih.', {
+        variant: 'error',
+      });
       return;
     }
 
@@ -943,7 +940,8 @@ export function InvoiceTable() {
         ]}
       >
         <p className="text-sm text-muted">
-          Nota {pendingDelete?.invoiceNumber} untuk {pendingDelete?.customerName} akan dihapus permanen.
+          Nota {pendingDelete?.invoiceNumber} untuk {pendingDelete?.customerName} akan dihapus
+          permanen.
         </p>
       </Modal>
 
@@ -1013,7 +1011,8 @@ export function InvoiceTable() {
         ]}
       >
         <p className="text-sm text-muted">
-          Bukti pembayaran untuk nota {proofDelete?.invoiceNumber} akan dihapus. Pelanggan bisa mengirim bukti baru lewat tautan nota.
+          Bukti pembayaran untuk nota {proofDelete?.invoiceNumber} akan dihapus. Pelanggan bisa
+          mengirim bukti baru lewat tautan nota.
         </p>
       </Modal>
     </div>

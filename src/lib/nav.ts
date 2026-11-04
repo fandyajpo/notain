@@ -79,7 +79,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     items: [
       { href: '/billing', label: 'Langganan', Icon: CreditCard },
       { href: '/api-keys', label: 'Integrasi', Icon: KeyRound },
-      { href: '/settings', label: 'Pengaturan', Icon: Settings }
+      { href: '/settings', label: 'Pengaturan', Icon: Settings },
     ],
   },
 ];

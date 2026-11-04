@@ -8,14 +8,14 @@ const CASES = [
     title: 'Warung dan usaha kecil',
     example: 'Warung, toko, katering',
     description:
-      'Buat nota harian, kirim lewat WhatsApp, dan simpan riwayatnya di akunmu. Bisa dibuka lagi saat ganti HP.'
+      'Buat nota harian, kirim lewat WhatsApp, dan simpan riwayatnya di akunmu. Bisa dibuka lagi saat ganti HP.',
   },
   {
     icon: Briefcase,
     title: 'Pekerja lepas',
     example: 'Desainer, developer, penulis',
     description:
-      'Buat nota untuk tiap proyek dengan nama usaha dan catatanmu. Tandai pembayaran yang sudah masuk.'
+      'Buat nota untuk tiap proyek dengan nama usaha dan catatanmu. Tandai pembayaran yang sudah masuk.',
   },
   {
     icon: Wrench,
@@ -29,7 +29,7 @@ const CASES = [
     title: 'Toko online dan reseller',
     example: 'Toko online, reseller, distributor',
     description:
-      'Impor daftar pelanggan dan barang dari Excel. Pakai lagi katalog saat membuat nota dan cek pembayaran yang belum masuk.'
+      'Impor daftar pelanggan dan barang dari Excel. Pakai lagi katalog saat membuat nota dan cek pembayaran yang belum masuk.',
   },
 ] as const;
 

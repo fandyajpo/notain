@@ -17,7 +17,11 @@ const HIGHLIGHTS: Record<(typeof PLAN_TIER_IDS)[number], readonly string[]> = {
     'Data pelanggan, katalog & template sendiri',
   ],
   pro: ['Laporan usaha dan tautan invoice', 'Penyimpanan lebih besar', 'Buat beberapa usaha'],
-  business: ['Kunci API untuk integrasi', 'Pemberitahuan perubahan invoice', 'Batas penggunaan lebih tinggi'],
+  business: [
+    'Kunci API untuk integrasi',
+    'Pemberitahuan perubahan invoice',
+    'Batas penggunaan lebih tinggi',
+  ],
 };
 
 const TIER_NAMES = { free: 'Free', pro: 'Pro', business: 'Business' } as const;

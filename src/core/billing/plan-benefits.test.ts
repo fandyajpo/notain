@@ -23,9 +23,7 @@ describe('plan display copy', () => {
     expect(PLAN_BENEFITS.free[0]).toBe(
       `${FREE_PLAN_LIMITS.invoicesPerMonth} invoice baru per bulan`,
     );
-    expect(PLAN_BENEFITS.free).toContain(
-      'Template bawaan, buat template sendiri, dan upload logo',
-    );
+    expect(PLAN_BENEFITS.free).toContain('Template bawaan, buat template sendiri, dan upload logo');
     expect(PLAN_BENEFITS.pro).not.toContain('Buat template sendiri dengan warna dan logo usaha');
   });
 

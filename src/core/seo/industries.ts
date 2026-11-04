@@ -123,7 +123,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       },
       {
         title: 'Halaman usaha untuk bio',
-        body: 'Halaman usaha menampilkan daftar jasa dan kontak. Bagikan tautannya di bio Instagram.'
+        body: 'Halaman usaha menampilkan daftar jasa dan kontak. Bagikan tautannya di bio Instagram.',
       },
     ],
     workflow: [
@@ -192,7 +192,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     exampleLines: [
       'Pembuatan halaman promosi, 1 proyek, Rp4.500.000',
       'Integrasi pembayaran, 1 sesi, Rp2.000.000',
-       'Perawatan bulanan, 1 bulan, Rp750.000',
+      'Perawatan bulanan, 1 bulan, Rp750.000',
     ],
     exampleNote: 'Ini contoh invoice. Sesuaikan dengan pekerjaan dan tarifmu.',
     pain: 'Proyek software sering dibayar per tahap. Buat invoice terpisah untuk tiap tahap agar tagihan dan status pembayarannya mudah dicek.',
@@ -293,7 +293,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       },
       {
         title: 'Kirim via WhatsApp',
-        body: 'Kirim PDF nota ke pembeli lewat WhatsApp dengan pesan yang sudah disiapkan.'
+        body: 'Kirim PDF nota ke pembeli lewat WhatsApp dengan pesan yang sudah disiapkan.',
       },
       {
         title: 'Status pesanan terlacak',
@@ -355,7 +355,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       },
       {
         title: 'Halaman usaha untuk bio',
-        body: 'Halaman usaha berisi daftar jasa dan kontak. Bagikan tautannya di media sosial atau email.'
+        body: 'Halaman usaha berisi daftar jasa dan kontak. Bagikan tautannya di media sosial atau email.',
       },
     ],
     workflow: [
@@ -409,7 +409,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       },
       {
         title: 'Daftar pekerjaan & tarif',
-        body: 'Simpan harga ganti oli, servis rutin, dan cuci kendaraan di katalog agar mudah dipakai lagi.'
+        body: 'Simpan harga ganti oli, servis rutin, dan cuci kendaraan di katalog agar mudah dipakai lagi.',
       },
       {
         title: 'Riwayat per pelanggan',
@@ -463,15 +463,15 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     features: [
       {
         title: 'Daftar treatment & tarif',
-        body: 'Simpan layanan seperti potong rambut, creambath, dan facial beserta harganya untuk dipakai lagi.'
+        body: 'Simpan layanan seperti potong rambut, creambath, dan facial beserta harganya untuk dipakai lagi.',
       },
       {
         title: 'Nota per kunjungan',
-        body: 'Buat satu nota untuk tiap kunjungan, lengkap dengan layanan dan total pembayaran.'
+        body: 'Buat satu nota untuk tiap kunjungan, lengkap dengan layanan dan total pembayaran.',
       },
       {
         title: 'Nota via WhatsApp',
-        body: 'Kirim nota lewat WhatsApp. Pelanggan tidak perlu aplikasi tambahan atau menunggu struk dicetak.'
+        body: 'Kirim nota lewat WhatsApp. Pelanggan tidak perlu aplikasi tambahan atau menunggu struk dicetak.',
       },
     ],
     workflow: [

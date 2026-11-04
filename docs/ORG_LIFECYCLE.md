@@ -22,18 +22,18 @@ This is not a database transaction. The existing server wrapper addresses Appwri
 
 ## Verification scenarios
 
-| Scenario | Implementation / verification |
-| --- | --- |
-| New account can finish sign-up without an organization or personal-name prompt | AuthGate no longer mounts onboarding; OrgGate displays the optional empty state. Static inspection; runtime test not run here. |
-| No-org user can visit dashboard and organization-dependent menu pages | Shared OrgGate empty state blocks tenant data from mounting and offers the create modal. Static inspection; runtime test not run here. |
-| Settings remains available for personal profile | AuthGate opts settings into no-org rendering; identity endpoint is session-scoped. Static inspection; runtime test not run here. |
-| Create organization in modal | Name-only validated form calls existing create mutation and closes on success; mutation sets active org and refreshes org list. Static inspection; runtime test not run here. |
-| Access features after creation | Owner membership is created by existing endpoint; shared cache/selection switch activates it. Static inspection; runtime test not run here. |
-| Owner deletes organization; active and pending members are removed | Existing cascade starts with all membership rows; test fixture now includes a pending invitation. Test authored, not executed here. |
-| Organization-owned data is deleted | Existing cascade covers invoices, customers, catalog, templates, stats, payments, audit logs, legacy org profile, logo and organization. Existing cascade test asserts key rows; not executed here. |
-| Owner and former members retain accounts and personal profiles | Cascade only removes `profiles/<orgId>`; a regression assertion verifies `profiles/<ownerId>` remains. Test authored, not executed here. |
-| Former members return to no-organization state | Their memberships are removed; subsequent org list is empty and OrgGate displays the shared state. Static inspection; runtime test not run here. |
-| Deletion never forces personal onboarding again | Personal onboarding gate/component removed; no profile-completion redirect remains. Static inspection; runtime test not run here. |
-| Admin access remains independent | `/admin/*` bypasses OrgGate and retains AdminGate plus API checks. Static inspection; runtime test not run here. |
+| Scenario                                                                       | Implementation / verification                                                                                                                                                                       |
+| ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| New account can finish sign-up without an organization or personal-name prompt | AuthGate no longer mounts onboarding; OrgGate displays the optional empty state. Static inspection; runtime test not run here.                                                                      |
+| No-org user can visit dashboard and organization-dependent menu pages          | Shared OrgGate empty state blocks tenant data from mounting and offers the create modal. Static inspection; runtime test not run here.                                                              |
+| Settings remains available for personal profile                                | AuthGate opts settings into no-org rendering; identity endpoint is session-scoped. Static inspection; runtime test not run here.                                                                    |
+| Create organization in modal                                                   | Name-only validated form calls existing create mutation and closes on success; mutation sets active org and refreshes org list. Static inspection; runtime test not run here.                       |
+| Access features after creation                                                 | Owner membership is created by existing endpoint; shared cache/selection switch activates it. Static inspection; runtime test not run here.                                                         |
+| Owner deletes organization; active and pending members are removed             | Existing cascade starts with all membership rows; test fixture now includes a pending invitation. Test authored, not executed here.                                                                 |
+| Organization-owned data is deleted                                             | Existing cascade covers invoices, customers, catalog, templates, stats, payments, audit logs, legacy org profile, logo and organization. Existing cascade test asserts key rows; not executed here. |
+| Owner and former members retain accounts and personal profiles                 | Cascade only removes `profiles/<orgId>`; a regression assertion verifies `profiles/<ownerId>` remains. Test authored, not executed here.                                                            |
+| Former members return to no-organization state                                 | Their memberships are removed; subsequent org list is empty and OrgGate displays the shared state. Static inspection; runtime test not run here.                                                    |
+| Deletion never forces personal onboarding again                                | Personal onboarding gate/component removed; no profile-completion redirect remains. Static inspection; runtime test not run here.                                                                   |
+| Admin access remains independent                                               | `/admin/*` bypasses OrgGate and retains AdminGate plus API checks. Static inspection; runtime test not run here.                                                                                    |
 
 Run `npm run test`, `npm run typecheck`, `npm run lint`, and `npm run format` locally or in CI to execute the verification suite. No production deletion was run.

@@ -3,6 +3,9 @@ import DashboardLayout from '../../layouts/DashboardLayout.astro';
 import { OrgSettingsApp } from '../../components/react/settings/settings-app';
 ---
 
-<DashboardLayout title="Pengaturan usaha | Notain" description="Atur nama, kontak, dan anggota usahamu di Notain.">
+<DashboardLayout
+  title="Pengaturan usaha | Notain"
+  description="Atur nama, kontak, dan anggota usahamu di Notain."
+>
   <OrgSettingsApp client:only="react" />
 </DashboardLayout>

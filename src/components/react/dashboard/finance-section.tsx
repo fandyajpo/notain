@@ -141,7 +141,8 @@ export function FinanceSection({ businessName, enabled = true }: Props) {
           <>
             {finance.data.truncated && (
               <Notice variant="warning">
-                Nota pada periode ini melebihi batas tampilan. Persempit periode supaya angkanya lebih akurat.
+                Nota pada periode ini melebihi batas tampilan. Persempit periode supaya angkanya
+                lebih akurat.
               </Notice>
             )}
             <SummaryCards summary={finance.data.summary} />

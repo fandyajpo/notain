@@ -72,8 +72,7 @@ export const TOURS: Record<string, TourDef> = {
       {
         target: 'invoices-search',
         title: 'Cari cepat',
-        description:
-          'Cari berdasarkan nomor nota, nama pelanggan, atau barang.',
+        description: 'Cari berdasarkan nomor nota, nama pelanggan, atau barang.',
         side: 'bottom',
       },
       {
@@ -170,8 +169,7 @@ export const TOURS: Record<string, TourDef> = {
       {
         target: 'settings-profile',
         title: 'Profil kamu',
-        description:
-          'Isi nama, kontak, dan logo usaha. Data ini akan dipakai di nota berikutnya.',
+        description: 'Isi nama, kontak, dan logo usaha. Data ini akan dipakai di nota berikutnya.',
         side: 'bottom',
       },
       {
