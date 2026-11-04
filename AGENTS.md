@@ -38,11 +38,13 @@ request is anonymous. Pointing the SDK back at Appwrite's domain reintroduces
 that bug.
 
 Two calls deliberately bypass the proxy: the OAuth **start**
-(`startGoogleOAuth`) goes straight to Appwrite because the `a_oauth2_*` state
-cookie it sets must live on Appwrite's domain for its callback to read it, and
-Google sign-in finishes on `/auth/callback`, which exchanges the returned
-`userId`/`secret` for a session (`account.createSession`) — Appwrite's token
-flow returns credentials, not a session, so that exchange is mandatory.
+(`startGoogleOAuth`/`startDiscordOAuth`) goes straight to Appwrite because the
+`a_oauth2_*` state cookie it sets must live on Appwrite's domain for its
+callback to read it, and sign-in finishes on `/auth/callback`, which exchanges
+the returned `userId`/`secret` for a session (`account.createSession`) —
+Appwrite's token flow returns credentials, not a session, so that exchange is
+mandatory. The exchange is provider-agnostic; only the start URL names the
+provider (`…/oauth2/google`, `…/oauth2/discord`).
 
 ## Documentation
 

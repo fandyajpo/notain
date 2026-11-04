@@ -59,16 +59,19 @@ export interface AuthRepository {
   /** Completes the reset with the `userId`/`secret` from the emailed link. */
   completeRecovery(input: RecoveryCompletion): Promise<void>;
   /**
-   * Sends the browser to the OAuth provider ("Masuk dengan Google").
+   * Sends the browser to an OAuth provider (Google or Discord).
    * Full-page redirect: this resolves when the browser leaves, not with a
    * session.
    */
   startGoogleOAuth(redirects: OAuthRedirects): void;
+  /** Same round trip as `startGoogleOAuth`, via Discord. */
+  startDiscordOAuth(redirects: OAuthRedirects): void;
   /**
    * Exchanges the `userId`/`secret` pair Appwrite puts on the success URL for a
-   * real session. Without this the round trip ends signed out: Appwrite's token
-   * flow hands the credentials to the landing page and expects the client to
-   * trade them in, and nothing else does it.
+   * real session — for any OAuth provider (Google, Discord, …). Without this
+   * the round trip ends signed out: Appwrite's token flow hands the
+   * credentials to the landing page and expects the client to trade them in,
+   * and nothing else does it.
    */
   completeGoogleOAuth(completion: OAuthCompletion): Promise<SessionUser>;
 }

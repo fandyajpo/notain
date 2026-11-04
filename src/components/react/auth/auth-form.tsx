@@ -1,7 +1,7 @@
 import { type AnyFieldApi, useForm } from '@tanstack/react-form';
 import { Link } from 'lucide-react';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { signInWithGoogle } from '../../../app/auth';
+import { signInWithDiscord, signInWithGoogle } from '../../../app/auth';
 import {
   forgotPasswordSchema,
   resetPasswordSchema,
@@ -150,7 +150,13 @@ function SignInForm({ redirectTo }: { redirectTo: string }) {
       serverError={serverError}
       submitLabel="Masuk"
       redirectTo={redirectTo}
-      oauthSlot={<GoogleAuthSlot redirectTo={redirectTo} label="Masuk dengan Google" />}
+      oauthSlot={
+        <OAuthSlot
+          redirectTo={redirectTo}
+          googleLabel="Masuk dengan Google"
+          discordLabel="Masuk dengan Discord"
+        />
+      }
       altPrompt="Belum punya akun?"
       altLabel="Daftar gratis"
       altHref="/register"
@@ -229,7 +235,13 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
       serverError={serverError}
       submitLabel="Buat akun"
       redirectTo={redirectTo}
-      oauthSlot={<GoogleAuthSlot redirectTo={redirectTo} label="Daftar dengan Google" />}
+      oauthSlot={
+        <OAuthSlot
+          redirectTo={redirectTo}
+          googleLabel="Daftar dengan Google"
+          discordLabel="Daftar dengan Discord"
+        />
+      }
       altPrompt="Sudah punya akun?"
       altLabel="Masuk"
       altHref="/login"
@@ -544,14 +556,26 @@ function FormShell({
 }
 
 /**
- * Divider + Google button under the email submit on both auth forms.
+ * Divider + the social buttons (Google, Discord) under the email submit on both
+ * auth forms.
  *
- * The click starts a full-page OAuth hop (`signInWithGoogle`), so the page
- * unloads before any pending state could matter — no spinner, no disabled
- * window. Google creates the account on first sign-in, which is why the same
- * slot serves both the sign-in and the sign-up form.
+ * The click starts a full-page OAuth hop (`signInWithGoogle` /
+ * `signInWithDiscord`), so the page unloads before any pending state could
+ * matter — no spinner, no disabled window. Both providers create the account on
+ * first sign-in, which is why the same slot serves both the sign-in and the
+ * sign-up form.
  */
-function GoogleAuthSlot({ redirectTo, label }: { redirectTo: string; label: string }) {
+function OAuthSlot({
+  redirectTo,
+  googleLabel,
+  discordLabel,
+}: {
+  redirectTo: string;
+  googleLabel: string;
+  discordLabel: string;
+}) {
+  const buttonClass =
+    'inline-flex w-full items-center justify-center gap-2 rounded-control border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent-soft focus-ring';
   return (
     <>
       <div className="flex items-center gap-3 text-xs uppercase tracking-wider text-muted">
@@ -559,14 +583,16 @@ function GoogleAuthSlot({ redirectTo, label }: { redirectTo: string; label: stri
         <span>atau</span>
         <span className="h-px flex-1 bg-border" aria-hidden="true" />
       </div>
-      <button
-        type="button"
-        onClick={() => signInWithGoogle(redirectTo)}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-control border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent-soft focus-ring"
-      >
-        <GoogleGIcon />
-        {label}
-      </button>
+      <div className="flex flex-col gap-2">
+        <button type="button" onClick={() => signInWithGoogle(redirectTo)} className={buttonClass}>
+          <GoogleGIcon />
+          {googleLabel}
+        </button>
+        <button type="button" onClick={() => signInWithDiscord(redirectTo)} className={buttonClass}>
+          <DiscordIcon />
+          {discordLabel}
+        </button>
+      </div>
     </>
   );
 }
@@ -595,24 +621,40 @@ function GoogleGIcon() {
   );
 }
 
+/** The Discord blurple mark — lucide ships no brand icons. */
+function DiscordIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 shrink-0">
+      <path
+        fill="#5865F2"
+        d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.058a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.291.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"
+      />
+    </svg>
+  );
+}
+
 /**
- * Reads the reason Appwrite dropped the user back on this page after a Google
- * round trip.
+ * Reads the reason Appwrite dropped the user back on this page after an OAuth
+ * round trip (Google or Discord).
  *
  * Two very different landings produce `/login`: Appwrite's own `failure`
- * redirect (tagged `google_fail=1`, possibly with `error`/`error_description`
- * appended — Appwrite's query handling varies, so any of the three counts),
- * and a bare visit to /login, which carries neither and stays silent. The
- * session-gate bounce always arrives as `?next=…` and must NOT read as an
- * OAuth failure — that one means the round trip succeeded but the session
- * cookie did not reach the SDK.
+ * redirect (tagged `google_fail=1` / `discord_fail=1`, possibly with
+ * `error`/`error_description` appended — Appwrite's query handling varies, so
+ * any of the three counts), and a bare visit to /login, which carries neither
+ * and stays silent. The session-gate bounce always arrives as `?next=…` and
+ * must NOT read as an OAuth failure — that one means the round trip succeeded
+ * but the session cookie did not reach the SDK.
  */
 function readOauthFailure(): string | null {
   if (typeof window === 'undefined') return null;
   const params = new URLSearchParams(window.location.search);
-  if (!params.has('google_fail') && !params.has('error')) return null;
+  const hasGoogle = params.has('google_fail');
+  const hasDiscord = params.has('discord_fail');
+  if (!hasGoogle && !hasDiscord && !params.has('error')) return null;
   const detail = params.get('error_description') || params.get('error');
-  const base = 'Masuk dengan Google gagal. Coba lagi, atau masuk dengan email dan kata sandi.';
+  const base = hasDiscord && !hasGoogle
+    ? 'Masuk dengan Discord gagal. Coba lagi, atau masuk dengan email dan kata sandi.'
+    : 'Masuk dengan Google gagal. Coba lagi, atau masuk dengan email dan kata sandi.';
   return detail ? `${base} (${detail})` : base;
 }
 

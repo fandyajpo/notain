@@ -12,16 +12,17 @@ import { AppError, ERROR_CODES } from '../core/shared/errors';
  * account, and the target carried across the hop.
  */
 
-const { startGoogleOAuth, completeGoogleOAuth } = vi.hoisted(() => ({
+const { startGoogleOAuth, startDiscordOAuth, completeGoogleOAuth } = vi.hoisted(() => ({
   startGoogleOAuth: vi.fn(),
+  startDiscordOAuth: vi.fn(),
   completeGoogleOAuth: vi.fn(),
 }));
 
 vi.mock('../infra/container', () => ({
-  container: { auth: { startGoogleOAuth, completeGoogleOAuth } },
+  container: { auth: { startGoogleOAuth, startDiscordOAuth, completeGoogleOAuth } },
 }));
 
-const { signInWithGoogle, completeGoogleOAuth: completeGoogleOAuthUseCase } =
+const { signInWithGoogle, signInWithDiscord, completeGoogleOAuth: completeGoogleOAuthUseCase } =
   await import('../app/auth');
 
 const USER = { id: 'user-1', email: 'budi@example.com', name: 'Budi' };
@@ -36,6 +37,7 @@ function cookieValue(name: string): string | null {
 
 beforeEach(() => {
   startGoogleOAuth.mockReset();
+  startDiscordOAuth.mockReset();
   completeGoogleOAuth.mockReset();
   // jsdom keeps cookies between tests; drop everything this flow writes.
   for (const entry of document.cookie.split('; ')) {
@@ -63,6 +65,30 @@ describe('signInWithGoogle', () => {
     signInWithGoogle('/login');
 
     expect(startGoogleOAuth.mock.calls[0]?.[0].success).toBe('http://localhost:3000/auth/callback');
+    expect(cookieValue('oauth_next')).toBe('/dashboard');
+  });
+});
+
+describe('signInWithDiscord', () => {
+  it('lands on the callback page and carries state + target in cookies', () => {
+    signInWithDiscord('/invoices?status=draft');
+
+    const redirects = startDiscordOAuth.mock.calls[0]?.[0];
+    expect(redirects.success).toBe('http://localhost:3000/auth/callback');
+    expect(redirects.failure).toBe('http://localhost:3000/login?discord_fail=1');
+    expect(redirects.state).toMatch(/^[0-9a-f]{32}$/);
+
+    expect(cookieValue('oauth_state')).toBe(redirects.state);
+    expect(cookieValue('oauth_next')).toBe('/invoices?status=draft');
+  });
+
+  it('falls back to the dashboard when the target is the login page itself', () => {
+    window.history.replaceState({}, '', '/login');
+    signInWithDiscord('/login');
+
+    expect(startDiscordOAuth.mock.calls[0]?.[0].success).toBe(
+      'http://localhost:3000/auth/callback',
+    );
     expect(cookieValue('oauth_next')).toBe('/dashboard');
   });
 });

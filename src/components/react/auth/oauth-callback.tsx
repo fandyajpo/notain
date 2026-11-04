@@ -5,12 +5,12 @@ import { Notice } from '../ui/notice';
 import { LoadingState } from '../ui/state';
 
 /**
- * The landing page of a Google round trip.
+ * The landing page of an OAuth round trip (Google or Discord).
  *
  * Appwrite sends the browser here with `userId`/`secret`/`state` on the query
  * string — credentials for a session, not the session itself. This island
  * trades them in and then forwards to wherever the user was heading. Without
- * this step the token flow ends signed out, which is exactly why every Google
+ * this step the token flow ends signed out, which is exactly why every OAuth
  * sign-in used to bounce off the dashboard back to `/login`.
  *
  * A missing or rejected `state` is a real failure (the cookie is gone, the link
@@ -28,7 +28,7 @@ export function OAuthCallback() {
     const state = params.get('state') ?? '';
 
     if (!userId || !secret) {
-      setError('Tautan masuk Google tidak lengkap. Coba masuk lagi dari halaman masuk.');
+      setError('Tautan masuk tidak lengkap. Coba masuk lagi dari halaman masuk.');
       return;
     }
 
@@ -41,7 +41,7 @@ export function OAuthCallback() {
         setError(
           typeof cause === 'object' && cause !== null && 'message' in cause
             ? String((cause as { message: unknown }).message)
-            : 'Masuk dengan Google gagal. Coba lagi.',
+            : 'Masuk gagal. Coba lagi.',
         );
       });
 
@@ -61,5 +61,5 @@ export function OAuthCallback() {
     );
   }
 
-  return <LoadingState label="Menyelesaikan masuk dengan Google…" />;
+  return <LoadingState label="Menyelesaikan masuk…" />;
 }

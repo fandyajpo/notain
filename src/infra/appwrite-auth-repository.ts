@@ -112,8 +112,8 @@ export class AppwriteAuthRepository implements AuthRepository {
   }
 
   /**
-   * Hands the browser to Google (OAuth2 token flow). This returns immediately —
-   * the navigation leaves the page.
+   * Hands the browser to an OAuth provider (OAuth2 token flow). This returns
+   * immediately — the navigation leaves the page.
    *
    * The URL is assembled by hand for two reasons. The SDK's
    * `createOAuth2Token` has no `state` parameter, and without one the success
@@ -127,9 +127,21 @@ export class AppwriteAuthRepository implements AuthRepository {
    * No Turnstile token is spent here: the round trip is a redirect, not a
    * session-creating call, and Appwrite rate-limits the OAuth endpoint itself.
    */
-  startGoogleOAuth({ success, failure, state }: OAuthRedirects): void {
+  startGoogleOAuth(redirects: OAuthRedirects): void {
+    this.startProviderOAuth(OAuthProvider.Google, redirects);
+  }
+
+  /** Same round trip, through Discord. */
+  startDiscordOAuth(redirects: OAuthRedirects): void {
+    this.startProviderOAuth(OAuthProvider.Discord, redirects);
+  }
+
+  private startProviderOAuth(
+    provider: OAuthProvider,
+    { success, failure, state }: OAuthRedirects,
+  ): void {
     const url = new URL(
-      `${APPWRITE.endpoint}/account/tokens/oauth2/${encodeURIComponent(OAuthProvider.Google)}`,
+      `${APPWRITE.endpoint}/account/tokens/oauth2/${encodeURIComponent(provider)}`,
     );
     url.searchParams.set('project', APPWRITE.projectId);
     url.searchParams.set('success', success);
@@ -139,7 +151,8 @@ export class AppwriteAuthRepository implements AuthRepository {
   }
 
   /**
-   * Trades the success URL's `userId`/`secret` for a session.
+   * Trades the success URL's `userId`/`secret` for a session — for any OAuth
+   * provider (Google, Discord, …).
    *
    * This is the half of the token flow the app was missing: Appwrite redirects
    * back with credentials, not a cookie, and the session only exists once the

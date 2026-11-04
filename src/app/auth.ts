@@ -5,6 +5,7 @@ import { DEFAULT_REDIRECT, isSafeRedirectPath, isSelfRedirect } from '../lib/red
 import type {
   CredentialsWithEmail,
   OAuthCompletion,
+  OAuthRedirects,
   RecoveryCompletion,
   SessionUser,
   SignUpInput,
@@ -46,8 +47,9 @@ export async function completeRecovery(input: RecoveryCompletion): Promise<void>
 }
 
 /**
- * Cookies that carry one Google round trip. Both are short-lived and scoped to
- * the whole site; they exist only between the click and the callback page.
+ * Cookies that carry one OAuth round trip (Google, Discord). Both are
+ * short-lived and scoped to the whole site; they exist only between the click
+ * and the callback page.
  *
  * `next` is kept here rather than in the success URL's query string because
  * Appwrite appends its own `userId`/`secret`/`state` to that URL, and a query
@@ -91,18 +93,23 @@ function createOAuthState(): string {
 }
 
 /**
- * Kicks off "Masuk dengan Google" — a full-page hop to the provider, so this
- * returns the moment the browser starts leaving, not with a session.
+ * Kicks off an OAuth round trip ("Masuk dengan Google" / "Masuk dengan
+ * Discord") — a full-page hop to the provider, so this returns the moment the
+ * browser starts leaving, not with a session.
  *
  * The landing page is `/auth/callback`, not the target: Appwrite's token flow
  * redirects back with `userId`/`secret` rather than a session, and something
  * has to trade those in. The target the user was heading for, and a `state`
  * nonce proving this tab started the round trip, travel in short-lived same-site
  * cookies. `failure` still drops straight on the login page tagged
- * `google_fail=1` — there is nothing to exchange when the provider refused, and
- * the login form surfaces the notice.
+ * `<provider>_fail=1` — there is nothing to exchange when the provider refused,
+ * and the login form surfaces the notice.
  */
-export function signInWithGoogle(redirectTo: string): void {
+function startOAuthFlow(
+  start: (redirects: OAuthRedirects) => void,
+  redirectTo: string,
+  failParam: string,
+): void {
   const origin = window.location.origin;
   const target = isSelfRedirect(redirectTo, window.location.pathname)
     ? DEFAULT_REDIRECT
@@ -110,15 +117,32 @@ export function signInWithGoogle(redirectTo: string): void {
   const state = createOAuthState();
   writeFlowCookie(OAUTH_STATE_COOKIE, state);
   writeFlowCookie(OAUTH_NEXT_COOKIE, target);
-  container.auth.startGoogleOAuth({
+  start({
     success: `${origin}/auth/callback`,
-    failure: `${origin}/login?google_fail=1`,
+    failure: `${origin}/login?${failParam}=1`,
     state,
   });
 }
 
+export function signInWithGoogle(redirectTo: string): void {
+  startOAuthFlow(
+    (redirects) => container.auth.startGoogleOAuth(redirects),
+    redirectTo,
+    'google_fail',
+  );
+}
+
+export function signInWithDiscord(redirectTo: string): void {
+  startOAuthFlow(
+    (redirects) => container.auth.startDiscordOAuth(redirects),
+    redirectTo,
+    'discord_fail',
+  );
+}
+
 /**
- * Finishes a Google round trip on `/auth/callback` and returns where to go.
+ * Finishes an OAuth round trip (Google or Discord) on `/auth/callback` and
+ * returns where to go.
  *
  * `state` is checked against the cookie this tab wrote before the hop: without
  * that check a link carrying someone else's `userId`/`secret` would silently
@@ -129,7 +153,7 @@ export function signInWithGoogle(redirectTo: string): void {
  * the same same-origin check `?next=` gets; a tampered cookie falls back to the
  * dashboard rather than redirecting off-site.
  */
-export async function completeGoogleOAuth(
+export async function completeOAuth(
   completion: OAuthCompletion & { state: string },
 ): Promise<string> {
   const expected = readFlowCookie(OAUTH_STATE_COOKIE);
@@ -140,7 +164,7 @@ export async function completeGoogleOAuth(
   if (!expected || completion.state !== expected) {
     throw new AppError(
       ERROR_CODES.UNAUTHENTICATED,
-      'Tautan masuk Google tidak valid atau sudah kedaluwarsa. Coba lagi dari halaman masuk.',
+      'Tautan masuk tidak valid atau sudah kedaluwarsa. Coba lagi dari halaman masuk.',
     );
   }
 
@@ -152,3 +176,10 @@ export async function completeGoogleOAuth(
 
   return storedTarget && isSafeRedirectPath(storedTarget) ? storedTarget : DEFAULT_REDIRECT;
 }
+
+/**
+ * Historical name of `completeOAuth`, kept so existing callers and tests are
+ * untouched. The exchange itself is provider-agnostic — Appwrite's token flow
+ * is the same for every provider.
+ */
+export const completeGoogleOAuth = completeOAuth;
