@@ -134,7 +134,7 @@ describe('FinanceSection', () => {
     expect(container.textContent).toContain('Rp40.000');
     expect(container.textContent).toContain('Jatuh tempo lewat');
     expect(container.textContent).toContain('1 nota');
-    expect(container.textContent).toContain('Invoice dibuat');
+    expect(container.textContent).toContain('Nota dibuat');
   });
 
   it('draws six chart bars with a screen-reader summary', async () => {
