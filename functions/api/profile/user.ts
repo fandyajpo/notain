@@ -19,9 +19,8 @@ import type { Env, PagesFunction } from '../../_lib/types';
  * `PUT /api/profile/user` — updates either field.
  *
  * Deliberately NOT org-gated: this is the account's identity, shared across
- * every organization the user owns or joins, and it must be editable while
- * the account still has zero orgs (the onboarding screen writes it before any
- * workspace exists). The only gate is the session JWT.
+ * every organization the user owns or joins, and it remains editable while
+ * the account has zero orgs. The only gate is the session JWT.
  *
  * The login email is deliberately absent — it is owned by the Appwrite
  * account, displayed read-only in the UI from the session, and no endpoint

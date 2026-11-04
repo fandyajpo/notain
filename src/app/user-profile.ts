@@ -3,11 +3,10 @@ import { AppError, ERROR_CODES } from '../core/shared/errors';
 import { appErrorFromStatus } from './errors';
 
 /**
- * The SHARED user identity (`userProfiles/<userId>`): username and phone,
- * owned by the account — not by any organization. Served by the session-gated
+ * The SHARED user identity (`profiles/<userId>`): username and phone, owned
+ * by the account — not by any organization. Served by the session-gated
  * `GET/PUT /api/profile/user`, which works even while the account has zero
- * organizations, so it never requires an active-org id the way the per-org
- * letterhead flows do.
+ * organizations and never requires an active-org id.
  *
  * The login email is deliberately absent: it is owned by the Appwrite account
  * and the settings UI renders it read-only from the session. Nothing here can

@@ -28,8 +28,9 @@ import type { Env, PagesFunction } from '../../_lib/types';
  * What is deleted (owner's choice: an org's data dies with it): every
  * `memberships` row, then `invoices`, `customers`, `catalog`, `templates`,
  * `stats`, `payments`, `audit_logs` rows carrying the orgId, then the
- * `profiles/<orgId>` business-identity row and its R2 logo object, and
- * finally the `organizations` row. Payment history goes too — the owner
+ * `profiles/<orgId>` legacy business-identity row and logo, then the current
+ * organization logo and root row. Personal `profiles/<userId>` rows are never
+ * included. Payment history goes too — the owner
  * knowingly accepted that a deleted org takes its billing record with it.
  */
 
@@ -232,9 +233,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
       if (profile) {
         const logoFileId = typeof profile.logoFileId === 'string' ? profile.logoFileId : '';
         if (logoFileId !== '') {
-          // Best effort: an orphaned logo object costs pennies and this call
-          // must not fail the wipe over storage cleanup.
-          await env.LOGOS.delete(logoFileId).catch(() => undefined);
+          try {
+            await env.LOGOS.delete(logoFileId);
+          } catch {
+            return apiError(503, 'unavailable', 'Gagal menghapus logo organization. Coba lagi.');
+          }
         }
         if (await deleteRow(auth, 'profiles', orgId, env)) budget -= 1;
       }
@@ -254,12 +257,41 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
           ],
           env,
         );
-        if (rows?.length) leftovers.push(table);
+        if (rows === null) {
+          return apiError(503, 'unavailable', 'Verifikasi penghapusan gagal. Coba lagi.');
+        }
+        if (rows.length > 0) leftovers.push(table);
       }
-      const profileLeft = await getRow(auth, 'profiles', orgId, env);
-      if (profileLeft) leftovers.push('profiles');
+      const profileRows = await listRows(
+        auth,
+        'profiles',
+        [
+          { method: 'equal', attribute: '$id', values: [orgId] },
+          { method: 'limit', values: [1] },
+        ],
+        env,
+      );
+      if (profileRows === null) {
+        return apiError(503, 'unavailable', 'Verifikasi profil organisasi gagal. Coba lagi.');
+      }
+      if (profileRows.length > 0) leftovers.push('profiles');
       if (leftovers.length === 0) {
-        await deleteRow(auth, 'organizations', orgId, env);
+        const organization = await getRow(auth, 'organizations', orgId, env);
+        if (!organization) {
+          return apiError(503, 'unavailable', 'Verifikasi organization gagal. Coba lagi.');
+        }
+        const orgLogoFileId =
+          typeof organization.logoFileId === 'string' ? organization.logoFileId : '';
+        if (orgLogoFileId !== '') {
+          try {
+            await env.LOGOS.delete(orgLogoFileId);
+          } catch {
+            return apiError(503, 'unavailable', 'Gagal menghapus logo organization. Coba lagi.');
+          }
+        }
+        if (!(await deleteRow(auth, 'organizations', orgId, env))) {
+          return apiError(503, 'unavailable', 'Gagal menghapus organization. Coba lagi.');
+        }
         if (session) {
           await writeAudit(env, {
             actorId: session.userId,

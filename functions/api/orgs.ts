@@ -221,9 +221,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   // Plan gate — one organization on the free tier, a second one only on an
   // active paid plan (the pricing page's "Buat lebih dari 1 organisasi" is a
   // product fact, so the server refuses instead of the client hiding a
-  // button). The FIRST org is always allowed: that is the forced onboarding
-  // screen, and it must never be blocked by billing. An existing multi-org
-  // account keeps every org it has — this only stops the next creation.
+  // button). The first organization is always allowed so an account can opt
+  // into using organization-scoped features without a billing barrier. Existing
+  // memberships are preserved; this only limits creating additional orgs.
   // Admins skip the gate entirely: limits are for customers, not operators.
   const admin = await isAdminUser(session.userId, env);
   const ownedMemberships = admin
@@ -278,8 +278,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     {
       name,
       ownerId: session.userId,
-      // The org's contact identity block: the email seeds from the creator's
-      // login email, everything else starts empty and is owner-edited later.
+      // Organization contact identity starts empty; the owner's login email
+      // belongs to the person, not the organization, and is never copied here.
       slug: slugFor(name, orgId),
       // The organization's contact email starts EMPTY: the owner's login email
       // belongs to the person, not the business. Settings fills this in.

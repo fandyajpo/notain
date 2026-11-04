@@ -511,8 +511,11 @@ describe('DELETE /api/orgs/<id> — cascade', () => {
     seedOrg(B);
     seedMembership(A, OWNER.$id, { role: 'owner', email: OWNER.email });
     seedMembership(A, STRANGER.$id, { email: STRANGER.email });
+    seedMembership(A, '', { status: 'pending', email: 'invitee@example.com' });
     seedMembership(B, STRANGER.$id, { role: 'owner', email: STRANGER.email });
     fake.rows.set(`profiles/${A}`, { $id: A, name: 'Org A', logoFileId: 'logos_x.png' } as Row);
+    fake.rows.set(`profiles/${OWNER.$id}`, { $id: OWNER.$id, username: 'Fandy Ahmad' } as Row);
+    fake.rows.set(`profiles/${STRANGER.$id}`, { $id: STRANGER.$id, username: 'Budi' } as Row);
     fake.rows.set('invoices/inv-a1', { $id: 'inv-a1', orgId: A, invoiceNumber: 'INV-1' } as Row);
     fake.rows.set('invoices/inv-a2', { $id: 'inv-a2', orgId: A, invoiceNumber: 'INV-2' } as Row);
     fake.rows.set('invoices/inv-b1', { $id: 'inv-b1', orgId: B, invoiceNumber: 'INV-9' } as Row);
@@ -526,6 +529,10 @@ describe('DELETE /api/orgs/<id> — cascade', () => {
     // Everything of A is gone — rows, memberships, identity, root.
     expect(fake.rows.has(`organizations/${A}`)).toBe(false);
     expect(fake.rows.has(`profiles/${A}`)).toBe(false);
+    // Organization deletion never removes personal identity rows for the owner
+    // or a former member.
+    expect(fake.rows.get(`profiles/${OWNER.$id}`)).toMatchObject({ username: 'Fandy Ahmad' });
+    expect(fake.rows.get(`profiles/${STRANGER.$id}`)).toMatchObject({ username: 'Budi' });
     expect(fake.rows.has('invoices/inv-a1')).toBe(false);
     expect(fake.rows.has('invoices/inv-a2')).toBe(false);
     expect(fake.rows.has('customers/cust-a')).toBe(false);

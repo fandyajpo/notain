@@ -9,11 +9,11 @@ import { beginOrgSwitch, endOrgSwitch, getOrgSwitch } from '../../../app/org-swi
 import type { OrgView } from '../../../app/orgs';
 
 /**
- * OrgGate — the tenancy stage between "signed in" and everything else:
+ * OrgGate — the tenancy stage between "signed in" and organization-scoped
+ * screens:
  *
- * - an account with zero organizations must land on the two-step ONBOARDING
- *   (children stay unmounted: no org = no data, no fetches) — its final step
- *   creates the organization from the business name itself;
+ * - an account with zero organizations remains in the app and sees an optional
+ *   organization-creation empty state;
  * - a persisted pick the server's list no longer contains (deleted org,
  *   revoked membership, another account on this browser) swaps to the first
  *   org the account actually has, while a still-valid pick survives;
@@ -30,7 +30,6 @@ const mocks = vi.hoisted(() => ({
   listOrgs: vi.fn(),
   acceptPendingInvites: vi.fn(),
   createOrg: vi.fn(),
-  saveUserIdentity: vi.fn(),
 }));
 
 vi.mock('../../../app/orgs', () => ({
@@ -42,14 +41,6 @@ vi.mock('../../../app/orgs', () => ({
   listOrgMembers: vi.fn(async () => []),
   inviteOrgMember: vi.fn(),
   removeOrgMember: vi.fn(async () => undefined),
-}));
-
-// The onboarding modal the empty gate renders saves the SHARED account identity
-// (app/user-profile) after the org is created — the real module would mint a
-// JWT against Appwrite, so stub it and assert the stub.
-vi.mock('../../../app/user-profile', () => ({
-  getUserIdentity: vi.fn(async () => ({ username: '', phone: '' })),
-  saveUserIdentity: mocks.saveUserIdentity,
 }));
 
 vi.mock('../../../lib/tour/tour-store', () => ({
@@ -151,7 +142,6 @@ beforeEach(() => {
   root = createRoot(container);
   mocks.listOrgs.mockResolvedValue({ orgs: [], pending: [] });
   mocks.acceptPendingInvites.mockResolvedValue([]);
-  mocks.saveUserIdentity.mockResolvedValue({ username: '', phone: '' });
 });
 
 afterEach(() => {
@@ -164,11 +154,16 @@ afterEach(() => {
 });
 
 describe('OrgGate', () => {
-  it('forces the create screen for an account with no organization', async () => {
+  it('keeps the account in-app and shows the optional no-organization empty state', async () => {
     renderGate();
-    await until(() => expect(container.textContent).toContain('Siapa nama kamu?'));
-
-    // Nothing behind the gate exists in the DOM — no dashboard, no fetches.
+    await until(() =>
+      expect(container.textContent).toContain('Kamu belum memiliki organization.'),
+    );
+    expect(container.textContent).toContain(
+      'Buat organization untuk mulai menggunakan fitur ini.',
+    );
+    expect(container.textContent).toContain('Buat Organization');
+    expect(container.textContent).not.toContain('Siapa nama kamu?');
     expect(container.textContent).not.toContain('APP');
     expect(getActiveOrgId()).toBeNull();
   });
@@ -304,70 +299,18 @@ describe('OrgGate', () => {
     expect(document.body.textContent).not.toContain('Berpindah ke');
   });
 
-  it('lands in a newly created organization when the account was empty', async () => {
-    const created: OrgView = {
-      id: 'org_cccccccccccccccc',
-      name: 'Usaha Baru',
-      role: 'owner',
-      isOwner: true,
-      plan: 'free',
-      active: false,
-      businessType: null,
-      slug: null,
-      email: null,
-      phone: null,
-      website: null,
-      address: null,
-      taxId: null,
-      logoFileId: null,
-    };
-    mocks.listOrgs.mockResolvedValue({ orgs: [created], pending: [] });
-    mocks.listOrgs
-      .mockResolvedValueOnce({ orgs: [], pending: [] })
-      .mockResolvedValueOnce({ orgs: [created], pending: [] });
-    mocks.createOrg.mockResolvedValue(created);
-
+  it('offers optional organization creation without requesting personal information', async () => {
     renderGate();
-    await until(() => expect(container.textContent).toContain('Siapa nama kamu?'));
-
-    const type = (placeholder: string, value: string) =>
-      act(async () => {
-        const input = container.querySelector<HTMLInputElement>(
-          `input[placeholder="${placeholder}"]`,
-        );
-        expect(input, `input "${placeholder}" must render`).toBeTruthy();
-        // Native setter + input event, so React's controlled value keeps up.
-        Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(
-          input,
-          value,
-        );
-        input?.dispatchEvent(new Event('input', { bubbles: true }));
-      });
-
-    const click = (label: string) =>
-      act(async () => {
-        const button = [...container.querySelectorAll('button')].find(
-          (node) => node.textContent?.trim() === label,
-        );
-        expect(button, `button "${label}" must render`).toBeTruthy();
-        button?.click();
-      });
-
-    // Step 0 → step 1.
-    await type('Fandy Ahmad', 'Fandy Ahmad');
-    await click('Lanjut');
-    // The business name IS the organization's name — one submit mints the org
-    // AND writes the shared account identity (no per-org profile row).
-    await type('Bengkel Jaya', 'Usaha Baru');
-    await click('Buat dan mulai');
-
-    await until(() => expect(getActiveOrgId()).toBe(created.id));
-    expect(mocks.createOrg).toHaveBeenCalledTimes(1);
-    expect(mocks.createOrg.mock.calls[0]?.[0]).toBe('Usaha Baru');
-    await until(() => expect(mocks.saveUserIdentity).toHaveBeenCalledTimes(1));
-    expect(mocks.saveUserIdentity.mock.calls[0]?.[0]).toMatchObject({
-      username: 'Fandy Ahmad',
-    });
-    await until(() => expect(container.textContent).toContain('APP'));
+    await until(() =>
+      expect(container.textContent).toContain('Kamu belum memiliki organization.'),
+    );
+    const button = [...container.querySelectorAll('button')].find(
+      (node) => node.textContent?.trim() === 'Buat Organization',
+    );
+    expect(button).toBeTruthy();
+    await act(async () => button?.click());
+    expect(document.body.textContent).toContain('Nama organization');
+    expect(document.body.textContent).not.toContain('Nama lengkap');
+    expect(mocks.createOrg).not.toHaveBeenCalled();
   });
 });

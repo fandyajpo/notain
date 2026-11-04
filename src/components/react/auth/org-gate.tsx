@@ -8,7 +8,7 @@ import { toast } from '../../../lib/ui/toast';
 import { Button } from '../ui/button';
 import { OrgSwitchOverlay } from '../orgs/org-switch-overlay';
 import { ErrorState, LoadingState } from '../ui/state';
-import { OnboardingModal } from './onboarding-modal';
+import { NoOrganizationState } from '../orgs/no-organization-state';
 
 type Props = {
   children: ReactNode;
@@ -27,10 +27,9 @@ const SWITCH_MIN_MS = 450;
 const SWITCH_MAX_MS = 8000;
 
 /**
- * The tenancy gate every signed-in screen walks through, sitting between the
- * session check (`AuthGate`) and the profile/onboarding check — because since
- * multi-tenancy the profile row IS `profiles/<orgId>`, so nothing about the
- * account can be read before an organization is chosen.
+ * The tenancy gate for organization-scoped screens, sitting after the
+ * session check (`AuthGate`). Personal account/profile state is independent of
+ * this gate; an empty org list renders an optional-create empty state.
  *
  * Four jobs, in order:
  *
@@ -42,9 +41,9 @@ const SWITCH_MAX_MS = 8000;
  * 2. **Ensure a valid active org.** The persisted choice (`active-org`)
  *    is re-checked against the server's list every time it changes: a deleted
  *    org, a revoked membership or another browser's stale pick all resolve to
- *    "first org in the list" — and an empty list resolves to the onboarding
- *    screen below, whose final step creates the first organization. When the
- *    invalid pick is the target of an in-flight switch, the previous org is
+ *    "first org in the list" — and an empty list resolves to the optional
+ *    no-organization state below. When the invalid pick is the target of an
+ *    in-flight switch, the previous org is
  *    restored instead of an arbitrary one (a failed switch rolls back).
  * 3. **Swap the data with the org.** Per-org caches (profile, invoices,
  *    stats…) are reset whenever the active org *changes*, so a switch can
@@ -238,12 +237,9 @@ export function OrgGate({ children, fallback }: Props) {
     );
   }
 
-  // With no orgs the answer is the ONBOARDING screen, not a bare "make an
-  // organization" card: its two steps collect name + business name and mint
-  // the organization FROM the business name on submit — one flow, because
-  // the org and the business name are the same thing to the user. Shown only
-  // once the invite sweep has settled: signing up with a pending invitation
-  // should land in the invited org, never a flash of onboarding.
+  // A user may keep an account without a workspace. Settings bypasses this
+  // organization gate; org-dependent pages share one empty state and offer
+  // creation as an optional action.
   if (data.orgs.length === 0) {
     if (accept.isPending) {
       return (
@@ -256,9 +252,7 @@ export function OrgGate({ children, fallback }: Props) {
     return (
       <>
         {overlay}
-        <div className="flex min-h-[60vh] items-center justify-center">
-          <OnboardingModal createOrg />
-        </div>
+        <NoOrganizationState />
       </>
     );
   }

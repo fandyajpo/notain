@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
-import { useCreateOrg, useRenameOrg } from './use-orgs';
+import { useCreateOrg, useDeleteOrg, useRenameOrg } from './use-orgs';
 import type { OrgView } from '../../../app/orgs';
 import { getActiveOrgId, setActiveOrgId } from '../../../app/active-org';
 import { AppError, ERROR_CODES } from '../../../core/shared/errors';
@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   renameOrg: vi.fn(),
   listOrgs: vi.fn(),
   createOrg: vi.fn(),
+  deleteOrgCascade: vi.fn(),
 }));
 
 vi.mock('../../../app/orgs', () => ({
@@ -26,7 +27,7 @@ vi.mock('../../../app/orgs', () => ({
   renameOrg: mocks.renameOrg,
   createOrg: mocks.createOrg,
   acceptPendingInvites: vi.fn(async () => []),
-  deleteOrgCascade: vi.fn(async () => undefined),
+  deleteOrgCascade: mocks.deleteOrgCascade,
   inviteOrgMember: vi.fn(),
   listOrgMembers: vi.fn(async () => []),
   removeOrgMember: vi.fn(async () => undefined),
@@ -106,6 +107,11 @@ function CreateHarness({ switchTo = true }: { switchTo?: boolean }) {
       Buat organisasi
     </button>
   );
+}
+
+function DeleteHarness() {
+  const remove = useDeleteOrg();
+  return <button type="button" onClick={() => remove.mutate(ORG.id)}>Hapus</button>;
 }
 
 beforeEach(() => {
@@ -235,5 +241,37 @@ describe('useCreateOrg', () => {
     await until(() => expect(mocks.createOrg).toHaveBeenCalledTimes(1));
     expect(queryClient.getQueryData(['orgs'])).toMatchObject({ orgs: [ORG] });
     expect(getActiveOrgId()).toBeNull();
+  });
+});
+
+describe('useDeleteOrg', () => {
+  it('removes the deleted org while preserving session and personal identity caches', async () => {
+    mocks.deleteOrgCascade.mockResolvedValue(undefined);
+    setActiveOrgId(ORG.id);
+    queryClient.setQueryData(['orgs'], { orgs: [ORG, NEW_ORG], pending: [] });
+    queryClient.setQueryData(['session'], { id: 'user-1' });
+    queryClient.setQueryData(['user-profile'], { username: 'Fandy Ahmad' });
+    queryClient.setQueryData(['invoices', ''], ['org-owned-invoice']);
+
+    act(() => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <DeleteHarness />
+        </QueryClientProvider>,
+      );
+    });
+
+    await act(async () => {
+      container.querySelector('button')?.click();
+    });
+
+    await until(() => expect(mocks.deleteOrgCascade).toHaveBeenCalledWith(ORG.id));
+    await until(() =>
+      expect(queryClient.getQueryData(['orgs'])).toMatchObject({ orgs: [NEW_ORG], pending: [] }),
+    );
+    expect(getActiveOrgId()).toBeNull();
+    expect(queryClient.getQueryData(['session'])).toEqual({ id: 'user-1' });
+    expect(queryClient.getQueryData(['user-profile'])).toEqual({ username: 'Fandy Ahmad' });
+    expect(queryClient.getQueryData(['invoices', ''])).toBeUndefined();
   });
 });

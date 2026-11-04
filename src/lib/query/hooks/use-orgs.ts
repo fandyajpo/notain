@@ -184,8 +184,30 @@ export function useDeleteOrg() {
   return useMutation({
     mutationFn: (orgId: string) => deleteOrgCascade(orgId),
     onSuccess: (_data, orgId) => {
+      // Remove the deleted workspace synchronously before clearing selection;
+      // otherwise OrgGate could re-select it from the stale list while the
+      // invalidation refetch is still in flight.
+      queryClient.setQueryData<{ orgs: OrgView[]; pending: PendingInvite[] }>(
+        queryKeys.orgs,
+        (current) =>
+          current
+            ? {
+                orgs: current.orgs.filter((org) => org.id !== orgId),
+                pending: current.pending.filter((invite) => invite.orgId !== orgId),
+              }
+            : current,
+      );
       if (getActiveOrgId() === orgId) setActiveOrgId(null);
-      queryClient.clear();
+      // Keep the authenticated session and shared personal profile alive. Drop
+      // tenant caches before invalidating the org list so no deleted data can
+      // flash while OrgGate resolves the user's remaining memberships.
+      void queryClient.resetQueries({
+        predicate: (query) =>
+          query.queryKey[0] !== 'session' &&
+          query.queryKey[0] !== 'user-profile' &&
+          query.queryKey[0] !== 'orgs',
+      });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.orgs });
     },
   });
 }

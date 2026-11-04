@@ -6,6 +6,7 @@ import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { IslandBoundary } from '../ui/island-boundary';
 import { PageHeader } from '../ui/page-header';
+import { ErrorState } from '../ui/state';
 import { OrgContactEditor } from './org-contact-editor';
 import { OrgSection } from './org-section';
 import { getActiveOrgId, subscribeActiveOrg } from '../../../app/active-org';
@@ -63,6 +64,7 @@ export function OrgSettingsApp() {
 function ProfileSettingsContent() {
   usePageTour('settings');
   const { data: session } = useSession();
+  const { data: orgs } = useOrgs();
 
   return (
     <div className="flex flex-col gap-6">
@@ -70,9 +72,11 @@ function ProfileSettingsContent() {
         title="Kelola Profil"
         description="Identitas akun kamu — dipakai di semua organisasi. Kontak usaha yang tercetak di invoice diatur di Kelola Organisasi."
         actions={
-          <Button variant="secondary" size="sm" href="/settings/organization">
-            Kelola organisasi
-          </Button>
+          orgs?.orgs.length ? (
+            <Button variant="secondary" size="sm" href="/settings/organization">
+              Kelola organisasi
+            </Button>
+          ) : undefined
         }
       />
 
@@ -109,11 +113,33 @@ function ProfileSettingsContent() {
 }
 
 function OrgSettingsContent() {
-  const { data: orgs } = useOrgs();
+  const { data: orgs, isLoading, isError, refetch } = useOrgs();
   // The public page is addressed by the ORG id, not the signed-in user —
   // every member of the organization shares the same `/site/<org>`.
   const orgId = useSyncExternalStore(subscribeActiveOrg, getActiveOrgId, () => null);
   const org = orgs?.orgs.find((candidate) => candidate.id === orgId) ?? null;
+
+  if (isLoading) {
+    return (
+      <Card>
+        <p className="text-sm text-muted">Memuat organisasi…</p>
+      </Card>
+    );
+  }
+  if (isError) {
+    return (
+      <ErrorState
+        title="Organisasi gagal dimuat"
+        message="Profil pribadi tetap tersedia di halaman Kelola Profil."
+        action={
+          <Button variant="secondary" size="sm" onClick={() => void refetch()}>
+            Coba lagi
+          </Button>
+        }
+      />
+    );
+  }
+  if (!orgs?.orgs.length) return <ProfileSettingsContent />;
 
   return (
     <div className="flex flex-col gap-6">

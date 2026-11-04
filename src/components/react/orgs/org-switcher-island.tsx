@@ -122,9 +122,8 @@ function OrgSwitcher() {
     );
   }
 
-  // With the list known, an empty one means the forced create screen (OrgGate)
-  // owns this moment, and a dead button under it would only compete for
-  // attention.
+  // With the list known, an empty one means OrgGate's no-organization state
+  // owns the page; there is no workspace to switch to yet.
   if (!active) return null;
 
   function switchTo(orgId: string, toName: string): void {

@@ -10,7 +10,7 @@ import { Notice } from '../ui/notice';
 import { LoadingState } from '../ui/state';
 
 /**
- * "Kelola Profil" — the SHARED account identity (`userProfiles/<userId>`):
+ * "Kelola Profil" — the SHARED account identity (`profiles/<userId>`):
  * username and phone are editable and apply across every organization the
  * account owns or joins, including the no-org state (the endpoint is
  * session-gated rather than org-gated).

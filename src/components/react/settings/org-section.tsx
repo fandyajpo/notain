@@ -39,8 +39,8 @@ import { BusinessTypeField } from '../business/business-type-field';
  *    why the server refuses it too.
  * 3. **Danger zone** (owner only) — delete the organization and everything
  *    under it, through the server's budgeted cascade. The gate takes over the
- *    moment it finishes: losing the last org lands on the forced create
- *    screen, losing one of several falls back to the next.
+ *    moment it finishes: losing the last org returns to the optional empty
+ *    state, while losing one of several falls back to the next.
  *
  * The section is keyed by the ACTIVE org (via `active-org`), so the switcher
  * in the sidebar and this card always describe the same workspace.
@@ -458,6 +458,8 @@ function MemberRow({
 function DangerZoneCard({ orgId, orgName }: { orgId: string; orgName: string }) {
   const remove = useDeleteOrg();
   const [confirming, setConfirming] = useState(false);
+  const [confirmation, setConfirmation] = useState('');
+  const ids = useFieldIds(`delete-${orgId}`);
 
   return (
     <Card className="border-danger/25">
@@ -466,9 +468,11 @@ function DangerZoneCard({ orgId, orgName }: { orgId: string; orgName: string }) 
           <div>
             <p className="font-medium text-danger">Hapus organisasi</p>
             <p className="text-sm text-muted">
-              Menghapus <span className="font-medium text-foreground">{orgName}</span> ikut
-              menghapus seluruh datanya — invoice, pelanggan, katalog, template, pembayaran, dan
-              anggota. Tindakan ini tidak bisa dibatalkan.
+              Menghapus organisasi akan menghapus permanen seluruh data milik organization ini,
+              termasuk invoice, pelanggan, katalog, template, pembayaran, dan catatan lainnya.
+              Semua anggota serta undangan tertunda akan dikeluarkan/dibatalkan. Akun dan profil
+              pribadi owner maupun mantan anggota tetap ada; semuanya kembali ke keadaan tanpa
+              organization. Tindakan ini tidak dapat dibatalkan.
             </p>
           </div>
           {!confirming && (
@@ -480,37 +484,55 @@ function DangerZoneCard({ orgId, orgName }: { orgId: string; orgName: string }) 
         </div>
 
         {confirming && (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-control border border-danger/25 bg-danger-soft p-3">
+          <div className="flex flex-col gap-3 rounded-control border border-danger/25 bg-danger-soft p-3">
             <p className="text-sm text-danger">
-              Yakin menghapus <span className="font-semibold">{orgName}</span> beserta semua
-              datanya? Tindakan ini tidak bisa dibatalkan.
+              Semua data organization akan dihapus permanen. Seluruh invoice, pelanggan, katalog,
+              template, data lainnya, anggota aktif, dan undangan tertunda akan dihapus. Akun serta
+              profil pribadi owner dan mantan anggota tetap aman; semua orang yang dikeluarkan akan
+              kembali ke keadaan tanpa organization.
             </p>
-            <span className="flex items-center gap-2">
+            <FieldShell label={`Ketik ${orgName} untuk mengonfirmasi`} htmlFor={ids.id}>
+              <Input
+                id={ids.id}
+                value={confirmation}
+                onChange={(event) => setConfirmation(event.target.value)}
+                autoComplete="off"
+                disabled={remove.isPending}
+              />
+            </FieldShell>
+            <span className="flex flex-wrap items-center gap-2">
               <Button
                 variant="danger"
                 size="sm"
                 loading={remove.isPending}
+                disabled={confirmation !== orgName}
                 onClick={() =>
                   remove.mutate(orgId, {
-                    // Success: the gate already cleared the selection — if this
-                    // was the last org the create screen appears; otherwise the
-                    // next org becomes active.
-                    onSuccess: () => toast('Organisasi dihapus.', { variant: 'success' }),
+                    onSuccess: () =>
+                      toast('Organisasi dihapus. Akun dan profil pribadi tetap ada.', {
+                        variant: 'success',
+                      }),
                     onError: (error) => {
-                      // A partial wipe continues on the next attempt — the
-                      // server answers done:false until it is finished.
                       toast(
                         isAppError(error) ? error.message : 'Penghapusan terhenti. Coba lagi.',
                         { variant: 'error' },
                       );
                       setConfirming(false);
+                      setConfirmation('');
                     },
                   })
                 }
               >
                 Ya, hapus permanen
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setConfirming(false);
+                  setConfirmation('');
+                }}
+              >
                 Batal
               </Button>
             </span>
