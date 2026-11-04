@@ -170,14 +170,14 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss(), editRouteFallback()],
     build: {
-      // The >500 kB chunk is the shared app runtime (react-dom + TanStack +
-      // the app code every island shares), not a lazy-load miss: SheetJS
-      // (~900 kB), jsPDF (~350 kB), heic2any and TipTap are all dynamic
-      // `import()`s already (see lib/excel.ts, lib/pdf.ts, lib/payment-proof.ts,
-      // lazy-rich-editor.tsx and PERF-002 in docs/CODEBASE_AUDIT.md). Splitting
-      // the runtime further across the four-framework island boundaries is a
-      // re-architecture, not an import away, so the limit follows the reality.
-      chunkSizeWarningLimit: 800,
+      // The biggest chunk (1.3 MB) is heic2any — its package ships the whole
+      // libheic decoder as one file — and it is ALREADY lazy: `import('heic2any')`
+      // in lib/payment-proof.ts, fetched only when an iPhone photo (HEIC) is
+      // uploaded. SheetJS (~480 kB), jsPDF (~390 kB) and TipTap (~390 kB) are
+      // lazy the same way. The warning counts on-demand chunks too, and none of
+      // these are in any page's initial payload, so the limit documents the
+      // reality instead of nagging (PERF-002 in docs/CODEBASE_AUDIT.md).
+      chunkSizeWarningLimit: 1400,
     },
     resolve: {
       // Vue's default esm-bundler build ships the runtime template compiler,
