@@ -11,11 +11,10 @@ import { OnboardingModal } from './onboarding-modal';
  * organization" card), where the business name the user types IS the
  * organization:
  *
- * - one submit creates the org (named after the business, business name
- *   passed through for the server-side profile seed) AND saves the profile
- *   with the personal name from step 0;
- * - a failed profile save must never mint a SECOND org on retry: the create
- *   step runs at most once per mount, the retry saves the profile only.
+ * - one submit creates the org (named after the business) AND saves the shared
+ *   account identity with the personal name from step 0;
+ * - a failed identity save must never mint a SECOND org on retry: the create
+ *   step runs at most once per mount, the retry saves the identity only.
  *
  * The app layer (`src/app/orgs`, `src/app/profile`) and the welcome-tour
  * scheduler are mocked; the two-step UI, validation and mutation sequencing
@@ -27,8 +26,8 @@ const mocks = vi.hoisted(() => ({
   acceptPendingInvites: vi.fn(),
   createOrg: vi.fn(),
   renameOrg: vi.fn(),
-  getProfile: vi.fn(),
-  saveProfile: vi.fn(),
+  getUserIdentity: vi.fn(),
+  saveUserIdentity: vi.fn(),
   scheduleTour: vi.fn(),
 }));
 
@@ -51,19 +50,13 @@ vi.mock('../../../app/active-org', () => ({
   subscribeActiveOrg: vi.fn(() => () => {}),
 }));
 
-vi.mock('../../../app/profile', () => ({
-  getProfile: mocks.getProfile,
-  saveProfile: mocks.saveProfile,
-  uploadLogo: vi.fn(),
-  removeLogo: vi.fn(),
-}));
-
-// Onboarding now also writes the SHARED account identity. Stub it so the tests
-// stay offline: the real module mints a JWT against Appwrite, which would throw
-// before the welcome tour is ever queued.
+// Onboarding writes the SHARED account identity (app/user-profile) — there is
+// no per-org profile write any more. Stub it so the tests stay offline: the
+// real module mints a JWT against Appwrite, which would throw before the
+// welcome tour is ever queued.
 vi.mock('../../../app/user-profile', () => ({
-  getUserIdentity: vi.fn(async () => ({ username: '', phone: '' })),
-  saveUserIdentity: vi.fn(async () => ({ username: '', phone: '' })),
+  getUserIdentity: mocks.getUserIdentity,
+  saveUserIdentity: mocks.saveUserIdentity,
 }));
 
 vi.mock('../../../lib/tour/tour-store', () => ({
@@ -149,7 +142,7 @@ beforeEach(() => {
   root = createRoot(container);
   mocks.createOrg.mockResolvedValue({ id: 'org_aaaaaaaaaaaaaaaa' });
   mocks.renameOrg.mockResolvedValue(undefined);
-  mocks.saveProfile.mockResolvedValue({ name: 'Fandy Ahmad' });
+  mocks.saveUserIdentity.mockResolvedValue({ username: '', phone: '' });
 });
 
 afterEach(() => {
@@ -160,7 +153,7 @@ afterEach(() => {
 });
 
 describe('OnboardingModal (create mode)', () => {
-  it('creates the organization from the business name and saves the profile in one submit', async () => {
+  it('creates the organization from the business name and saves the account identity in one submit', async () => {
     render(<OnboardingModal createOrg />);
 
     await until(() => expect(container.textContent).toContain('Siapa nama kamu?'));
@@ -177,17 +170,17 @@ describe('OnboardingModal (create mode)', () => {
     // person's name (the business name lives on the org row).
     expect(mocks.createOrg.mock.calls[0]?.[0]).toBe('Kopi Senja');
 
-    await until(() => expect(mocks.saveProfile).toHaveBeenCalledTimes(1));
-    expect(mocks.saveProfile.mock.calls[0]?.[0]).toMatchObject({
-      name: 'Fandy Ahmad',
+    await until(() => expect(mocks.saveUserIdentity).toHaveBeenCalledTimes(1));
+    expect(mocks.saveUserIdentity.mock.calls[0]?.[0]).toMatchObject({
+      username: 'Fandy Ahmad',
     });
     await until(() => expect(mocks.scheduleTour).toHaveBeenCalledWith('welcome'));
   });
 
-  it('retries the profile save without ever creating a second organization', async () => {
-    // The org lands, then the profile write fails (network blip) — retrying
-    // must save the profile only: a second create would mint a duplicate org.
-    mocks.saveProfile.mockRejectedValueOnce(new Error('offline'));
+  it('retries the identity save without ever creating a second organization', async () => {
+    // The org lands, then the identity write fails (network blip) — retrying
+    // must save the identity only: a second create would mint a duplicate org.
+    mocks.saveUserIdentity.mockRejectedValueOnce(new Error('offline'));
 
     render(<OnboardingModal createOrg />);
     await until(() => expect(container.textContent).toContain('Siapa nama kamu?'));
@@ -197,12 +190,12 @@ describe('OnboardingModal (create mode)', () => {
 
     await until(() => expect(container.textContent).toContain('Gagal menyimpan.'));
     expect(mocks.createOrg).toHaveBeenCalledTimes(1);
-    expect(mocks.saveProfile).toHaveBeenCalledTimes(1);
+    expect(mocks.saveUserIdentity).toHaveBeenCalledTimes(1);
 
     // Retry: same screen (the gate still has no orgs to switch to), and the
     // create step must not run again.
     await click('Buat dan mulai');
-    await until(() => expect(mocks.saveProfile).toHaveBeenCalledTimes(2));
+    await until(() => expect(mocks.saveUserIdentity).toHaveBeenCalledTimes(2));
     expect(mocks.createOrg).toHaveBeenCalledTimes(1);
     await until(() => expect(mocks.scheduleTour).toHaveBeenCalledWith('welcome'));
   });
@@ -218,7 +211,7 @@ describe('OnboardingModal (create mode)', () => {
 
     await until(() => expect(container.textContent).toContain('Masukkan nama usaha kamu.'));
     expect(mocks.createOrg).not.toHaveBeenCalled();
-    expect(mocks.saveProfile).not.toHaveBeenCalled();
+    expect(mocks.saveUserIdentity).not.toHaveBeenCalled();
   });
 });
 
@@ -242,7 +235,7 @@ describe('OnboardingModal (existing organization)', () => {
     // Their business-name field shows the ORG's name read-only — a rename
     // attempt would answer 403 and block onboarding outright.
     mocks.listOrgs.mockResolvedValue({ orgs: [memberOrg()], pendingInvites: [] });
-    mocks.getProfile.mockResolvedValue({ name: '', phone: '' });
+    mocks.getUserIdentity.mockResolvedValue({ username: '', phone: '' });
 
     render(<OnboardingModal />);
     await until(() => expect(container.textContent).toContain('Siapa nama kamu?'));
@@ -257,7 +250,7 @@ describe('OnboardingModal (existing organization)', () => {
     expect(container.textContent).toContain('diatur oleh owner-nya');
 
     await click('Selesai');
-    await until(() => expect(mocks.saveProfile).toHaveBeenCalledTimes(1));
+    await until(() => expect(mocks.saveUserIdentity).toHaveBeenCalledTimes(1));
     expect(mocks.renameOrg).not.toHaveBeenCalled();
     await until(() => expect(mocks.scheduleTour).toHaveBeenCalledWith('welcome'));
   });
@@ -267,7 +260,7 @@ describe('OnboardingModal (existing organization)', () => {
       orgs: [{ ...memberOrg(), role: 'owner', isOwner: true }],
       pendingInvites: [],
     });
-    mocks.getProfile.mockResolvedValue({ name: '', phone: '' });
+    mocks.getUserIdentity.mockResolvedValue({ username: '', phone: '' });
 
     render(<OnboardingModal />);
     await until(() => expect(container.textContent).toContain('Siapa nama kamu?'));
@@ -279,6 +272,6 @@ describe('OnboardingModal (existing organization)', () => {
 
     await until(() => expect(mocks.renameOrg).toHaveBeenCalledTimes(1));
     expect(mocks.renameOrg.mock.calls[0]).toEqual([ORG_ID, 'Kopi Senja']);
-    await until(() => expect(mocks.saveProfile).toHaveBeenCalledTimes(1));
+    await until(() => expect(mocks.saveUserIdentity).toHaveBeenCalledTimes(1));
   });
 });

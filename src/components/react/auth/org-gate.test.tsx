@@ -30,8 +30,7 @@ const mocks = vi.hoisted(() => ({
   listOrgs: vi.fn(),
   acceptPendingInvites: vi.fn(),
   createOrg: vi.fn(),
-  getProfile: vi.fn(),
-  saveProfile: vi.fn(),
+  saveUserIdentity: vi.fn(),
 }));
 
 vi.mock('../../../app/orgs', () => ({
@@ -45,14 +44,12 @@ vi.mock('../../../app/orgs', () => ({
   removeOrgMember: vi.fn(async () => undefined),
 }));
 
-// The onboarding modal the empty gate now renders reaches the profile layer:
-// its reads stay disabled in create mode and its save is what this test
-// asserts after the org is created.
-vi.mock('../../../app/profile', () => ({
-  getProfile: mocks.getProfile,
-  saveProfile: mocks.saveProfile,
-  uploadLogo: vi.fn(),
-  removeLogo: vi.fn(),
+// The onboarding modal the empty gate renders saves the SHARED account identity
+// (app/user-profile) after the org is created — the real module would mint a
+// JWT against Appwrite, so stub it and assert the stub.
+vi.mock('../../../app/user-profile', () => ({
+  getUserIdentity: vi.fn(async () => ({ username: '', phone: '' })),
+  saveUserIdentity: mocks.saveUserIdentity,
 }));
 
 vi.mock('../../../lib/tour/tour-store', () => ({
@@ -154,7 +151,7 @@ beforeEach(() => {
   root = createRoot(container);
   mocks.listOrgs.mockResolvedValue({ orgs: [], pending: [] });
   mocks.acceptPendingInvites.mockResolvedValue([]);
-  mocks.saveProfile.mockResolvedValue({ name: '' });
+  mocks.saveUserIdentity.mockResolvedValue({ username: '', phone: '' });
 });
 
 afterEach(() => {
@@ -360,16 +357,16 @@ describe('OrgGate', () => {
     await type('Fandy Ahmad', 'Fandy Ahmad');
     await click('Lanjut');
     // The business name IS the organization's name — one submit mints the org
-    // AND writes the personal profile.
+    // AND writes the shared account identity (no per-org profile row).
     await type('Bengkel Jaya', 'Usaha Baru');
     await click('Buat dan mulai');
 
     await until(() => expect(getActiveOrgId()).toBe(created.id));
     expect(mocks.createOrg).toHaveBeenCalledTimes(1);
     expect(mocks.createOrg.mock.calls[0]?.[0]).toBe('Usaha Baru');
-    await until(() => expect(mocks.saveProfile).toHaveBeenCalledTimes(1));
-    expect(mocks.saveProfile.mock.calls[0]?.[0]).toMatchObject({
-      name: 'Fandy Ahmad',
+    await until(() => expect(mocks.saveUserIdentity).toHaveBeenCalledTimes(1));
+    expect(mocks.saveUserIdentity.mock.calls[0]?.[0]).toMatchObject({
+      username: 'Fandy Ahmad',
     });
     await until(() => expect(container.textContent).toContain('APP'));
   });

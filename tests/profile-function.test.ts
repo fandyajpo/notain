@@ -213,11 +213,24 @@ describe('GET /api/profile', () => {
     expect(writes()).toEqual([]);
   });
 
-  it('answers 404 when the org has no profile row yet', async () => {
+  it('answers a view synthesized from the org row when the org has no profile row yet', async () => {
     const response = await handle(
       new Request(PROFILE_URL, { headers: { authorization: 'Bearer jwt-token' } }),
     );
-    expect(response.status).toBe(404);
+    // Org-create stopped seeding `profiles/<orgId>`; the reader must not 404 —
+    // the view is synthesized from the organizations row (here: none yet).
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(body).toMatchObject({
+      name: '',
+      phone: '',
+      address: null,
+      email: null,
+      logoFileId: null,
+      plan: 'free',
+    });
+    expect(writes()).toEqual([]);
   });
 
   it('reports the ORGANIZATION plan, so entitlements follow billing', async () => {

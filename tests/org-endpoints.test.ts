@@ -105,7 +105,7 @@ afterEach(() => {
 });
 
 describe('POST /api/orgs — create', () => {
-  it('creates the org, its owner membership and its business profile row', async () => {
+  it('creates the org and its owner membership, without a legacy profile row', async () => {
     fake = appwriteFake();
 
     const response = await handle(orgsOnRequest, req('POST', '/api/orgs', { name: 'Kopi Senja' }));
@@ -124,8 +124,10 @@ describe('POST /api/orgs — create', () => {
     );
     expect(membership).toMatchObject({ userId: OWNER.$id, role: 'owner' });
 
-    const profile = fake.rows.get(`profiles/${body.org.id}`);
-    expect(profile).toMatchObject({ name: 'Kopi Senja' });
+    // One person = one `profiles` row keyed by userId: org-create stopped
+    // seeding `profiles/<orgId>` — the org row IS the business identity now.
+    expect(fake.rows.get(`profiles/${body.org.id}`)).toBeUndefined();
+    expect(org?.slug).toEqual(expect.any(String));
   });
 
   it('refuses an empty or oversized name', async () => {

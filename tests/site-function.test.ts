@@ -21,6 +21,9 @@ beforeEach(() => {
     name: 'Warung Uji Coba',
     businessType: 'warung-makan',
     ownerId: 'user-1',
+    // The contact block lives on the org row; the seeded legacy profile row's
+    // own email must be ignored by the public page.
+    email: 'halo@ujicoba.test',
     plan: 'free',
     planExpiresAt: null,
   });
