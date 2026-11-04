@@ -122,7 +122,8 @@ function PlanSummary({ session, canManage }: { session: PortalSession; canManage
 
       {paid && !session.active && (
         <Notice variant="accent" className="mt-3">
-          Masa aktif {info?.name} sudah berakhir. Akunmu sekarang memakai Free. Nota dan datamu tetap tersimpan. Pilih plan lagi di bawah kalau ingin berlangganan.
+          Masa aktif {info?.name} sudah berakhir. Akunmu sekarang memakai Free. Nota dan datamu
+          tetap tersimpan. Pilih plan lagi di bawah kalau ingin berlangganan.
         </Notice>
       )}
 
@@ -139,8 +140,9 @@ function PlanSummary({ session, canManage }: { session: PortalSession; canManage
       )}
       {paid && session.active && (
         <Notice variant="accent" className="mt-3">
-          Plan ini berlaku 30 hari dan <span className="font-medium">tidak diperpanjang otomatis</span>.
-          Langganan berhenti sendiri saat masa aktifnya habis. Kamu bisa memilih plan yang lebih rendah setelah itu.
+          Plan ini berlaku 30 hari dan{' '}
+          <span className="font-medium">tidak diperpanjang otomatis</span>. Langganan berhenti
+          sendiri saat masa aktifnya habis. Kamu bisa memilih plan yang lebih rendah setelah itu.
         </Notice>
       )}
     </>

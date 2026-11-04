@@ -74,9 +74,7 @@ export function PaymentProofCard({ proof, status, onUpload }: Props) {
 
     setError(null);
     if (file.size > PAYMENT_PROOF_MAX_BYTES) {
-      setError(
-        'Ukuran file maksimal 5 MB. Foto akan dikompres otomatis setelah dipilih.',
-      );
+      setError('Ukuran file maksimal 5 MB. Foto akan dikompres otomatis setelah dipilih.');
       return;
     }
     if (captcha && !token) {

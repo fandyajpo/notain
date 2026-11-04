@@ -35,7 +35,7 @@ const PLANS: readonly Plan[] = [
     id: 'free',
     name: 'Free',
     badge: PLAN_BADGES.free ?? undefined,
-    cta: { href: '/register', label: 'Buat nota gratis' }
+    cta: { href: '/register', label: 'Buat nota gratis' },
   },
   {
     id: 'pro',
@@ -183,8 +183,8 @@ export function PricingPlans() {
             transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
             className="mx-auto mt-5 max-w-xl text-lead text-muted"
           >
-            Fitur dasar gratis selamanya, termasuk template bawaan dan template buatan sendiri. Pro menambah nota tanpa batas dan laporan.
-            Business sedang disiapkan dan belum bisa dibeli.
+            Fitur dasar gratis selamanya, termasuk template bawaan dan template buatan sendiri. Pro
+            menambah nota tanpa batas dan laporan. Business sedang disiapkan dan belum bisa dibeli.
           </motion.p>
         </div>
 

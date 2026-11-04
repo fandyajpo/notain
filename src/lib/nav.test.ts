@@ -18,7 +18,7 @@ const WORKSPACE = [
 const ACCOUNT = [
   { href: '/billing', label: 'Langganan' },
   { href: '/api-keys', label: 'Integrasi' },
-  { href: '/settings', label: 'Pengaturan' }
+  { href: '/settings', label: 'Pengaturan' },
 ];
 
 describe('NAV_GROUPS', () => {

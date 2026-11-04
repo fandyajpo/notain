@@ -6,19 +6,17 @@ const STEPS = [
     title: 'Daftar dan isi data usaha',
     description:
       'Isi nama usaha, nomor WhatsApp, alamat, dan logo. Nota berikutnya akan memakai data yang sama.',
-    detail: 'Isi sekali, pakai lagi.'
+    detail: 'Isi sekali, pakai lagi.',
   },
   {
     title: 'Buat nota',
-    description:
-      'Pilih pelanggan dan barang. Diskon, pajak, dan total dihitung otomatis.',
-    detail: 'Tidak perlu hitung manual.'
+    description: 'Pilih pelanggan dan barang. Diskon, pajak, dan total dihitung otomatis.',
+    detail: 'Tidak perlu hitung manual.',
   },
   {
     title: 'Unduh dan kirim',
-    description:
-      'Unduh PDF nota, buka WhatsApp, lampirkan berkasnya, lalu kirim ke pelanggan.',
-    detail: 'Nota siap dibagikan.'
+    description: 'Unduh PDF nota, buka WhatsApp, lampirkan berkasnya, lalu kirim ke pelanggan.',
+    detail: 'Nota siap dibagikan.',
   },
 ];
 

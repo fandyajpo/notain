@@ -82,7 +82,8 @@ function OrgSectionContent({ orgId }: { orgId: string }) {
             <RenameForm orgId={orgId} name={current.name} />
           ) : (
             <p className="text-sm text-muted">
-              <span className="font-medium text-foreground">{current.name}</span>. Hanya pemilik yang bisa mengganti nama.
+              <span className="font-medium text-foreground">{current.name}</span>. Hanya pemilik
+              yang bisa mengganti nama.
             </p>
           )}
           <BusinessTypeField
@@ -98,9 +99,14 @@ function OrgSectionContent({ orgId }: { orgId: string }) {
                       .mutateAsync(slug)
                       .then(() => toast('Jenis usaha disimpan.', { variant: 'success' }))
                       .catch((error) =>
-                        toast(isAppError(error) ? error.message : 'Jenis usaha belum tersimpan. Coba lagi ya.', {
-                          variant: 'error',
-                        }),
+                        toast(
+                          isAppError(error)
+                            ? error.message
+                            : 'Jenis usaha belum tersimpan. Coba lagi ya.',
+                          {
+                            variant: 'error',
+                          },
+                        ),
                       );
                   }
                 : undefined
@@ -216,7 +222,8 @@ function NewOrgModal({ onClose }: { onClose: () => void }) {
           <div className="flex flex-col gap-1">
             <p className="font-medium text-foreground">{created.name}</p>
             <p className="text-sm text-muted">
-              Usaha ini sudah siap. Pilih <span className="font-medium">Buka usaha ini</span> untuk mulai, atau pilih Nanti dan bukalah dari daftar usaha kapan saja.
+              Usaha ini sudah siap. Pilih <span className="font-medium">Buka usaha ini</span> untuk
+              mulai, atau pilih Nanti dan bukalah dari daftar usaha kapan saja.
             </p>
           </div>
         </div>
@@ -354,7 +361,8 @@ function MembersCard({ orgId, isOwner }: { orgId: string; isOwner: boolean }) {
           <div className="border-t border-border pt-4">
             <p className="text-sm font-medium">Undang anggota, segera hadir</p>
             <p className="text-sm text-muted">
-              Undangan lewat email belum tersedia. Kamu tetap bisa mengelola anggota yang sudah bergabung di daftar atas.
+              Undangan lewat email belum tersedia. Kamu tetap bisa mengelola anggota yang sudah
+              bergabung di daftar atas.
             </p>
           </div>
         )}
@@ -483,7 +491,8 @@ function DangerZoneCard({ orgId, orgName }: { orgId: string; orgName: string }) 
             <p className="text-sm text-danger">
               Semua data usaha ini akan dihapus permanen, termasuk nota, pelanggan, katalog,
               template, anggota aktif, dan undangan tertunda. Akun serta profil pribadi pemilik dan
-              mantan anggota tetap ada. Semua orang yang dikeluarkan kembali memakai akun tanpa usaha ini.
+              mantan anggota tetap ada. Semua orang yang dikeluarkan kembali memakai akun tanpa
+              usaha ini.
             </p>
             <FieldShell label={`Ketik ${orgName} untuk mengonfirmasi`} htmlFor={ids.id}>
               <Input

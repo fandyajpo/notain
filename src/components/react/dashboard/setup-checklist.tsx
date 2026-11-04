@@ -134,8 +134,7 @@ export function SetupChecklist({ profile, hasInvoices, hidden }: Props) {
           </span>
           <p className="font-medium">Semua siap!</p>
           <p className="max-w-sm text-sm text-muted">
-            Data usaha, logo, dan nota pertamamu sudah siap.
-            Kamu siap mencatat transaksi.
+            Data usaha, logo, dan nota pertamamu sudah siap. Kamu siap mencatat transaksi.
           </p>
           <Button
             size="sm"

@@ -156,12 +156,8 @@ afterEach(() => {
 describe('OrgGate', () => {
   it('keeps the account in-app and shows the optional no-organization empty state', async () => {
     renderGate();
-    await until(() =>
-      expect(container.textContent).toContain('Kamu belum punya usaha di Notain.'),
-    );
-    expect(container.textContent).toContain(
-      'Buat usaha untuk mulai memakai fitur ini.',
-    );
+    await until(() => expect(container.textContent).toContain('Kamu belum punya usaha di Notain.'));
+    expect(container.textContent).toContain('Buat usaha untuk mulai memakai fitur ini.');
     expect(container.textContent).toContain('Buat usaha');
     expect(container.textContent).not.toContain('Siapa nama kamu?');
     expect(container.textContent).not.toContain('APP');
@@ -301,9 +297,7 @@ describe('OrgGate', () => {
 
   it('offers optional organization creation without requesting personal information', async () => {
     renderGate();
-    await until(() =>
-      expect(container.textContent).toContain('Kamu belum punya usaha di Notain.'),
-    );
+    await until(() => expect(container.textContent).toContain('Kamu belum punya usaha di Notain.'));
     const button = [...container.querySelectorAll('button')].find(
       (node) => node.textContent?.trim() === 'Buat usaha',
     );

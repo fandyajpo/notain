@@ -10,19 +10,19 @@ import { EASE } from './reveal';
 const PAIRS = [
   {
     problem: 'Salah hitung diskon atau pajak?',
-    solution: 'Total nota dihitung otomatis.'
+    solution: 'Total nota dihitung otomatis.',
   },
   {
     problem: 'Nota terselip di chat atau galeri?',
-    solution: 'Simpan semua nota di akunmu, lalu buka dari HP atau laptop.'
+    solution: 'Simpan semua nota di akunmu, lalu buka dari HP atau laptop.',
   },
   {
     problem: 'Capek menyalin pesan setiap kali kirim nota?',
-    solution: 'Siapkan pesan WhatsApp dan lampirkan PDF nota.'
+    solution: 'Siapkan pesan WhatsApp dan lampirkan PDF nota.',
   },
   {
     problem: 'Bingung siapa yang sudah bayar?',
-    solution: 'Tandai pembayaran dan simpan bukti transfer di nota.'
+    solution: 'Tandai pembayaran dan simpan bukti transfer di nota.',
   },
 ] as const;
 

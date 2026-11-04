@@ -195,8 +195,7 @@ type NoteProps = {
 export function EmptyListNote({ className, children }: NoteProps) {
   return (
     <p className={`text-sm text-[color:var(--site-muted)] ${className ?? ''}`}>
-      {children ??
-        'Daftar belum tersedia. Hubungi usaha ini jika kamu ingin bertanya.'}
+      {children ?? 'Daftar belum tersedia. Hubungi usaha ini jika kamu ingin bertanya.'}
     </p>
   );
 }

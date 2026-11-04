@@ -36,11 +36,11 @@ const FAQS = [
   },
   {
     question: 'Bisa diunduh jadi PDF?',
-    answer: `Bisa. Buka nota dalam ukuran A4, lalu pilih "Simpan sebagai PDF" di menu cetak browser. Setelah itu, kirim PDF ke pelanggan lewat WhatsApp.`, 
+    answer: `Bisa. Buka nota dalam ukuran A4, lalu pilih "Simpan sebagai PDF" di menu cetak browser. Setelah itu, kirim PDF ke pelanggan lewat WhatsApp.`,
   },
   {
     question: 'Berapa biayanya?',
-    answer: `Fitur dasar gratis selamanya, termasuk ${FREE_PLAN_LIMITS.invoicesPerMonth} nota baru per bulan, template bawaan, dan template buatan sendiri. Pro seharga ${PLAN_PRICES.pro.amount}${PLAN_PRICES.pro.period} menambah nota tanpa batas dan tautan invoice. Business sedang disiapkan dan belum bisa dibeli.`, 
+    answer: `Fitur dasar gratis selamanya, termasuk ${FREE_PLAN_LIMITS.invoicesPerMonth} nota baru per bulan, template bawaan, dan template buatan sendiri. Pro seharga ${PLAN_PRICES.pro.amount}${PLAN_PRICES.pro.period} menambah nota tanpa batas dan tautan invoice. Business sedang disiapkan dan belum bisa dibeli.`,
   },
   {
     question: 'Bagaimana langganan dan perpanjangannya?',
