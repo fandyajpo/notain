@@ -652,9 +652,10 @@ function readOauthFailure(): string | null {
   const hasDiscord = params.has('discord_fail');
   if (!hasGoogle && !hasDiscord && !params.has('error')) return null;
   const detail = params.get('error_description') || params.get('error');
-  const base = hasDiscord && !hasGoogle
-    ? 'Masuk dengan Discord gagal. Coba lagi, atau masuk dengan email dan kata sandi.'
-    : 'Masuk dengan Google gagal. Coba lagi, atau masuk dengan email dan kata sandi.';
+  const base =
+    hasDiscord && !hasGoogle
+      ? 'Masuk dengan Discord gagal. Coba lagi, atau masuk dengan email dan kata sandi.'
+      : 'Masuk dengan Google gagal. Coba lagi, atau masuk dengan email dan kata sandi.';
   return detail ? `${base} (${detail})` : base;
 }
 

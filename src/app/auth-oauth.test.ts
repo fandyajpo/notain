@@ -22,8 +22,11 @@ vi.mock('../infra/container', () => ({
   container: { auth: { startGoogleOAuth, startDiscordOAuth, completeGoogleOAuth } },
 }));
 
-const { signInWithGoogle, signInWithDiscord, completeGoogleOAuth: completeGoogleOAuthUseCase } =
-  await import('../app/auth');
+const {
+  signInWithGoogle,
+  signInWithDiscord,
+  completeGoogleOAuth: completeGoogleOAuthUseCase,
+} = await import('../app/auth');
 
 const USER = { id: 'user-1', email: 'budi@example.com', name: 'Budi' };
 
