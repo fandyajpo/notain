@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { ArrowRight, FileText, Plus } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
@@ -11,7 +13,7 @@ import { SetupChecklist } from './setup-checklist';
 import { FinanceSection } from './finance-section';
 import { calculateTotals } from '../../../core/invoice/calculator';
 import { formatRupiah } from '../../../core/shared/money';
-import { formatSalam, formatTanggalRelatif, formatWaktuLalu } from '../../../core/shared/dates';
+import { formatTanggalRelatif, formatWaktuLalu } from '../../../core/shared/dates';
 import type { DashboardStats } from '../../../core/stats/model';
 import { hasProAccess } from '../../../core/profile/model';
 import type { InvoiceStatus } from '../../../core/invoice/model';
@@ -82,9 +84,7 @@ function DashboardContent() {
   const invoices = useInvoices('', { limit: RECENT_PREVIEW });
   const stats = useDashboardStats();
 
-  const greeting = formatSalam();
-  // The page header greets the person; the finance card is named after the
-  // business, which is the ORGANIZATION's name.
+  // The finance card is named after the business, which is the ORGANIZATION's name.
   const businessName = profile?.name?.trim() || 'Usaha kamu';
   const usahaName = issuer.businessName.trim() || 'Usaha kamu';
 
@@ -96,7 +96,7 @@ function DashboardContent() {
     <div className="flex flex-col gap-6">
       <div data-tour="dash-hero">
         <PageHeader
-          kicker={greeting}
+          kicker={<RotatingGreeting />}
           title={businessName}
           description={session?.email}
           actions={
@@ -134,6 +134,47 @@ function DashboardContent() {
         onRetryInvoices={() => void invoices.refetch()}
       />{' '}
     </div>
+  );
+}
+
+const DASHBOARD_GREETINGS = [
+  'Hai!',
+  'Halo!',
+  'Semangat!',
+  'Selamat datang!',
+  'Yuk, mulai!',
+] as const;
+
+function RotatingGreeting() {
+  const [greeting, setGreeting] = useState<string>(DASHBOARD_GREETINGS[0]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setGreeting((current) => {
+        const choices = DASHBOARD_GREETINGS.filter((item) => item !== current);
+        return choices[Math.floor(Math.random() * choices.length)] ?? DASHBOARD_GREETINGS[0];
+      });
+    }, 2000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return (
+    <span className="inline-flex min-h-5 items-center overflow-hidden">
+      <span className="sr-only">Hai, selamat datang di dasbor Notain.</span>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={greeting}
+          aria-hidden="true"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+        >
+          {greeting}
+        </motion.span>
+      </AnimatePresence>
+    </span>
   );
 }
 

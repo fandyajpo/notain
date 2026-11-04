@@ -575,7 +575,7 @@ function OAuthSlot({
   discordLabel: string;
 }) {
   const buttonClass =
-    'inline-flex w-full items-center justify-center gap-2 rounded-control border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent-soft focus-ring';
+    'inline-flex min-w-0 w-full items-center justify-center gap-2 rounded-control border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent-soft focus-ring';
   return (
     <>
       <div className="flex items-center gap-3 text-xs uppercase tracking-wider text-muted">
@@ -583,14 +583,24 @@ function OAuthSlot({
         <span>atau</span>
         <span className="h-px flex-1 bg-border" aria-hidden="true" />
       </div>
-      <div className="flex flex-col gap-2">
-        <button type="button" onClick={() => signInWithGoogle(redirectTo)} className={buttonClass}>
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          aria-label={googleLabel}
+          onClick={() => signInWithGoogle(redirectTo)}
+          className={buttonClass}
+        >
           <GoogleGIcon />
-          {googleLabel}
+          <span>Google</span>
         </button>
-        <button type="button" onClick={() => signInWithDiscord(redirectTo)} className={buttonClass}>
+        <button
+          type="button"
+          aria-label={discordLabel}
+          onClick={() => signInWithDiscord(redirectTo)}
+          className={buttonClass}
+        >
           <DiscordIcon />
-          {discordLabel}
+          <span>Discord</span>
         </button>
       </div>
     </>
