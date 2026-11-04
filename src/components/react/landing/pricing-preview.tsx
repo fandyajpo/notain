@@ -14,9 +14,9 @@ const HIGHLIGHTS: Record<(typeof PLAN_TIER_IDS)[number], readonly string[]> = {
   free: [
     `${FREE_PLAN_LIMITS.invoicesPerMonth} nota baru per bulan`,
     'PDF A4 & kirim ke WhatsApp',
-    'Data pelanggan & katalog',
+    'Data pelanggan, katalog & template sendiri',
   ],
-  pro: ['Template sendiri', 'Laporan usaha dan tautan invoice', 'Penyimpanan lebih besar'],
+  pro: ['Laporan usaha dan tautan invoice', 'Penyimpanan lebih besar', 'Buat beberapa usaha'],
   business: ['Kunci API untuk integrasi', 'Pemberitahuan perubahan invoice', 'Batas penggunaan lebih tinggi'],
 };
 

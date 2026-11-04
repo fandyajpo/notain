@@ -313,7 +313,7 @@ describe('DELETE /api/data/<resource> — delete isolation', () => {
   });
 });
 
-describe('templates — the custom-template plan gate', () => {
+describe('templates — free and paid access', () => {
   function templates(path: string, init?: RequestInit): Promise<Response> {
     return handle(
       dataOnRequest,
@@ -325,7 +325,7 @@ describe('templates — the custom-template plan gate', () => {
     );
   }
 
-  /** The plan the gate reads lives on the ORGANIZATION row, not the membership. */
+  /** Plans are stored on the ORGANIZATION row, not the membership. */
   function seedOrgRow(orgId: string, plan: string, planExpiresAt: string | null = null): void {
     fake!.rows.set(`organizations/${orgId}`, {
       $id: orgId,
@@ -338,7 +338,7 @@ describe('templates — the custom-template plan gate', () => {
 
   const createBody = JSON.stringify({ data: { name: 'Kustom', blocks: [], theme: {} } });
 
-  it('refuses a free org creating a custom template', async () => {
+  it('lets a free org create a custom template', async () => {
     fake = appwriteFake({ teamMemberships: 0 });
     seedMembership(A, OWNER.$id);
     seedOrgRow(A, 'free');
@@ -348,13 +348,8 @@ describe('templates — the custom-template plan gate', () => {
       body: createBody,
     });
 
-    expect(response.status).toBe(402);
-    await expect(response.json()).resolves.toMatchObject({
-      error: 'plan_required',
-      message: expect.stringContaining('fitur plan Pro'),
-    });
-    // The refusal is before any write.
-    expect([...fake.rows.keys()].filter((key) => key.startsWith('templates/'))).toHaveLength(0);
+    expect(response.status).toBe(201);
+    expect([...fake.rows.keys()].filter((key) => key.startsWith('templates/'))).toHaveLength(1);
   });
 
   it('lets a paid org create one', async () => {
@@ -383,7 +378,7 @@ describe('templates — the custom-template plan gate', () => {
     expect(response.status).toBe(201);
   });
 
-  it('refuses a free org editing a template it already owns — read-only, never a 404', async () => {
+  it('lets a free org edit a template it already owns', async () => {
     fake = appwriteFake({ teamMemberships: 0 });
     seedMembership(A, OWNER.$id);
     seedOrgRow(A, 'free');
@@ -401,7 +396,7 @@ describe('templates — the custom-template plan gate', () => {
       body: JSON.stringify({ data: { name: 'Baru' } }),
     });
 
-    expect(response.status).toBe(402);
-    expect(fake.rows.get('templates/tpl_mine')?.name).toBe('Lama'); // untouched
+    expect(response.status).toBe(200);
+    expect(fake.rows.get('templates/tpl_mine')?.name).toBe('Baru');
   });
 });

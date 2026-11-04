@@ -40,7 +40,7 @@ const FAQS = [
   },
   {
     question: 'Berapa biayanya?',
-    answer: `Fitur dasar gratis selamanya, termasuk ${FREE_PLAN_LIMITS.invoicesPerMonth} nota baru per bulan. Pro seharga ${PLAN_PRICES.pro.amount}${PLAN_PRICES.pro.period} menambah nota tanpa batas, template sendiri, dan tautan invoice. Business sedang disiapkan dan belum bisa dibeli.`, 
+    answer: `Fitur dasar gratis selamanya, termasuk ${FREE_PLAN_LIMITS.invoicesPerMonth} nota baru per bulan, template bawaan, dan template buatan sendiri. Pro seharga ${PLAN_PRICES.pro.amount}${PLAN_PRICES.pro.period} menambah nota tanpa batas dan tautan invoice. Business sedang disiapkan dan belum bisa dibeli.`, 
   },
   {
     question: 'Bagaimana langganan dan perpanjangannya?',
@@ -50,7 +50,7 @@ const FAQS = [
   {
     question: 'Apa yang terjadi setelah masa aktif berakhir?',
     answer:
-      'Akunmu kembali ke Free. Data tetap tersimpan dan fitur dasar tetap bisa dipakai. Fitur Pro seperti laporan, template sendiri, dan tautan invoice tidak bisa dipakai lagi.',
+      'Akunmu kembali ke Free. Data tetap tersimpan dan fitur dasar tetap bisa dipakai. Fitur Pro seperti laporan dan tautan invoice tidak bisa dipakai lagi.',
   },
   {
     question: 'Nota saya aman tersimpan?',

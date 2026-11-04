@@ -42,10 +42,8 @@ function TemplatesContent() {
   const { data: orgs } = useOrgs();
   const org = orgs?.orgs.find((candidate) => candidate.id === getActiveOrgId()) ?? null;
   const { data: isAdmin } = useAdminMembership();
-  // Custom templates (own block order, colors, branding) are the Pro feature;
-  // the server 402s every write, so the UI must say so BEFORE a save attempt.
-  // Admins skip the gate server-side, so they skip the lock here too.
-  const canCustomize = Boolean(isAdmin) || Boolean(org?.active);
+  // Free and paid usaha can use built-in templates and create their own.
+  const canCustomize = Boolean(isAdmin) || Boolean(org);
   const issuer = toBusinessIssuer(profile, org);
   const logoUrl = profile?.logoUrl ?? null;
   const remove = useDeleteTemplate();
@@ -84,7 +82,7 @@ function TemplatesContent() {
         description={
           canCustomize
             ? 'Atur tampilan template sekali, lalu pakai lagi setiap kali membuat nota.'
-            : 'Pakai template bawaan di Free. Di Pro, kamu bisa membuat template sendiri dengan warna dan logo usaha.'
+            : 'Pakai template bawaan atau buat template sendiri dengan warna dan logo usaha.'
         }
         actions={
           canCustomize ? (
@@ -196,7 +194,7 @@ function TemplatesContent() {
             description={
               canCustomize
                 ? 'Duplikat salah satu template bawaan, lalu sesuaikan urutan blok dan warnanya.'
-                : 'Template kustom adalah fitur Pro. Plan gratis memakai template bawaan — pilih langsung saat membuat invoice.'
+                : 'Pilih template bawaan, atau buat template sendiri sesuai kebutuhan usahamu.'
             }
             action={
               canCustomize ? (

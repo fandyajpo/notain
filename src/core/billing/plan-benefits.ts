@@ -16,7 +16,7 @@ export const PLAN_TIER_IDS: readonly PlanTier[] = ['free', 'pro', 'business'];
 
 export const PLAN_TAGLINES: Record<PlanTier, string> = {
   free: 'Mulai gratis, tanpa kartu kredit.',
-  pro: 'Buat nota lebih banyak, pakai template sendiri.',
+  pro: 'Buat nota lebih banyak dan akses fitur tambahan.',
   business: 'Untuk usaha yang butuh integrasi.',
 };
 
@@ -56,7 +56,7 @@ export const PLAN_BENEFITS: Record<PlanTier, readonly string[]> = {
     'Hitung diskon, pajak, dan pembulatan otomatis',
     'Unduh PDF ukuran A4',
     'Simpan data pelanggan',
-    'Template bawaan dan upload logo',
+    'Template bawaan, buat template sendiri, dan upload logo',
     'Ekspor riwayat invoice ke Excel',
     'Dukungan prioritas',
   ],
@@ -65,7 +65,6 @@ export const PLAN_BENEFITS: Record<PlanTier, readonly string[]> = {
     'Buat beberapa usaha',
     'Buat invoice sebanyak yang kamu perlukan',
     'Bagikan tautan invoice ke pelanggan',
-    'Buat template sendiri dengan warna dan logo usaha',
     'Dukungan prioritas',
   ],
   business: [

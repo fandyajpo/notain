@@ -183,7 +183,7 @@ export function PricingPlans() {
             transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
             className="mx-auto mt-5 max-w-xl text-lead text-muted"
           >
-            Fitur dasar gratis selamanya. Pro menambah nota tanpa batas, template sendiri, dan laporan.
+            Fitur dasar gratis selamanya, termasuk template bawaan dan template buatan sendiri. Pro menambah nota tanpa batas dan laporan.
             Business sedang disiapkan dan belum bisa dibeli.
           </motion.p>
         </div>
