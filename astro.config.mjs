@@ -169,6 +169,16 @@ export default defineConfig({
   ],
   vite: {
     plugins: [tailwindcss(), editRouteFallback()],
+    build: {
+      // The >500 kB chunk is the shared app runtime (react-dom + TanStack +
+      // the app code every island shares), not a lazy-load miss: SheetJS
+      // (~900 kB), jsPDF (~350 kB), heic2any and TipTap are all dynamic
+      // `import()`s already (see lib/excel.ts, lib/pdf.ts, lib/payment-proof.ts,
+      // lazy-rich-editor.tsx and PERF-002 in docs/CODEBASE_AUDIT.md). Splitting
+      // the runtime further across the four-framework island boundaries is a
+      // re-architecture, not an import away, so the limit follows the reality.
+      chunkSizeWarningLimit: 800,
+    },
     resolve: {
       // Vue's default esm-bundler build ships the runtime template compiler,
       // which reaches for `new Function` — a CSP `unsafe-eval` violation.
