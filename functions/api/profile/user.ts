@@ -114,10 +114,12 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   };
   if (Object.prototype.hasOwnProperty.call(body, 'username')) {
     const raw = body.username;
-    if (raw === null || raw === undefined) {
+    // Only JSON strings are names — String() on anything else would turn an
+    // object into "[object Object]" and a number into digits worth rejecting.
+    if (typeof raw !== 'string') {
       return apiError(400, 'validation', 'Nama pengguna tidak valid.');
     }
-    const value = String(raw).trim();
+    const value = raw.trim();
     if (value.length > USERNAME_MAX) {
       return apiError(400, 'validation', 'Nama pengguna terlalu panjang.');
     }
@@ -125,10 +127,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   }
   if (Object.prototype.hasOwnProperty.call(body, 'phone')) {
     const raw = body.phone;
-    if (raw === null || raw === undefined) {
+    // Same rule as the username: strings only, no implicit stringify.
+    if (typeof raw !== 'string') {
       return apiError(400, 'validation', 'Nomor WhatsApp tidak valid.');
     }
-    const value = String(raw).trim();
+    const value = raw.trim();
     if (value !== '' && !PHONE_PATTERN.test(value)) {
       return apiError(
         400,

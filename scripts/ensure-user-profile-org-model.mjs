@@ -249,7 +249,6 @@ try {
   let cursor;
   let orgCount = 0;
   do {
-    const qs = new URLSearchParams({ limit: '100', queries: '[]' });
     // Appwrite ≥2.4 JSON-object queries; a bare page walk only needs limit.
     const page = await api(
       'GET',
