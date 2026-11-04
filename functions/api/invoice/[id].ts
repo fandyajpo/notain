@@ -165,8 +165,11 @@ function publicBusinessFrom(
   orgRow: (Record<string, unknown> & { $id: string }) | null,
 ) {
   const legacy = profile ? publicBusinessFromRow(profile, orgRow) : null;
-  const orgContact = (key: string): string | null =>
-    orgRow && typeof orgRow[key] === 'string' ? (orgRow as Record<string, string>)[key] : null;
+  const orgContact = (key: string): string | null => {
+    if (!orgRow) return null;
+    const value = (orgRow as Record<string, unknown>)[key];
+    return typeof value === 'string' ? value : null;
+  };
   const orgName = typeof orgRow?.name === 'string' ? orgRow.name : '';
 
   const businessName = orgContact('name') || orgName || legacy?.businessName || '';
@@ -176,9 +179,9 @@ function publicBusinessFrom(
   return {
     // The print view leads with the business name (now the org name).
     name: businessName,
-    phone: orgContact('phone') ?? undefined ?? legacy?.phone,
-    address: orgContact('address') ?? undefined ?? legacy?.address,
-    email: orgContact('email') ?? undefined ?? legacy?.email,
+    phone: orgContact('phone') ?? legacy?.phone ?? null,
+    address: orgContact('address') ?? legacy?.address ?? null,
+    email: orgContact('email') ?? legacy?.email ?? null,
     businessName,
     businessType: legacy?.businessType ?? null,
     logoUrl: logoFileId ? `/api/logo/${logoFileId}` : undefined,

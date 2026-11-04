@@ -27,8 +27,6 @@ import { LoadingState } from '../ui/state';
 const phonePattern = /^(?:\+?62|0)8\d{7,12}$/;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type FieldKey = 'email' | 'phone' | 'website' | 'address' | 'taxId';
-
 export function OrgContactEditor() {
   const orgId = useSyncExternalStore(subscribeActiveOrg, getActiveOrgId, () => null);
   const { data: orgs, isLoading: orgsLoading, isError: orgsError, refetch } = useOrgs();
@@ -72,6 +70,7 @@ export function OrgContactEditor() {
   const websiteIds = useFieldIds();
   const addressIds = useFieldIds();
   const taxIds = useFieldIds();
+  const logoIds = useFieldIds();
   const logoInput = useRef<HTMLInputElement | null>(null);
 
   const emailError =
@@ -157,11 +156,12 @@ export function OrgContactEditor() {
     >
       {serverError && <Notice variant="danger">{serverError}</Notice>}
       {!isOwner && (
-        <Notice variant="info">Hanya owner yang bisa mengubah kontak organisasi ini.</Notice>
+        <Notice variant="accent">Hanya owner yang bisa mengubah kontak organisasi ini.</Notice>
       )}
 
       <FieldShell
         label="Logo usaha"
+        htmlFor={logoIds.id}
         hint="Tampil di invoice dan halaman publik organisasi ini. Maksimal 2 MB (PNG, JPG, SVG, WEBP, ICO)."
       >
         <div className="flex items-center gap-3">
@@ -174,6 +174,7 @@ export function OrgContactEditor() {
           )}
           <input
             ref={logoInput}
+            id={logoIds.id}
             type="file"
             className="hidden"
             accept="image/png,image/jpeg,image/svg+xml,image/webp,image/vnd.microsoft.icon"

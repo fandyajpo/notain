@@ -71,6 +71,13 @@ const ORG_A: OrgView = {
   plan: 'free',
   active: false,
   businessType: null,
+  slug: null,
+  email: null,
+  phone: null,
+  website: null,
+  address: null,
+  taxId: null,
+  logoFileId: null,
 };
 const ORG_B: OrgView = {
   id: 'org_bbbbbbbbbbbbbbbb',
@@ -80,6 +87,13 @@ const ORG_B: OrgView = {
   plan: 'free',
   active: false,
   businessType: null,
+  slug: null,
+  email: null,
+  phone: null,
+  website: null,
+  address: null,
+  taxId: null,
+  logoFileId: null,
 };
 
 /**
@@ -302,6 +316,13 @@ describe('OrgGate', () => {
       plan: 'free',
       active: false,
       businessType: null,
+      slug: null,
+      email: null,
+      phone: null,
+      website: null,
+      address: null,
+      taxId: null,
+      logoFileId: null,
     };
     mocks.listOrgs.mockResolvedValue({ orgs: [created], pending: [] });
     mocks.listOrgs

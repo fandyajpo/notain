@@ -22,7 +22,7 @@ const env = {
   PUBLIC_APPWRITE_PROJECT_ID: 'proj_test',
   QUOTA_SESSION_CACHE_TTL_MS: '0',
   QUOTA_ADMIN_CACHE_TTL_MS: '0',
-} as Env;
+} as unknown as Env;
 
 let fake: AppwriteFake;
 

@@ -45,6 +45,13 @@ const ORG: OrgView = {
   plan: 'free',
   active: false,
   businessType: null,
+  slug: null,
+  email: null,
+  phone: null,
+  website: null,
+  address: null,
+  taxId: null,
+  logoFileId: null,
 };
 
 const NEW_ORG: OrgView = {
@@ -55,6 +62,13 @@ const NEW_ORG: OrgView = {
   plan: 'free',
   active: false,
   businessType: null,
+  slug: null,
+  email: null,
+  phone: null,
+  website: null,
+  address: null,
+  taxId: null,
+  logoFileId: null,
 };
 
 /** Polls an assertion while flushing React and a real timer tick. */
