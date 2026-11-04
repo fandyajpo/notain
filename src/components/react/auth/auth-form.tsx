@@ -192,7 +192,7 @@ function SignInForm({ redirectTo }: { redirectTo: string }) {
               href="/forgot-password"
               className="font-medium text-accent underline-offset-2 hover:underline focus-ring rounded-control"
             >
-              Lupa password?
+              Lupa kata sandi?
             </a>
           </p>
 
@@ -654,8 +654,8 @@ function readOauthFailure(): string | null {
   const detail = params.get('error_description') || params.get('error');
   const base =
     hasDiscord && !hasGoogle
-      ? 'Masuk dengan Discord gagal. Coba lagi, atau masuk dengan email dan kata sandi.'
-      : 'Masuk dengan Google gagal. Coba lagi, atau masuk dengan email dan kata sandi.';
+      ? 'Belum bisa masuk dengan Discord. Coba lagi atau masuk dengan email dan kata sandi.'
+      : 'Belum bisa masuk dengan Google. Coba lagi atau masuk dengan email dan kata sandi.';
   return detail ? `${base} (${detail})` : base;
 }
 

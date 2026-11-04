@@ -185,9 +185,9 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
           <Eyebrow delay={0.05} />
 
           <h1 className="mx-auto mt-6 max-w-3xl text-[clamp(2.5rem,6.5vw,4.25rem)] font-semibold leading-[1.03] tracking-[-0.035em]">
-            <SplitWords text="Urus invoice lebih rapi." className="block" delay={0.16} immediate />
+            <SplitWords text="Buat nota lebih rapi." className="block" delay={0.16} immediate />
             <SplitWords
-              text="Fokus kembangkan usaha."
+              text="Biar urusan usaha lebih mudah."
               className="block text-accent"
               delay={0.34}
               immediate
@@ -200,8 +200,8 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
             transition={{ duration: 0.6, delay: 0.6, ease: EASE }}
             className="mx-auto mt-6 max-w-xl text-lead text-muted"
           >
-            Buat invoice profesional, kelola pelanggan, dan simpan dokumen tagihan dalam satu
-            platform yang praktis, lebih mudah mengatur pekerjaan, lebih siap melayani pelanggan.
+            Buat nota, simpan data pelanggan, lalu bagikan PDF lewat WhatsApp. Semua catatan usaha
+            ada di satu tempat.
           </motion.p>
 
           <motion.div

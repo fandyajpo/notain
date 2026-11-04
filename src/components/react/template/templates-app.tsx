@@ -80,11 +80,11 @@ function TemplatesContent() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Template invoice"
+        title="Template nota"
         description={
           canCustomize
-            ? 'Atur urutan blok, warna, dan teks default sekali, dipakai tiap kali invoice baru dibuat.'
-            : 'Plan gratis memakai template bawaan. Template kustom — urutan blok, warna, dan branding di setiap nota — adalah fitur Pro.'
+            ? 'Atur tampilan template sekali, lalu pakai lagi setiap kali membuat nota.'
+            : 'Pakai template bawaan di Free. Di Pro, kamu bisa membuat template sendiri dengan warna dan logo usaha.'
         }
         actions={
           canCustomize ? (

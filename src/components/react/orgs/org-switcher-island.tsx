@@ -146,7 +146,7 @@ function OrgSwitcher() {
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={`Organisasi aktif: ${active.name}. Ganti organisasi`}
+        aria-label={`Usaha yang dibuka: ${active.name}. Ganti usaha`}
         onClick={() => setOpen((value) => !value)}
         className="flex w-full min-w-0 items-center gap-2 rounded-control px-2 py-3 text-sm text-foreground transition-colors hover:bg-background focus-ring"
       >
@@ -166,12 +166,12 @@ function OrgSwitcher() {
           <div
             ref={panelRef}
             role="menu"
-            aria-label="Daftar organisasi"
+            aria-label="Daftar usaha"
             style={pos ?? { top: 0, left: 0, visibility: 'hidden' }}
             className={cx('fixed z-portal min-w-52', popoverClass())}
           >
             <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wider text-muted">
-              Organisasi
+              Usaha
             </p>
             {orgs.map((org) => {
               const isActive = org.id === active.id;
@@ -198,7 +198,7 @@ function OrgSwitcher() {
               className={menuItemClass()}
             >
               <Settings size={15} className="shrink-0 text-muted" aria-hidden="true" />
-              <span className="truncate">Kelola organisasi</span>
+              <span className="truncate">Pengaturan usaha</span>
             </a>
           </div>,
           document.body,

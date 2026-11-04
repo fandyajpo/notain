@@ -78,7 +78,7 @@ export default function FreelancerTemplate({ site, items }: SiteTemplateProps) {
         </p>
         <p className="mx-auto mt-5 max-w-md text-[color:var(--site-muted)]">
           {hasList
-            ? 'Layanan yang bisa dikerjakan — hubungi untuk membahas kebutuhanmu.'
+            ? 'Daftar layanan tersedia. Hubungi untuk membahas kebutuhanmu.'
             : 'Hubungi untuk membahas kebutuhanmu.'}
         </p>
         {wa && (

@@ -28,10 +28,10 @@ describe('plan display copy', () => {
   it('derives the yearly saving from the monthly price', () => {
     // 12 × 49.000 = 588.000 − 490.000, computed rather than hand-written.
     expect(yearlySavingNote('pro')).toBe(
-      'Rp 490.000 / tahun — hemat Rp 98.000 dibanding pembayaran bulanan selama 12 bulan.',
+      'Rp 490.000 per tahun, hemat Rp 98.000 dibanding bayar bulanan selama 12 bulan.',
     );
     expect(yearlySavingNote('business')).toBe(
-      'Rp 990.000 / tahun — hemat Rp 198.000 dibanding pembayaran bulanan selama 12 bulan.',
+      'Rp 990.000 per tahun, hemat Rp 198.000 dibanding bayar bulanan selama 12 bulan.',
     );
   });
 

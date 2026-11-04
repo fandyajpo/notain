@@ -93,9 +93,9 @@ function PlanSummary({ session, canManage }: { session: PortalSession; canManage
   // means the term was granted without an end (the admin panel can clear it),
   // and Free has no end date at all.
   const expiryLine = !paid
-    ? 'Tidak kedaluwarsa — plan Free berlaku selamanya.'
+    ? 'Plan Free berlaku selamanya.'
     : session.planExpiresAt == null
-      ? 'Tidak kedaluwarsa — masa berlaku ini tidak dibatasi tanggal.'
+      ? 'Masa berlaku plan ini tidak dibatasi tanggal.'
       : session.active
         ? `Berlaku sampai ${formatTanggal(session.planExpiresAt)}.`
         : `Berakhir pada ${formatTanggal(session.planExpiresAt)}.`;
@@ -122,8 +122,7 @@ function PlanSummary({ session, canManage }: { session: PortalSession; canManage
 
       {paid && !session.active && (
         <Notice variant="accent" className="mt-3">
-          Plan {info?.name} kamu sudah berakhir, jadi saat ini kamu berjalan di plan Free. Riwayat
-          invoice dan datanya tetap tersimpan — pilih lagi plan di bawah untuk kembali berlangganan.
+          Masa aktif {info?.name} sudah berakhir. Akunmu sekarang memakai Free. Nota dan datamu tetap tersimpan. Pilih plan lagi di bawah kalau ingin berlangganan.
         </Notice>
       )}
 
@@ -140,10 +139,8 @@ function PlanSummary({ session, canManage }: { session: PortalSession; canManage
       )}
       {paid && session.active && (
         <Notice variant="accent" className="mt-3">
-          Plan ini dibayar untuk 30 hari dan{' '}
-          <span className="font-medium">tidak diperpanjang otomatis</span> — karena itu tidak ada
-          tombol batal langganan: langganan berhenti dengan sendirinya di tanggal berakhir di atas.
-          Turun ke plan lebih rendah baru bisa dipilih setelah masa aktif itu selesai.
+          Plan ini berlaku 30 hari dan <span className="font-medium">tidak diperpanjang otomatis</span>.
+          Langganan berhenti sendiri saat masa aktifnya habis. Kamu bisa memilih plan yang lebih rendah setelah itu.
         </Notice>
       )}
     </>

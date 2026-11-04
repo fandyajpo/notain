@@ -25,15 +25,15 @@ function InvoicesContent() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Invoice"
-        description="Semua invoice yang pernah kamu buat."
+        title="Nota"
+        description="Semua nota yang pernah kamu buat."
         actions={
           <Button
             onClick={() => window.location.assign('/invoice/new')}
             data-tour="invoices-create"
           >
             <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
-            Buat invoice
+            Buat nota
           </Button>
         }
       />

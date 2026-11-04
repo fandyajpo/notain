@@ -35,7 +35,7 @@ const PLANS: readonly Plan[] = [
     id: 'free',
     name: 'Free',
     badge: PLAN_BADGES.free ?? undefined,
-    cta: { href: '/register', label: 'Buat invoice gratis' },
+    cta: { href: '/register', label: 'Buat nota gratis' }
   },
   {
     id: 'pro',
@@ -174,8 +174,7 @@ export function PricingPlans() {
           </motion.span>
 
           <h1 className="mx-auto mt-6 max-w-2xl text-[clamp(2.25rem,5.5vw,3.25rem)] font-semibold leading-[1.06] tracking-[-0.03em]">
-            Mulai gratis. <span className="text-accent">Naik ke Pro</span> kalau butuh lebih.
-            Business menyusul.
+            Mulai gratis. <span className="text-accent">Pilih Pro</span> kalau butuh fitur lebih.
           </h1>
 
           <motion.p
@@ -184,9 +183,8 @@ export function PricingPlans() {
             transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
             className="mx-auto mt-5 max-w-xl text-lead text-muted"
           >
-            Fitur inti gratis selamanya, tanpa kartu kredit dan tanpa masa trial. Pro membuka
-            template premium, invoice tanpa batas, dan laporan bisnis. Business — akses API,
-            webhook, dan rate limit lebih tinggi — sedang disiapkan dan belum bisa dibeli.
+            Fitur dasar gratis selamanya. Pro menambah nota tanpa batas, template sendiri, dan laporan.
+            Business sedang disiapkan dan belum bisa dibeli.
           </motion.p>
         </div>
 

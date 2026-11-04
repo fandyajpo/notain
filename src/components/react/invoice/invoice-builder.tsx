@@ -294,7 +294,7 @@ export function InvoiceBuilder({
             }));
           if (drafts.length > 0) await rememberCatalog.mutateAsync(drafts);
         } catch {
-          toast('Invoice tersimpan, tapi sebagian barang belum masuk katalog. Coba lagi nanti.', {
+          toast('Nota tersimpan, tapi beberapa barang belum masuk katalog. Coba lagi nanti.', {
             variant: 'error',
           });
         }
@@ -306,7 +306,7 @@ export function InvoiceBuilder({
           setFirstInvoiceSaved(true);
           return;
         }
-        toast('Invoice berhasil disimpan.', { variant: 'success' });
+        toast('Nota berhasil disimpan.', { variant: 'success' });
         // Disarm the unsaved-changes guard so this intentional redirect is not
         // met with a "leave?" prompt.
         disarmGuard.current();
@@ -408,7 +408,7 @@ export function InvoiceBuilder({
         })
         .catch(() => {
           form.setFieldValue('status', previous);
-          toast('Status gagal disimpan. Coba lagi.', { variant: 'error' });
+          toast('Status belum tersimpan. Coba lagi ya.', { variant: 'error' });
         });
     },
     [form, invoiceId, updateStatus, values.status],
@@ -992,7 +992,7 @@ export function InvoiceBuilder({
                 if (!paymentProof) return;
                 try {
                   await deleteProof.mutateAsync(paymentProof.key);
-                  toast('Bukti pembayaran dihapus. Customer bisa unggah ulang.', {
+                  toast('Bukti pembayaran dihapus. Pelanggan bisa mengirim ulang.', {
                     variant: 'success',
                   });
                 } catch {

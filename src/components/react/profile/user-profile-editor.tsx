@@ -51,7 +51,7 @@ export function UserProfileEditor() {
   if (isError) {
     return (
       <div className="flex flex-col items-start gap-3">
-        <p className="text-sm text-danger">Profil gagal dimuat. Periksa koneksi internet kamu.</p>
+        <p className="text-sm text-danger">Profil belum bisa dimuat. Cek koneksi internetmu.</p>
         <Button variant="secondary" size="sm" onClick={() => void refetch()}>
           Coba lagi
         </Button>
@@ -68,7 +68,7 @@ export function UserProfileEditor() {
   async function handleSave() {
     setServerError(null);
     if (username.trim().length === 0) {
-      setServerError('Masukkan nama kamu terlebih dahulu.');
+      setServerError('Isi nama kamu dulu ya.');
       return;
     }
     if (phoneError) {
@@ -77,7 +77,7 @@ export function UserProfileEditor() {
     }
     try {
       await save.mutateAsync({ username: username.trim(), phone: phone.trim() });
-      toast('Profil berhasil disimpan.', { variant: 'success' });
+      toast('Profil tersimpan.', { variant: 'success' });
     } catch (error) {
       setServerError(toAppError(error).message);
     }
@@ -97,7 +97,7 @@ export function UserProfileEditor() {
       <FieldShell
         label="Email login"
         htmlFor={emailIds.id}
-        hint="Email login kamu — terkunci ke akun Appwrite dan tidak bisa diubah dari sini."
+        hint="Email ini dipakai untuk masuk dan tidak bisa diubah di sini."
       >
         <Input id={emailIds.id} type="email" value={email} readOnly className="text-muted" />
       </FieldShell>
@@ -115,7 +115,7 @@ export function UserProfileEditor() {
       <FieldShell
         label="Nomor WhatsApp (opsional)"
         htmlFor={phoneIds.id}
-        hint="Identitas akun — dipakai di seluruh organisasi, bukan hanya satu workspace."
+        hint="Nomor ini dipakai di profil akunmu, bukan sebagai nomor usaha."
         error={phoneError ?? undefined}
       >
         <Input

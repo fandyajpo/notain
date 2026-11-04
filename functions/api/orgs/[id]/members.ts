@@ -87,7 +87,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     return apiError(
       503,
       'unavailable',
-      'Undang anggota segera hadir — undangan otomatis belum bisa dikirim.',
+      'Fitur undangan anggota belum tersedia. Kamu belum bisa mengirim undangan otomatis.',
     );
   }
 

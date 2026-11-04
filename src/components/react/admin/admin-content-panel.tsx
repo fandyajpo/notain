@@ -216,7 +216,7 @@ export function AdminContentPanel() {
         <p className="text-sm text-muted">
           {total > 0
             ? `${users.length} dari ${total} user dimuat`
-            : 'Kelola template dan invoice milik satu user.'}
+            : 'Atur template dan nota milik satu pengguna.'}
         </p>
         <Button
           variant="secondary"
@@ -719,7 +719,7 @@ function InvoiceList({
           <thead>
             <tr className={THEAD_ROW}>
               <Th>Nomor</Th>
-              <Th>Customer</Th>
+              <Th>Pelanggan</Th>
               <Th>Tanggal</Th>
               <Th>Status</Th>
               <Th align="right">Aksi</Th>

@@ -94,7 +94,7 @@ export function Turnstile({ siteKey, onToken }: Props) {
       <div ref={containerRef} aria-live="polite" />
       {failed && (
         <p role="alert" className="text-sm text-danger">
-          Verifikasi keamanan gagal dimuat. Muat ulang halaman, atau coba lagi.
+          Verifikasi keamanan belum bisa dimuat. Muat ulang halaman atau coba lagi.
         </p>
       )}
     </div>

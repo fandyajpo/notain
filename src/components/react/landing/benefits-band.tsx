@@ -9,20 +9,20 @@ import { EASE } from './reveal';
  */
 const PAIRS = [
   {
-    problem: 'Hitungan diskon & pajak yang meleset bikin rugi.',
-    solution: 'Kalkulator otomatis: persen atau nominal, total selalu pas.',
+    problem: 'Salah hitung diskon atau pajak?',
+    solution: 'Total nota dihitung otomatis.'
   },
   {
-    problem: 'File invoice berserakan di galeri dan chat.',
-    solution: 'Semua tersimpan di akun, dibuka dari HP maupun laptop.',
+    problem: 'Nota terselip di chat atau galeri?',
+    solution: 'Simpan semua nota di akunmu, lalu buka dari HP atau laptop.'
   },
   {
-    problem: 'Kirim nota satu-satu, ribet salin tempel.',
-    solution: 'PDF A4 siap kirim, pesan WhatsApp-nya sudah disiapkan.',
+    problem: 'Capek menyalin pesan setiap kali kirim nota?',
+    solution: 'Siapkan pesan WhatsApp dan lampirkan PDF nota.'
   },
   {
-    problem: 'Lupa siapa yang sudah bayar dan siapa yang belum.',
-    solution: 'Status Lunas & Terkirim jelas, bukti bayar menempel di invoicenya.',
+    problem: 'Bingung siapa yang sudah bayar?',
+    solution: 'Tandai pembayaran dan simpan bukti transfer di nota.'
   },
 ] as const;
 

@@ -4,12 +4,12 @@ import { PrintApp } from '../../components/react/invoice/print-app';
 import '../../styles/print.css';
 ---
 
-<Layout title="Cetak Invoice | Notain">
+<Layout title="Cetak nota | Notain">
   <main id="konten" tabindex="-1">
     <!-- The island is `client:only`, so it ships no HTML of its own: the
          heading has to live in the shell for the document to have one before
          (and regardless of) hydration. -->
-    <h1 class="sr-only">Cetak invoice</h1>
+    <h1 class="sr-only">Cetak nota</h1>
     <PrintApp client:only="react" />
   </main>
 </Layout>

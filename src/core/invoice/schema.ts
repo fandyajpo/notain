@@ -149,7 +149,7 @@ export const invoiceDraftSchema = z
     customerName: z
       .string()
       .trim()
-      .min(1, 'Masukkan nama pelanggan terlebih dahulu.')
+      .min(1, 'Isi nama pelanggan dulu ya.')
       .max(INVOICE_LIMITS.customerName, 'Nama pelanggan terlalu panjang.'),
     customerPhone: z
       .string()
@@ -171,7 +171,7 @@ export const invoiceDraftSchema = z
     tax: invoiceAdjustmentSchema,
     items: z
       .array(invoiceItemSchema)
-      .min(1, 'Tambahkan minimal satu item ke invoice.')
+      .min(1, 'Tambahkan setidaknya satu barang atau jasa ke nota.')
       .max(INVOICE_LIMITS.maxItems, 'Jumlah item terlalu banyak.'),
     sections: invoiceSectionsSchema,
     details: invoiceDetailsSchema,
@@ -187,7 +187,7 @@ export const invoiceDraftSchema = z
       ctx.addIssue({
         code: 'custom',
         path: ['dueDate'],
-        message: 'Jatuh tempo tidak boleh sebelum tanggal invoice.',
+        message: 'Tanggal jatuh tempo harus sama atau setelah tanggal nota.',
       });
     }
 

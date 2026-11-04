@@ -157,12 +157,12 @@ describe('OrgGate', () => {
   it('keeps the account in-app and shows the optional no-organization empty state', async () => {
     renderGate();
     await until(() =>
-      expect(container.textContent).toContain('Kamu belum memiliki organization.'),
+      expect(container.textContent).toContain('Kamu belum punya usaha di Notain.'),
     );
     expect(container.textContent).toContain(
-      'Buat organization untuk mulai menggunakan fitur ini.',
+      'Buat usaha untuk mulai memakai fitur ini.',
     );
-    expect(container.textContent).toContain('Buat Organization');
+    expect(container.textContent).toContain('Buat usaha');
     expect(container.textContent).not.toContain('Siapa nama kamu?');
     expect(container.textContent).not.toContain('APP');
     expect(getActiveOrgId()).toBeNull();
@@ -302,14 +302,14 @@ describe('OrgGate', () => {
   it('offers optional organization creation without requesting personal information', async () => {
     renderGate();
     await until(() =>
-      expect(container.textContent).toContain('Kamu belum memiliki organization.'),
+      expect(container.textContent).toContain('Kamu belum punya usaha di Notain.'),
     );
     const button = [...container.querySelectorAll('button')].find(
-      (node) => node.textContent?.trim() === 'Buat Organization',
+      (node) => node.textContent?.trim() === 'Buat usaha',
     );
     expect(button).toBeTruthy();
     await act(async () => button?.click());
-    expect(document.body.textContent).toContain('Nama organization');
+    expect(document.body.textContent).toContain('Nama usaha');
     expect(document.body.textContent).not.toContain('Nama lengkap');
     expect(mocks.createOrg).not.toHaveBeenCalled();
   });

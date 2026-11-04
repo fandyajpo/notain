@@ -20,7 +20,7 @@ export function AuthGate({ children, fallback }: Props) {
   useEffect(() => {
     if (isLoading || isError || session) return;
     const next = encodeURIComponent(window.location.pathname + window.location.search);
-    toast('Silakan masuk terlebih dahulu.', { variant: 'info' });
+    toast('Masuk dulu untuk melanjutkan.', { variant: 'info' });
     window.location.replace(`/login?next=${next}`);
   }, [isLoading, isError, session]);
 

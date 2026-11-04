@@ -264,9 +264,9 @@ export function InvoiceTable() {
     if (!pendingDelete) return;
     try {
       await deleteInvoice.mutateAsync(pendingDelete.id);
-      toast('Invoice berhasil dihapus.', { variant: 'success' });
+      toast('Nota berhasil dihapus.', { variant: 'success' });
     } catch {
-      toast('Invoice gagal dihapus. Coba lagi.', { variant: 'error' });
+      toast('Nota belum bisa dihapus. Coba lagi ya.', { variant: 'error' });
     } finally {
       setPendingDelete(null);
     }
@@ -288,9 +288,9 @@ export function InvoiceTable() {
       try {
         await deleteInvoices.mutateAsync(ids);
         selection.clear();
-        toast(`${ids.length} invoice berhasil dihapus.`, { variant: 'success' });
+        toast(`${ids.length} nota berhasil dihapus.`, { variant: 'success' });
       } catch {
-        toast('Sebagian invoice gagal dihapus. Coba lagi.', { variant: 'error' });
+        toast('Beberapa nota belum bisa dihapus. Coba lagi ya.', { variant: 'error' });
       }
     } catch (error) {
       toast(toAppError(error).message, { variant: 'error' });
@@ -308,7 +308,7 @@ export function InvoiceTable() {
     }
     try {
       await deleteProof.mutateAsync(key);
-      toast('Bukti pembayaran dihapus. Customer bisa unggah ulang.', { variant: 'success' });
+      toast('Bukti pembayaran dihapus. Pelanggan bisa mengirim ulang.', { variant: 'success' });
     } catch {
       toast('Bukti pembayaran gagal dihapus. Coba lagi.', { variant: 'error' });
     } finally {
@@ -335,7 +335,7 @@ export function InvoiceTable() {
 
     if (file.size > PAYMENT_PROOF_MAX_BYTES) {
       toast(
-        'File terlalu besar. Maksimal 5 MB — foto akan dikompres otomatis, tapi file asli harus di bawah 5 MB.',
+        'Ukuran file maksimal 5 MB. Foto akan dikompres otomatis setelah dipilih.',
         {
           variant: 'error',
         },
@@ -765,7 +765,7 @@ export function InvoiceTable() {
           claim both "we could not load your invoices" and "you have none". */}
       {isError && invoices.length > 0 && (
         <Notice variant="accent">
-          Gagal memperbarui daftar invoice. Menampilkan data terakhir yang dimuat.
+          Daftar nota belum diperbarui. Yang tampil masih data terakhir.
         </Notice>
       )}
 
@@ -800,7 +800,7 @@ export function InvoiceTable() {
 
       {isError && invoices.length === 0 ? (
         <ErrorState
-          title="Gagal memuat invoice"
+          title="Nota belum bisa dimuat"
           message="Periksa koneksi internet kamu, lalu coba lagi."
           action={
             <Button size="sm" loading={isFetching} onClick={() => void refetch()}>
@@ -812,11 +812,11 @@ export function InvoiceTable() {
         <LoadingState label="Memuat invoice…" />
       ) : invoices.length === 0 ? (
         <EmptyState
-          title={anyFilter ? 'Tidak ada invoice yang cocok' : 'Belum ada invoice'}
+          title={anyFilter ? 'Belum ada nota yang cocok' : 'Belum ada nota'}
           description={
             anyFilter
               ? 'Coba kata kunci lain, atau ubah/hapus filter di atas.'
-              : 'Buat invoice pertama kamu dan kirim ke pelanggan dalam hitungan menit.'
+              : 'Buat nota pertamamu, lalu bagikan ke pelanggan lewat WhatsApp.'
           }
           action={
             !anyFilter ? (
@@ -931,7 +931,7 @@ export function InvoiceTable() {
         role="alertdialog"
         size="sm"
         ariaLabelledBy="delete-dialog-title"
-        title={<span id="delete-dialog-title">Hapus invoice ini?</span>}
+        title={<span id="delete-dialog-title">Hapus nota ini?</span>}
         actions={[
           { label: 'Batal', variant: 'secondary', onClick: () => setPendingDelete(null) },
           {
@@ -943,7 +943,7 @@ export function InvoiceTable() {
         ]}
       >
         <p className="text-sm text-muted">
-          {pendingDelete?.invoiceNumber} untuk {pendingDelete?.customerName} akan dihapus permanen.
+          Nota {pendingDelete?.invoiceNumber} untuk {pendingDelete?.customerName} akan dihapus permanen.
         </p>
       </Modal>
 
@@ -954,7 +954,7 @@ export function InvoiceTable() {
         size="sm"
         ariaLabelledBy="bulk-delete-dialog-title"
         title={
-          <span id="bulk-delete-dialog-title">Hapus {selectionCount ?? 0} invoice terpilih?</span>
+          <span id="bulk-delete-dialog-title">Hapus {selectionCount ?? 0} nota terpilih?</span>
         }
         actions={[
           { label: 'Batal', variant: 'secondary', onClick: () => setBulkDeleteOpen(false) },
@@ -967,7 +967,7 @@ export function InvoiceTable() {
         ]}
       >
         <p className="text-sm text-muted">
-          Invoice yang dipilih akan dihapus permanen dan tidak bisa dikembalikan.
+          Nota yang dipilih akan dihapus permanen dan tidak bisa dipulihkan.
         </p>
       </Modal>
 
@@ -1013,8 +1013,7 @@ export function InvoiceTable() {
         ]}
       >
         <p className="text-sm text-muted">
-          Bukti pembayaran {proofDelete?.invoiceNumber} akan dihapus. Customer bisa mengunggah bukti
-          yang baru lewat tautan invoice.
+          Bukti pembayaran untuk nota {proofDelete?.invoiceNumber} akan dihapus. Pelanggan bisa mengirim bukti baru lewat tautan nota.
         </p>
       </Modal>
     </div>

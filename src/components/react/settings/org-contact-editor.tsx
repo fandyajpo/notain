@@ -75,7 +75,7 @@ export function OrgContactEditor() {
 
   const emailError =
     fields.email !== '' && !emailPattern.test(fields.email)
-      ? 'Email organisasi tidak valid.'
+      ? 'Format email usaha belum benar.'
       : null;
   const phoneError =
     fields.phone !== '' && !phonePattern.test(fields.phone)
@@ -102,7 +102,7 @@ export function OrgContactEditor() {
       // The org list is the read model for this form — refresh it so the card
       // and the public-page link show the saved values.
       void queryClient.invalidateQueries({ queryKey: queryKeys.orgs });
-      toast('Kontak organisasi tersimpan.', { variant: 'success' });
+      toast('Kontak usaha tersimpan.', { variant: 'success' });
     } catch (error) {
       setServerError(toAppError(error).message);
     } finally {
@@ -119,7 +119,7 @@ export function OrgContactEditor() {
       await updateOrgContact(orgId, { logoFileId: fileId });
       setLogoUrl(`/api/logo/${encodeURIComponent(fileId)}`);
       void queryClient.invalidateQueries({ queryKey: queryKeys.orgs });
-      toast('Logo organisasi diperbarui.', { variant: 'success' });
+      toast('Logo usaha diperbarui.', { variant: 'success' });
     } catch (error) {
       toast(toAppError(error).message, { variant: 'error' });
     } finally {
@@ -129,14 +129,14 @@ export function OrgContactEditor() {
   }
 
   if (orgsLoading) {
-    return <LoadingState label="Memuat kontak organisasi…" />;
+    return <LoadingState label="Memuat kontak usaha…" />;
   }
 
   if (orgsError || !current) {
     return (
       <div className="flex flex-col items-start gap-3">
         <p className="text-sm text-danger">
-          Kontak organisasi gagal dimuat. Periksa koneksi internet kamu.
+          Kontak usaha belum bisa dimuat. Cek koneksi internetmu.
         </p>
         <Button variant="secondary" size="sm" onClick={() => void refetch()}>
           Coba lagi
@@ -156,19 +156,19 @@ export function OrgContactEditor() {
     >
       {serverError && <Notice variant="danger">{serverError}</Notice>}
       {!isOwner && (
-        <Notice variant="accent">Hanya owner yang bisa mengubah kontak organisasi ini.</Notice>
+        <Notice variant="accent">Hanya pemilik usaha yang bisa mengubah kontak ini.</Notice>
       )}
 
       <FieldShell
         label="Logo usaha"
         htmlFor={logoIds.id}
-        hint="Tampil di invoice dan halaman publik organisasi ini. Maksimal 2 MB (PNG, JPG, SVG, WEBP, ICO)."
+        hint="Tampil di nota dan halaman usahamu. Maksimal 2 MB. Bisa pakai PNG, JPG, SVG, WEBP, atau ICO."
       >
         <div className="flex items-center gap-3">
           {logoUrl && (
             <img
               src={logoUrl}
-              alt="Logo organisasi"
+              alt="Logo usaha"
               className="h-12 w-12 rounded-control object-contain"
             />
           )}
@@ -261,7 +261,7 @@ export function OrgContactEditor() {
 
       <div>
         <Button type="submit" size="lg" loading={saving} disabled={!isOwner}>
-          Simpan kontak organisasi
+          Simpan kontak usaha
         </Button>
       </div>
     </form>

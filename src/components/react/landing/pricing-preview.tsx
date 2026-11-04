@@ -12,12 +12,12 @@ import { EASE, Reveal, SectionHeading } from './reveal';
 
 const HIGHLIGHTS: Record<(typeof PLAN_TIER_IDS)[number], readonly string[]> = {
   free: [
-    `${FREE_PLAN_LIMITS.invoicesPerMonth} invoice baru per bulan`,
+    `${FREE_PLAN_LIMITS.invoicesPerMonth} nota baru per bulan`,
     'PDF A4 & kirim ke WhatsApp',
     'Data pelanggan & katalog',
   ],
-  pro: ['Template premium & branding', 'Laporan bisnis & invoice link', 'Penyimpanan lebih besar'],
-  business: ['API key untuk tim & integrasi', 'Webhook event invoice', 'Rate limit lebih tinggi'],
+  pro: ['Template sendiri', 'Laporan usaha dan tautan invoice', 'Penyimpanan lebih besar'],
+  business: ['Kunci API untuk integrasi', 'Pemberitahuan perubahan invoice', 'Batas penggunaan lebih tinggi'],
 };
 
 const TIER_NAMES = { free: 'Free', pro: 'Pro', business: 'Business' } as const;
@@ -38,7 +38,7 @@ export function PricingPreview() {
           <SectionHeading
             align="center"
             title="Mulai gratis. Bayar hanya kalau butuh lebih."
-            description="Fitur inti gratis selamanya, tanpa kartu kredit dan tanpa masa trial."
+            description="Fitur dasar gratis selamanya. Tidak perlu kartu kredit atau masa percobaan."
           />
 
           <div className="mt-12 grid gap-4 sm:grid-cols-3 sm:gap-6">
@@ -102,7 +102,7 @@ export function PricingPreview() {
                 transition={{ type: 'spring', stiffness: 400, damping: 24 }}
                 className="group inline-flex h-12 items-center gap-2 rounded-control border border-border bg-card px-6 text-base font-medium text-foreground shadow-card focus-ring"
               >
-                Lihat semua plan
+                Lihat pilihan langganan
                 <ArrowRight
                   size={17}
                   aria-hidden="true"

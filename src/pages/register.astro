@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import { AuthPage } from '../components/react/auth/auth-page';
 ---
 
-<Layout title="Daftar | Notain" description="Buat akun Notain gratis dan mulai membuat invoice.">
+<Layout title="Daftar | Notain" description="Buat akun Notain gratis untuk mulai membuat nota usahamu.">
   <main
     id="konten"
     tabindex="-1"
@@ -22,7 +22,7 @@ import { AuthPage } from '../components/react/auth/auth-page';
 
     <div class="rounded-card border border-border bg-card p-6 shadow-card sm:p-8">
       <h1 class="text-title">Buat akun</h1>
-      <p class="mt-2 text-sm text-muted">Gratis, dan invoice kamu tersimpan aman di akun ini.</p>
+      <p class="mt-2 text-sm text-muted">Gratis. Nota dan data usahamu tersimpan di akun ini.</p>
 
       <div class="mt-6">
         <AuthPage mode="sign-up" client:only="react" />

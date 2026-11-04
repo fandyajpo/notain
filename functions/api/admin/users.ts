@@ -295,7 +295,7 @@ async function updateUserProfile(
     return apiError(
       404,
       'not_found',
-      'User belum memiliki organisasi — belum ada data yang bisa diubah.',
+      'Akun ini belum punya usaha, jadi belum ada data usaha untuk diubah.'
     );
   }
 

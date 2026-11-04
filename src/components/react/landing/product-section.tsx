@@ -88,7 +88,7 @@ function TotalsCard() {
   return (
     <div
       role="img"
-      aria-label="Contoh rincian invoice: subtotal, diskon, pajak, dan total tagihan"
+      aria-label="Contoh rincian nota: subtotal, diskon, pajak, dan total pembayaran"
       className={cardClass('md')}
     >
       <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
@@ -236,11 +236,11 @@ function StatusBoardCards() {
     {
       label: 'Pendapatan diterima',
       value: formatRupiah(received),
-      sub: 'Invoice lunas pada periode ini',
+      sub: 'Nota yang sudah dibayar bulan ini',
     },
     { label: 'Belum dibayar', value: formatRupiah(unpaid), sub: 'Piutang yang masih menunggu' },
-    { label: 'Jatuh tempo lewat', value: '0 invoice', sub: 'Tidak ada' },
-    { label: 'Invoice dibuat', value: '3', sub: 'Termasuk yang batal' },
+    { label: 'Lewat jatuh tempo', value: '0 nota', sub: 'Tidak ada' },
+    { label: 'Nota dibuat', value: '3', sub: 'Termasuk yang dibatalkan' },
   ];
 
   return (
@@ -252,7 +252,7 @@ function StatusBoardCards() {
       >
         <div className="flex items-center gap-2 border-b border-border pb-3">
           <FileSpreadsheet size={15} aria-hidden="true" className="shrink-0 text-accent" />
-          <p className="text-sm font-semibold">Invoice</p>
+          <p className="text-sm font-semibold">Nota</p>
         </div>
         <ul className="mt-1 divide-y divide-border">
           {rows.map((row) => (
@@ -294,30 +294,30 @@ export function ProductSection() {
       <section id="fitur" className="scroll-mt-4">
         <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
           <SectionHeading
-            title="Dari isi sampai dibayar, satu alur yang rapi."
-            description="Bukan sekadar bikin invoice: data pelanggan, barang, hitungan, dan status tagihan saling terhubung di satu tempat."
+            title="Buat nota, kirim, lalu catat pembayarannya."
+            description="Data pelanggan, barang, total, dan status pembayaran tersimpan bersama di satu tempat."
           />
 
           <div className="mt-14 space-y-20 sm:space-y-24">
             <FeatureRow
               eyebrow="Bikin invoice"
-              title="Invoice profesional tanpa mulai dari nol."
-              description="Mulai dari template bawaan, isi kop dan barangnya. Diskon dan pajak dihitung otomatis, jadi angka total tidak pernah meleset, dan invoice berikutnya cukup ganti nama pelanggan."
+              title="Buat nota tanpa mulai dari awal."
+              description="Pilih template, isi nama pelanggan dan barang. Diskon, pajak, dan total dihitung otomatis. Nota berikutnya tinggal pakai lagi data yang sudah tersimpan."
               bullets={[
-                'Template bawaan siap pakai, lengkap dengan logo & kop usaha',
-                'Diskon dan pajak: persen atau nominal, total dihitung sendiri',
-                'Catatan, tanggal jatuh tempo, dan teks bebas di tiga zona',
+                'Template siap pakai dengan logo dan nama usaha',
+                'Atur diskon dan pajak sesuai kebutuhan',
+                'Tambahkan catatan dan tanggal jatuh tempo',
               ]}
               visual={<TotalsCard />}
             />
 
             <FeatureRow
               eyebrow="Data sekali, pakai berkali-kali"
-              title="Pelanggan & barang tak perlu diketik ulang."
-              description="Nomor HP pelanggan dan daftar barang tersimpan di akunmu. Saat bikin invoice, pilih dari daftar, datanya terpakai otomatis dan riwayat tiap pelanggan ikut tercatat."
+              title="Pelanggan dan barang tidak perlu diketik ulang."
+              description="Simpan nomor WhatsApp pelanggan dan daftar barang. Saat membuat nota, pilih dari daftar dan lanjutkan tanpa mengetik ulang."
               bullets={[
-                'Direktori pelanggan dengan nomor WhatsApp',
-                'Katalog barang & jasa dengan harga satuan',
+                'Simpan nama dan nomor WhatsApp pelanggan',
+                'Catat barang dan jasa beserta harganya',
                 'Punya daftar lama? Impor dari Excel atau CSV',
               ]}
               visual={<DirectoryCards />}
@@ -325,12 +325,12 @@ export function ProductSection() {
 
             <FeatureRow
               eyebrow="Pantau tagihan"
-              title="Tahu mana yang sudah dibayar, mana yang belum."
-              description="Setiap invoice punya status yang jelas (Belum dikirim, Terkirim, Lunas, atau Batal) dan ringkasannya langsung terlihat di dashboard. Bukti bayar dari pelanggan menempel di invoicenya."
+              title="Tahu nota mana yang sudah dibayar."
+              description="Tandai nota sudah dibayar atau belum, lalu lihat ringkasannya di dashboard. Bukti transfer juga bisa disimpan bersama notanya."
               bullets={[
-                'Status invoice terlihat dalam sekali lihat',
-                'Ringkasan pendapatan dan piutang per periode',
-                'Bukti transfer pelanggan tersimpan di invoice yang sama',
+                'Cek status pembayaran dengan cepat',
+                'Lihat pemasukan dan pembayaran yang belum masuk',
+                'Simpan bukti transfer di nota',
               ]}
               visual={<StatusBoardCards />}
             />

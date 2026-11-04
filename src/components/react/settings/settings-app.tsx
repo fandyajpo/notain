@@ -70,11 +70,11 @@ function ProfileSettingsContent() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Kelola Profil"
-        description="Identitas akun kamu — dipakai di semua organisasi. Kontak usaha yang tercetak di invoice diatur di Kelola Organisasi."
+        description="Nama dan nomor telepon akunmu. Kontak usaha yang tercetak di nota diatur di Pengaturan usaha."
         actions={
           orgs?.orgs.length ? (
             <Button variant="secondary" size="sm" href="/settings/organization">
-              Kelola organisasi
+              Pengaturan usaha
             </Button>
           ) : undefined
         }
@@ -144,8 +144,8 @@ function OrgSettingsContent() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Kelola Organisasi"
-        description="Identitas usaha, kontak yang tercetak di invoice, anggota, dan ruang kerja tempat semua data Notain kamu tersimpan."
+        title="Pengaturan usaha"
+        description="Atur nama, kontak, anggota, dan data untuk usaha ini."
         actions={
           <Button variant="secondary" size="sm" href="/settings">
             Profil saya
@@ -164,8 +164,7 @@ function OrgSettingsContent() {
             <div>
               <p className="font-medium">Kontak usaha</p>
               <p className="text-sm text-muted">
-                Yang tercetak di invoice dan tampil di halaman usaha organisasi ini — terpisah dari
-                identitas akun di Kelola Profil.
+                Kontak ini tercetak di nota dan tampil di halaman usahamu. Kontak akunmu diatur terpisah.
               </p>
             </div>
             <OrgContactEditor />

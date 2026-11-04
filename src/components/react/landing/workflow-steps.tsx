@@ -3,22 +3,22 @@ import { EASE, Reveal } from './reveal';
 
 const STEPS = [
   {
-    title: 'Daftar & isi profil usaha',
+    title: 'Daftar dan isi data usaha',
     description:
-      'Nama, nomor WhatsApp, alamat, dan logo. Cukup sekali di awal. Setiap invoice berikutnya otomatis pakai data ini.',
-    detail: 'Sekali isi, selamanya kepakai.',
+      'Isi nama usaha, nomor WhatsApp, alamat, dan logo. Nota berikutnya akan memakai data yang sama.',
+    detail: 'Isi sekali, pakai lagi.'
   },
   {
-    title: 'Buat invoice-nya',
+    title: 'Buat nota',
     description:
-      'Tambah pelanggan dan barang. Diskon, pajak, dan total dihitung otomatis. Mau ngebut? Ada pintasan keyboard di setiap kolom.',
-    detail: 'Hitungan selalu pas, tanpa kalkulator.',
+      'Pilih pelanggan dan barang. Diskon, pajak, dan total dihitung otomatis.',
+    detail: 'Tidak perlu hitung manual.'
   },
   {
-    title: 'Download & kirim',
+    title: 'Unduh dan kirim',
     description:
-      'PDF profesional langsung turun ke perangkat kamu. Notain lalu menyiapkan pesan WhatsApp-nya. Tinggal lampir, kirim.',
-    detail: 'Sampai ke pelanggan dalam hitungan detik.',
+      'Unduh PDF nota, buka WhatsApp, lampirkan berkasnya, lalu kirim ke pelanggan.',
+    detail: 'Nota siap dibagikan.'
   },
 ];
 
@@ -35,7 +35,7 @@ export function WorkflowSteps() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
               Cara kerjanya
             </p>
-            <h2 className="mt-3 max-w-xl text-title">Tiga langkah, kurang dari satu menit.</h2>
+            <h2 className="mt-3 max-w-xl text-title">Buat nota dalam tiga langkah.</h2>
           </Reveal>
 
           <div className="relative mt-14">

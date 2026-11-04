@@ -5,31 +5,31 @@ import { EASE, Reveal, SectionHeading } from './reveal';
 const CASES = [
   {
     icon: Coffee,
-    title: 'UMKM & usaha kecil',
+    title: 'Warung dan usaha kecil',
     example: 'Warung, toko, katering',
     description:
-      'Nota harian cetak rapi tanpa buku kas. Dikirim ke pelanggan lewat WhatsApp, dan riwayatnya tetap tersimpan walau ganti HP.',
+      'Buat nota harian, kirim lewat WhatsApp, dan simpan riwayatnya di akunmu. Bisa dibuka lagi saat ganti HP.'
   },
   {
     icon: Briefcase,
-    title: 'Freelancer & profesional mandiri',
+    title: 'Pekerja lepas',
     example: 'Desainer, developer, penulis',
     description:
-      'Invoice per proyek dengan kop dan catatan sendiri, jadi setiap klien menerima dokumen yang profesional, dan kamu tahu mana yang sudah lunas.',
+      'Buat nota untuk tiap proyek dengan nama usaha dan catatanmu. Tandai pembayaran yang sudah masuk.'
   },
   {
     icon: Wrench,
     title: 'Penyedia jasa',
     example: 'Jasa servis, salon, fotografer',
     description:
-      'Rincian pekerjaan, jumlah, dan total tagihan terangkum dalam satu dokumen. Pelanggan tinggal terima PDF-nya, tanpa perlu bertanya ulang.',
+      'Catat pekerjaan, jumlah, dan total pembayaran di satu nota. Bagikan PDF-nya ke pelanggan.',
   },
   {
     icon: ShoppingBag,
-    title: 'Online shop & reseller',
-    example: 'Toko daring, reseller, distributor',
+    title: 'Toko online dan reseller',
+    example: 'Toko online, reseller, distributor',
     description:
-      'Punya daftar pembeli dan barang lama? Impor dari Excel, pakai ulang katalog, lalu pantau pesanan yang belum dibayar.',
+      'Impor daftar pelanggan dan barang dari Excel. Pakai lagi katalog saat membuat nota dan cek pembayaran yang belum masuk.'
   },
 ] as const;
 
@@ -47,8 +47,8 @@ export function UseCases() {
       <section id="untuk-siapa" className="scroll-mt-4 border-t border-border bg-card">
         <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
           <SectionHeading
-            title="Cocok untuk yang pekerjaannya berputar di tagihan."
-            description="Tidak perlu tim keuangan atau pelatihan khusus: cukup koneksi internet dan satu menit waktu kamu."
+            title="Buat nota untuk berbagai jenis usaha."
+            description="Warung, toko online, katering, salon, atau jasa. Mulai dari browser HP maupun laptop."
           />
 
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:gap-6">
@@ -77,8 +77,7 @@ export function UseCases() {
 
           <Reveal y={14} delay={0.2}>
             <p className="mt-8 text-center text-xs text-muted">
-              Semua pengguna memakai fitur yang sama: Invoice, pelanggan, katalog, dan PDF, semuanya
-              dibuka dari HP maupun laptop.
+              Fitur yang sama bisa dipakai dari HP atau laptop: nota, pelanggan, katalog, dan PDF.
             </p>
           </Reveal>
         </div>

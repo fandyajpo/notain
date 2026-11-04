@@ -208,7 +208,7 @@ export async function deleteOrgCascade(orgId: string): Promise<void> {
   }
   throw new AppError(
     ERROR_CODES.UNKNOWN,
-    'Penghapusan melebihi batas. Muat ulang lalu coba lagi — penghapusan akan dilanjutkan.',
+    'Penghapusan belum selesai. Muat ulang halaman untuk melanjutkan.'
   );
 }
 

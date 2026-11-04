@@ -71,8 +71,8 @@ export function SetupChecklist({ profile, hasInvoices, hidden }: Props) {
   const steps: Step[] = [
     {
       id: 'profil',
-      label: 'Lengkapi profil usaha',
-      hint: 'Nama & kontak tampil di kop setiap invoice.',
+      label: 'Isi data usaha',
+      hint: 'Nama dan kontak ini tampil di setiap nota.',
       done: Boolean(profile?.name?.trim()),
       href: '/settings',
       cta: 'Lengkapi',
@@ -80,15 +80,15 @@ export function SetupChecklist({ profile, hasInvoices, hidden }: Props) {
     {
       id: 'logo',
       label: 'Unggah logo',
-      hint: 'Logo bikin invoice kelihatan lebih resmi.',
+      hint: 'Logo membuat nota lebih mudah dikenali.',
       done: Boolean(profile?.logoUrl),
       href: '/settings',
       cta: 'Unggah',
     },
     {
       id: 'invoice',
-      label: 'Buat invoice pertama',
-      hint: 'Pilih template, isi pelanggan & barang, langsung siap kirim.',
+      label: 'Buat nota pertama',
+      hint: 'Pilih template, isi pelanggan dan barang, lalu kirim.',
       done: hasInvoices,
       href: '/invoice/new',
       cta: 'Buat',
@@ -134,8 +134,8 @@ export function SetupChecklist({ profile, hasInvoices, hidden }: Props) {
           </span>
           <p className="font-medium">Semua siap!</p>
           <p className="max-w-sm text-sm text-muted">
-            Profil, logo, dan invoice pertama kamu sudah beres. Notain siap dipakai buat tagih
-            customer.
+            Data usaha, logo, dan nota pertamamu sudah siap.
+            Kamu siap mencatat transaksi.
           </p>
           <Button
             size="sm"
@@ -166,7 +166,7 @@ export function SetupChecklist({ profile, hasInvoices, hidden }: Props) {
         </span>
       </div>
       <p className="mt-1 text-sm text-muted">
-        Ikuti langkah ini supaya invoice kamu langsung siap dikirim.
+        Ikuti langkah ini supaya nota pertamamu siap dibagikan.
       </p>
 
       <ol className="mt-4 flex flex-col gap-2">

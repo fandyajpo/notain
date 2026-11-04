@@ -298,7 +298,7 @@ function CatalogContent() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Katalog"
-        description="Simpan barang dan jasa tetap kamu sekali, lalu ambil dari katalog saat membuat invoice."
+        description="Simpan barang dan jasa yang sering kamu jual, lalu pilih lagi saat membuat nota."
       />
 
       <form
@@ -397,8 +397,8 @@ function CatalogContent() {
         <LoadingState label="Memuat katalog…" />
       ) : isError && items.length === 0 ? (
         <ErrorState
-          title="Gagal memuat katalog"
-          message="Periksa koneksi internet kamu, lalu coba lagi."
+          title="Katalog belum bisa dimuat"
+          message="Cek koneksi internetmu, lalu coba lagi."
           action={
             <Button size="sm" loading={isFetching} onClick={() => void refetch()}>
               Coba lagi
@@ -409,7 +409,7 @@ function CatalogContent() {
         <EmptyState
           icon={Package}
           title="Belum ada barang atau jasa"
-          description="Tambahkan lewat form di atas, atau centang 'Simpan ke katalog' saat membuat invoice."
+          description="Tambahkan lewat form di atas atau centang 'Simpan ke katalog' saat membuat nota."
         />
       ) : (
         <div className="flex flex-col gap-3">

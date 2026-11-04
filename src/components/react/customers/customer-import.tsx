@@ -138,7 +138,7 @@ export function CustomerImportPanel() {
               loading={importCustomers.isPending}
               disabled={result.customers.length === 0}
             >
-              Impor {result.customers.length} customer
+              Impor {result.customers.length} pelanggan
             </Button>
             <Button variant="ghost" size="sm" onClick={reset}>
               Batal

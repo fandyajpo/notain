@@ -47,8 +47,8 @@ describe('SetupChecklist', () => {
     await render(<SetupChecklist profile={EMPTY_PROFILE} hasInvoices={false} hidden={false} />);
 
     expect(container.textContent).toContain('Langkah awal');
-    expect(container.textContent).toContain('Lengkapi profil usaha');
-    expect(container.textContent).toContain('Buat invoice pertama');
+    expect(container.textContent).toContain('Isi data usaha');
+    expect(container.textContent).toContain('Buat nota pertama');
     expect(container.textContent).toContain('0/3 selesai');
     expect(window.localStorage.getItem(INCOMPLETE_SEEN_KEY)).toBe('1');
     expect(window.localStorage.getItem(CELEBRATED_KEY)).toBeNull();
@@ -73,7 +73,7 @@ describe('SetupChecklist', () => {
 
     expect(container.textContent).toContain('3/3 selesai');
     expect(container.textContent).toContain('Semua siap!');
-    expect(container.textContent).not.toContain('Lengkapi profil usaha');
+    expect(container.textContent).not.toContain('Isi data usaha');
   });
 
   it('honours the dismissal so later visits stay quiet', async () => {

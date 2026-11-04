@@ -89,7 +89,7 @@ function InvoiceNewContent() {
   }, [source, numbers]);
 
   if (profileLoading || numbersLoading || templatesLoading) {
-    return <LoadingState label="Menyiapkan invoice…" />;
+    return <LoadingState label="Menyiapkan nota…" />;
   }
 
   if (setupFailed) {
@@ -97,7 +97,7 @@ function InvoiceNewContent() {
     // number list — that could produce a wrong number or letterhead.
     return (
       <ErrorState
-        title="Gagal menyiapkan invoice"
+        title="Nota belum bisa disiapkan"
         message="Periksa koneksi internet kamu, lalu coba lagi."
         action={
           <Button
@@ -122,7 +122,7 @@ function InvoiceNewContent() {
     // The fetch failed — that's a connectivity problem, not a missing invoice.
     return (
       <ErrorState
-        title="Gagal menyalin invoice"
+        title="Nota belum bisa disalin"
         message="Periksa koneksi internet kamu, lalu coba lagi."
         action={
           <Button loading={sourceQuery.isFetching} onClick={() => void sourceQuery.refetch()}>
@@ -137,9 +137,9 @@ function InvoiceNewContent() {
     return (
       <EmptyState
         icon={FileText}
-        title="Invoice tidak ditemukan"
-        description="Invoice yang mau disalin ini mungkin sudah dihapus, atau kamu membuka tautan dari akun lain."
-        action={<Button href="/invoice/new">Buat invoice baru</Button>}
+        title="Nota tidak ditemukan"
+        description="Nota yang ingin disalin mungkin sudah dihapus atau bukan milik akunmu."
+        action={<Button href="/invoice/new">Buat nota baru</Button>}
       />
     );
   }

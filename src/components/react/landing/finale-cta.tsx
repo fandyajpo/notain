@@ -27,7 +27,7 @@ export function FinaleCta() {
 
           <div className="relative rounded-card bg-card px-6 py-14 text-center sm:px-12 sm:py-16">
             <Reveal scale y={18}>
-              <h2 className="text-title">Buat invoice pertama kamu sekarang</h2>
+              <h2 className="text-title">Buat nota pertamamu</h2>
             </Reveal>
             <Reveal y={14} delay={0.1}>
               <p className="mx-auto mt-3 max-w-md text-muted">
@@ -45,7 +45,7 @@ export function FinaleCta() {
                 href="/register"
                 className="group inline-flex h-12 items-center gap-2 rounded-control bg-accent px-5 text-base font-medium text-accent-foreground shadow-accent transition-colors hover:bg-accent/90 focus-ring"
               >
-                Buat invoice gratis
+                Buat nota gratis
                 <ArrowRight
                   size={17}
                   aria-hidden="true"

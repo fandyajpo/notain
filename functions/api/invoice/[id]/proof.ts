@@ -136,8 +136,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
         409,
         'conflict',
         row.status === 'paid'
-          ? 'Invoice ini sudah ditandai Lunas — unggah bukti pembayaran sudah ditutup.'
-          : 'Invoice ini sudah dibatalkan — unggah bukti pembayaran sudah ditutup.',
+          ? 'Nota ini sudah ditandai lunas. Bukti pembayaran tidak bisa ditambahkan lagi.'
+          : 'Nota ini sudah dibatalkan. Bukti pembayaran tidak bisa ditambahkan lagi.',
       );
     }
     if (typeof row.paymentProofKey === 'string' && row.paymentProofKey !== '') {

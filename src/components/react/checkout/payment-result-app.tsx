@@ -97,7 +97,7 @@ function PaymentResultContent() {
         message={
           notFound
             ? 'Nomor invoice ini tidak cocok dengan pembayaran di akun kamu. Pastikan kamu membuka tautan dari akun yang sama.'
-            : 'Periksa koneksi internet kamu, lalu coba lagi. Pembayaran yang sudah masuk tetap tersimpan — coba lagi tidak membuat tagihan baru.'
+            : 'Cek koneksi internetmu, lalu coba lagi. Pembayaran yang sudah masuk tetap tersimpan dan percobaan ulang tidak membuat tagihan baru.'
         }
         action={
           <Button size="sm" loading={status.isFetching} onClick={() => void status.refetch()}>
@@ -161,8 +161,8 @@ function PaymentResultContent() {
       title={value === 'expired' ? 'Pembayaran kedaluwarsa' : 'Pembayaran tidak selesai'}
       message={
         value === 'expired'
-          ? `Pesanan untuk plan ${planLabel} tidak diselesaikan dalam waktu yang tersedia. Tidak ada uang yang tertahan — mulai lagi kapan saja.`
-          : `Pesanan untuk plan ${planLabel} tidak berhasil diselesaikan. Tidak ada uang yang tertahan — coba lagi kapan saja.`
+          ? `Pembayaran ${planLabel} tidak selesai tepat waktu. Tidak ada uang yang tertahan. Kamu bisa mencoba lagi kapan saja.`
+          : `Pembayaran ${planLabel} belum berhasil. Tidak ada uang yang tertahan. Kamu bisa mencoba lagi kapan saja.`
       }
       action={
         <div className="flex flex-wrap items-center justify-center gap-3">

@@ -73,7 +73,7 @@ export const TOURS: Record<string, TourDef> = {
         target: 'invoices-search',
         title: 'Cari cepat',
         description:
-          'Ketik nomor, nama pelanggan, atau barang untuk menemukan invoice dalam sekejap.',
+          'Cari berdasarkan nomor nota, nama pelanggan, atau barang.',
         side: 'bottom',
       },
       {
@@ -87,7 +87,7 @@ export const TOURS: Record<string, TourDef> = {
         target: 'invoices-table',
         title: 'Daftar invoice kamu',
         description:
-          'Setiap baris menampilkan nomor, pelanggan, tanggal, total, dan status. Buka satu invoice untuk detailnya — ubah status di sana, unduh PDF A4, atau kirim ke WhatsApp pelanggan.',
+          'Setiap baris menampilkan nomor nota, pelanggan, tanggal, total, dan status. Buka nota untuk melihat rinciannya, mengubah status, mengunduh PDF, atau membagikannya lewat WhatsApp.',
         side: 'top',
       },
     ],
@@ -101,7 +101,7 @@ export const TOURS: Record<string, TourDef> = {
         target: 'inv-tabs',
         title: 'Isi lewat tab',
         description:
-          'Invoice ini punya beberapa tab: Detail (pelanggan), Barang (item), Kop, dan lainnya. Pindah tab untuk mengisi tiap bagian.',
+          'Isi nota lewat beberapa tab, seperti Pelanggan, Barang, dan Tampilan. Pindah tab untuk melengkapi tiap bagian.',
         side: 'bottom',
       },
       {
@@ -115,7 +115,7 @@ export const TOURS: Record<string, TourDef> = {
         target: 'inv-preview',
         title: 'Pratinjau & simpan',
         description:
-          'Pratinjau invoice di samping selalu ikut terbaru. Selesai mengisi? Simpan invoice-nya.',
+          'Pratinjau nota di samping ikut berubah saat kamu mengisi. Kalau sudah siap, simpan notanya.',
         side: 'left',
       },
     ],
@@ -129,7 +129,7 @@ export const TOURS: Record<string, TourDef> = {
         target: 'cust-form',
         title: 'Tambah pelanggan',
         description:
-          'Simpan nama, email, dan nomor WhatsApp supaya bisa dipakai ulang di invoice berikutnya.',
+          'Simpan nama, email, dan nomor WhatsApp supaya bisa dipakai lagi saat membuat nota.',
         side: 'bottom',
       },
       {
@@ -150,7 +150,7 @@ export const TOURS: Record<string, TourDef> = {
         target: 'catalog-form',
         title: 'Simpan barang & jasa',
         description:
-          'Catat barang atau jasa tetap kamu sekali di sini — nama, jenis, satuan, dan harga. Ambil lagi kapan saja saat bikin invoice.',
+          'Simpan nama barang atau jasa, satuan, dan harganya. Pilih lagi saat membuat nota.',
         side: 'bottom',
       },
       {
@@ -171,7 +171,7 @@ export const TOURS: Record<string, TourDef> = {
         target: 'settings-profile',
         title: 'Profil kamu',
         description:
-          'Isi sekali di sini — nama, kontak, dan logo kamu yang otomatis dipakai di setiap invoice.',
+          'Isi nama, kontak, dan logo usaha. Data ini akan dipakai di nota berikutnya.',
         side: 'bottom',
       },
       {

@@ -42,7 +42,7 @@ function customerNameIssue(): unknown {
 
 describe('errorMessage', () => {
   it('reads the message off a raw Zod 4 issue object', () => {
-    expect(errorMessage(customerNameIssue())).toBe('Masukkan nama pelanggan terlebih dahulu.');
+    expect(errorMessage(customerNameIssue())).toBe('Isi nama pelanggan dulu ya.');
   });
 
   it('unwraps a whole ZodError down to its first issue', () => {
@@ -73,7 +73,7 @@ describe('FieldShell', () => {
     );
 
     const alert = container.querySelector('[role="alert"]');
-    expect(alert?.textContent).toContain('Masukkan nama pelanggan terlebih dahulu.');
+    expect(alert?.textContent).toContain('Isi nama pelanggan dulu ya.');
   });
 
   it('falls back to the hint when there is no error', async () => {

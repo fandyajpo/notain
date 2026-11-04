@@ -12,9 +12,9 @@ export function NoOrganizationState() {
   return (
     <>
       <EmptyState
-        title="Kamu belum memiliki organization."
-        description="Buat organization untuk mulai menggunakan fitur ini."
-        action={<Button onClick={() => setOpen(true)}>Buat Organization</Button>}
+        title="Kamu belum punya usaha di Notain."
+        description="Buat usaha untuk mulai memakai fitur ini."
+        action={<Button onClick={() => setOpen(true)}>Buat usaha</Button>}
       />
       {open && <CreateOrganizationModal onClose={() => setOpen(false)} />}
     </>
@@ -30,7 +30,7 @@ function CreateOrganizationModal({ onClose }: { onClose: () => void }) {
   async function submit(): Promise<void> {
     const trimmed = name.trim();
     if (!trimmed || trimmed.length > 128) {
-      setError('Nama organization wajib diisi (maksimal 128 karakter).');
+      setError('Isi nama usaha, maksimal 128 karakter.');
       return;
     }
     setError(undefined);
@@ -38,7 +38,7 @@ function CreateOrganizationModal({ onClose }: { onClose: () => void }) {
       await create.mutateAsync({ name: trimmed });
       onClose();
     } catch (cause) {
-      setError(isAppError(cause) ? cause.message : 'Gagal membuat organization. Coba lagi.');
+      setError(isAppError(cause) ? cause.message : 'Usaha belum bisa dibuat. Coba lagi ya.');
     }
   }
 
@@ -48,10 +48,10 @@ function CreateOrganizationModal({ onClose }: { onClose: () => void }) {
       onClose={() => {
         if (!create.isPending) onClose();
       }}
-      title="Buat Organization"
+      title="Buat usaha"
       actions={[
         { label: 'Batal', variant: 'secondary', onClick: onClose, disabled: create.isPending },
-        { label: 'Buat Organization', onClick: () => void submit(), loading: create.isPending },
+        { label: 'Buat usaha', onClick: () => void submit(), loading: create.isPending },
       ]}
     >
       <form
@@ -60,7 +60,7 @@ function CreateOrganizationModal({ onClose }: { onClose: () => void }) {
           void submit();
         }}
       >
-        <FieldShell label="Nama organization" htmlFor={ids.id} error={error} required>
+        <FieldShell label="Nama usaha" htmlFor={ids.id} error={error} required>
           <Input
             id={ids.id}
             value={name}

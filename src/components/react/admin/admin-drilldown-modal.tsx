@@ -21,7 +21,7 @@ import { toAppError } from '../../../app/errors';
 const RESOURCE_OPTIONS: ReadonlyArray<{ value: AdminDrillResource; label: string }> = [
   { value: 'overview', label: 'Ringkasan' },
   { value: 'invoices', label: 'Invoice' },
-  { value: 'customers', label: 'Customer' },
+  { value: 'customers', label: 'Pelanggan' },
   { value: 'templates', label: 'Template' },
 ];
 
@@ -139,7 +139,7 @@ function OverviewPanel({ overview }: { overview: AdminDrillOverview }) {
       </dl>
       <div className="flex flex-wrap gap-2">
         <Badge variant="neutral">Invoice: {counts.invoices}</Badge>
-        <Badge variant="neutral">Customer: {counts.customers}</Badge>
+        <Badge variant="neutral">Pelanggan: {counts.customers}</Badge>
         <Badge variant="neutral">Template: {counts.templates}</Badge>
       </div>
     </div>
@@ -172,7 +172,7 @@ function ResourceTable({
         <thead>
           <tr className={THEAD_ROW}>
             <Th>No. Invoice</Th>
-            <Th>Customer</Th>
+            <Th>Pelanggan</Th>
             <Th>Status</Th>
             <Th>Tanggal</Th>
           </tr>

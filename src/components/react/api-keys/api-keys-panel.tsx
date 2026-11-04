@@ -11,8 +11,8 @@ export function ApiKeysPanel() {
   return (
     <EmptyState
       icon={KeyRound}
-      title="API Keys segera hadir"
-      description="Fitur API masih disiapkan. Nanti kamu bisa membuat key, mengatur scope, dan memantau pemakaian API langsung di halaman ini."
+      title="Kunci API segera hadir"
+      description="Fitur API sedang disiapkan. Nantinya kamu bisa membuat kunci dan melihat pemakaiannya di sini."
       action={
         <Button href="/developers" variant="secondary" size="sm">
           Pelajari rencana API

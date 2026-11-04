@@ -56,7 +56,7 @@ export function EmptyState({
  * retry. `inline` sits inside a table cell or narrow column and drops the card.
  */
 export function ErrorState({
-  title = 'Gagal memuat',
+  title = 'Belum bisa dimuat',
   message,
   action,
   inline = false,

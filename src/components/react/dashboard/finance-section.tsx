@@ -129,7 +129,7 @@ export function FinanceSection({ businessName, enabled = true }: Props) {
           </div>
         ) : finance.isError || !finance.data ? (
           <ErrorState
-            title="Gagal memuat keuangan"
+            title="Ringkasan belum bisa dimuat"
             message="Periksa koneksi internet kamu, lalu coba lagi."
             action={
               <Button size="sm" onClick={() => void finance.refetch()}>
@@ -141,8 +141,7 @@ export function FinanceSection({ businessName, enabled = true }: Props) {
           <>
             {finance.data.truncated && (
               <Notice variant="warning">
-                Jumlah invoice pada periode ini melebihi batas muat — angka di bawah mungkin belum
-                lengkap. Persempit periode untuk angka pasti.
+                Nota pada periode ini melebihi batas tampilan. Persempit periode supaya angkanya lebih akurat.
               </Notice>
             )}
             <SummaryCards summary={finance.data.summary} />
@@ -183,7 +182,7 @@ const MONEY_CARDS: ReadonlyArray<MoneyCardSpec> = [
     Icon: Banknote,
     tone: 'success',
     pick: (summary) => formatRupiah(summary.receivedRevenue),
-    sub: () => 'Invoice lunas pada periode ini',
+    sub: () => 'Nota yang sudah dibayar bulan ini',
   },
   {
     label: 'Belum dibayar',
@@ -196,12 +195,12 @@ const MONEY_CARDS: ReadonlyArray<MoneyCardSpec> = [
     label: 'Jatuh tempo lewat',
     Icon: TriangleAlert,
     tone: 'danger',
-    pick: (summary) => `${summary.overdueCount} invoice`,
+    pick: (summary) => `${summary.overdueCount} nota`,
     sub: (summary) =>
       summary.overdueCount > 0 ? formatRupiah(summary.overdueAmount) + ' terlambat' : 'Tidak ada',
   },
   {
-    label: 'Invoice dibuat',
+    label: 'Nota dibuat',
     Icon: FileText,
     tone: 'neutral',
     pick: (summary) => `${summary.invoiceCount}`,
@@ -253,7 +252,7 @@ function RevenueChart({ points }: { points: ChartPoint[] }) {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-sm font-medium">Pendapatan 6 bulan terakhir</h3>
         {/* The honesty label: bucketed by invoice date, paid invoices only. */}
-        <p className="text-xs text-muted">Dihitung dari tanggal invoice yang lunas</p>
+        <p className="text-xs text-muted">Dihitung dari tanggal nota yang sudah dibayar</p>
       </div>
       <div className="mt-4 flex h-40 items-end gap-2 sm:gap-3" role="img" aria-label={summaryLabel}>
         {points.map((point) => (

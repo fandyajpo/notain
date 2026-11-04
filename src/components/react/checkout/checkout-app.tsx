@@ -95,7 +95,7 @@ function CheckoutContent() {
     return (
       <ErrorState
         title="Plan Business sedang disiapkan"
-        message="Business belum bisa dibeli — tim kami masih menyelesaikannya. Kalau butuh fitur lebih sekarang, plan Pro sudah tersedia."
+        message="Business belum bisa dibeli. Kalau butuh fitur lebih sekarang, kamu bisa memilih Pro."
         action={
           <Button href="/pricing" size="sm">
             Lihat harga
@@ -142,8 +142,8 @@ function CheckoutContent() {
   if (!activeOrg.isOwner) {
     return (
       <ErrorState
-        title="Hanya owner yang bisa berlangganan"
-        message={`Plan dibayar untuk organisasi, jadi hanya owner ${activeOrg.name} yang boleh membeli atau memperpanjangnya. Minta owner-nya melakukan upgrade, atau pindah ke organisasi yang kamu pegang sendiri.`}
+        title="Hanya pemilik usaha yang bisa berlangganan"
+        message={`Langganan berlaku untuk satu usaha. Hanya pemilik ${activeOrg.name} yang bisa membeli atau memperpanjangnya. Minta pemilik usaha ini yang melanjutkan.`}
         action={
           <Button href="/dashboard" size="sm">
             Ke dashboard

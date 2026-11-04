@@ -71,7 +71,7 @@ function OrgSectionContent({ orgId }: { orgId: string }) {
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
-              <p className="font-medium">Organisasi aktif</p>
+              <p className="font-medium">Usaha yang sedang dibuka</p>
               <Badge variant={isOwner ? 'accent' : 'neutral'} size="sm">
                 {isOwner ? 'Owner' : 'Anggota'}
               </Badge>
@@ -82,8 +82,7 @@ function OrgSectionContent({ orgId }: { orgId: string }) {
             <RenameForm orgId={orgId} name={current.name} />
           ) : (
             <p className="text-sm text-muted">
-              <span className="font-medium text-foreground">{current.name}</span> — hanya owner yang
-              bisa mengganti nama.
+              <span className="font-medium text-foreground">{current.name}</span>. Hanya pemilik yang bisa mengganti nama.
             </p>
           )}
           <BusinessTypeField
@@ -97,16 +96,16 @@ function OrgSectionContent({ orgId }: { orgId: string }) {
                 ? (slug) => {
                     void setType
                       .mutateAsync(slug)
-                      .then(() => toast('Jenis bisnis disimpan.', { variant: 'success' }))
+                      .then(() => toast('Jenis usaha disimpan.', { variant: 'success' }))
                       .catch((error) =>
-                        toast(isAppError(error) ? error.message : 'Gagal menyimpan jenis bisnis.', {
+                        toast(isAppError(error) ? error.message : 'Jenis usaha belum tersimpan. Coba lagi ya.', {
                           variant: 'error',
                         }),
                       );
                   }
                 : undefined
             }
-            description="Dipakai untuk mengelompokkan template, mengisi contoh invoice, dan menentukan tampilan halaman usaha publik."
+            description="Pilihan ini menyesuaikan template dan contoh nota dengan jenis usahamu."
           />
         </div>
       </Card>
@@ -145,7 +144,7 @@ function NewOrgButton() {
   return (
     <>
       <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
-        Buat organisasi baru
+        Buat usaha baru
       </Button>
       {open && <NewOrgModal onClose={() => setOpen(false)} />}
     </>
@@ -182,7 +181,7 @@ function NewOrgModal({ onClose }: { onClose: () => void }) {
   async function handleCreate(): Promise<void> {
     const trimmed = name.trim();
     if (trimmed === '') {
-      setError('Nama organisasi wajib diisi.');
+      setError('Isi nama usaha dulu ya.');
       return;
     }
     setError(undefined);
@@ -196,7 +195,7 @@ function NewOrgModal({ onClose }: { onClose: () => void }) {
     } catch (cause) {
       // The server's own copy (duplicate name, quota, 403) is more precise
       // than anything invented here.
-      setError(isAppError(cause) ? cause.message : 'Gagal membuat organisasi. Coba lagi.');
+      setError(isAppError(cause) ? cause.message : 'Usaha belum bisa dibuat. Coba lagi ya.');
     }
   }
   if (created) {
@@ -204,10 +203,10 @@ function NewOrgModal({ onClose }: { onClose: () => void }) {
       <Modal
         open
         onClose={onClose}
-        title="Organisasi dibuat"
+        title="Usaha dibuat"
         actions={[
           { label: 'Nanti', variant: 'secondary', onClick: onClose },
-          { label: 'Masuk ke ruang kerja', onClick: enterCreated },
+          { label: 'Buka usaha ini', onClick: enterCreated },
         ]}
       >
         <div className="flex flex-col items-center gap-3 py-4 text-center">
@@ -217,9 +216,7 @@ function NewOrgModal({ onClose }: { onClose: () => void }) {
           <div className="flex flex-col gap-1">
             <p className="font-medium text-foreground">{created.name}</p>
             <p className="text-sm text-muted">
-              Sudah masuk ke daftar organisasi kamu. Pilih{' '}
-              <span className="font-medium">Masuk ke ruang kerja</span> untuk langsung bekerja di
-              ruang baru ini, atau 'Nanti' dan buka kapan saja dari daftar organisasi.
+              Usaha ini sudah siap. Pilih <span className="font-medium">Buka usaha ini</span> untuk mulai, atau pilih Nanti dan bukalah dari daftar usaha kapan saja.
             </p>
           </div>
         </div>
@@ -231,12 +228,12 @@ function NewOrgModal({ onClose }: { onClose: () => void }) {
     <Modal
       open
       onClose={handleClose}
-      title="Buat organisasi baru"
+      title="Buat usaha baru"
       ariaLabelledBy="new-org-title"
       actions={[
         { label: 'Batal', variant: 'secondary', onClick: handleClose, disabled: create.isPending },
         {
-          label: 'Buat organisasi',
+          label: 'Buat usaha',
           onClick: () => void handleCreate(),
           loading: create.isPending,
         },
@@ -249,10 +246,10 @@ function NewOrgModal({ onClose }: { onClose: () => void }) {
         }}
       >
         <FieldShell
-          label="Nama organisasi"
+          label="Nama usaha"
           htmlFor={ids.id}
           error={error}
-          hint="Ruang kerja terpisah: data invoice, pelanggan, dan pembayarannya tidak bercampur dengan organisasi lain."
+          hint="Data nota, pelanggan, dan pembayaran usaha ini terpisah dari usaha lainnya."
           required
         >
           <Input
@@ -284,7 +281,7 @@ function RenameForm({ orgId, name }: { orgId: string; name: string }) {
     if (trimmed === '' || trimmed === name) return;
     try {
       await rename.mutateAsync(trimmed);
-      toast('Nama organisasi disimpan.', { variant: 'success' });
+      toast('Nama usaha disimpan.', { variant: 'success' });
     } catch (error) {
       // Keep the typed value: the fix is usually a retry, not a retyping.
       toast(isAppError(error) ? error.message : 'Gagal menyimpan nama.', { variant: 'error' });
@@ -297,7 +294,7 @@ function RenameForm({ orgId, name }: { orgId: string; name: string }) {
       onSubmit={(event) => void handleRename(event)}
     >
       <div className="flex-1">
-        <FieldShell label="Nama organisasi" htmlFor={ids.id}>
+        <FieldShell label="Nama usaha" htmlFor={ids.id}>
           <Input
             id={ids.id}
             value={value}
@@ -355,10 +352,9 @@ function MembersCard({ orgId, isOwner }: { orgId: string; isOwner: boolean }) {
             instead of offering a form that can only fail. */}
         {isOwner && (
           <div className="border-t border-border pt-4">
-            <p className="text-sm font-medium">Undang anggota — segera hadir</p>
+            <p className="text-sm font-medium">Undang anggota, segera hadir</p>
             <p className="text-sm text-muted">
-              Undangan lewat email belum aktif karena layanan emailnya belum terpasang. Kamu tetap
-              bisa mengelola anggota yang sudah bergabung di daftar atas.
+              Undangan lewat email belum tersedia. Kamu tetap bisa mengelola anggota yang sudah bergabung di daftar atas.
             </p>
           </div>
         )}
@@ -468,11 +464,10 @@ function DangerZoneCard({ orgId, orgName }: { orgId: string; orgName: string }) 
           <div>
             <p className="font-medium text-danger">Hapus organisasi</p>
             <p className="text-sm text-muted">
-              Menghapus organisasi akan menghapus permanen seluruh data milik organization ini,
-              termasuk invoice, pelanggan, katalog, template, pembayaran, dan catatan lainnya.
-              Semua anggota serta undangan tertunda akan dikeluarkan/dibatalkan. Akun dan profil
-              pribadi owner maupun mantan anggota tetap ada; semuanya kembali ke keadaan tanpa
-              organization. Tindakan ini tidak dapat dibatalkan.
+              Usaha ini dan semua datanya akan dihapus permanen, termasuk nota, pelanggan, katalog,
+              template, pembayaran, dan data lainnya. Semua anggota dan undangan tertunda akan
+              dikeluarkan. Akun dan profil pribadi pemilik serta mantan anggota tetap ada. Mereka
+              kembali memakai akun tanpa usaha ini. Tindakan ini tidak bisa dibatalkan.
             </p>
           </div>
           {!confirming && (
@@ -486,10 +481,9 @@ function DangerZoneCard({ orgId, orgName }: { orgId: string; orgName: string }) 
         {confirming && (
           <div className="flex flex-col gap-3 rounded-control border border-danger/25 bg-danger-soft p-3">
             <p className="text-sm text-danger">
-              Semua data organization akan dihapus permanen. Seluruh invoice, pelanggan, katalog,
-              template, data lainnya, anggota aktif, dan undangan tertunda akan dihapus. Akun serta
-              profil pribadi owner dan mantan anggota tetap aman; semua orang yang dikeluarkan akan
-              kembali ke keadaan tanpa organization.
+              Semua data usaha ini akan dihapus permanen, termasuk nota, pelanggan, katalog,
+              template, anggota aktif, dan undangan tertunda. Akun serta profil pribadi pemilik dan
+              mantan anggota tetap ada. Semua orang yang dikeluarkan kembali memakai akun tanpa usaha ini.
             </p>
             <FieldShell label={`Ketik ${orgName} untuk mengonfirmasi`} htmlFor={ids.id}>
               <Input
@@ -509,7 +503,7 @@ function DangerZoneCard({ orgId, orgName }: { orgId: string; orgName: string }) 
                 onClick={() =>
                   remove.mutate(orgId, {
                     onSuccess: () =>
-                      toast('Organisasi dihapus. Akun dan profil pribadi tetap ada.', {
+                      toast('Usaha dihapus. Akun dan profil pribadimu tetap ada.', {
                         variant: 'success',
                       }),
                     onError: (error) => {

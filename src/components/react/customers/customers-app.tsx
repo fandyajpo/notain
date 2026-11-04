@@ -199,7 +199,7 @@ function CustomersContent() {
       {
         onSuccess: () => {
           setEditing(null);
-          toast('Customer berhasil diperbarui.', { variant: 'success' });
+          toast('Data pelanggan diperbarui.', { variant: 'success' });
         },
         onError: (error) => {
           const fieldErrors = takeFieldErrors(error);
@@ -230,7 +230,7 @@ function CustomersContent() {
     deleteCustomer.mutate(id, {
       onSuccess: () => {
         setDeleteTarget(null);
-        toast(`Customer "${name}" dihapus.`, { variant: 'success' });
+        toast(`Pelanggan "${name}" dihapus.`, { variant: 'success' });
       },
       onError: (error) => {
         setDeleteTarget(null);
@@ -371,8 +371,8 @@ function CustomersContent() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Customer"
-        description="Daftar pelanggan yang pernah kamu buat invoice. Otomatis terisi tiap kali kamu simpan invoice."
+        title="Pelanggan"
+        description="Simpan pelanggan yang sering kamu layani. Nama mereka bisa dipilih lagi saat membuat nota."
         actions={
           <div className="flex items-center gap-2">
             {mergeMode ? (
@@ -516,7 +516,7 @@ function CustomersContent() {
         <EmptyState
           icon={Users}
           title="Belum ada pelanggan"
-          description="Tambahkan lewat form di atas, atau simpan invoice."
+          description="Tambahkan lewat form di atas atau simpan nota pertama."
         />
       ) : (
         <div className="flex flex-col gap-3">
@@ -534,7 +534,7 @@ function CustomersContent() {
             </div>
             {total > customers.length && (
               <p className="text-xs text-muted">
-                {customers.length} dari {total} customer dimuat
+                {customers.length} dari {total} pelanggan dimuat
               </p>
             )}
           </div>
@@ -575,7 +575,7 @@ function CustomersContent() {
           )}
 
           {filtered.length === 0 ? (
-            <EmptyState title="Tidak ada pelanggan yang cocok." />
+            <EmptyState title="Belum ada pelanggan yang cocok." />
           ) : (
             <TableFrame data-tour="cust-list">
               <table className={TABLE} style={{ minWidth: '640px' }}>
@@ -624,7 +624,7 @@ function CustomersContent() {
                         />
                       </span>
                     </Th>
-                    <Th>Customer</Th>
+                    <Th>Pelanggan</Th>
                     <Th>Kontak</Th>
                     <Th>Terakhir dipakai</Th>
                     <Th align="right" className="w-14" />
@@ -712,7 +712,7 @@ function CustomersContent() {
         open={editing !== null}
         onClose={() => setEditing(null)}
         size="md"
-        title="Edit Customer"
+        title="Ubah data pelanggan"
         actions={[
           {
             label: 'Batal',
@@ -778,7 +778,7 @@ function CustomersContent() {
         open={mergeOpen}
         onClose={() => setMergeOpen(false)}
         size="md"
-        title="Gabungkan Customer"
+        title="Gabungkan pelanggan"
         actions={[
           {
             label: 'Batal',
@@ -795,7 +795,7 @@ function CustomersContent() {
         ]}
       >
         <p className="mb-4 text-sm text-muted">
-          Pilih data yang ingin dipertahankan. Customer lain yang dipilih akan digabungkan ke
+          Pilih data yang ingin dipertahankan. Pelanggan lain yang dipilih akan digabungkan ke
           dalamnya.
         </p>
         <div className="flex flex-col gap-5">
@@ -878,7 +878,7 @@ function CustomersContent() {
         ]}
       >
         <p className="text-sm text-muted">
-          Customer yang dipilih akan dihapus permanen dari daftar kamu dan tidak bisa dikembalikan.
+          Pelanggan yang dipilih akan dihapus permanen dari daftar dan tidak bisa dipulihkan.
         </p>
       </Modal>
 

@@ -41,7 +41,7 @@ export function LandingTop({ children }: Props) {
           <section className="mx-auto w-full max-w-6xl px-5 sm:px-8">
             <Hero
               ctaHref="/register"
-              ctaLabel="Buat invoice gratis"
+              ctaLabel="Buat nota gratis"
               secondaryHref="#fitur"
               secondaryLabel="Lihat fiturnya"
             />

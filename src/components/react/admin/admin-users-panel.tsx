@@ -506,7 +506,7 @@ export function AdminUsersPanel() {
             label="Email"
             htmlFor="admin-email"
             error={formErrors.email}
-            hint="Email bisnis (opsional) — bukan email login."
+            hint="Email usaha, jika ada. Email ini berbeda dari email untuk masuk."
           >
             <Input
               id="admin-email"

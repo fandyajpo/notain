@@ -71,7 +71,7 @@ export default function SalonTemplate({ site, items }: SiteTemplateProps) {
         <h1 className="mt-4 font-serif text-4xl break-words sm:text-6xl">{site.businessName}</h1>
         <p className="mx-auto mt-5 max-w-md text-[color:var(--site-muted)]">
           {hasList
-            ? 'Pilihan layanan dan harganya di bawah — booking jadwal lewat WhatsApp.'
+            ? 'Lihat layanan dan harganya di bawah. Atur jadwal lewat WhatsApp.'
             : 'Booking jadwal lewat WhatsApp.'}
         </p>
         {wa && (

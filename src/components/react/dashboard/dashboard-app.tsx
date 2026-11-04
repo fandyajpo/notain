@@ -102,7 +102,7 @@ function DashboardContent() {
           actions={
             <Button href="/invoice/new" data-tour="dash-create">
               <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
-              Buat invoice
+              Buat nota
             </Button>
           }
         />
@@ -272,7 +272,7 @@ function SummarySection({
 
       <section data-tour="dash-recent" className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-section">Invoice terbaru</h2>
+          <h2 className="text-section">Nota terbaru</h2>
           <a
             href="/invoices"
             className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
@@ -298,8 +298,8 @@ function SummarySection({
         ) : recent.length === 0 ? (
           <EmptyState
             icon={FileText}
-            title="Belum ada invoice"
-            description="Buat invoice pertama kamu untuk mulai melacak."
+            title="Belum ada nota"
+            description="Buat nota pertamamu untuk mulai mencatat transaksi."
           />
         ) : (
           <ul className={cardClass('none', 'flex flex-col divide-y divide-border')}>

@@ -21,7 +21,7 @@ export function SiteFooter({ anchorPrefix = '' }: Props) {
               Notain
             </a>
             <p className="mt-3 text-sm text-muted">
-              Bikin invoice profesional, download PDF-nya, kirim lewat WhatsApp. Selesai.
+              Buat nota, unduh PDF, lalu kirim lewat WhatsApp. Beres.
             </p>
           </div>
 
@@ -87,7 +87,7 @@ export function SiteFooter({ anchorPrefix = '' }: Props) {
                     href="/developers"
                     className="text-muted transition-colors hover:text-foreground"
                   >
-                    Developers
+                    Untuk developer
                   </a>
                 </li>
               </ul>
@@ -120,7 +120,7 @@ export function SiteFooter({ anchorPrefix = '' }: Props) {
                 </li>
                 <li>
                   <a href="/contact" className="text-muted transition-colors hover:text-foreground">
-                    Kontak &amp; Support
+                    Kontak dan bantuan
                   </a>
                 </li>
                 <li>
@@ -140,7 +140,7 @@ export function SiteFooter({ anchorPrefix = '' }: Props) {
 
         <div className="flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
           <p>© 2026 Notain. Dibuat untuk UMKM Indonesia.</p>
-          <p>Invoice kamu tersimpan aman di akun Notain.</p>
+          <p>Nota dan data usahamu tersimpan di akun Notain.</p>
         </div>
       </div>
     </footer>

@@ -15,7 +15,7 @@ export function SupportSection() {
       <div className="mx-auto w-full max-w-3xl px-5 py-20 sm:px-8 sm:py-24">
         <Reveal scale y={18}>
           <p className="text-center text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-            Support
+            Bantuan
           </p>
           <h2 className="mt-3 text-center text-title">Ada yang bisa kami bantu?</h2>
           <p className="mx-auto mt-4 max-w-xl text-center text-lead text-muted">

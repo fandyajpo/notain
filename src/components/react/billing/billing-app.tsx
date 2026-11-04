@@ -30,8 +30,8 @@ function BillingContent() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Billing"
-        description="Plan aktif, masa berlaku, dan riwayat pembayaran kamu."
+        title="Langganan"
+        description="Lihat langganan, tanggal berakhir, dan riwayat pembayaran."
       />
       <PlanStatusCard />
       <PaymentHistoryCard />

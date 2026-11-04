@@ -10,21 +10,21 @@ import {
 const WORKSPACE = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/invoices', label: 'Invoice' },
-  { href: '/customers', label: 'Customer' },
+  { href: '/customers', label: 'Pelanggan' },
   { href: '/catalog', label: 'Katalog' },
   { href: '/templates', label: 'Template' },
 ];
 
 const ACCOUNT = [
-  { href: '/billing', label: 'Billing' },
-  { href: '/api-keys', label: 'Integration' },
-  { href: '/settings', label: 'Settings' },
+  { href: '/billing', label: 'Langganan' },
+  { href: '/api-keys', label: 'Integrasi' },
+  { href: '/settings', label: 'Pengaturan' }
 ];
 
 describe('NAV_GROUPS', () => {
   it('groups every signed-in destination under Workspace and Account', () => {
     expect(NAV_GROUPS.map((group) => group.id)).toEqual(['workspace', 'account']);
-    expect(NAV_GROUPS.map((group) => group.label)).toEqual(['Workspace', 'Account']);
+    expect(NAV_GROUPS.map((group) => group.label)).toEqual(['Usaha', 'Akun']);
   });
 
   it('lists the workspace and account items in navigation order', () => {
@@ -41,8 +41,8 @@ describe('NAV_GROUPS', () => {
     // appear here — the shell renders their labels itself.
     const hrefs = NAV_GROUPS.flatMap((group) => group.items.map((item) => item.href));
     expect(hrefs).not.toContain('/admin');
-    expect(ADMIN_GROUP_LABEL).toBe('Admin Panel');
-    expect(UTILITIES_GROUP_LABEL).toBe('Utilities');
+    expect(ADMIN_GROUP_LABEL).toBe('Admin');
+    expect(UTILITIES_GROUP_LABEL).toBe('Lainnya');
   });
 
   it('never repeats a destination across the two groups', () => {
@@ -68,7 +68,7 @@ describe('ADMIN_NAV_ITEMS', () => {
     expect(ADMIN_NAV_ITEMS.map(({ href, label }) => ({ href, label }))).toEqual([
       { href: '/admin/users', label: 'Pengguna' },
       { href: '/admin/content', label: 'Konten pengguna' },
-      { href: '/admin/support', label: 'Support' },
+      { href: '/admin/support', label: 'Bantuan' },
       { href: '/admin/audit', label: 'Log aktivitas' },
     ]);
   });

@@ -33,4 +33,4 @@ export async function orgHasPaidPlan(
  * "Template kustom" line) are what this gate protects on create and update.
  */
 export const TEMPLATE_PRO_MESSAGE =
-  'Template kustom adalah fitur plan Pro. Pakai template bawaan, atau upgrade ke Pro untuk membuat dan mengubah template sendiri — urutan blok, warna, dan branding.';
+  'Template sendiri tersedia di Pro. Di Free, kamu tetap bisa memakai template bawaan.';

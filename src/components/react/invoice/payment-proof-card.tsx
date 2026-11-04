@@ -45,8 +45,7 @@ export function PaymentProofCard({ proof, status, onUpload }: Props) {
       <Notice variant="success">
         <p className="font-medium">Bukti pembayaran sudah dikirim</p>
         <p className="mt-1">
-          Bukti pembayaran untuk invoice ini sudah kami terima. Terima kasih! Halaman ini bisa
-          ditutup.
+          Bukti pembayaran sudah kami terima. Terima kasih, halaman ini bisa ditutup.
         </p>
       </Notice>
     );
@@ -56,12 +55,12 @@ export function PaymentProofCard({ proof, status, onUpload }: Props) {
     return (
       <Notice variant="accent">
         <p className="font-medium">
-          {status === 'paid' ? 'Invoice ini sudah ditandai Lunas' : 'Invoice ini sudah dibatalkan'}
+          {status === 'paid' ? 'Nota ini sudah ditandai lunas' : 'Nota ini sudah dibatalkan'}
         </p>
         <p className="mt-1">
           {status === 'paid'
-            ? 'Pembayaran sudah tercatat, jadi unggah bukti pembayaran tidak diperlukan lagi.'
-            : `Status invoice ini ${INVOICE_STATUS_LABELS[status]}, jadi unggah bukti pembayaran sudah ditutup.`}
+            ? 'Pembayaran sudah tercatat. Bukti pembayaran tidak perlu dikirim lagi.'
+            : `Nota ini berstatus ${INVOICE_STATUS_LABELS[status]}, jadi bukti pembayaran tidak bisa dikirim.`}
         </p>
       </Notice>
     );
@@ -76,7 +75,7 @@ export function PaymentProofCard({ proof, status, onUpload }: Props) {
     setError(null);
     if (file.size > PAYMENT_PROOF_MAX_BYTES) {
       setError(
-        'File terlalu besar. Maksimal 5 MB — foto akan dikompres otomatis, tapi file asli harus di bawah 5 MB.',
+        'Ukuran file maksimal 5 MB. Foto akan dikompres otomatis setelah dipilih.',
       );
       return;
     }

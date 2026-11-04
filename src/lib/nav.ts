@@ -39,8 +39,8 @@ export type NavGroup = {
  * They live here so the Astro shell and the React islands cannot drift apart
  * on wording.
  */
-export const ADMIN_GROUP_LABEL = 'Admin Panel';
-export const UTILITIES_GROUP_LABEL = 'Utilities';
+export const ADMIN_GROUP_LABEL = 'Admin';
+export const UTILITIES_GROUP_LABEL = 'Lainnya';
 
 /**
  * The `/admin` section's own destinations, rendered by the same island as the
@@ -51,7 +51,7 @@ export const UTILITIES_GROUP_LABEL = 'Utilities';
 export const ADMIN_NAV_ITEMS: readonly NavItem[] = [
   { href: '/admin/users', label: 'Pengguna', Icon: UserCog },
   { href: '/admin/content', label: 'Konten pengguna', Icon: FileStack },
-  { href: '/admin/support', label: 'Support', Icon: MessageSquareText },
+  { href: '/admin/support', label: 'Bantuan', Icon: MessageSquareText },
   { href: '/admin/audit', label: 'Log aktivitas', Icon: ScrollText },
 ];
 
@@ -64,22 +64,22 @@ export const ADMIN_NAV_ITEMS: readonly NavItem[] = [
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
     id: 'workspace',
-    label: 'Workspace',
+    label: 'Usaha',
     items: [
       { href: '/dashboard', label: 'Dashboard', Icon: LayoutGrid },
       { href: '/invoices', label: 'Invoice', Icon: FileText },
-      { href: '/customers', label: 'Customer', Icon: Users },
+      { href: '/customers', label: 'Pelanggan', Icon: Users },
       { href: '/catalog', label: 'Katalog', Icon: Package },
       { href: '/templates', label: 'Template', Icon: Palette },
     ],
   },
   {
     id: 'account',
-    label: 'Account',
+    label: 'Akun',
     items: [
-      { href: '/billing', label: 'Billing', Icon: CreditCard },
-      { href: '/api-keys', label: 'Integration', Icon: KeyRound },
-      { href: '/settings', label: 'Settings', Icon: Settings },
+      { href: '/billing', label: 'Langganan', Icon: CreditCard },
+      { href: '/api-keys', label: 'Integrasi', Icon: KeyRound },
+      { href: '/settings', label: 'Pengaturan', Icon: Settings }
     ],
   },
 ];

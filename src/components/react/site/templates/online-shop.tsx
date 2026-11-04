@@ -70,7 +70,7 @@ export default function OnlineShopTemplate({ site, items }: SiteTemplateProps) {
           </h1>
           <p className="mt-4 max-w-md text-[color:var(--site-muted)]">
             {hasList
-              ? 'Produk dan layanan yang tersedia — tanyakan stok dan pemesanan lewat WhatsApp.'
+              ? 'Lihat produk dan layanan yang tersedia. Tanyakan stok atau cara pesan lewat WhatsApp.'
               : 'Tanyakan ketersediaan lewat WhatsApp.'}
           </p>
           {wa && (

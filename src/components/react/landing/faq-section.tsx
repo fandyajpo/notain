@@ -17,45 +17,45 @@ const FAQS = [
   {
     question: 'Apa itu Notain?',
     answer:
-      'Notain adalah aplikasi berbasis web untuk membuat, mengelola, dan mengirim invoice profesional, lengkap dengan kop usaha, diskon, pajak, dan PDF A4, untuk UMKM, freelancer, dan penyedia jasa di Indonesia.',
+      'Notain membantu kamu membuat nota, menghitung total, menyimpan data pelanggan, dan membagikan PDF lewat WhatsApp. Bisa dipakai dari HP atau laptop.',
   },
   {
     question: 'Siapa yang bisa memakai Notain?',
     answer:
-      'Siapa pun yang perlu mengirim tagihan: pemilik UMKM, freelancer, jasa servis, sampai online shop. Tidak perlu latar belakang akuntansi, semua dirancang untuk dipakai langsung tanpa pelatihan.',
+      'Pemilik warung, toko online, katering, salon, pekerja lepas, dan usaha jasa bisa memakai Notain untuk membuat nota.',
   },
   {
-    question: 'Bagaimana cara membuat invoice?',
+    question: 'Bagaimana cara membuat nota?',
     answer:
-      'Daftar, lengkapi profil usaha sekali, lalu tekan tombol "Buat invoice". Pilih pelanggan dan barang dari daftar yang sudah tersimpan, atur diskon dan pajak, totalnya dihitung otomatis. Selesai dalam hitungan detik.',
+      'Buat akun, lalu pilih Buat nota. Pilih pelanggan dan barang yang sudah tersimpan, atur diskon atau pajak, lalu bagikan notanya.',
   },
   {
-    question: 'Bisakah detail invoice disesuaikan?',
+    question: 'Tampilan nota bisa diubah?',
     answer:
-      'Bisa. Pakai template bawaan, unggah logo, dan isi kop, catatan, serta zona teks bebas di invoice. Nama usaha, alamat, dan nomor WhatsApp kamu tampil otomatis di setiap invoice.',
+      'Bisa. Pilih template bawaan, tambahkan logo dan nama usaha, lalu isi catatan atau tanggal jatuh tempo di nota.',
   },
   {
     question: 'Bisa diunduh jadi PDF?',
-    answer: `Bisa. Invoice dibuka di tampilan cetak berukuran A4. Pilih "Simpan sebagai PDF" di dialog cetak browser, lalu kirim ke pelanggan. Dari aplikasinya, kamu juga bisa langsung membuka WhatsApp-nya.`,
+    answer: `Bisa. Buka nota dalam ukuran A4, lalu pilih "Simpan sebagai PDF" di menu cetak browser. Setelah itu, kirim PDF ke pelanggan lewat WhatsApp.`, 
   },
   {
     question: 'Berapa biayanya?',
-    answer: `Gratis selamanya untuk fitur inti: ${FREE_PLAN_LIMITS.invoicesPerMonth} invoice baru tiap bulan, PDF, kirim lewat WhatsApp, dan data pelanggan, tanpa kartu kredit dan tanpa masa trial. Butuh lebih? Pro ${PLAN_PRICES.pro.amount}${PLAN_PRICES.pro.period} untuk invoice tanpa batas, template premium, dan invoice link. Plan Business untuk akses API sedang disiapkan dan belum bisa dibeli — harganya ${PLAN_PRICES.business.amount}${PLAN_PRICES.business.period}, diumumkan di halaman Harga saat siap.`,
+    answer: `Fitur dasar gratis selamanya, termasuk ${FREE_PLAN_LIMITS.invoicesPerMonth} nota baru per bulan. Pro seharga ${PLAN_PRICES.pro.amount}${PLAN_PRICES.pro.period} menambah nota tanpa batas, template sendiri, dan tautan invoice. Business sedang disiapkan dan belum bisa dibeli.`, 
   },
   {
     question: 'Bagaimana langganan dan perpanjangannya?',
     answer:
-      'Plan Pro dibayar per bulan lewat DOKU. Setelah pembayaran terkonfirmasi, plan langsung aktif. Perpanjangan memperpanjang masa aktif dari tanggal berakhirnya, jadi bayar lebih awal tidak mengurangi hari. Tidak ada biaya di luar harga yang tertera, dan kamu bisa berhenti kapan saja.',
+      'Pro dibayar per bulan lewat DOKU. Setelah pembayaran terkonfirmasi, langganan langsung aktif. Kalau memperpanjang lebih awal, sisa masa aktif tetap dihitung.',
   },
   {
     question: 'Apa yang terjadi setelah masa aktif berakhir?',
     answer:
-      'Akun kamu kembali ke plan Free. Semua data tetap tersimpan dan fitur inti tetap bisa dipakai; yang kembali tertutup hanya fitur berbayar, seperti laporan bisnis, template premium, dan invoice link.',
+      'Akunmu kembali ke Free. Data tetap tersimpan dan fitur dasar tetap bisa dipakai. Fitur Pro seperti laporan, template sendiri, dan tautan invoice tidak bisa dipakai lagi.',
   },
   {
-    question: 'Data invoice saya aman?',
+    question: 'Nota saya aman tersimpan?',
     answer:
-      'Invoice disimpan di akun kamu, bukan di browser ini. Artinya tidak hilang kalau ganti HP atau bersihkan data browser, dan tidak bisa dibuka orang lain.',
+      'Nota tersimpan di akunmu, jadi tetap ada saat kamu ganti HP. Orang lain tidak bisa membukanya.',
   },
   {
     question: 'Bagaimana mengelola akun dan data saya?',

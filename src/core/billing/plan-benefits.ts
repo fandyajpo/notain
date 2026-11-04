@@ -16,8 +16,8 @@ export const PLAN_TIER_IDS: readonly PlanTier[] = ['free', 'pro', 'business'];
 
 export const PLAN_TAGLINES: Record<PlanTier, string> = {
   free: 'Mulai gratis, tanpa kartu kredit.',
-  pro: 'Untuk bisnis yang makin sering kirim nota.',
-  business: 'Untuk integrasi.',
+  pro: 'Buat nota lebih banyak, pakai template sendiri.',
+  business: 'Untuk usaha yang butuh integrasi.',
 };
 
 /** The pill shown on a card the marketing wants highlighted, or `null`. */
@@ -52,28 +52,28 @@ export function isPlanComingSoon(tier: PlanTier): boolean {
 export const PLAN_BENEFITS: Record<PlanTier, readonly string[]> = {
   free: [
     `${FREE_PLAN_LIMITS.invoicesPerMonth} invoice baru per bulan`,
-    '1 organisasi (workspace)',
-    'Kalkulator otomatis: diskon, pajak, pembulatan',
-    'PDF A4 siap cetak',
-    'Kelola pelanggan',
+    '1 usaha',
+    'Hitung diskon, pajak, dan pembulatan otomatis',
+    'Unduh PDF ukuran A4',
+    'Simpan data pelanggan',
     'Template bawaan dan upload logo',
     'Ekspor riwayat invoice ke Excel',
     'Dukungan prioritas',
   ],
   pro: [
     'Semua fitur Free',
-    'Buat lebih dari 1 organisasi (workspace)',
-    'Invoice tanpa batas dengan kebijakan penggunaan wajar',
-    'Invoice link untuk pelanggan',
-    'Template kustom sendiri: urutan blok, warna, dan branding di setiap nota',
+    'Buat beberapa usaha',
+    'Buat invoice sebanyak yang kamu perlukan',
+    'Bagikan tautan invoice ke pelanggan',
+    'Buat template sendiri dengan warna dan logo usaha',
     'Dukungan prioritas',
   ],
   business: [
     'Semua fitur Pro',
-    'API key untuk akses programatik',
-    'Multi API key',
-    'Webhook invoice: created, paid, dan event lain yang didukung',
-    'Rate limit lebih tinggi',
+    'Kunci API untuk menghubungkan Notain ke aplikasi lain',
+    'Buat beberapa kunci API',
+    'Webhook untuk perubahan status invoice',
+    'Batas penggunaan API lebih tinggi',
     'Dukungan prioritas untuk integrasi',
   ],
 };
@@ -114,7 +114,7 @@ export function yearlySavingNote(tier: PaidPlanTier): string | null {
   if (annual === undefined) return null;
   const fullPrice = parseIdrAmount(monthly) * 12;
   const saving = fullPrice - annual;
-  return `${formatIdr(annual)} / tahun — hemat ${formatIdr(saving)} dibanding pembayaran bulanan selama 12 bulan.`;
+  return `${formatIdr(annual)} per tahun, hemat ${formatIdr(saving)} dibanding bayar bulanan selama 12 bulan.`;
 }
 
 /** `"Rp 49.000"` → `49000`. Returns 0 for anything that is not an Rupiah figure. */
