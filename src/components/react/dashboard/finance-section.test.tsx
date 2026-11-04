@@ -133,7 +133,7 @@ describe('FinanceSection', () => {
     expect(container.textContent).toContain('Belum dibayar');
     expect(container.textContent).toContain('Rp40.000');
     expect(container.textContent).toContain('Jatuh tempo lewat');
-    expect(container.textContent).toContain('1 invoice');
+    expect(container.textContent).toContain('1 nota');
     expect(container.textContent).toContain('Invoice dibuat');
   });
 
@@ -177,7 +177,7 @@ describe('FinanceSection', () => {
 
     await render(<FinanceSection businessName="Warung Maju" />);
 
-    expect(container.textContent).toContain('mungkin belum lengkap');
+    expect(container.textContent).toContain('Nota pada periode ini melebihi batas tampilan');
   });
 
   it('offers a retry when the finance query fails', async () => {
@@ -185,7 +185,7 @@ describe('FinanceSection', () => {
 
     await render(<FinanceSection businessName="Warung Maju" />);
 
-    expect(container.textContent).toContain('Gagal memuat keuangan');
+    expect(container.textContent).toContain('Ringkasan belum bisa dimuat');
     const retry = [...container.querySelectorAll('button')].find(
       (button) => button.textContent === 'Coba lagi',
     );

@@ -308,7 +308,7 @@ describe('members — invite, list, remove', () => {
     );
     expect(invite.status).toBe(503);
     const body = (await invite.json()) as { message?: string };
-    expect(body.message).toContain('segera hadir');
+    expect(body.message).toContain('belum tersedia');
 
     // Nothing was written: there is no half-created invitation to clean up.
     const pendingRows = [...fake.rows.values()].filter(

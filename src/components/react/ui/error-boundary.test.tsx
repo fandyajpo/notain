@@ -116,7 +116,7 @@ describe('IslandBoundary', () => {
 
     const alert = container.querySelector('[role="alert"]');
     expect(alert).toBeTruthy();
-    expect(alert?.textContent).toContain('Halaman ini gagal dimuat');
+    expect(alert?.textContent).toContain('Halaman belum bisa dibuka');
     expect(container.querySelector('button')?.textContent).toBe('Muat ulang');
   });
 

@@ -78,7 +78,7 @@ describe('BusinessTypeStep', () => {
     const onSkip = vi.fn();
     await render(<BusinessTypeStep onPick={onPick} onSkip={onSkip} />);
 
-    await act(async () => button('Lewati, pakai yang umum')?.click());
+    await act(async () => button('Lewati, pakai template umum')?.click());
 
     expect(onSkip).toHaveBeenCalledTimes(1);
     expect(onPick).not.toHaveBeenCalled();
@@ -88,6 +88,6 @@ describe('BusinessTypeStep', () => {
     await render(<BusinessTypeStep onPick={() => {}} onSkip={() => {}} />);
 
     expect(document.body.textContent).toContain('Jenis usaha kamu');
-    expect(document.body.textContent).toContain('bisa diubah kapan saja di Pengaturan');
+    expect(document.body.textContent).toContain('bisa mengubahnya kapan saja di Pengaturan');
   });
 });
