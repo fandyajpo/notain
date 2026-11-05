@@ -43,16 +43,11 @@ function QuotaMeterBody() {
   const full = data.remaining === 0;
 
   return (
-    <div
-      data-tour="quota-meter"
-      className="sidebar-label rounded-control border border-border bg-background p-3"
-    >
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-muted">
-          Kuota bulan ini
-        </p>
-        <p className="text-xs font-medium tabular-nums">
-          {used}/{data.limit}
+    <div data-tour="quota-meter" className="sidebar-label rounded-control bg-background p-3">
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <p className="text-muted">Nota bulan ini</p>
+        <p className="font-medium tabular-nums">
+          {used} <span className="text-muted">/ {data.limit}</span>
         </p>
       </div>
 
@@ -61,8 +56,8 @@ function QuotaMeterBody() {
         aria-valuemin={0}
         aria-valuemax={data.limit}
         aria-valuenow={used}
-        aria-label={`Kuota invoice bulan ini: ${used} dari ${data.limit}`}
-        className="mt-2 h-1.5 overflow-hidden rounded-full bg-card"
+        aria-label={`Nota dibuat bulan ini: ${used} dari ${data.limit}`}
+        className="mt-2 h-1 overflow-hidden rounded-full bg-card"
       >
         <div
           className={`h-full rounded-full transition-[width] duration-500 ease-out ${
@@ -72,24 +67,27 @@ function QuotaMeterBody() {
         />
       </div>
 
-      <p className="mt-2 text-xs leading-relaxed text-muted">
+      <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] text-muted">
         {full ? (
           <>
-            Kuota penuh bulan ini.{' '}
-            <a href="/pricing" className="font-medium text-accent underline underline-offset-2">
-              Upgrade ke Pro
+            <span>Batas tercapai</span>
+            <a href="/pricing" className="font-medium text-accent hover:underline">
+              Lihat Pro
             </a>
           </>
         ) : (
           <>
-            {data.remaining} invoice tersisa — reset{' '}
-            {new Date(data.resetsAt).toLocaleDateString('id-ID', {
-              day: 'numeric',
-              month: 'short',
-            })}
+            <span>{data.remaining} nota tersisa</span>
+            <span>
+              Batas baru{' '}
+              {new Date(data.resetsAt).toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'short',
+              })}
+            </span>
           </>
         )}
-      </p>
+      </div>
     </div>
   );
 }
