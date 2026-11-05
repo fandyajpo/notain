@@ -49,7 +49,9 @@ export function CustomerImportPanel() {
       setResult(parseCustomerImportRows(rows));
       setFileName(file.name);
     } catch {
-      toast('Berkas tidak bisa dibaca. Gunakan format .csv, .txt, atau .xlsx.', { variant: 'error' });
+      toast('Berkas tidak bisa dibaca. Gunakan format .csv, .txt, atau .xlsx.', {
+        variant: 'error',
+      });
     } finally {
       setReading(false);
     }
@@ -74,9 +76,8 @@ export function CustomerImportPanel() {
           <p className="text-sm text-muted">
             Unggah berkas <code className="rounded bg-background px-1">.csv</code>,{' '}
             <code className="rounded bg-background px-1">.txt</code>, atau{' '}
-            <code className="rounded bg-background px-1">.xlsx</code>. Kolom{' '}
-            <strong>Nama</strong> wajib ada; <strong>Email</strong> dan <strong>WhatsApp</strong>{' '}
-            boleh dikosongkan.
+            <code className="rounded bg-background px-1">.xlsx</code>. Kolom <strong>Nama</strong>{' '}
+            wajib ada; <strong>Email</strong> dan <strong>WhatsApp</strong> boleh dikosongkan.
           </p>
         </div>
         <div className="flex items-center gap-2">

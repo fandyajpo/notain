@@ -16,7 +16,11 @@ const HIGHLIGHTS: Record<(typeof PLAN_TIER_IDS)[number], readonly string[]> = {
     'PDF A4; lampirkan sendiri di WhatsApp',
     'Data pelanggan, katalog barang & jasa, dan template sendiri',
   ],
-  pro: ['Laporan usaha dan tautan tagihan', 'Nota tanpa batas selama paket aktif', 'Buat beberapa usaha'],
+  pro: [
+    'Laporan usaha dan tautan tagihan',
+    'Nota tanpa batas selama paket aktif',
+    'Buat beberapa usaha',
+  ],
   business: [
     'Kunci API untuk integrasi',
     'Webhook untuk perubahan status nota',

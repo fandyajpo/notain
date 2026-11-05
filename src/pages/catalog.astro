@@ -3,6 +3,9 @@ import DashboardLayout from '../layouts/DashboardLayout.astro';
 import { CatalogApp } from '../components/react/catalog/catalog-app';
 ---
 
-<DashboardLayout title="Katalog barang dan jasa | Notain" description="Simpan daftar barang dan jasa yang sering kamu jual di Notain.">
+<DashboardLayout
+  title="Katalog barang dan jasa | Notain"
+  description="Simpan daftar barang dan jasa yang sering kamu jual di Notain."
+>
   <CatalogApp client:only="react" />
 </DashboardLayout>

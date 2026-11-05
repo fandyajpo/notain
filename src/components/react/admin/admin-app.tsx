@@ -28,10 +28,7 @@ export function AdminUsersApp() {
 
 export function AdminContentApp() {
   return (
-    <AdminShell
-      title="Konten pengguna"
-      description="Kelola template dan nota milik satu pengguna."
-    >
+    <AdminShell title="Konten pengguna" description="Kelola template dan nota milik satu pengguna.">
       <AdminContentPanel />
     </AdminShell>
   );

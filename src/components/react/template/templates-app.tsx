@@ -91,11 +91,7 @@ function TemplatesContent() {
               Template baru
             </Button>
           ) : (
-            <Button
-              href="/pricing"
-              variant="secondary"
-              title="Lihat paket dan fitur yang tersedia"
-            >
+            <Button href="/pricing" variant="secondary" title="Lihat paket dan fitur yang tersedia">
               Lihat paket
             </Button>
           )
