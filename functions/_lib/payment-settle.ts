@@ -160,7 +160,7 @@ async function activatePaidPayment(
     ? ((await getRow(auth, 'organizations', payment.orgId)) as OrgRow | null)
     : null;
   if (!org) {
-    await deferActivation(env, auth, payment, 'organization_missing');
+    await deferActivation(auth, payment, 'organization_missing');
     await writeActivationFailure(env, payment, 'organization_missing');
     console.error('payments: organization missing for payment', payment.$id, payment.orgId);
     return { kind: 'org_missing', paidAt };
@@ -236,7 +236,7 @@ async function activatePaidPayment(
       planExpiresAt: activationExpiresAt,
     });
     if (!activated) {
-      await deferActivation(env, auth, payment, 'organization_update_failed');
+      await deferActivation(auth, payment, 'organization_update_failed');
       await writeActivationFailure(env, payment, 'organization_update_failed');
       console.error('payments: org activation failed for', payment.orgId);
       return { kind: 'activation_pending', paidAt };
@@ -249,7 +249,7 @@ async function activatePaidPayment(
     activationError: null,
   });
   if (!marked) {
-    await deferActivation(env, auth, payment, 'activation_marker_update_failed');
+    await deferActivation(auth, payment, 'activation_marker_update_failed');
     await writeActivationFailure(env, payment, 'activation_marker_update_failed');
     return { kind: 'activation_pending', paidAt };
   }
@@ -267,7 +267,6 @@ async function activatePaidPayment(
 }
 
 async function deferActivation(
-  env: Env,
   auth: TableAuth,
   payment: PaymentRow,
   reason: string,
