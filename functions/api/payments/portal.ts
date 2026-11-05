@@ -97,11 +97,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     .map((row) => {
       const status = normalizeStatus(row.status);
       const activationStatus =
-        row.activationStatus === 'active'
-          ? 'active'
-          : status === 'paid'
-            ? 'pending'
-            : 'unknown';
+        row.activationStatus === 'active' ? 'active' : status === 'paid' ? 'pending' : 'unknown';
       // A pending order still worth paying: it has a hosted page and DOKU has
       // not expired it yet. That is the only state with a resume link.
       const resumable =
