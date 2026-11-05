@@ -38,7 +38,7 @@ export function CustomerImportPanel() {
   }
 
   function handleTemplate() {
-    downloadCsv('template-customer', CUSTOMER_TEMPLATE_ROWS);
+    downloadCsv('template-pelanggan', CUSTOMER_TEMPLATE_ROWS);
   }
 
   async function handleFile(file: File) {
@@ -49,7 +49,7 @@ export function CustomerImportPanel() {
       setResult(parseCustomerImportRows(rows));
       setFileName(file.name);
     } catch {
-      toast('File tidak bisa dibaca. Pakai format .csv atau .xlsx.', { variant: 'error' });
+      toast('Berkas tidak bisa dibaca. Gunakan format .csv, .txt, atau .xlsx.', { variant: 'error' });
     } finally {
       setReading(false);
     }
@@ -70,17 +70,19 @@ export function CustomerImportPanel() {
     <Card padding="sm" className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-section">Impor dari Excel</p>
+          <p className="text-section">Impor pelanggan</p>
           <p className="text-sm text-muted">
-            Upload file <code className="rounded bg-background px-1">.csv</code> atau{' '}
-            <code className="rounded bg-background px-1">.xlsx</code> berisi kolom{' '}
-            <strong>Nama</strong>, <strong>Email</strong> &amp; <strong>WhatsApp</strong>.
+            Unggah berkas <code className="rounded bg-background px-1">.csv</code>,{' '}
+            <code className="rounded bg-background px-1">.txt</code>, atau{' '}
+            <code className="rounded bg-background px-1">.xlsx</code>. Kolom{' '}
+            <strong>Nama</strong> wajib ada; <strong>Email</strong> dan <strong>WhatsApp</strong>{' '}
+            boleh dikosongkan.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={handleTemplate}>
             <Download size={15} aria-hidden="true" />
-            Template
+            Unduh templat
           </Button>
           <Button
             variant="secondary"
@@ -89,7 +91,7 @@ export function CustomerImportPanel() {
             loading={reading}
           >
             <Upload size={15} aria-hidden="true" />
-            Pilih File
+            Pilih berkas
           </Button>
         </div>
       </div>

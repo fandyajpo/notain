@@ -75,7 +75,7 @@ function PaymentResultContent() {
     return (
       <ErrorState
         title="Tautan tidak lengkap"
-        message="Halaman ini dibuka dari tautan pembayaran yang membawa nomor invoice. Buka tautan aslinya, atau mulai lagi dari halaman harga."
+        message="Halaman ini dibuka dari tautan pembayaran yang membawa nomor transaksi. Buka tautan aslinya, atau mulai lagi dari halaman harga."
         action={
           <Button href="/pricing" size="sm">
             Lihat harga
@@ -96,8 +96,8 @@ function PaymentResultContent() {
         title={notFound ? 'Pembayaran tidak ditemukan' : 'Gagal memeriksa pembayaran'}
         message={
           notFound
-            ? 'Nomor invoice ini tidak cocok dengan pembayaran di akun kamu. Pastikan kamu membuka tautan dari akun yang sama.'
-            : 'Cek koneksi internetmu, lalu coba lagi. Pembayaran yang sudah masuk tetap tersimpan dan percobaan ulang tidak membuat tagihan baru.'
+            ? 'Nomor transaksi ini tidak ditemukan di akun kamu. Pastikan kamu membuka tautan dari akun yang sama.'
+            : 'Periksa koneksi internet kamu, lalu coba lagi. Pemeriksaan ulang tidak memulai pembayaran baru.'
         }
         action={
           <Button size="sm" loading={status.isFetching} onClick={() => void status.refetch()}>
@@ -116,8 +116,8 @@ function PaymentResultContent() {
         <Clock size={28} className="mx-auto text-muted" aria-hidden="true" />
         <h1 className="mt-4 text-title">Menunggu pembayaran</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          Selesaikan pembayaran di halaman DOKU. Statusnya diperbarui otomatis begitu DOKU mengirim
-          konfirmasi — biasanya beberapa detik setelah pembayaran.
+          Selesaikan pembayaran di halaman DOKU. Halaman ini memeriksa status secara berkala. Plan
+          aktif setelah DOKU mengonfirmasi pembayaran.
         </p>
         <Button
           variant="secondary"
@@ -161,8 +161,8 @@ function PaymentResultContent() {
       title={value === 'expired' ? 'Pembayaran kedaluwarsa' : 'Pembayaran tidak selesai'}
       message={
         value === 'expired'
-          ? `Pembayaran ${planLabel} tidak selesai tepat waktu. Tidak ada uang yang tertahan. Kamu bisa mencoba lagi kapan saja.`
-          : `Pembayaran ${planLabel} belum berhasil. Tidak ada uang yang tertahan. Kamu bisa mencoba lagi kapan saja.`
+          ? `Sesi pembayaran ${planLabel} kedaluwarsa sebelum DOKU mengonfirmasi pembayaran. Periksa status transaksi. Jika dana sudah terpotong, hubungi tim bantuan sebelum mencoba lagi.`
+          : `DOKU belum mengonfirmasi pembayaran ${planLabel}. Periksa status transaksi. Jika dana sudah terpotong, hubungi tim bantuan sebelum mencoba lagi.`
       }
       action={
         <div className="flex flex-wrap items-center justify-center gap-3">

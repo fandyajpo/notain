@@ -96,7 +96,7 @@ export function BlockList({ layout, onChange }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <ul className="flex flex-col gap-2" aria-label="Blok invoice">
+      <ul className="flex flex-col gap-2" aria-label="Bagian nota">
         {layout.map((block, index) => (
           <li
             key={block.id}

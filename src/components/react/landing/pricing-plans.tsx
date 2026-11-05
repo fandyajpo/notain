@@ -10,7 +10,6 @@ import {
   PLAN_PRICES,
   PLAN_TAGLINES,
   isPlanComingSoon,
-  yearlySavingNote,
   type PlanTier,
 } from '../../../core/billing/plan-benefits';
 
@@ -60,9 +59,6 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
   // Announced, not sold (Business): no annual alternative either — there is
   // nothing to buy in any period yet.
   const comingSoon = isPlanComingSoon(plan.id);
-  // A paid tier also shows the annual alternative. Derived, so the saving can
-  // never disagree with the monthly price printed a few pixels above it.
-  const yearly = plan.id === 'free' || comingSoon ? null : yearlySavingNote(plan.id);
 
   return (
     <motion.article
@@ -91,7 +87,6 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
         <span className="text-[2rem] font-semibold leading-none tracking-[-0.03em]">{amount}</span>
         <span className="text-sm text-muted">{period}</span>
       </p>
-      {yearly && <p className="mt-2 text-sm leading-relaxed text-muted">{yearly}</p>}
       <p className="mt-3 text-sm leading-relaxed text-muted">{tagline}</p>
 
       <div className="mt-6">
@@ -211,7 +206,7 @@ export function PricingPlans() {
             href="/developers"
             className="font-medium text-foreground underline underline-offset-2 hover:text-muted"
           >
-            halaman developers
+            halaman developer
           </a>
           .
         </p>

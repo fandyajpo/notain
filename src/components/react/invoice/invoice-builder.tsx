@@ -501,13 +501,13 @@ export function InvoiceBuilder({
     // A blank phone would open `wa.me/?text=…` — a chat with no one on the
     // other end, which reads as a broken button. Guard it and say why instead.
     if (!values.customerPhone?.trim()) {
-      toast('Isi nomor WhatsApp pelanggan dulu supaya invoice bisa dikirim.', {
+      toast('Isi nomor WhatsApp pelanggan dulu untuk menyiapkan pesan di WhatsApp.', {
         variant: 'error',
       });
       return;
     }
     const message = buildInvoiceWhatsAppMessage({
-      customerName: values.customerName || 'Customer',
+      customerName: values.customerName || 'Pelanggan',
       invoiceNumber: values.invoiceNumber,
       businessName: profile.businessName || profile.name || 'Bisnis kamu',
       total: totals.grandTotal,
@@ -554,7 +554,7 @@ export function InvoiceBuilder({
       >
         <header className="flex flex-col gap-1">
           <div className="flex items-start justify-between gap-3">
-            <h1 className="text-title">{isEditing ? 'Ubah invoice' : 'Buat invoice'}</h1>
+            <h1 className="text-title">{isEditing ? 'Ubah nota' : 'Buat nota'}</h1>
             <button
               type="button"
               onClick={() => setShortcutsOpen(true)}
@@ -603,19 +603,19 @@ export function InvoiceBuilder({
             <p role="status" className="inline-flex w-fit items-center gap-1.5 text-xs text-muted">
               {quota.remaining > 0 ? (
                 <>
-                  Kuota gratis bulan ini: {quota.used} dari {quota.limit} invoice terpakai.
+                  Kuota nota Free bulan ini: {quota.used} dari {quota.limit} nota terpakai.
                 </>
               ) : (
                 <>
-                  Kuota gratis bulan ini penuh ({quota.limit} dari {quota.limit}). Tunggu bulan
+                  Kuota nota Free bulan ini penuh ({quota.limit} dari {quota.limit}). Tunggu bulan
                   depan atau{' '}
                   <a
                     href="/pricing"
                     className="font-medium text-foreground underline underline-offset-2 hover:text-muted"
                   >
-                    upgrade ke Pro
+                    pilih Pro
                   </a>{' '}
-                  untuk invoice tanpa batas.
+                  untuk membuat nota tanpa batas selama plan aktif.
                 </>
               )}
             </p>
@@ -647,11 +647,12 @@ export function InvoiceBuilder({
               >
                 {needsPaymentCheck({ status: values.status, paymentProof }) ? (
                   <p>
-                    Customer mengunggah bukti pembayaran. Periksa buktinya, lalu ubah status ke{' '}
-                    <span className="font-medium">Lunas</span> kalau sudah cocok.
+                    Pelanggan mengunggah bukti pembayaran. Periksa bukti dan pastikan pembayaran
+                    diterima di luar Notain, lalu catat status nota sebagai{' '}
+                    <span className="font-medium">Lunas</span>.
                   </p>
                 ) : (
-                  <p>Bukti pembayaran sudah diterima untuk invoice ini.</p>
+                  <p>Bukti pembayaran sudah diterima untuk nota ini.</p>
                 )}
                 <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
                   <a
@@ -700,7 +701,7 @@ export function InvoiceBuilder({
         </div>
 
         <div hidden={activeSection !== 'detail'} className="flex flex-col gap-6">
-          <Section title="Untuk siapa invoice ini?">
+          <Section title="Untuk siapa nota ini?">
             <Picker
               mode="customer"
               label="Cari pelanggan"
@@ -727,7 +728,7 @@ export function InvoiceBuilder({
                   label="Nomor WhatsApp pelanggan (opsional)"
                   placeholder="081234567890"
                   inputMode="tel"
-                  hint="Dipakai untuk kirim invoice lewat WhatsApp."
+                  hint="Dipakai untuk menyiapkan pesan WhatsApp tentang nota."
                   showError={shouldShow(submissionAttempts, field.state.meta.isBlurred)}
                 />
               )}
@@ -1067,10 +1068,11 @@ export function InvoiceBuilder({
           <span className="flex size-14 items-center justify-center rounded-full bg-success-soft text-success">
             <PartyPopper size={26} aria-hidden="true" />
           </span>
-          <h2 className="text-section">Invoice pertama jadi! 🎉</h2>
+          <h2 className="text-section">Nota pertamamu tersimpan.</h2>
           <p className="text-sm text-muted">
-            {values.invoiceNumber} sudah tersimpan. Tinggal kirim ke pelanggan lewat WhatsApp dari
-            halaman invoice — statusnya bisa ditandai Lunas begitu dibayar.
+            {values.invoiceNumber} sudah tersimpan. Siapkan pesan WhatsApp dari halaman nota, lalu
+            lampirkan PDF dan kirim sendiri. Setelah menerima pembayaran, catat status nota sebagai
+            Lunas.
           </p>
         </div>
       </Modal>

@@ -1,5 +1,6 @@
 import { motion, MotionConfig } from 'motion/react';
 import { ArrowRight, Check } from 'lucide-react';
+import { FREE_PLAN_LIMITS } from '../../../core/billing/plans';
 import {
   PLAN_COMING_SOON_LABEL,
   PLAN_PRICES,
@@ -7,20 +8,19 @@ import {
   PLAN_TIER_IDS,
   isPlanComingSoon,
 } from '../../../core/billing/plan-benefits';
-import { FREE_PLAN_LIMITS } from '../../../core/billing/plans';
 import { EASE, Reveal, SectionHeading } from './reveal';
 
 const HIGHLIGHTS: Record<(typeof PLAN_TIER_IDS)[number], readonly string[]> = {
   free: [
     `${FREE_PLAN_LIMITS.invoicesPerMonth} nota baru per bulan`,
-    'PDF A4 & kirim ke WhatsApp',
-    'Data pelanggan, katalog & template sendiri',
+    'PDF A4; lampirkan sendiri di WhatsApp',
+    'Data pelanggan, katalog barang & jasa, dan template sendiri',
   ],
-  pro: ['Laporan usaha dan tautan invoice', 'Penyimpanan lebih besar', 'Buat beberapa usaha'],
+  pro: ['Laporan usaha dan tautan tagihan', 'Nota tanpa batas selama plan aktif', 'Buat beberapa usaha'],
   business: [
     'Kunci API untuk integrasi',
-    'Pemberitahuan perubahan invoice',
-    'Batas penggunaan lebih tinggi',
+    'Webhook untuk perubahan status nota',
+    'Batas penggunaan API lebih tinggi',
   ],
 };
 

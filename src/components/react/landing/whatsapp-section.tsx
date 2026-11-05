@@ -9,7 +9,7 @@ import { EASE, Reveal, SectionHeading } from './reveal';
 const BULLETS = [
   {
     icon: Send,
-    title: 'Pesan tinggal kirim',
+    title: 'Pesan siap di WhatsApp',
     description: 'Nomor invoice, nama pelanggan, dan totalnya sudah terisi otomatis.',
   },
   {
@@ -19,8 +19,8 @@ const BULLETS = [
   },
   {
     icon: Paperclip,
-    title: 'PDF tinggal dilampirkan',
-    description: 'File sudah siap di perangkat kamu sebelum pesan dikirim.',
+    title: 'Lampirkan PDF sendiri',
+    description: 'Simpan PDF dari halaman cetak ke perangkatmu, lalu lampirkan di chat WhatsApp.'
   },
 ];
 
@@ -146,8 +146,8 @@ export function WhatsAppSection() {
       <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:py-20">
         <div>
           <SectionHeading
-            title="Sampai ke pelanggan dalam satu ketukan"
-            description="Notain menyiapkan pesan WhatsApp-nya untuk kamu. Buka chat, lampirkan PDF, kirim."
+            title="Bagikan nota lewat WhatsApp"
+            description="Notain menyiapkan pesannya. Simpan PDF dari halaman cetak, buka WhatsApp, lampirkan berkasnya, lalu kirim sendiri."
           />
 
           <ul className="mt-8 space-y-5">

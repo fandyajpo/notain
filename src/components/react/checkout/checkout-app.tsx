@@ -79,10 +79,10 @@ function CheckoutContent() {
     return (
       <ErrorState
         title="Plan Free tidak perlu dibeli"
-        message="Plan Free gratis selamanya. Langsung buat akun dan mulai bikin invoice."
+        message="Plan Free gratis selamanya. Langsung buat akun dan mulai membuat nota."
         action={
           <Button href="/register" size="sm">
-            Buat invoice gratis
+            Buat nota gratis
           </Button>
         }
       />

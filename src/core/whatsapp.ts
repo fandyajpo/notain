@@ -19,12 +19,12 @@ export function normalizeWhatsAppPhone(phone: string): string {
 
 export function buildInvoiceWhatsAppMessage(input: WhatsAppMessageInput): string {
   return [
-    `Halo ${input.customerName} 👋`,
+    `Halo ${input.customerName}`,
     '',
-    `Berikut invoice ${input.invoiceNumber}`,
+    `Berikut nota ${input.invoiceNumber}`,
     `dari ${input.businessName} sebesar ${formatRupiah(input.total)}.`,
     '',
-    'Terima kasih 🙏',
+    'Terima kasih.',
   ].join('\n');
 }
 
@@ -48,13 +48,13 @@ export function buildPaymentReminderMessage(input: PaymentReminderInput): string
       ? `yang jatuh tempo pada ${formatTanggal(input.dueDate)}`
       : 'yang belum dibayar';
   return [
-    `Halo ${input.customerName} 👋`,
+    `Halo ${input.customerName}`,
     '',
-    `Ini pengingat pembayaran invoice ${input.invoiceNumber}`,
+    `Ini pengingat pembayaran tagihan untuk nota ${input.invoiceNumber}`,
     `dari ${input.businessName} sebesar ${formatRupiah(input.total)}`,
     `${dueLine}.`,
     '',
-    'Terima kasih 🙏',
+    'Terima kasih.',
   ].join('\n');
 }
 

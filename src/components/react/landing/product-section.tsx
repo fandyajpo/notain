@@ -247,7 +247,7 @@ function StatusBoardCards() {
     <div className="space-y-4">
       <div
         role="img"
-        aria-label="Contoh daftar invoice dengan nomor, pelanggan, total, dan status: satu terkirim, dua lunas"
+        aria-label="Contoh daftar nota dengan nomor, pelanggan, total, dan status: satu terkirim, dua lunas"
         className={cardClass('sm')}
       >
         <div className="flex items-center gap-2 border-b border-border pb-3">
@@ -272,7 +272,7 @@ function StatusBoardCards() {
 
       <div
         role="img"
-        aria-label="Contoh kartu ringkasan dashboard: pendapatan diterima, belum dibayar, jatuh tempo lewat, dan invoice dibuat"
+        aria-label="Contoh kartu ringkasan dasbor: pendapatan diterima, belum dibayar, jatuh tempo lewat, dan nota dibuat"
         className="grid gap-3 sm:grid-cols-2"
       >
         {moneyCards.map((card) => (
@@ -295,12 +295,12 @@ export function ProductSection() {
         <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
           <SectionHeading
             title="Buat nota, kirim, lalu catat pembayarannya."
-            description="Data pelanggan, barang, total, dan status pembayaran tersimpan bersama di satu tempat."
+            description="Simpan data pelanggan, katalog barang dan jasa, rincian nota, serta status pembayaran di satu tempat."
           />
 
           <div className="mt-14 space-y-20 sm:space-y-24">
             <FeatureRow
-              eyebrow="Bikin invoice"
+              eyebrow="Buat nota"
               title="Buat nota tanpa mulai dari awal."
               description="Pilih template, isi nama pelanggan dan barang. Diskon, pajak, dan total dihitung otomatis. Nota berikutnya tinggal pakai lagi data yang sudah tersimpan."
               bullets={[
@@ -325,12 +325,12 @@ export function ProductSection() {
 
             <FeatureRow
               eyebrow="Pantau tagihan"
-              title="Tahu nota mana yang sudah dibayar."
-              description="Tandai nota sudah dibayar atau belum, lalu lihat ringkasannya di dashboard. Bukti transfer juga bisa disimpan bersama notanya."
+              title="Pantau nota dan pembayaran."
+              description="Catat status nota setelah pembayaran diterima. Pelanggan dapat mengunggah bukti pembayaran, tetapi bukti itu tidak mengubah status otomatis."
               bullets={[
-                'Cek status pembayaran dengan cepat',
-                'Lihat pemasukan dan pembayaran yang belum masuk',
-                'Simpan bukti transfer di nota',
+                'Catat status Lunas setelah menerima pembayaran',
+                'Periksa bukti pembayaran yang diunggah pelanggan',
+                'Lihat laporan pemasukan di plan Pro',
               ]}
               visual={<StatusBoardCards />}
             />

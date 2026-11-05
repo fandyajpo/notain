@@ -297,7 +297,7 @@ function CatalogContent() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Katalog"
+        title="Katalog barang dan jasa"
         description="Simpan barang dan jasa yang sering kamu jual, lalu pilih lagi saat membuat nota."
       />
 
@@ -398,7 +398,7 @@ function CatalogContent() {
       ) : isError && items.length === 0 ? (
         <ErrorState
           title="Katalog belum bisa dimuat"
-          message="Cek koneksi internetmu, lalu coba lagi."
+          message="Periksa koneksi internet kamu, lalu coba lagi."
           action={
             <Button size="sm" loading={isFetching} onClick={() => void refetch()}>
               Coba lagi
@@ -441,10 +441,10 @@ function CatalogContent() {
               onClear={() => selection.clear()}
               clearDisabled={deleteItems.isPending || resolving}
               exportOptions={{
-                filename: 'katalog-terpilih',
+                filename: 'barang-jasa-terpilih',
                 sheetName: 'Katalog',
                 getRows: exportSelectedRows,
-                pdfTitle: 'Katalog Terpilih',
+                pdfTitle: 'Katalog barang dan jasa terpilih',
               }}
               actions={
                 <Button
@@ -556,7 +556,7 @@ function CatalogContent() {
                             variant="ghost"
                             size="sm"
                             onClick={() => openEdit(item)}
-                            aria-label={`Edit ${item.name}`}
+                            aria-label={`Ubah ${item.name}`}
                           >
                             <Pencil size={15} aria-hidden="true" />
                           </Button>
@@ -590,7 +590,7 @@ function CatalogContent() {
         open={editing !== null}
         onClose={() => setEditing(null)}
         size="md"
-        title="Edit Barang/Jasa"
+        title="Ubah barang atau jasa"
         actions={[
           {
             label: 'Batal',

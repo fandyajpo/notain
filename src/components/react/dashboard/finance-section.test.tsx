@@ -132,7 +132,7 @@ describe('FinanceSection', () => {
     expect(container.textContent).toContain('Rp150.000');
     expect(container.textContent).toContain('Belum dibayar');
     expect(container.textContent).toContain('Rp40.000');
-    expect(container.textContent).toContain('Jatuh tempo lewat');
+    expect(container.textContent).toContain('Nota lewat jatuh tempo');
     expect(container.textContent).toContain('1 nota');
     expect(container.textContent).toContain('Nota dibuat');
   });
@@ -166,8 +166,8 @@ describe('FinanceSection', () => {
     await render(<FinanceSection businessName="Warung Maju" />);
 
     const activity = container.querySelector('[data-tour="dash-activity"]');
-    expect(activity?.textContent).toContain('INV-2026-002 dibuat untuk Siti');
-    expect(activity?.textContent).toContain('Customer Andi ditambahkan');
+    expect(activity?.textContent).toContain('Nota INV-2026-002 dibuat untuk Siti');
+    expect(activity?.textContent).toContain('Pelanggan Andi ditambahkan');
     const rows = activity?.querySelectorAll('li') ?? [];
     expect(rows[0]?.textContent).toContain('INV-2026-002');
   });

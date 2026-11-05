@@ -186,8 +186,8 @@ export function TemplatePicker({
     return (
       <div className="flex w-full flex-col gap-6">
         <PageHeader
-          title="Pilih template invoice"
-          description="Tampilannya bisa diganti kapan saja. Data invoice yang kamu isi tetap tersimpan."
+          title="Pilih template nota"
+          description="Tampilannya bisa diganti kapan saja. Data nota yang kamu isi tetap tersimpan."
         />
         {grid(templates)}
       </div>
@@ -197,8 +197,8 @@ export function TemplatePicker({
   return (
     <div className="flex w-full flex-col gap-6">
       <PageHeader
-        title="Pilih template invoice"
-        description="Tampilannya bisa diganti kapan saja. Data invoice yang kamu isi tetap tersimpan."
+        title="Pilih template nota"
+        description="Tampilannya bisa diganti kapan saja. Data nota yang kamu isi tetap tersimpan."
       />
       <section className="flex flex-col gap-3">
         <h2 className="text-eyebrow uppercase text-muted">Sesuai bisnis kamu</h2>

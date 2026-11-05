@@ -555,10 +555,10 @@ function CustomersContent() {
                 loading: resolving || mergeCustomers.isPending,
               }}
               exportOptions={{
-                filename: 'customer-terpilih',
-                sheetName: 'Customer',
+                filename: 'pelanggan-terpilih',
+                sheetName: 'Pelanggan',
                 getRows: exportSelectedRows,
-                pdfTitle: 'Daftar Customer Terpilih',
+                pdfTitle: 'Daftar pelanggan terpilih',
               }}
               actions={
                 <Button
@@ -676,7 +676,7 @@ function CustomersContent() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => openEdit(customer)}
-                                aria-label={`Edit ${customer.name}`}
+                                aria-label={`Ubah ${customer.name}`}
                               >
                                 <Pencil size={15} aria-hidden="true" />
                               </Button>

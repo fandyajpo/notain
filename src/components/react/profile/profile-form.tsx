@@ -133,7 +133,7 @@ export function ProfileForm({ profile }: Props) {
             label="Nomor WhatsApp (opsional)"
             placeholder="081234567890"
             inputMode="tel"
-            hint="Dipakai di invoice dan pesan WhatsApp."
+            hint="Dipakai di nota dan pesan WhatsApp."
             autoComplete="tel"
           />
         )}

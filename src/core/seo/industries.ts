@@ -20,6 +20,8 @@
  *   are not customer data.
  */
 
+import { PLAN_PRICES } from '../billing/plan-benefits';
+
 export type SeoIndustryFeature = { title: string; body: string };
 
 export type SeoIndustryFaq = { question: string; answer: string };
@@ -44,16 +46,18 @@ export type SeoIndustryPage = {
   faq: readonly SeoIndustryFaq[];
 };
 
+const PRO_PRICE_PER_PERIOD = `${PLAN_PRICES.pro.amount} per 30 hari`;
+
 export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
   {
     slug: 'katering',
     label: 'Katering',
     title: 'Nota untuk usaha katering | Notain',
     description:
-      'Buat nota katering dari daftar paket dan hitung total pesanan otomatis. Unduh PDF lalu kirim ke pelanggan lewat WhatsApp. Mulai gratis.',
+      'Buat nota katering dari daftar paket dan hitung total pesanan otomatis. Simpan PDF, buka WhatsApp, lampirkan berkas, lalu kirim sendiri. Mulai gratis.',
     h1: 'Nota katering rapi, siap sebelum pesanan berangkat',
     heroLead:
-      'Pilih paket katering yang dipesan, hitung totalnya otomatis, lalu bagikan PDF nota lewat WhatsApp.',
+      'Pilih paket katering yang dipesan dan hitung totalnya otomatis. Simpan PDF, lalu lampirkan di WhatsApp untuk dikirim ke pelanggan.',
     features: [
       {
         title: 'Katalog paket & lauk',
@@ -64,14 +68,14 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
         body: 'Pilih jenis usaha katering agar contoh template lebih cocok dengan pesananmu.',
       },
       {
-        title: 'Kirim ke klien',
-        body: 'Unduh PDF atau buka WhatsApp dengan pesan nota yang sudah disiapkan.',
+        title: 'Bagikan ke pelanggan',
+        body: 'Simpan PDF atau buka WhatsApp dengan pesan nota yang sudah disiapkan. Lampirkan PDF sendiri sebelum mengirim.',
       },
     ],
     workflow: [
       'Buka Notain dan pilih jenis usaha katering. Template contoh akan menyesuaikan.',
       'Isi pesanan dari katalog: paket, lauk, jumlah pesanan.',
-      'Kirim PDF ke klien lewat WhatsApp, tandai statusnya setelah dibayar.',
+      'Simpan PDF, lampirkan di WhatsApp, lalu kirim sendiri. Catat status nota setelah pembayaran diterima.',
     ],
     exampleLines: [
       'Paket nasi box standar, 100 box, Rp35.000',
@@ -84,7 +88,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Apakah Notain gratis dipakai katering kecil?',
         answer:
-          'Ya. Free mencakup nota, katalog, dan kirim lewat WhatsApp. Pro mulai Rp49.000 per 30 hari, termasuk tautan invoice dan laporan. Lihat rinciannya di halaman Harga.',
+          `Ya. Free mencakup nota, katalog barang dan jasa, serta pesan WhatsApp yang bisa kamu siapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, termasuk tautan tagihan dan laporan usaha. Lihat rinciannya di halaman Harga.`,
       },
       {
         question: 'Bisakah paket dan harganya dicatat sekali saja?',
@@ -94,7 +98,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Bagaimana klien menerima notanya?',
         answer:
-          'Unduh PDF lalu kirim lewat WhatsApp, atau bagikan link invoice-nya (fitur Pro) supaya klien bisa membuka notanya langsung dari HP.',
+          `Simpan PDF, lampirkan di WhatsApp, lalu kirim sendiri. Dengan Pro, kamu juga bisa membagikan tautan tagihan agar pelanggan membukanya di HP.`,
       },
       {
         question: 'Apakah total dan diskon dihitung otomatis?',
@@ -108,7 +112,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     label: 'Desainer',
     title: 'Nota untuk desainer dan pekerja lepas | Notain',
     description:
-      'Buat invoice desain dari daftar jasa dan tarifmu, lalu kirim PDF lewat WhatsApp. Mulai pakai Notain gratis.',
+      'Buat nota untuk jasa desain dari daftar layanan dan tarifmu. Simpan PDF, lalu kirim sendiri lewat WhatsApp. Mulai gratis.',
     h1: 'Nota desain rapi, siap dikirim ke pelanggan',
     heroLead:
       'Pelanggan juga melihat kerapian nota. Pilih jasa dan tarif yang sudah tersimpan, lalu bagikan PDF-nya.',
@@ -129,7 +133,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     workflow: [
       'Daftar gratis dan pilih tipe usaha desain grafis.',
       'Masukkan jasa beserta tarifnya ke katalog.',
-      'Buat invoice per proyek, kirim PDF atau linknya ke klien.',
+      'Buat tagihan per proyek, lalu kirim PDF atau tautannya ke pelanggan.',
     ],
     exampleLines: [
       'Desain logo, 3 konsep, Rp1.500.000',
@@ -142,22 +146,22 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Apakah Notain gratis untuk desainer freelance?',
         answer:
-          'Ya. Plan gratis mencakup pembuatan invoice, katalog jasa, dan pengiriman via WhatsApp. Link invoice dan laporan ada di plan Pro mulai Rp49.000 per 30 hari.',
+          `Ya. Free mencakup pembuatan nota, katalog jasa, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD} dengan tautan tagihan dan laporan usaha.`,
       },
       {
         question: 'Bisakah satu klien punya beberapa invoice?',
         answer:
-          'Bisa. Setiap proyek atau tahap pembayaran dibuat sebagai invoice terpisah, dan semuanya tercatat atas nama klien yang sama di direktori pelanggan.',
+          'Bisa. Buat nota terpisah untuk tiap proyek atau tahap pembayaran. Semua nota tercatat atas nama pelanggan yang sama di daftar pelanggan.',
       },
       {
         question: 'Bagaimana kalau klien telat membayar?',
         answer:
-          'Invoice yang terkirim bisa dikirim ulang dengan pesan pengingat lewat WhatsApp dari dasbor, tanpa menulis ulang chat dari nol.',
+          'Dari dasbor, siapkan pesan pengingat pembayaran di WhatsApp tanpa menulisnya dari awal. Lampirkan berkas jika perlu, lalu kirim sendiri.',
       },
       {
         question: 'Apakah saya perlu install aplikasi?',
         answer:
-          'Tidak. Notain jalan di browser HP maupun desktop, dan klien sama sekali tidak perlu akun untuk membuka serta mengunduh invoice-nya.',
+          'Tidak. Notain berjalan di browser HP maupun desktop. Pelanggan tidak perlu akun untuk membuka tautan tagihan atau PDF yang kamu bagikan.',
       },
     ],
   },
@@ -166,56 +170,56 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     label: 'Developer',
     title: 'Invoice untuk jasa developer dan website | Notain',
     description:
-      'Buat invoice untuk jasa website, aplikasi, atau perawatan bulanan. Pilih layanan dari katalog dan kirim PDF lewat WhatsApp. Mulai gratis.',
+      'Buat tagihan untuk jasa website, aplikasi, atau perawatan bulanan. Pilih layanan dari katalog, simpan PDF, lalu kirim sendiri lewat WhatsApp. Mulai gratis.',
     h1: 'Catat tagihan proyek software dengan rapi',
     heroLead:
-      'Catat layanan dan biaya tiap tahap proyek dalam invoice, dari pembuatan website sampai perawatan bulanan.',
+      'Catat layanan dan biaya tiap tahap proyek dalam tagihan, dari pembuatan situs hingga perawatan bulanan.',
     features: [
       {
         title: 'Katalog layanan teknis',
         body: 'Simpan jasa pembuatan website, integrasi API, dan perawatan bulanan beserta tarifnya untuk dipakai lagi.',
       },
       {
-        title: 'Invoice per tahap proyek',
-        body: 'Pisahkan pembayaran per fase kerja; setiap invoice punya nomor, tanggal, dan statusnya sendiri sehingga tidak saling tertukar.',
+        title: 'Tagihan per tahap proyek',
+        body: 'Pisahkan pembayaran per fase kerja. Setiap tagihan punya nomor, tanggal, dan status sendiri agar tidak tertukar.',
       },
       {
-        title: 'Riwayat klien otomatis',
-        body: 'Nama klien tersimpan sendiri setiap kali dipakai, jadi invoice untuk klien yang sama tidak perlu diketik ulang datanya.',
+        title: 'Riwayat pelanggan',
+        body: 'Nama pelanggan tersimpan saat dipakai, jadi datanya tidak perlu diketik ulang untuk tagihan berikutnya.',
       },
     ],
     workflow: [
       'Daftar gratis, pilih tipe usaha software house / web developer.',
       'Masukkan layanan dan tarifnya ke katalog satu kali.',
-      'Buat invoice per fase, kirim PDF atau link invoice ke klien.',
+      'Buat tagihan per tahap, lalu bagikan PDF atau tautan tagihan ke pelanggan.',
     ],
     exampleLines: [
       'Pembuatan halaman promosi, 1 proyek, Rp4.500.000',
       'Integrasi pembayaran, 1 sesi, Rp2.000.000',
       'Perawatan bulanan, 1 bulan, Rp750.000',
     ],
-    exampleNote: 'Ini contoh invoice. Sesuaikan dengan pekerjaan dan tarifmu.',
-    pain: 'Proyek software sering dibayar per tahap. Buat invoice terpisah untuk tiap tahap agar tagihan dan status pembayarannya mudah dicek.',
+    exampleNote: 'Ini contoh nota. Sesuaikan dengan pekerjaan dan tarifmu.',
+    pain: 'Proyek software sering dibayar per tahap. Buat tagihan terpisah untuk tiap tahap agar status pembayarannya mudah dicek.',
     faq: [
       {
         question: 'Apakah Notain gratis dipakai developer?',
         answer:
-          'Ya. Plan gratis mencakup pembuatan invoice, katalog layanan, dan kirim via WhatsApp. Link invoice dan laporan keuangan ada di plan Pro mulai Rp49.000 per 30 hari.',
+          `Ya. Free mencakup pembuatan nota, katalog layanan, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD} dengan tautan tagihan dan laporan usaha.`,
       },
       {
         question: 'Bisakah satu proyek punya beberapa invoice?',
         answer:
-          'Bisa. Umumnya tiap tahap pembayaran dibuat invoice terpisah; semuanya tercatat atas nama klien yang sama dan bisa difilter dari daftar invoice.',
+          'Bisa. Buat nota terpisah untuk tiap tahap pembayaran. Semuanya tercatat atas nama pelanggan yang sama dan bisa dicari dari daftar nota.',
       },
       {
         question: 'Apakah klien bisa membuka invoice dari HP?',
         answer:
-          'Bisa. Dengan Pro, kamu bisa membagikan tautan invoice yang pelanggan buka langsung di browser tanpa perlu akun.',
+          'Bisa. Dengan Pro, kamu bisa membagikan tautan tagihan yang bisa dibuka pelanggan di browser tanpa akun.',
       },
       {
         question: 'Apakah datanya aman di awan?',
         answer:
-          'Invoice disimpan di akun Notain dan hanya bisa dibuka olehmu, selain tautan invoice yang kamu kirimkan sendiri ke klien.',
+          'Nota tersimpan di akun Notain. Pelanggan dapat melihat salinannya melalui tautan tagihan yang kamu bagikan.'
       },
     ],
   },
@@ -239,7 +243,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       },
       {
         title: 'Bukti belanja yang rapi',
-        body: 'Unduh PDF atau kirim lewat WhatsApp. Pembeli mendapat bukti belanja dan kamu punya catatannya.',
+        body: 'Simpan PDF, lalu lampirkan di WhatsApp dan kirim sendiri. Pembeli mendapat rincian belanja dan kamu menyimpan catatannya.',
       },
     ],
     workflow: [
@@ -258,12 +262,12 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Apakah Notain benar-benar gratis untuk warung kecil?',
         answer:
-          'Ya. Free mencakup nota, katalog menu, dan kirim lewat WhatsApp. Pro mulai Rp49.000 per 30 hari, termasuk tautan invoice dan laporan.',
+          `Ya. Free mencakup nota, katalog menu, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, termasuk tautan tagihan dan laporan usaha.`,
       },
       {
         question: 'Apakah harus punya komputer atau printer?',
         answer:
-          'Tidak. Notain jalan di browser HP; notanya berupa PDF yang bisa dikirim lewat WhatsApp, dan dicetak hanya kalau memang diperlukan.',
+          'Tidak. Notain berjalan di browser HP. Simpan nota sebagai PDF, lalu bagikan sendiri lewat WhatsApp atau cetak jika diperlukan.',
       },
       {
         question: 'Bisakah mencatat pembeli langganan?',
@@ -282,7 +286,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     label: 'Online shop',
     title: 'Nota untuk toko online dan reseller | Notain',
     description:
-      'Invoice untuk toko online: buat nota penjualan dari katalog produk, kirim ke pembeli via WhatsApp, lacak status pembayarannya. Notain gratis untuk mulai.',
+      'Buat nota penjualan toko online dari katalog produk dan catat status pembayarannya. Simpan PDF, lalu bagikan sendiri lewat WhatsApp. Notain gratis untuk mulai.',
     h1: 'Nota toko online untuk tiap pesanan',
     heroLead:
       'Saat pesanan masuk, pilih produk dan harga yang sudah tersimpan. Buat nota lalu kirim ke pembeli.',
@@ -293,17 +297,17 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       },
       {
         title: 'Kirim via WhatsApp',
-        body: 'Kirim PDF nota ke pembeli lewat WhatsApp dengan pesan yang sudah disiapkan.',
+        body: 'Siapkan pesan WhatsApp tentang nota, simpan PDF, lalu lampirkan berkas dan kirim sendiri.',
       },
       {
         title: 'Status pesanan terlacak',
-        body: 'Tandai nota belum dikirim, sudah dikirim, atau lunas agar pesanan yang belum dibayar tidak terlewat.',
+        body: 'Catat status nota sebagai terkirim, lunas, atau dibatalkan agar tagihan yang belum dibayar tidak terlewat.',
       },
     ],
     workflow: [
       'Daftar gratis dan pilih tipe usaha toko online / reseller.',
       'Masukkan produk beserta harga ke katalog.',
-      'Buat invoice dari keranjang pesanan, lalu kirim ke pembeli.',
+      'Buat nota untuk pesanan, lalu bagikan ke pembeli.',
     ],
     exampleLines: [
       'Kaos polos katun combed, 3 pcs, Rp95.000',
@@ -316,22 +320,22 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Apakah Notain gratis untuk online shop kecil?',
         answer:
-          'Ya, plan gratis berlaku selamanya untuk katalog produk, pembuatan invoice, dan kirim via WhatsApp. Link invoice dan laporan ada di plan Pro mulai Rp49.000 per 30 hari.',
+          `Ya, Free berlaku selamanya untuk katalog produk, pembuatan nota, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, dengan tautan tagihan dan laporan usaha.`,
       },
       {
         question: 'Bisakah invoice dikirim langsung dari HP?',
         answer:
-          'Bisa. Notain dibuka di browser HP; setelah invoice jadi, tombol kirim membuka WhatsApp dengan pesan dan PDF yang sudah siap.',
+          'Bisa. Buka Notain di browser HP. Setelah nota jadi, simpan PDF, buka WhatsApp, lampirkan berkas, lalu kirim sendiri.',
       },
       {
         question: 'Bagaimana pembeli tahu invoice sudah dibayar?',
         answer:
-          'Kamu memperbarui status invoice menjadi lunas; riwayatnya tercatat di daftar invoice dan terlihat di dasbor penjualan.',
+          'Setelah pembayaran diterima, catat status nota sebagai Lunas. Statusnya terlihat di daftar nota dan dasbor.',
       },
       {
         question: 'Apakah cocok untuk penjualan pre-order?',
         answer:
-          'Cocok. Invoice dibuat saat pesanan masuk, dan statusnya tetap terpantau sampai pembayaran benar-benar diterima.',
+          'Cocok. Buat nota saat pesanan masuk, lalu catat statusnya setelah menerima pembayaran.',
       },
     ],
   },
@@ -340,7 +344,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     label: 'Freelancer',
     title: 'Aplikasi Invoice Freelancer & Jasa Lepas | Notain',
     description:
-      'Invoice freelancer profesional: katalog jasa dan tarif, invoice per proyek, pengingat pembayaran via WhatsApp. Pakai Notain gratis tanpa install.',
+      'Buat nota freelancer dari katalog jasa dan tarif, lalu catat tagihan per proyek. Siapkan pengingat pembayaran di WhatsApp. Pakai Notain gratis tanpa memasang aplikasi.',
     h1: 'Invoice freelancer: profesional dalam hitungan detik',
     heroLead:
       'Kerja lepas berarti menjual jasa, bukan menagih. Notain mengubah daftar jasamu jadi invoice rapi yang siap dikirim ke klien.',
@@ -350,8 +354,8 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
         body: 'Simpan tarif per jenis pekerjaan; klien baru tidak perlu menanyakan harga dari nol dan invoice tidak salah ketik angka.',
       },
       {
-        title: 'Pengingat pembayaran sekali klik',
-        body: 'Dasbor menandai invoice yang belum dibayar dan mengirim ulang invoice beserta pesan pengingat lewat WhatsApp.',
+        title: 'Pengingat pembayaran mudah disiapkan',
+        body: 'Dasbor menampilkan tagihan yang belum lunas. Siapkan pesan pengingat di WhatsApp, lalu kirim sendiri setelah memeriksa isinya.',
       },
       {
         title: 'Halaman usaha untuk bio',
@@ -361,7 +365,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     workflow: [
       'Daftar gratis, pilih tipe usaha sesuai bidangmu.',
       'Masukkan jasa dan tarif ke katalog.',
-      'Buat invoice per proyek, kirim ke klien, tandai saat lunas.',
+      'Buat tagihan per proyek, bagikan ke pelanggan, lalu catat pembayaran saat diterima.',
     ],
     exampleLines: [
       'Penulisan artikel, 1.000 kata, 4 artikel, Rp400.000',
@@ -374,22 +378,22 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Apakah Notain gratis untuk freelancer?',
         answer:
-          'Ya, plan gratis berlaku selamanya untuk katalog jasa, invoice, dan kirim via WhatsApp. Link invoice dan laporan keuangan tersedia di plan Pro mulai Rp49.000 per 30 hari.',
+          `Ya, Free berlaku selamanya untuk katalog jasa, nota, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, dengan tautan tagihan dan laporan usaha.`,
       },
       {
         question: 'Bagaimana kalau klien telat membayar?',
         answer:
-          'Invoice yang terkirim bisa dikirim ulang dengan pesan pengingat dari dasbor, sehingga kamu tidak perlu menulis chat penagihan sendiri.',
+          'Dari dasbor, siapkan pesan pengingat pembayaran di WhatsApp. Periksa pesannya dan kirim sendiri ke pelanggan.',
       },
       {
         question: 'Apakah klien perlu akun untuk membuka invoice?',
         answer:
-          'Tidak. Pelanggan cukup membuka tautan atau PDF yang kamu kirim di browser. Mereka tidak perlu membuat akun.',
+          'Tidak. Pelanggan bisa membuka tautan tagihan atau PDF yang kamu bagikan di browser tanpa membuat akun.',
       },
       {
         question: 'Bisakah saya memantau semua proyek di satu tempat?',
         answer:
-          'Bisa. Semua invoice tercatat di daftar invoice lengkap dengan statusnya, dan rekap pemasukannya terlihat di dasbor.',
+          'Bisa. Semua nota tercatat di daftar nota beserta statusnya. Ringkasan pemasukan tersedia di dasbor.',
       },
     ],
   },
@@ -432,7 +436,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Apakah Notain gratis untuk bengkel kecil?',
         answer:
-          'Ya, plan gratis berlaku selamanya untuk pembuatan nota, katalog pekerjaan, dan kirim via WhatsApp. Plan Pro (Rp49.000 per 30 hari) menambahkan link invoice dan laporan keuangan.',
+          `Ya, Free berlaku selamanya untuk pembuatan nota, katalog pekerjaan, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, dengan tautan tagihan dan laporan usaha.`,
       },
       {
         question: 'Bisakah mencatat nomor polisi atau tipe kendaraan?',
@@ -442,12 +446,12 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Bagaimana pelanggan menerima notanya?',
         answer:
-          'Unduh PDF dan kirim lewat WhatsApp setelah kendaraan selesai. Pelanggan mendapat rincian pekerjaan dan biayanya.',
+          'Simpan PDF, lampirkan di WhatsApp, lalu kirim sendiri setelah kendaraan selesai. Pelanggan mendapat rincian pekerjaan dan biayanya.',
       },
       {
         question: 'Apakah catatan servis lama masih bisa dilihat?',
         answer:
-          'Bisa. Semua nota tersimpan di akunmu beserta nama pelanggannya; gunakan pencarian di daftar invoice untuk menemukan riwayatnya.',
+          'Bisa. Nota tersimpan di akunmu beserta nama pelanggan. Cari nota dari daftar untuk melihat riwayatnya.',
       },
     ],
   },
@@ -467,7 +471,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       },
       {
         title: 'Nota per kunjungan',
-        body: 'Buat satu nota untuk tiap kunjungan, lengkap dengan layanan dan total pembayaran.',
+        body: 'Buat satu nota untuk tiap kunjungan, lengkap dengan layanan dan jumlah yang harus dibayar.',
       },
       {
         title: 'Nota via WhatsApp',
@@ -490,7 +494,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Apakah Notain gratis dipakai salon kecil?',
         answer:
-          'Ya, plan gratis berlaku selamanya untuk katalog treatment, pembuatan nota, dan kirim via WhatsApp. Plan Pro (Rp49.000 per 30 hari) menambahkan link invoice dan laporan keuangan.',
+          `Ya, Free berlaku selamanya untuk katalog layanan, pembuatan nota, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, dengan tautan tagihan dan laporan usaha.`,
       },
       {
         question: 'Bisakah daftar harga dibagikan ke pelanggan?',

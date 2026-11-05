@@ -8,7 +8,7 @@ copy, sama seperti error typecheck.
 
 Notain terdengar seperti rekan kerja yang cakap: percaya diri tanpa
 menjanjikan hal yang berlebihan, ringkas tanpa kehilangan informasi, ramah
-tanpa kekanak-kanakan. Produknya menyangkut invoice dan uang, jadi nadanya
+tanpa kekanak-kanakan. Produknya menyangkut nota dan transaksi uang, jadi nadanya
 harus terasa tepat dan bisa dipercaya.
 
 1. **Manfaat dulu, mekanisme belakangan.** Sebut apa yang didapat pengguna,
@@ -17,7 +17,7 @@ harus terasa tepat dan bisa dipercaya.
    - Bukan: "Sistem kami menggunakan kalkulator otomatis untuk menghitung."
 2. **Kalimat pendek, satu ide.** Satu kalimat panjang dengan dua koma dan
    "dan" berulang hampir selalu bisa dipotong jadi dua.
-3. **Kata kerja konkret untuk CTA.** "Buat invoice gratis", "Kirim undangan",
+3. **Kata kerja konkret untuk CTA.** "Buat nota gratis", "Kirim undangan",
    "Simpan" — bukan "Mulai sekarang", "Lanjutkan", "Klik di sini".
 4. **Bahasa Indonesia alami.** Hindari terjemahan kaku ("pengguna dapat
    melakukan"), jargon marketing ("solusi revolusioner"), dan emoji. Angka,
@@ -25,23 +25,32 @@ harus terasa tepat dan bisa dipercaya.
    mengarang fitur atau testimoni.
 5. **Konsisten satu halaman ke halaman berikutnya.** Istilah yang sama
    ditulis sama di landing, aplikasi, toast, dan notifikasi.
+6. **Jelaskan batas perilaku dengan jujur.** Tombol WhatsApp menyiapkan pesan
+   dan membuka chat; pengguna sendiri yang melampirkan PDF dan mengirim pesan.
+   Bukti pembayaran yang diunggah pelanggan bukan verifikasi pembayaran dan
+   tidak mengubah status nota. Status Lunas dicatat pemilik setelah menerima
+   pembayaran di luar Notain.
 
 ## Konsistensi istilah
 
-| Pakai                                             | Jangan                                       | Catatan                                                                            |
-| ------------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------- |
-| invoice                                           | Invoice, tagihan (kecuali konteks "menagih") | Produknya sendiri; huruf kecil di tengah kalimat                                   |
-| pelanggan                                         | customer, klien, konsumen                    | "klien" hanya bila konteksnya memang klien proyek                                  |
-| nota                                              | —                                            | Boleh untuk konteks UMKM/warung, jangan campur dalam satu kalimat dengan "invoice" |
-| plan Free / Pro / Business                        | paket, tier                                  | Nama plan ditulis Title Case                                                       |
-| langganan                                         | subscription, berlangganan (kata benda)      |                                                                                    |
-| kata sandi                                        | password, passphrase                         |                                                                                    |
-| WhatsApp, PDF, Excel, CSV, API, webhook, checkout | —                                            | Istilah teknis yang boleh tetap Inggris                                            |
-| usaha / bisnis                                    | brand, entitas                               | "usaha" untuk UMKM, "bisnis" untuk penjelasan umum                                 |
+| Pakai                                        | Jangan                                   | Catatan                                                                                   |
+| -------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------- |
+| nota                                         | invoice, tagihan (untuk dokumen umum)    | Dokumen transaksi umum; gunakan konsisten di aplikasi dan materi pemasaran                |
+| tagihan                                      | —                                        | Permintaan pembayaran; "invoice" boleh dipakai bila jelas merujuk pada tagihan             |
+| pelanggan                                    | customer, konsumen                       | Gunakan "klien" hanya untuk pekerjaan berbasis proyek                                     |
+| bukti pembayaran                             | bukti transfer (kecuali memang transfer) | Unggahan bukti tidak memverifikasi pembayaran                                              |
+| catat pembayaran                             | tandai pembayaran                        | Status dicatat pemilik setelah pembayaran diterima                                        |
+| riwayat transaksi                            | riwayat invoice                          | Gunakan untuk daftar dan ekspor transaksi                                                  |
+| katalog barang & jasa                       | —                                        | Sebutkan barang dan jasa saat menjelaskan isi katalog                                      |
+| plan Free / Pro / Business                   | paket, tier                              | Pertahankan nama plan dan casingnya                                                        |
+| langganan                                   | subscription, berlangganan (kata benda) |                                                                                           |
+| kata sandi                                  | password, passphrase                     |                                                                                           |
+| WhatsApp, PDF, Excel, CSV, API, webhook, DOKU | —                                      | Pertahankan nama provider dan istilah teknis yang memang perlu tampil                     |
+| usaha / bisnis                               | brand, entitas                           | "usaha" untuk UMKM; "bisnis" untuk penjelasan umum                                        |
 
-**Casing:** sentence case untuk judul, tombol, dan label — "Buat invoice
-gratis", "Buat organisasi baru". Title Case hanya untuk nama plan dan nama
-produk pihak ketiga. Semua huruf kapital hanya untuk eyebrow/tracking-widest.
+**Casing:** sentence case untuk judul, tombol, dan label — "Buat nota gratis",
+"Buat organisasi baru". Title Case hanya untuk nama plan dan nama produk pihak
+ketiga. Semua huruf kapital hanya untuk eyebrow/tracking-widest.
 
 ## Gerak
 

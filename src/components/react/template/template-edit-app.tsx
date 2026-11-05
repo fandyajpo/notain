@@ -124,7 +124,7 @@ function TemplateEditContent() {
     if (picked === undefined || picked === null || !orgId) return;
     if (profileType === finalType) return;
     void setOrgType.mutateAsync(finalType).catch(() =>
-      toast('Pilihan belum tersimpan. Bisa diatur lagi di Settings.', {
+      toast('Pilihan belum tersimpan. Bisa diatur lagi di Pengaturan.', {
         variant: 'error',
       }),
     );
@@ -231,7 +231,7 @@ function TemplateForm({
           <BackButton />
 
           <PageHeader
-            title={existing ? 'Edit template' : 'Template baru'}
+            title={existing ? 'Ubah template' : 'Template baru'}
             actions={
               <>
                 <Button variant="secondary" onClick={() => window.location.assign('/templates')}>
@@ -275,7 +275,7 @@ function TemplateForm({
         />
 
         <Section
-          title="Blok invoice"
+          title="Bagian nota"
           description="Seret barisnya, atau pakai tombol panah, untuk mengubah urutan."
         >
           <BlockList
@@ -293,7 +293,7 @@ function TemplateForm({
 
         <Section
           title="Teks default"
-          description="Ditulis ke invoice begitu template ini dipakai. Masih bisa diubah sesudahnya."
+          description="Ditulis ke nota saat template ini dipakai. Masih bisa diubah sesudahnya."
         >
           <DefaultsForm
             defaults={values.defaults}
@@ -304,7 +304,7 @@ function TemplateForm({
 
       <aside className="flex flex-col gap-3 lg:sticky lg:top-6 lg:self-start">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-eyebrow uppercase text-muted">Preview</p>
+          <p className="text-eyebrow uppercase text-muted">Pratinjau</p>
           <span className="text-xs text-muted">{visibleCount} blok tampil</span>
         </div>
         <InvoicePreview

@@ -17,7 +17,7 @@ const FAQS = [
   {
     question: 'Apa itu Notain?',
     answer:
-      'Notain membantu kamu membuat nota, menghitung total, menyimpan data pelanggan, dan membagikan PDF lewat WhatsApp. Bisa dipakai dari HP atau laptop.',
+      'Notain membantu kamu membuat nota, menghitung total, dan menyimpan data pelanggan. Simpan PDF, lampirkan sendiri di WhatsApp, lalu kirim. Bisa dipakai dari HP atau laptop.',
   },
   {
     question: 'Siapa yang bisa memakai Notain?',
@@ -36,31 +36,32 @@ const FAQS = [
   },
   {
     question: 'Bisa diunduh jadi PDF?',
-    answer: `Bisa. Buka nota dalam ukuran A4, lalu pilih "Simpan sebagai PDF" di menu cetak browser. Setelah itu, kirim PDF ke pelanggan lewat WhatsApp.`,
+    answer:
+      'Bisa. Buka pratinjau cetak dan pilih “Simpan sebagai PDF” di dialog cetak browser. Setelah berkas tersimpan, buka WhatsApp, lampirkan PDF, lalu kirim sendiri.',
   },
   {
     question: 'Berapa biayanya?',
-    answer: `Fitur dasar gratis selamanya, termasuk ${FREE_PLAN_LIMITS.invoicesPerMonth} nota baru per bulan, template bawaan, dan template buatan sendiri. Pro seharga ${PLAN_PRICES.pro.amount}${PLAN_PRICES.pro.period} menambah nota tanpa batas dan tautan invoice. Business sedang disiapkan dan belum bisa dibeli.`,
+    answer: `Fitur dasar Free berlaku selamanya, termasuk ${FREE_PLAN_LIMITS.invoicesPerMonth} nota baru per bulan, template bawaan, dan template buatan sendiri. Pro seharga ${PLAN_PRICES.pro.amount} per 30 hari menambah nota tanpa batas selama plan aktif, tautan tagihan, dan laporan usaha. Business sedang disiapkan dan belum bisa dibeli.`
   },
   {
     question: 'Bagaimana langganan dan perpanjangannya?',
     answer:
-      'Pro dibayar per bulan lewat DOKU. Setelah pembayaran terkonfirmasi, langganan langsung aktif. Kalau memperpanjang lebih awal, sisa masa aktif tetap dihitung.',
+      'Pro dibayar per 30 hari lewat DOKU. Plan aktif setelah pembayaran terkonfirmasi. Jika memperpanjang sebelum masa aktif berakhir, sisa masa aktif ditambahkan.',
   },
   {
     question: 'Apa yang terjadi setelah masa aktif berakhir?',
     answer:
-      'Akunmu kembali ke Free. Data tetap tersimpan dan fitur dasar tetap bisa dipakai. Fitur Pro seperti laporan dan tautan invoice tidak bisa dipakai lagi.',
+      'Akunmu kembali ke Free. Data tetap tersimpan dan fitur dasar tetap bisa dipakai. Fitur Pro seperti laporan usaha dan tautan tagihan tidak bisa dipakai lagi.',
   },
   {
     question: 'Nota saya aman tersimpan?',
     answer:
-      'Nota tersimpan di akunmu, jadi tetap ada saat kamu ganti HP. Orang lain tidak bisa membukanya.',
+      'Nota tersimpan di akunmu, jadi tetap ada saat kamu ganti HP. Jika kamu membagikan tautan tagihan, pelanggan yang menerimanya bisa membuka halaman itu.',
   },
   {
     question: 'Bagaimana mengelola akun dan data saya?',
     answer:
-      'Profil usaha dan logo diatur di halaman Pengaturan. Kata sandi bisa diganti lewat tautan "Lupa password" yang dikirim ke email. Invoice dan pelanggan bisa dihapus dari halaman masing-masing, dan riwayatnya bisa diekspor ke Excel atau CSV. Notain jalan di browser HP maupun laptop, tanpa perlu install aplikasi.',
+      'Profil usaha dan logo diatur di halaman Pengaturan. Kata sandi bisa diganti lewat tautan “Lupa kata sandi” yang dikirim ke email. Nota dan pelanggan bisa dihapus dari halaman masing-masing. Riwayat nota bisa diekspor ke Excel atau CSV. Notain berjalan di browser HP maupun laptop, tanpa perlu memasang aplikasi.',
   },
 ];
 

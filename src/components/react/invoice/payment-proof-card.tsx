@@ -43,9 +43,10 @@ export function PaymentProofCard({ proof, status, onUpload }: Props) {
   if (proof || done) {
     return (
       <Notice variant="success">
-        <p className="font-medium">Bukti pembayaran sudah dikirim</p>
+        <p className="font-medium">Bukti pembayaran sudah diunggah</p>
         <p className="mt-1">
-          Bukti pembayaran sudah kami terima. Terima kasih, halaman ini bisa ditutup.
+          Bukti sudah terkirim ke pemilik usaha. Pemilik usaha akan memeriksanya dan mencatat status
+          nota secara terpisah.
         </p>
       </Notice>
     );
@@ -55,11 +56,11 @@ export function PaymentProofCard({ proof, status, onUpload }: Props) {
     return (
       <Notice variant="accent">
         <p className="font-medium">
-          {status === 'paid' ? 'Nota ini sudah ditandai lunas' : 'Nota ini sudah dibatalkan'}
+          {status === 'paid' ? 'Pemilik usaha sudah menandai nota ini lunas' : 'Nota ini sudah dibatalkan'}
         </p>
         <p className="mt-1">
           {status === 'paid'
-            ? 'Pembayaran sudah tercatat. Bukti pembayaran tidak perlu dikirim lagi.'
+            ? 'Pemilik usaha sudah mencatat pembayaran. Bukti pembayaran tidak perlu diunggah lagi.'
             : `Nota ini berstatus ${INVOICE_STATUS_LABELS[status]}, jadi bukti pembayaran tidak bisa dikirim.`}
         </p>
       </Notice>
@@ -148,7 +149,9 @@ export function PaymentProofCard({ proof, status, onUpload }: Props) {
           )}
         </Button>
       </div>
-      <p className="mt-2 text-[11px] text-muted">Unggahan hanya bisa dikirim satu kali.</p>
+      <p className="mt-2 text-[11px] text-muted">
+        Kirim bukti satu kali. Jika ada kekeliruan, hubungi pemilik usaha.
+      </p>
     </div>
   );
 }

@@ -264,7 +264,7 @@ function SummarySection({
                   Status
                 </th>
                 <th scope="col" className={thClass('text-right')}>
-                  Jumlah invoice
+                  Jumlah nota
                 </th>
                 <th scope="col" className={thClass('text-right')}>
                   Porsi
@@ -324,11 +324,11 @@ function SummarySection({
         </div>
 
         {invoicesLoading ? (
-          <LoadingState label="Memuat invoice…" />
+          <LoadingState label="Memuat nota…" />
         ) : invoicesError && recent.length === 0 ? (
           // A failed fetch must not read as "Belum ada invoice" — offer a retry.
           <ErrorState
-            title="Gagal memuat invoice"
+            title="Gagal memuat nota"
             message="Periksa koneksi internet kamu, lalu coba lagi."
             action={
               <Button size="sm" onClick={onRetryInvoices}>

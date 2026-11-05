@@ -12,7 +12,7 @@ import { Aurora } from './aurora';
 const TRUST_POINTS = [
   'Gratis selamanya',
   'Tanpa kartu kredit',
-  'PDF A4 siap kirim',
+  'PDF A4 siap diunduh',
   'Pakai bahasa Indonesia',
 ];
 
@@ -65,7 +65,7 @@ function PreviewStage() {
 
       <motion.div
         role="tablist"
-        aria-label="Pilih tampilan invoice"
+        aria-label="Pilih tampilan nota"
         initial={false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.85, ease: EASE }}
@@ -143,7 +143,7 @@ function PreviewStage() {
         className="absolute -right-4 bottom-24 hidden items-center gap-2 rounded-control rounded-br-sm border border-accent/20 bg-accent-soft px-3 py-2 text-xs font-medium text-foreground shadow-popover lg:flex"
       >
         <CheckCheck size={14} aria-hidden="true" className="text-accent" />
-        Terkirim ke Budi
+        Pesan siap dibagikan
       </motion.div>
     </div>
   );
@@ -200,8 +200,8 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
             transition={{ duration: 0.6, delay: 0.6, ease: EASE }}
             className="mx-auto mt-6 max-w-xl text-lead text-muted"
           >
-            Buat nota, simpan data pelanggan, lalu bagikan PDF lewat WhatsApp. Semua catatan usaha
-            ada di satu tempat.
+            Buat nota dan simpan data pelanggan. Simpan PDF, lalu lampirkan sendiri di WhatsApp.
+            Catatan usaha tersimpan di satu tempat.
           </motion.p>
 
           <motion.div

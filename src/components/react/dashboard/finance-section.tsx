@@ -183,29 +183,31 @@ const MONEY_CARDS: ReadonlyArray<MoneyCardSpec> = [
     Icon: Banknote,
     tone: 'success',
     pick: (summary) => formatRupiah(summary.receivedRevenue),
-    sub: () => 'Nota yang sudah dibayar bulan ini',
+    sub: () => 'Total nota berstatus Lunas pada periode ini',
   },
   {
     label: 'Belum dibayar',
     Icon: Clock,
     tone: 'accent',
     pick: (summary) => formatRupiah(summary.unpaidAmount),
-    sub: () => 'Piutang yang masih menunggu',
+    sub: () => 'Nilai nota yang belum lunas',
   },
   {
-    label: 'Jatuh tempo lewat',
+    label: 'Nota lewat jatuh tempo',
     Icon: TriangleAlert,
     tone: 'danger',
     pick: (summary) => `${summary.overdueCount} nota`,
     sub: (summary) =>
-      summary.overdueCount > 0 ? formatRupiah(summary.overdueAmount) + ' terlambat' : 'Tidak ada',
+      summary.overdueCount > 0
+        ? `${formatRupiah(summary.overdueAmount)} belum dibayar`
+        : 'Tidak ada',
   },
   {
     label: 'Nota dibuat',
     Icon: FileText,
     tone: 'neutral',
     pick: (summary) => `${summary.invoiceCount}`,
-    sub: () => 'Termasuk yang batal',
+    sub: () => 'Termasuk nota yang dibatalkan',
   },
 ];
 
@@ -253,7 +255,7 @@ function RevenueChart({ points }: { points: ChartPoint[] }) {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-sm font-medium">Pendapatan 6 bulan terakhir</h3>
         {/* The honesty label: bucketed by invoice date, paid invoices only. */}
-        <p className="text-xs text-muted">Dihitung dari tanggal nota yang sudah dibayar</p>
+        <p className="text-xs text-muted">Dihitung dari tanggal nota yang berstatus Lunas</p>
       </div>
       <div className="mt-4 flex h-40 items-end gap-2 sm:gap-3" role="img" aria-label={summaryLabel}>
         {points.map((point) => (
@@ -276,7 +278,9 @@ function RevenueChart({ points }: { points: ChartPoint[] }) {
         ))}
       </div>
       {!hasRevenue && (
-        <p className="mt-3 text-sm text-muted">Belum ada pemasukan lunas dalam 6 bulan terakhir.</p>
+        <p className="mt-3 text-sm text-muted">
+          Belum ada nota berstatus Lunas yang bertanggal dalam 6 bulan terakhir.
+        </p>
       )}
     </div>
   );
@@ -294,7 +298,7 @@ function AttentionList({ items, businessName }: { items: AttentionItem[]; busine
   return (
     <section
       data-tour="dash-attention"
-      aria-label="Invoice yang perlu ditagih"
+      aria-label="Nota yang perlu ditagih"
       className="flex flex-col gap-4"
     >
       <div className="flex items-center justify-between">
@@ -334,7 +338,7 @@ function AttentionList({ items, businessName }: { items: AttentionItem[]; busine
                   href={buildWhatsAppUrl({
                     phone: entry.customerPhone,
                     message: buildPaymentReminderMessage({
-                      customerName: entry.customerName || 'Customer',
+                      customerName: entry.customerName || 'Pelanggan',
                       invoiceNumber: entry.invoiceNumber,
                       businessName,
                       total,
@@ -345,7 +349,7 @@ function AttentionList({ items, businessName }: { items: AttentionItem[]; busine
                   rel="noopener noreferrer"
                 >
                   <MessageCircle size={15} aria-hidden="true" />
-                  Ingatkan
+                  Siapkan pengingat
                 </Button>
               )}
               <Button size="sm" variant="ghost" href={`/invoice/${entry.id}`}>
@@ -377,13 +381,13 @@ const ACTIVITY_ICON: Record<ActivityEvent['kind'], LucideIcon> = {
 function activityText(event: ActivityEvent): string {
   switch (event.kind) {
     case 'invoice-created':
-      return `Invoice ${event.invoiceNumber ?? ''} dibuat${
+      return `Nota ${event.invoiceNumber ?? ''} dibuat${
         event.customerName ? ` untuk ${event.customerName}` : ''
       }`;
     case 'payment-proof':
       return `Bukti pembayaran ${event.invoiceNumber ?? ''} diunggah`;
     case 'customer-created':
-      return `Customer ${event.customerName ?? ''} ditambahkan`;
+      return `Pelanggan ${event.customerName ?? ''} ditambahkan`;
   }
 }
 
@@ -447,9 +451,9 @@ function FinanceUpsell() {
       <Card padding="lg">
         <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="max-w-md">
-            <p className="font-medium">Laporan bisnis ada di plan Pro</p>
+            <p className="font-medium">Laporan usaha tersedia di plan Pro</p>
             <p className="mt-1 text-sm leading-relaxed text-muted">
-              Ringkasan penjualan & pendapatan periode ini, grafik enam bulan, dan daftar invoice
+              Ringkasan penjualan dan pendapatan periode ini, grafik enam bulan, serta daftar nota
               yang perlu ditagih — semuanya dalam satu layar.
             </p>
           </div>

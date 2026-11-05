@@ -281,7 +281,7 @@ export function InvoiceTable() {
       const rows = await resolveSelected({
         snapshot: selection.getSnapshot(),
         loaders: invoiceLoaders,
-        noun: 'invoice',
+        noun: 'nota',
       });
       const ids = rows.map((row) => row.id);
       if (ids.length === 0) return;
@@ -334,7 +334,7 @@ export function InvoiceTable() {
     if (!file || !invoice) return;
 
     if (file.size > PAYMENT_PROOF_MAX_BYTES) {
-      toast('Ukuran file maksimal 5 MB. Foto akan dikompres otomatis setelah dipilih.', {
+      toast('Ukuran berkas maksimal 5 MB. Foto akan dikompres otomatis setelah dipilih.', {
         variant: 'error',
       });
       return;
@@ -422,7 +422,7 @@ export function InvoiceTable() {
    */
   const selectAllMenu = (
     <SelectAllMenu
-      noun="invoice"
+      noun="nota"
       pageCount={invoices.length}
       onSelectPage={() =>
         setManyInScope(
@@ -474,7 +474,7 @@ export function InvoiceTable() {
                   }
                 }}
                 onChange={table.getToggleAllPageRowsSelectedHandler()}
-                aria-label="Pilih semua invoice yang dimuat"
+                aria-label="Pilih semua nota yang dimuat"
                 className="h-4 w-4 accent-accent"
               />
               {selectAllMenu}
@@ -489,7 +489,7 @@ export function InvoiceTable() {
                 type="checkbox"
                 checked={row.getIsSelected()}
                 onChange={row.getToggleSelectedHandler()}
-                aria-label={`Pilih invoice ${row.original.invoiceNumber}`}
+                aria-label={`Pilih nota ${row.original.invoiceNumber}`}
                 className="h-4 w-4 accent-accent"
               />
             </span>
@@ -603,14 +603,14 @@ export function InvoiceTable() {
                   },
                   publicLinkReady
                     ? {
-                        label: 'Buka halaman bayar',
+                        label: 'Buka halaman tagihan',
                         icon: <ExternalLink size={15} aria-hidden="true" />,
                         // The capability URL the customer uses: shows the
                         // invoice and the one-shot proof upload form.
                         href: `/invoice/print/${invoice.id}`,
                       }
                     : {
-                        label: 'Buka halaman bayar (Pro)',
+                        label: 'Pilih Pro untuk berbagi tautan tagihan',
                         icon: <Sparkles size={15} aria-hidden="true" />,
                         href: '/checkout?plan=pro',
                       },
@@ -684,7 +684,7 @@ export function InvoiceTable() {
         <div className="flex w-full flex-col gap-2 sm:max-w-md sm:flex-row sm:items-center">
           <div data-tour="invoices-search" className="w-full sm:max-w-xs">
             <label htmlFor={searchField.id} className="sr-only">
-              Cari invoice
+              Cari nota
             </label>
             <SearchField
               id={searchField.id}
@@ -772,14 +772,14 @@ export function InvoiceTable() {
       {hasSelection(selectionCount) && (
         <SelectionToolbar
           count={selectionCount}
-          noun="invoice"
+          noun="nota"
           onClear={() => selection.clear()}
           clearDisabled={deleteInvoices.isPending || resolving}
           exportOptions={{
-            filename: 'invoice-terpilih',
-            sheetName: 'Invoice',
+            filename: 'nota-terpilih',
+            sheetName: 'Nota',
             getRows: exportSelectedRows,
-            pdfTitle: 'Invoice Terpilih',
+            pdfTitle: 'Nota terpilih',
           }}
           actions={
             <Button
@@ -806,20 +806,20 @@ export function InvoiceTable() {
           }
         />
       ) : isLoading ? (
-        <LoadingState label="Memuat invoice…" />
+        <LoadingState label="Memuat nota…" />
       ) : invoices.length === 0 ? (
         <EmptyState
           title={anyFilter ? 'Belum ada nota yang cocok' : 'Belum ada nota'}
           description={
             anyFilter
               ? 'Coba kata kunci lain, atau ubah/hapus filter di atas.'
-              : 'Buat nota pertamamu, lalu bagikan ke pelanggan lewat WhatsApp.'
+              : 'Buat nota pertamamu, simpan sebagai PDF, lalu lampirkan sendiri di WhatsApp untuk dikirim.'
           }
           action={
             !anyFilter ? (
               <Button href="/invoice/new">
                 <Plus size={16} aria-hidden="true" />
-                Buat invoice
+                Buat nota
               </Button>
             ) : undefined
           }

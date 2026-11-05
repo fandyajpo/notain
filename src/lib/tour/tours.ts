@@ -53,7 +53,7 @@ export const TOURS: Record<string, TourDef> = {
         target: 'dash-recent',
         title: 'Kelola & bagikan invoice',
         description:
-          'Invoice terbaru ada di sini. Buka satu untuk melihat detail, unduh PDF A4, atau kirim langsung ke WhatsApp pelanggan. Selamat berkarya!',
+          'Nota terbaru ada di sini. Buka satu untuk melihat detail, simpan PDF A4, atau siapkan pesan WhatsApp untuk pelanggan. Lampirkan PDF dan kirim sendiri. Selamat berkarya!',
         side: 'top',
       },
     ],

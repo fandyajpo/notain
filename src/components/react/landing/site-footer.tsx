@@ -21,7 +21,7 @@ export function SiteFooter({ anchorPrefix = '' }: Props) {
               Notain
             </a>
             <p className="mt-3 text-sm text-muted">
-              Buat nota, unduh PDF, lalu kirim lewat WhatsApp. Beres.
+              Buat nota, simpan PDF, lalu buka WhatsApp untuk melampirkan dan mengirimnya.
             </p>
           </div>
 
