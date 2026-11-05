@@ -452,9 +452,7 @@ type AdminDocumentSnapshot =
   | { kind: 'error' };
 
 function adminDocumentUrl(endpoint: string, table: string, id: string): string {
-  return `${endpoint}/databases/${DATABASE_ID}/collections/${table}/documents/${encodeURIComponent(
-    id,
-  )}`;
+  return `${endpoint}/databases/${DATABASE_ID}/collections/${table}/documents/${encodeURIComponent(id)}`;
 }
 
 async function readAdminDocument(

@@ -96,6 +96,12 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     .filter((row) => row.orgId === gate.access.orgId)
     .map((row) => {
       const status = normalizeStatus(row.status);
+      const activationStatus =
+        row.activationStatus === 'active'
+          ? 'active'
+          : status === 'paid'
+            ? 'pending'
+            : 'unknown';
       // A pending order still worth paying: it has a hosted page and DOKU has
       // not expired it yet. That is the only state with a resume link.
       const resumable =
@@ -111,11 +117,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
         amount: typeof row.amount === 'number' ? row.amount : null,
         currency: typeof row.currency === 'string' ? row.currency : 'IDR',
         status,
-        activationStatus: row.activationStatus === 'active'
-          ? 'active'
-          : status === 'paid'
-            ? 'pending'
-            : 'unknown',
+        activationStatus,
         paidAt: row.paidAt ?? null,
         createdAt: row.createdAt ?? null,
         resumeUrl: resumable ? row.checkoutUrl : null,

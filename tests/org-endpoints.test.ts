@@ -155,9 +155,7 @@ describe('POST /api/orgs — create', () => {
       message: expect.stringContaining('1 organisasi'),
     });
     // The refusal happens before any write: the one seeded org is all there is.
-    expect(
-      [...fake.rows.keys()].filter((key) => key.startsWith('organizations/')),
-    ).toHaveLength(1);
+    expect([...fake.rows.keys()].filter((key) => key.startsWith('organizations/'))).toHaveLength(1);
   });
 
   it('allows a second organization once an owned org is on an active paid plan', async () => {
@@ -388,9 +386,7 @@ describe('members — invite, list, remove', () => {
     seedOrg('org_aaaaaaaaaaaaaaaa');
     seedOrg('org_bbbbbbbbbbbbbbbb');
     seedMembership('org_aaaaaaaaaaaaaaaa', OWNER.$id, { role: 'owner', email: OWNER.email });
-    const foreign = seedMembership('org_bbbbbbbbbbbbbbbb', STRANGER.$id, {
-      email: STRANGER.email,
-    });
+    const foreign = seedMembership('org_bbbbbbbbbbbbbbbb', STRANGER.$id, { email: STRANGER.email });
 
     const response = await handle(
       memberOnRequest,
