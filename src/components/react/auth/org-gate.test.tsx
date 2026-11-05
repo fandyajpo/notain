@@ -290,10 +290,7 @@ describe('OrgGate', () => {
     // The list refetch a switch triggers now fails (revoked membership,
     // offline): the gate must roll back to the org we came from and drop the
     // overlay instead of hanging on it.
-    act(() => {
-      beginOrgSwitch(ORG_A.id, ORG_B.id, ORG_B.name);
-      setActiveOrgId(ORG_B.id);
-    });
+    act(() => switchActiveOrg(ORG_B.id, ORG_B.name));
 
     await until(() => expect(getOrgSwitch()).toBeNull(), 300);
     expect(getActiveOrgId()).toBe(ORG_A.id);
