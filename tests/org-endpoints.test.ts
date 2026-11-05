@@ -527,11 +527,9 @@ describe('DELETE /api/orgs/<id> — cascade', () => {
       status: 'paid',
       activationStatus: 'pending',
     } as Row);
-    const activationPending = await handle(
-      orgOnRequest,
-      req('DELETE', `/api/orgs/${A}`),
-      { id: A },
-    );
+    const activationPending = await handle(orgOnRequest, req('DELETE', `/api/orgs/${A}`), {
+      id: A,
+    });
     expect(activationPending.status).toBe(409);
     expect(fake.rows.has(`organizations/${A}`)).toBe(true);
   });

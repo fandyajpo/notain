@@ -44,7 +44,8 @@ function makeBucket(): { bucket: R2Bucket; objects: Map<string, StoredObject> } 
       ) => {
         const current = stored.get(key);
         if (options.onlyIf?.etagDoesNotMatch === '*' && current) return null;
-        if (options.onlyIf?.etagMatches && current?.etag !== options.onlyIf.etagMatches) return null;
+        if (options.onlyIf?.etagMatches && current?.etag !== options.onlyIf.etagMatches)
+          return null;
         const size = typeof value === 'string' ? new TextEncoder().encode(value).byteLength : 3;
         const object: StoredObject = {
           key,

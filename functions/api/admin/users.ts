@@ -357,9 +357,7 @@ async function updateUserProfile(
   }
 
   if (!profileResponse?.ok) {
-    const detail = profileResponse
-      ? await profileResponse.text().catch(() => '')
-      : 'network error';
+    const detail = profileResponse ? await profileResponse.text().catch(() => '') : 'network error';
     console.error('admin.users: profile write failed:', detail.slice(0, 200));
     const restored = await restoreProfileSnapshot(endpoint, headers, orgId, profileSnapshot);
     return restored
@@ -483,18 +481,12 @@ async function restoreProfileSnapshot(
     return response !== null && (response.ok || response.status === 404);
   }
   if (snapshot.kind !== 'found') return false;
-  return restoreDocument(
-    endpoint,
-    headers,
-    PROFILES_TABLE_ID,
-    orgId,
-    {
-      name: typeof snapshot.data.name === 'string' ? snapshot.data.name : '',
-      phone: typeof snapshot.data.phone === 'string' ? snapshot.data.phone : '',
-      address: snapshot.data.address ?? null,
-      email: snapshot.data.email ?? null,
-    },
-  );
+  return restoreDocument(endpoint, headers, PROFILES_TABLE_ID, orgId, {
+    name: typeof snapshot.data.name === 'string' ? snapshot.data.name : '',
+    phone: typeof snapshot.data.phone === 'string' ? snapshot.data.phone : '',
+    address: snapshot.data.address ?? null,
+    email: snapshot.data.email ?? null,
+  });
 }
 
 async function restoreOrgSnapshot(
