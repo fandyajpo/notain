@@ -470,7 +470,9 @@ export function AdminUsersPanel() {
         title={
           <>
             Ubah profil
-            <span className="block text-sm font-normal text-muted">{editing?.email} · email masuk</span>
+            <span className="block text-sm font-normal text-muted">
+              {editing?.email} · email masuk
+            </span>
           </>
         }
         actions={[

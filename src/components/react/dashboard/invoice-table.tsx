@@ -975,7 +975,9 @@ export function InvoiceTable() {
         size="md"
         ariaLabelledBy="proof-dialog-title"
         title={
-          <span id="proof-dialog-title">Bukti pembayaran nota {proofView?.invoiceNumber ?? ''}</span>
+          <span id="proof-dialog-title">
+            Bukti pembayaran nota {proofView?.invoiceNumber ?? ''}
+          </span>
         }
         actions={[{ label: 'Tutup', variant: 'secondary', onClick: () => setProofView(null) }]}
       >

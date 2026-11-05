@@ -22,7 +22,7 @@ const PAIRS = [
   },
   {
     problem: 'Bingung siapa yang sudah bayar?',
-    solution: 'Catat status nota setelah pembayaran diterima dan simpan bukti transfer di nota.'
+    solution: 'Catat status nota setelah pembayaran diterima dan simpan bukti transfer di nota.',
   },
 ] as const;
 

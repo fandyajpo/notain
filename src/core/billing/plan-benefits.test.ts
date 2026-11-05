@@ -20,14 +20,11 @@ describe('plan display copy', () => {
   });
 
   it('quotes the enforced free-tier limit and includes custom templates', () => {
-    expect(PLAN_BENEFITS.free[0]).toBe(
-      `${FREE_PLAN_LIMITS.invoicesPerMonth} nota baru per bulan`,
-    );
+    expect(PLAN_BENEFITS.free[0]).toBe(`${FREE_PLAN_LIMITS.invoicesPerMonth} nota baru per bulan`);
     expect(PLAN_BENEFITS.free).toContain('Template bawaan, buat template sendiri, dan unggah logo');
     expect(PLAN_BENEFITS.pro).not.toContain('Buat template sendiri dengan warna dan logo usaha');
     expect(PLAN_BENEFITS.pro).toContain('Laporan usaha');
     expect(PLAN_BENEFITS.free.join(' ')).not.toContain('Dukungan prioritas');
     expect(PLAN_BENEFITS.pro.join(' ')).not.toContain('Dukungan prioritas');
   });
-
 });

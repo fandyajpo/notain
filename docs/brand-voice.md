@@ -33,20 +33,20 @@ harus terasa tepat dan bisa dipercaya.
 
 ## Konsistensi istilah
 
-| Pakai                                        | Jangan                                   | Catatan                                                                                   |
-| -------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------- |
-| nota                                         | invoice, tagihan (untuk dokumen umum)    | Dokumen transaksi umum; gunakan konsisten di aplikasi dan materi pemasaran                |
-| tagihan                                      | —                                        | Permintaan pembayaran; "invoice" boleh dipakai bila jelas merujuk pada tagihan             |
-| pelanggan                                    | customer, konsumen                       | Gunakan "klien" hanya untuk pekerjaan berbasis proyek                                     |
-| bukti pembayaran                             | bukti transfer (kecuali memang transfer) | Unggahan bukti tidak memverifikasi pembayaran                                              |
-| catat pembayaran                             | tandai pembayaran                        | Status dicatat pemilik setelah pembayaran diterima                                        |
-| riwayat transaksi                            | riwayat invoice                          | Gunakan untuk daftar dan ekspor transaksi                                                  |
-| katalog barang & jasa                       | —                                        | Sebutkan barang dan jasa saat menjelaskan isi katalog                                      |
-| plan Free / Pro / Business                   | paket, tier                              | Pertahankan nama plan dan casingnya                                                        |
-| langganan                                   | subscription, berlangganan (kata benda) |                                                                                           |
-| kata sandi                                  | password, passphrase                     |                                                                                           |
-| WhatsApp, PDF, Excel, CSV, API, webhook, DOKU | —                                      | Pertahankan nama provider dan istilah teknis yang memang perlu tampil                     |
-| usaha / bisnis                               | brand, entitas                           | "usaha" untuk UMKM; "bisnis" untuk penjelasan umum                                        |
+| Pakai                                         | Jangan                                   | Catatan                                                                        |
+| --------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------ |
+| nota                                          | invoice, tagihan (untuk dokumen umum)    | Dokumen transaksi umum; gunakan konsisten di aplikasi dan materi pemasaran     |
+| tagihan                                       | —                                        | Permintaan pembayaran; "invoice" boleh dipakai bila jelas merujuk pada tagihan |
+| pelanggan                                     | customer, konsumen                       | Gunakan "klien" hanya untuk pekerjaan berbasis proyek                          |
+| bukti pembayaran                              | bukti transfer (kecuali memang transfer) | Unggahan bukti tidak memverifikasi pembayaran                                  |
+| catat pembayaran                              | tandai pembayaran                        | Status dicatat pemilik setelah pembayaran diterima                             |
+| riwayat transaksi                             | riwayat invoice                          | Gunakan untuk daftar dan ekspor transaksi                                      |
+| katalog barang & jasa                         | —                                        | Sebutkan barang dan jasa saat menjelaskan isi katalog                          |
+| plan Free / Pro / Business                    | paket, tier                              | Pertahankan nama plan dan casingnya                                            |
+| langganan                                     | subscription, berlangganan (kata benda)  |                                                                                |
+| kata sandi                                    | password, passphrase                     |                                                                                |
+| WhatsApp, PDF, Excel, CSV, API, webhook, DOKU | —                                        | Pertahankan nama provider dan istilah teknis yang memang perlu tampil          |
+| usaha / bisnis                                | brand, entitas                           | "usaha" untuk UMKM; "bisnis" untuk penjelasan umum                             |
 
 **Casing:** sentence case untuk judul, tombol, dan label — "Buat nota gratis",
 "Buat organisasi baru". Title Case hanya untuk nama plan dan nama produk pihak

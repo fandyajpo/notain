@@ -56,7 +56,9 @@ export function PaymentProofCard({ proof, status, onUpload }: Props) {
     return (
       <Notice variant="accent">
         <p className="font-medium">
-          {status === 'paid' ? 'Pemilik usaha sudah menandai nota ini lunas' : 'Nota ini sudah dibatalkan'}
+          {status === 'paid'
+            ? 'Pemilik usaha sudah menandai nota ini lunas'
+            : 'Nota ini sudah dibatalkan'}
         </p>
         <p className="mt-1">
           {status === 'paid'

@@ -168,7 +168,8 @@ export function WhatsAppSection() {
 
           <Reveal y={16} delay={0.3}>
             <p className="mt-8 text-xs text-muted">
-              Fitur ini tidak memakai API WhatsApp. Notain tidak mengenakan biaya tambahan untuk menyiapkan pesan; kirim lewat chat WhatsApp biasa.
+              Fitur ini tidak memakai API WhatsApp. Notain tidak mengenakan biaya tambahan untuk
+              menyiapkan pesan; kirim lewat chat WhatsApp biasa.
             </p>
           </Reveal>
         </div>

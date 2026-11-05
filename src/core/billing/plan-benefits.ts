@@ -81,4 +81,3 @@ export const PLAN_PRICES: Record<PlanTier, { amount: string; period: string }> =
   pro: { amount: 'Rp 49.000', period: '/30 hari' },
   business: { amount: 'Rp 99.000', period: '/30 hari' },
 };
-

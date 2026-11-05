@@ -738,12 +738,7 @@ function InvoiceList({
                 </Td>
                 <Td align="right">
                   <div className="flex justify-end gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onEdit(row)}
-                      title="Ubah nota"
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => onEdit(row)} title="Ubah nota">
                       <Pencil size={14} aria-hidden="true" />
                       Ubah
                     </Button>
@@ -1503,12 +1498,7 @@ function InvoiceFormModal({
                 />
               </FieldShell>
 
-              <FieldShell
-                label="Tanggal nota"
-                htmlFor="ac-inv-date"
-                required
-                error={errors.date}
-              >
+              <FieldShell label="Tanggal nota" htmlFor="ac-inv-date" required error={errors.date}>
                 <Input
                   id="ac-inv-date"
                   type="date"

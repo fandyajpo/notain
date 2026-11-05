@@ -87,8 +87,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     faq: [
       {
         question: 'Apakah Notain gratis dipakai katering kecil?',
-        answer:
-          `Ya. Free mencakup nota, katalog barang dan jasa, serta pesan WhatsApp yang bisa kamu siapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, termasuk tautan tagihan dan laporan usaha. Lihat rinciannya di halaman Harga.`,
+        answer: `Ya. Free mencakup nota, katalog barang dan jasa, serta pesan WhatsApp yang bisa kamu siapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, termasuk tautan tagihan dan laporan usaha. Lihat rinciannya di halaman Harga.`,
       },
       {
         question: 'Bisakah paket dan harganya dicatat sekali saja?',
@@ -97,8 +96,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       },
       {
         question: 'Bagaimana klien menerima notanya?',
-        answer:
-          `Simpan PDF, lampirkan di WhatsApp, lalu kirim sendiri. Dengan Pro, kamu juga bisa membagikan tautan tagihan agar pelanggan membukanya di HP.`,
+        answer: `Simpan PDF, lampirkan di WhatsApp, lalu kirim sendiri. Dengan Pro, kamu juga bisa membagikan tautan tagihan agar pelanggan membukanya di HP.`,
       },
       {
         question: 'Apakah total dan diskon dihitung otomatis?',
@@ -145,8 +143,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     faq: [
       {
         question: 'Apakah Notain gratis untuk desainer freelance?',
-        answer:
-          `Ya. Free mencakup pembuatan nota, katalog jasa, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD} dengan tautan tagihan dan laporan usaha.`,
+        answer: `Ya. Free mencakup pembuatan nota, katalog jasa, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD} dengan tautan tagihan dan laporan usaha.`,
       },
       {
         question: 'Bisakah satu klien punya beberapa invoice?',
@@ -203,8 +200,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     faq: [
       {
         question: 'Apakah Notain gratis dipakai developer?',
-        answer:
-          `Ya. Free mencakup pembuatan nota, katalog layanan, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD} dengan tautan tagihan dan laporan usaha.`,
+        answer: `Ya. Free mencakup pembuatan nota, katalog layanan, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD} dengan tautan tagihan dan laporan usaha.`,
       },
       {
         question: 'Bisakah satu proyek punya beberapa invoice?',
@@ -219,7 +215,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
       {
         question: 'Apakah datanya aman di awan?',
         answer:
-          'Nota tersimpan di akun Notain. Pelanggan dapat melihat salinannya melalui tautan tagihan yang kamu bagikan.'
+          'Nota tersimpan di akun Notain. Pelanggan dapat melihat salinannya melalui tautan tagihan yang kamu bagikan.',
       },
     ],
   },
@@ -261,8 +257,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     faq: [
       {
         question: 'Apakah Notain benar-benar gratis untuk warung kecil?',
-        answer:
-          `Ya. Free mencakup nota, katalog menu, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, termasuk tautan tagihan dan laporan usaha.`,
+        answer: `Ya. Free mencakup nota, katalog menu, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, termasuk tautan tagihan dan laporan usaha.`,
       },
       {
         question: 'Apakah harus punya komputer atau printer?',
@@ -319,8 +314,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     faq: [
       {
         question: 'Apakah Notain gratis untuk online shop kecil?',
-        answer:
-          `Ya, Free berlaku selamanya untuk katalog produk, pembuatan nota, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, dengan tautan tagihan dan laporan usaha.`,
+        answer: `Ya, Free berlaku selamanya untuk katalog produk, pembuatan nota, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, dengan tautan tagihan dan laporan usaha.`,
       },
       {
         question: 'Bisakah invoice dikirim langsung dari HP?',
@@ -377,8 +371,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     faq: [
       {
         question: 'Apakah Notain gratis untuk freelancer?',
-        answer:
-          `Ya, Free berlaku selamanya untuk katalog jasa, nota, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, dengan tautan tagihan dan laporan usaha.`,
+        answer: `Ya, Free berlaku selamanya untuk katalog jasa, nota, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, dengan tautan tagihan dan laporan usaha.`,
       },
       {
         question: 'Bagaimana kalau klien telat membayar?',
@@ -435,8 +428,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     faq: [
       {
         question: 'Apakah Notain gratis untuk bengkel kecil?',
-        answer:
-          `Ya, Free berlaku selamanya untuk pembuatan nota, katalog pekerjaan, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, dengan tautan tagihan dan laporan usaha.`,
+        answer: `Ya, Free berlaku selamanya untuk pembuatan nota, katalog pekerjaan, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, dengan tautan tagihan dan laporan usaha.`,
       },
       {
         question: 'Bisakah mencatat nomor polisi atau tipe kendaraan?',
@@ -493,8 +485,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     faq: [
       {
         question: 'Apakah Notain gratis dipakai salon kecil?',
-        answer:
-          `Ya, Free berlaku selamanya untuk katalog layanan, pembuatan nota, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, dengan tautan tagihan dan laporan usaha.`,
+        answer: `Ya, Free berlaku selamanya untuk katalog layanan, pembuatan nota, dan pesan WhatsApp yang bisa disiapkan. Pro mulai ${PRO_PRICE_PER_PERIOD}, dengan tautan tagihan dan laporan usaha.`,
       },
       {
         question: 'Bisakah daftar harga dibagikan ke pelanggan?',
