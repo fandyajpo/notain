@@ -82,7 +82,7 @@ function TemplatesContent() {
         description={
           canCustomize
             ? 'Atur tampilan template sekali, lalu pakai lagi setiap kali membuat nota.'
-            : 'Pakai template bawaan atau buat template sendiri dengan warna dan logo usaha.'
+            : 'Pakai template bawaan. Template sendiri tersedia untuk akun yang memiliki usaha.'
         }
         actions={
           canCustomize ? (
@@ -94,9 +94,9 @@ function TemplatesContent() {
             <Button
               href="/pricing"
               variant="secondary"
-              title="Template kustom adalah fitur plan Pro"
+              title="Lihat paket dan fitur yang tersedia"
             >
-              Lihat plan Pro
+              Lihat paket
             </Button>
           )
         }
@@ -128,7 +128,7 @@ function TemplatesContent() {
       >
         <p className="text-sm text-muted">
           <span className="font-medium text-foreground">“{pendingDelete?.name}”</span> akan dihapus.
-          Invoice yang sudah memakai template ini tetap tersimpan; tampilannya kembali ke template
+          Nota yang sudah memakai template ini tetap tersimpan; tampilannya kembali ke template
           bawaan.
         </p>
       </Modal>
@@ -160,10 +160,10 @@ function TemplatesContent() {
                       href="/pricing"
                       variant="secondary"
                       size="sm"
-                      title="Template kustom adalah fitur plan Pro"
+                      title="Lihat paket dan fitur yang tersedia"
                     >
                       <Copy size={13} aria-hidden="true" />
-                      Duplikat (Pro)
+                      Lihat paket
                     </Button>
                   )
                 }
@@ -194,7 +194,7 @@ function TemplatesContent() {
             description={
               canCustomize
                 ? 'Duplikat salah satu template bawaan, lalu sesuaikan urutan blok dan warnanya.'
-                : 'Pilih template bawaan, atau buat template sendiri sesuai kebutuhan usahamu.'
+                : 'Pilih template bawaan. Template sendiri tersedia setelah akun memiliki usaha.'
             }
             action={
               canCustomize ? (
@@ -207,7 +207,7 @@ function TemplatesContent() {
                 </Button>
               ) : (
                 <Button href="/pricing" variant="secondary">
-                  Lihat plan Pro
+                  Lihat paket
                 </Button>
               )
             }
@@ -235,10 +235,10 @@ function TemplatesContent() {
                           href="/pricing"
                           variant="secondary"
                           size="sm"
-                          title="Ubah template adalah fitur plan Pro"
+                          title="Lihat paket dan fitur yang tersedia"}},{
                         >
                           <Pencil size={13} aria-hidden="true" />
-                          Ubah (Pro)
+                          Lihat paket
                         </Button>
                       )}
                       <Button

@@ -115,7 +115,7 @@ function InvoiceNewContent() {
   }
 
   if (duplicating && sourceLoading) {
-    return <LoadingState label="Menyalin invoice…" />;
+    return <LoadingState label="Menyalin nota…" />;
   }
 
   if (duplicating && sourceError && !source && !sourceNotFound) {

@@ -33,7 +33,7 @@ export function DetailFieldsCard({
     <Card className="flex flex-col gap-5">
       <h2 className="text-section">Detail bisnis</h2>
       <p className="text-xs text-muted">
-        Info tambahan sesuai jenis usaha kamu. Yang diisi akan ikut tercetak di invoice.
+        Info tambahan sesuai jenis usaha kamu. Yang diisi akan ikut tercetak di nota.
       </p>
       <div className="grid gap-5 sm:grid-cols-2">
         {fields.map((field) => (

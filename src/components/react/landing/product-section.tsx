@@ -294,7 +294,7 @@ export function ProductSection() {
       <section id="fitur" className="scroll-mt-4">
         <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
           <SectionHeading
-            title="Buat nota, kirim, lalu catat pembayarannya."
+            title="Buat nota, siapkan pesan WhatsApp, lalu catat pembayarannya."
             description="Simpan data pelanggan, katalog barang dan jasa, rincian nota, serta status pembayaran di satu tempat."
           />
 
@@ -330,7 +330,7 @@ export function ProductSection() {
               bullets={[
                 'Catat status Lunas setelah menerima pembayaran',
                 'Periksa bukti pembayaran yang diunggah pelanggan',
-                'Lihat laporan pemasukan di plan Pro',
+                'Lihat laporan pemasukan di paket Pro',
               ]}
               visual={<StatusBoardCards />}
             />

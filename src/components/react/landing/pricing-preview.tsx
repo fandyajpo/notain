@@ -16,7 +16,7 @@ const HIGHLIGHTS: Record<(typeof PLAN_TIER_IDS)[number], readonly string[]> = {
     'PDF A4; lampirkan sendiri di WhatsApp',
     'Data pelanggan, katalog barang & jasa, dan template sendiri',
   ],
-  pro: ['Laporan usaha dan tautan tagihan', 'Nota tanpa batas selama plan aktif', 'Buat beberapa usaha'],
+  pro: ['Laporan usaha dan tautan tagihan', 'Nota tanpa batas selama paket aktif', 'Buat beberapa usaha'],
   business: [
     'Kunci API untuk integrasi',
     'Webhook untuk perubahan status nota',
@@ -114,7 +114,7 @@ export function PricingPreview() {
                 />
               </motion.a>
               <p className="max-w-xl text-center text-xs leading-relaxed text-muted">
-                Pembayaran plan Pro diproses lewat DOKU dan plan aktif otomatis setelah pembayaran
+                Pembayaran paket Pro diproses lewat DOKU dan paket aktif otomatis setelah pembayaran
                 terkonfirmasi. Tidak ada biaya di luar harga yang tertera, dan kamu bisa berhenti
                 kapan saja.
               </p>

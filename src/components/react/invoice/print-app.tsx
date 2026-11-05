@@ -80,7 +80,7 @@ function PublicPrintView({ invoiceId }: { invoiceId: string }) {
   const { data: payload, isLoading, isError, error, refetch } = usePublicInvoice(invoiceId);
   const upload = useUploadPaymentProof(invoiceId);
 
-  if (isLoading) return <LoadingState label="Memuat invoice…" />;
+  if (isLoading) return <LoadingState label="Memuat nota…" />;
 
   if (isError || !payload) {
     const notFound = isAppError(error) && error.code === ERROR_CODES.NOT_FOUND;
@@ -95,9 +95,9 @@ function PublicPrintView({ invoiceId }: { invoiceId: string }) {
             <EmptyState
               icon={FileText}
               className="w-full"
-              title="Invoice link butuh plan Pro"
+              title="Tautan tagihan tersedia di Pro"
               description={error.message}
-              action={<Button href="/checkout?plan=pro">Berlangganan Pro</Button>}
+              action={<Button href="/checkout?plan=pro">Pilih Pro</Button>}
             />
           </div>
         </Status>
@@ -109,10 +109,10 @@ function PublicPrintView({ invoiceId }: { invoiceId: string }) {
           <EmptyState
             icon={FileText}
             className="w-full"
-            title={notFound ? 'Invoice tidak ditemukan' : 'Gagal memuat invoice'}
+            title={notFound ? 'Nota tidak ditemukan' : 'Gagal memuat nota'}
             description={
               notFound
-                ? 'Tautan ini tidak menunjuk ke invoice yang ada. Minta tautan baru ke pengirimnya.'
+                ? 'Tautan ini tidak mengarah ke nota yang tersedia. Minta tautan baru kepada pemilik usaha.'
                 : 'Periksa koneksi internet kamu, lalu muat ulang halaman.'
             }
             action={
@@ -143,13 +143,12 @@ function PublicPrintView({ invoiceId }: { invoiceId: string }) {
   return (
     <>
       <PrintToolbar>
-        <p className="text-sm font-semibold">Invoice {invoice.invoiceNumber}</p>
+        <p className="text-sm font-semibold">Nota {invoice.invoiceNumber}</p>
         <p className="text-xs text-muted">
           Dari {issuer.businessName || issuer.name || 'penjual'} · untuk {invoice.customerName}
         </p>
         <p className="mt-0.5 text-xs text-muted">
-          Pilih <span className="font-medium">Save as PDF</span> di dialog cetak untuk menyimpannya
-          sebagai file.
+          Di dialog cetak, pilih opsi untuk menyimpan nota sebagai PDF.
         </p>
       </PrintToolbar>
 

@@ -10,7 +10,7 @@ const BULLETS = [
   {
     icon: Send,
     title: 'Pesan siap di WhatsApp',
-    description: 'Nomor invoice, nama pelanggan, dan totalnya sudah terisi otomatis.',
+    description: 'Nomor nota, nama pelanggan, dan totalnya sudah terisi otomatis.',
   },
   {
     icon: MessageCircle,
@@ -20,7 +20,7 @@ const BULLETS = [
   {
     icon: Paperclip,
     title: 'Lampirkan PDF sendiri',
-    description: 'Simpan PDF dari halaman cetak ke perangkatmu, lalu lampirkan di chat WhatsApp.'
+    description: 'Simpan PDF dari halaman cetak ke perangkatmu, lalu lampirkan di chat WhatsApp.',
   },
 ];
 
@@ -168,7 +168,7 @@ export function WhatsAppSection() {
 
           <Reveal y={16} delay={0.3}>
             <p className="mt-8 text-xs text-muted">
-              Tanpa API WhatsApp dan tanpa biaya tambahan, memakai chat biasa yang sudah kamu punya.
+              Fitur ini tidak memakai API WhatsApp. Notain tidak mengenakan biaya tambahan untuk menyiapkan pesan; kirim lewat chat WhatsApp biasa.
             </p>
           </Reveal>
         </div>

@@ -34,7 +34,7 @@ export function BuilderTabs() {
       onChange={setBuilderSection}
       options={SECTIONS.map((section) => ({ value: section.id, label: section.label }))}
       variant="accent"
-      ariaLabel="Bagian invoice"
+      ariaLabel="Bagian nota"
       className="!block max-w-full overflow-x-auto"
     />
   );

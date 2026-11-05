@@ -276,7 +276,7 @@ export function InvoiceBuilder({
             },
           });
         } catch {
-          toast('Invoice tersimpan, tapi pelanggan belum masuk ke daftar. Coba lagi nanti.', {
+          toast('Nota tersimpan, tapi pelanggan belum masuk ke daftar. Coba lagi nanti.', {
             variant: 'error',
           });
         }
@@ -615,7 +615,7 @@ export function InvoiceBuilder({
                   >
                     pilih Pro
                   </a>{' '}
-                  untuk membuat nota tanpa batas selama plan aktif.
+                  untuk membuat nota tanpa batas selama paket aktif.
                 </>
               )}
             </p>
@@ -740,7 +740,7 @@ export function InvoiceBuilder({
                   field={field}
                   label="Email pelanggan (opsional)"
                   placeholder="budi@email.com"
-                  hint="Ikut tercetak di invoice dan ekspor Excel."
+                  hint="Ikut tercetak di nota dan ekspor Excel."
                   showError={shouldShow(submissionAttempts, field.state.meta.isBlurred)}
                 />
               )}
@@ -753,12 +753,12 @@ export function InvoiceBuilder({
             onChange={(details) => form.setFieldValue('details', details)}
           />
 
-          <Section title="Detail invoice">
+          <Section title="Detail nota">
             <form.Field name="invoiceNumber">
               {(field) => (
                 <TextField
                   field={field}
-                  label="Nomor invoice"
+                  label="Nomor nota"
                   placeholder="INV-2026-001"
                   required
                   readOnly={isEditing}
@@ -772,7 +772,7 @@ export function InvoiceBuilder({
                 {(field) => (
                   <DateField
                     field={field}
-                    label="Tanggal invoice"
+                    label="Tanggal nota"
                     required
                     showError={shouldShow(submissionAttempts, field.state.meta.isBlurred)}
                   />
@@ -816,13 +816,13 @@ export function InvoiceBuilder({
                 Enter
               </kbd>{' '}
               untuk menambah barang. Centang "Simpan ke katalog" di tiap barang untuk memakainya
-              ulang di invoice berikutnya.
+              ulang di nota berikutnya.
             </p>
           </Section>
         </div>
 
         <div hidden={activeSection !== 'header'} className="flex flex-col gap-6">
-          <Section title="Kop &amp; informasi invoice">
+          <Section title="Kop dan informasi nota">
             {/* Mounted only while the tab is open: the editor chunk is by far
                 the largest in the build, and hidden panels have no reason to
                 fetch it on every page load. */}
@@ -890,7 +890,7 @@ export function InvoiceBuilder({
         <div className="hidden md:block">
           <Button type="submit" full size="lg" loading={isSubmitting} disabled={!canSubmit}>
             <Save size={16} aria-hidden="true" />
-            {isSubmitting ? 'Menyimpan…' : isEditing ? 'Simpan perubahan' : 'Simpan invoice'}
+            {isSubmitting ? 'Menyimpan…' : isEditing ? 'Simpan perubahan' : 'Simpan nota'}
           </Button>
         </div>
       </form>
@@ -902,7 +902,7 @@ export function InvoiceBuilder({
         className="flex flex-col gap-3 md:sticky md:top-20 md:max-h-[calc(100vh-6.5rem)] md:overflow-y-auto lg:top-6 lg:max-h-[calc(100vh-3rem)]"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-eyebrow uppercase text-muted">Preview invoice</p>
+          <p className="text-eyebrow uppercase text-muted">Pratinjau nota</p>
           <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
             <Button
               size="sm"
@@ -940,7 +940,7 @@ export function InvoiceBuilder({
                   className="min-w-0 whitespace-normal text-left leading-tight"
                 >
                   <ExternalLink size={14} className="shrink-0" aria-hidden="true" />
-                  Halaman bayar
+                  Halaman tagihan
                 </Button>
                 <Button
                   size="sm"
@@ -1006,8 +1006,8 @@ export function InvoiceBuilder({
           ]}
         >
           <p className="text-sm text-muted">
-            Bukti pembayaran yang diunggah customer akan dihapus dari invoice ini. Setelah dihapus,
-            customer bisa mengunggah bukti yang baru lewat halaman bayar.
+            Bukti pembayaran yang diunggah pelanggan akan dihapus dari nota ini. Setelah dihapus,
+            pelanggan bisa mengunggah bukti baru lewat halaman tagihan.
           </p>
         </Modal>
         <InvoicePreview
@@ -1034,7 +1034,7 @@ export function InvoiceBuilder({
               </Button>
             )}
             <Button type="submit" form="invoice-form" loading={isSubmitting}>
-              {isEditing ? 'Simpan' : 'Simpan invoice'}
+              {isEditing ? 'Simpan' : 'Simpan nota'}
             </Button>
           </div>
         </div>
@@ -1046,7 +1046,7 @@ export function InvoiceBuilder({
         role="alertdialog"
         size="sm"
         ariaLabelledBy="leave-dialog-title"
-        title={<span id="leave-dialog-title">Tinggalkan invoice ini?</span>}
+        title={<span id="leave-dialog-title">Tinggalkan nota ini?</span>}
         actions={[
           { label: 'Batal', variant: 'secondary', onClick: guard.cancelLeave },
           { label: 'Tetap tinggalkan', variant: 'danger', onClick: guard.confirmLeave },

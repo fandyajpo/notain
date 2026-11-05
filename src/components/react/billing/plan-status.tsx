@@ -52,11 +52,11 @@ export function PlanStatusCard() {
         <div>
           <p className="font-medium">Langganan aktif</p>
           <p className="text-sm text-muted">
-            Plan saat ini, masa berlaku, dan aksi perpanjangan kamu.
+            Paket saat ini, masa berlaku, dan opsi perpanjangannya.
           </p>
         </div>
         <Button href="/pricing" variant="secondary" size="sm">
-          Lihat semua plan
+          Lihat semua paket
         </Button>
       </div>
 
@@ -93,9 +93,9 @@ function PlanSummary({ session, canManage }: { session: PortalSession; canManage
   // means the term was granted without an end (the admin panel can clear it),
   // and Free has no end date at all.
   const expiryLine = !paid
-    ? 'Plan Free berlaku selamanya.'
+    ? 'Paket Free berlaku selamanya.'
     : session.planExpiresAt == null
-      ? 'Masa berlaku plan ini tidak dibatasi tanggal.'
+      ? 'Paket ini tidak memiliki tanggal kedaluwarsa.'
       : session.active
         ? `Berlaku sampai ${formatTanggal(session.planExpiresAt)}.`
         : `Berakhir pada ${formatTanggal(session.planExpiresAt)}.`;
@@ -123,7 +123,7 @@ function PlanSummary({ session, canManage }: { session: PortalSession; canManage
       {paid && !session.active && (
         <Notice variant="accent" className="mt-3">
           Masa aktif {info?.name} sudah berakhir. Akunmu sekarang memakai Free. Nota dan datamu
-          tetap tersimpan. Pilih plan lagi di bawah kalau ingin berlangganan.
+          tetap tersimpan. Pilih paket lagi di bawah kalau ingin berlangganan.
         </Notice>
       )}
 
@@ -140,9 +140,9 @@ function PlanSummary({ session, canManage }: { session: PortalSession; canManage
       )}
       {paid && session.active && (
         <Notice variant="accent" className="mt-3">
-          Plan ini berlaku 30 hari dan{' '}
+          Paket ini berlaku 30 hari dan{' '}
           <span className="font-medium">tidak diperpanjang otomatis</span>. Langganan berhenti
-          sendiri saat masa aktifnya habis. Kamu bisa memilih plan yang lebih rendah setelah itu.
+          sendiri saat masa aktifnya habis. Kamu bisa memilih paket yang lebih rendah setelah itu.
         </Notice>
       )}
     </>

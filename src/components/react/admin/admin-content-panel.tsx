@@ -215,7 +215,7 @@ export function AdminContentPanel() {
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-muted">
           {total > 0
-            ? `${users.length} dari ${total} user dimuat`
+            ? `${users.length} dari ${total} pengguna dimuat`
             : 'Atur template dan nota milik satu pengguna.'}
         </p>
         <Button
@@ -234,16 +234,16 @@ export function AdminContentPanel() {
       <SearchField
         value={query}
         placeholder="Cari nama, email, atau usaha…"
-        aria-label="Cari user"
+        aria-label="Cari pengguna"
         onChange={setQuery}
       />
 
       {isFetching && users.length === 0 ? (
-        <LoadingState label="Memuat user…" />
+        <LoadingState label="Memuat pengguna…" />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={UserRound}
-          title={query ? 'User tidak ditemukan' : 'Belum ada user terdaftar'}
+          title={query ? 'Pengguna tidak ditemukan' : 'Belum ada pengguna terdaftar'}
           description={query ? 'Coba kata kunci lain.' : undefined}
         />
       ) : (
@@ -340,7 +340,7 @@ function ContentWorkspace({ user, onChangeUser }: { user: AdminUser; onChangeUse
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={onChangeUser}>
             <ArrowLeft size={15} aria-hidden="true" />
-            Ganti user
+            Ganti pengguna
           </Button>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-foreground">
@@ -359,7 +359,7 @@ function ContentWorkspace({ user, onChangeUser }: { user: AdminUser; onChangeUse
             ariaLabel="Jenis konten"
             options={[
               { value: 'templates', label: 'Template' },
-              { value: 'invoices', label: 'Invoice' },
+              { value: 'invoices', label: 'Nota' },
             ]}
           />
           <Button
@@ -379,7 +379,7 @@ function ContentWorkspace({ user, onChangeUser }: { user: AdminUser; onChangeUse
             }
           >
             <Plus size={15} aria-hidden="true" />
-            {resource === 'templates' ? 'Tambah template' : 'Tambah invoice'}
+            {resource === 'templates' ? 'Tambah template' : 'Tambah nota'}
           </Button>
         </div>
       </div>
@@ -418,7 +418,7 @@ function ContentWorkspace({ user, onChangeUser }: { user: AdminUser; onChangeUse
             setDeleting({
               resource: 'invoices',
               rowId: row.id,
-              label: `Invoice ${row.invoiceNumber || '(tanpa nomor)'}`,
+              label: `Nota ${row.invoiceNumber || '(tanpa nomor)'}`,
             })
           }
           loadMore={
@@ -493,7 +493,7 @@ function ContentWorkspace({ user, onChangeUser }: { user: AdminUser; onChangeUse
             createInvoice
               .mutateAsync({ userId: user.userId, draft })
               .then(() => {
-                toast(`Invoice ${draft.invoiceNumber} dibuat.`, { variant: 'success' });
+                toast(`Nota ${draft.invoiceNumber} dibuat.`, { variant: 'success' });
                 setCreatingInvoice(false);
               })
               .catch(() => {
@@ -524,7 +524,7 @@ function ContentWorkspace({ user, onChangeUser }: { user: AdminUser; onChangeUse
                 expectedContentHash,
               })
               .then(() => {
-                toast('Invoice diperbarui.', { variant: 'success' });
+                toast('Nota diperbarui.', { variant: 'success' });
                 setEditingInvoice(null);
               })
               .catch(() => {
@@ -649,10 +649,10 @@ function TemplateList({
                       variant="ghost"
                       size="sm"
                       onClick={() => onEdit(row)}
-                      title="Edit template"
+                      title="Ubah template"
                     >
                       <Pencil size={14} aria-hidden="true" />
-                      Edit
+                      Ubah
                     </Button>
                     <Button
                       variant="ghost"
@@ -689,7 +689,7 @@ function TemplateList({
   return (
     <EmptyState
       icon={Layers}
-      title="Belum ada template milik user ini"
+      title="Belum ada template milik pengguna ini"
       description="Template bawaan tetap tersedia. Tambah template untuk menyimpan desain milik mereka."
     />
   );
@@ -718,7 +718,7 @@ function InvoiceList({
         <TableShell minWidth="720px">
           <thead>
             <tr className={THEAD_ROW}>
-              <Th>Nomor</Th>
+              <Th>Nomor nota</Th>
               <Th>Pelanggan</Th>
               <Th>Tanggal</Th>
               <Th>Status</Th>
@@ -742,7 +742,7 @@ function InvoiceList({
                       variant="ghost"
                       size="sm"
                       onClick={() => onEdit(row)}
-                      title="Ubah invoice"
+                      title="Ubah nota"
                     >
                       <Pencil size={14} aria-hidden="true" />
                       Ubah
@@ -752,7 +752,7 @@ function InvoiceList({
                       size="sm"
                       className="text-danger"
                       onClick={() => onDelete(row)}
-                      title="Hapus invoice"
+                      title="Hapus nota"
                     >
                       <Trash2 size={14} aria-hidden="true" />
                       Hapus
@@ -774,7 +774,7 @@ function InvoiceList({
         isLoading={isLoading}
         error={error}
         onReload={onReload}
-        title="Gagal memuat invoice"
+        title="Gagal memuat nota"
       />
     );
   }
@@ -782,8 +782,8 @@ function InvoiceList({
   return (
     <EmptyState
       icon={FileText}
-      title="Belum ada invoice milik user ini"
-      description="Tambah invoice untuk membuat dokumen langsung di akun mereka."
+      title="Belum ada nota milik pengguna ini"
+      description="Tambah nota untuk membuat dokumen langsung di akun mereka."
     />
   );
 }
@@ -903,7 +903,7 @@ function TemplateCreateModal({
         <FieldShell
           label="Desain dasar"
           htmlFor="ac-template-base"
-          hint="Template baru disalin dari desain ini, lalu bisa diedit lewat tombol Edit."
+          hint="Template baru disalin dari desain ini, lalu bisa diedit lewat tombol Ubah."
         >
           <Select
             id="ac-template-base"
@@ -1029,7 +1029,7 @@ function TemplateEditModal({
       size="xl"
       title={
         <>
-          Edit template
+          Ubah template
           <span className="block text-sm font-normal text-muted">{row.name}</span>
         </>
       }
@@ -1094,7 +1094,7 @@ function TemplateEditModal({
             />
 
             <Group
-              title="Blok invoice"
+              title="Bagian nota"
               description="Seret barisnya, atau pakai tombol panah, untuk mengubah urutan."
             >
               <BlockList
@@ -1109,7 +1109,7 @@ function TemplateEditModal({
 
             <Group
               title="Teks default"
-              description="Ditulis ke invoice begitu template ini dipakai. Masih bisa diubah sesudahnya."
+              description="Ditulis ke nota saat template ini dipakai. Masih bisa diubah sesudahnya."
             >
               <DefaultsForm
                 defaults={values.defaults}
@@ -1422,19 +1422,19 @@ function InvoiceFormModal({
       title={
         isEdit ? (
           <>
-            Ubah invoice
+            Ubah nota
             <span className="block text-sm font-normal text-muted">
               {row?.invoiceNumber || targetEmail}
             </span>
           </>
         ) : (
-          'Tambah invoice'
+          'Tambah nota'
         )
       }
       actions={[
         { label: 'Batal', variant: 'secondary', disabled: isPending, onClick: close },
         {
-          label: isEdit ? 'Simpan perubahan' : 'Buat invoice',
+          label: isEdit ? 'Simpan perubahan' : 'Buat nota',
           loading: isPending,
           disabled: !form,
           onClick: submit,
@@ -1455,7 +1455,7 @@ function InvoiceFormModal({
           isEdit ? (
             detail.error ? (
               <ErrorState
-                title="Invoice gagal dimuat"
+                title="Nota gagal dimuat"
                 message={toAppError(detail.error).message}
                 action={
                   <Button variant="secondary" size="sm" onClick={() => void detail.refetch()}>
@@ -1464,16 +1464,16 @@ function InvoiceFormModal({
                 }
               />
             ) : (
-              <LoadingState label="Memuat invoice…" />
+              <LoadingState label="Memuat nota…" />
             )
           ) : (
-            <LoadingState label="Menyiapkan nomor invoice…" />
+            <LoadingState label="Menyiapkan nomor nota…" />
           )
         ) : (
           <>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FieldShell
-                label="Nomor invoice"
+                label="Nomor nota"
                 htmlFor="ac-inv-number"
                 required
                 error={errors.invoiceNumber}
@@ -1504,7 +1504,7 @@ function InvoiceFormModal({
               </FieldShell>
 
               <FieldShell
-                label="Tanggal invoice"
+                label="Tanggal nota"
                 htmlFor="ac-inv-date"
                 required
                 error={errors.date}
@@ -1548,7 +1548,7 @@ function InvoiceFormModal({
                 {isEdit ? (
                   <StatusSelect
                     value={form.status}
-                    label={`Status invoice ${form.invoiceNumber}`}
+                    label={`Status nota ${form.invoiceNumber}`}
                     onChange={(status) => set('status', status)}
                   />
                 ) : (
@@ -1562,7 +1562,7 @@ function InvoiceFormModal({
                 <p className="text-xs text-muted">
                   {isEdit
                     ? 'Status hanya bergerak maju — langkah mundur tidak ditawarkan.'
-                    : 'Status awal; aturan berlaku begitu invoice diubah lagi.'}
+                    : 'Status awal. Aturan alur status berlaku saat nota diedit berikutnya.'}
                 </p>
               </div>
 
@@ -1615,10 +1615,10 @@ function InvoiceFormModal({
               />
             </Group>
 
-            <Group title="Isi invoice" description="Teks ini tercetak pada dokumen.">
+            <Group title="Isi nota" description="Teks ini tercetak pada dokumen.">
               <div className="flex flex-col gap-4">
                 <LazyRichEditor
-                  label="Kop & informasi invoice"
+                  label="Kop dan informasi nota"
                   value={form.sections.header}
                   onChange={(html) => set('sections', { ...form.sections, header: html })}
                 />

@@ -31,20 +31,20 @@ export function PlanCatalogCard() {
   return (
     <Card data-tour="billing-plans">
       <div>
-        <p className="font-medium">Plan & keuntungan</p>
+        <p className="font-medium">Paket & manfaat</p>
         <p className="text-sm text-muted">
-          Apa yang kamu dapat sekarang, dan pilihan plan yang bisa dipilih dari akun ini.
+          Manfaat paket saat ini dan pilihan paket yang tersedia untuk akun ini.
         </p>
       </div>
 
       {portal.isLoading ? (
         <div className="mt-4">
-          <LoadingState label="Memuat daftar plan…" />
+          <LoadingState label="Memuat daftar paket…" />
         </div>
       ) : portal.isError || !portal.data || !current ? (
         <div className="mt-4">
           <ErrorState
-            title="Daftar plan tidak bisa dimuat"
+            title="Daftar paket tidak bisa dimuat"
             message={isAppError(portal.error) ? portal.error.message : GENERIC_ERROR_MESSAGE}
             action={
               <Button variant="secondary" size="sm" onClick={() => void portal.refetch()}>
@@ -87,7 +87,7 @@ function PlanTile({
         </p>
         {isCurrent && (
           <Badge variant="accent" size="sm">
-            Plan saat ini
+            Paket saat ini
           </Badge>
         )}
       </div>
@@ -118,7 +118,7 @@ function PlanTile({
             {choice.label}
           </Button>
         ) : choice.kind === 'current' ? (
-          <p className="text-sm text-muted">Kamu sedang memakai plan ini.</p>
+          <p className="text-sm text-muted">Kamu sedang memakai paket ini.</p>
         ) : (
           <p className="text-sm text-muted">{choice.label}</p>
         )}

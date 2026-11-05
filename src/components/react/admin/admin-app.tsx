@@ -30,7 +30,7 @@ export function AdminContentApp() {
   return (
     <AdminShell
       title="Konten pengguna"
-      description="Kelola template dan invoice milik satu pengguna."
+      description="Kelola template dan nota milik satu pengguna."
     >
       <AdminContentPanel />
     </AdminShell>
@@ -40,7 +40,7 @@ export function AdminContentApp() {
 export function AdminSupportApp() {
   return (
     <AdminShell
-      title="Support"
+      title="Bantuan"
       description="Pesan dari pengguna lewat formulir kontak, terbaru di atas."
     >
       <AdminSupportPanel />
@@ -50,7 +50,7 @@ export function AdminSupportApp() {
 
 export function AdminAuditApp() {
   return (
-    <AdminShell title="Log aktivitas" description="Jejak aksi admin dan perubahan data.">
+    <AdminShell title="Log aktivitas" description="Riwayat tindakan admin dan perubahan data.">
       <AdminAuditPanel />
     </AdminShell>
   );

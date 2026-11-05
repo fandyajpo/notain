@@ -78,8 +78,8 @@ function CheckoutContent() {
   if (planParam === 'free') {
     return (
       <ErrorState
-        title="Plan Free tidak perlu dibeli"
-        message="Plan Free gratis selamanya. Langsung buat akun dan mulai membuat nota."
+        title="Paket Free tidak perlu dibeli"
+        message="Paket Free gratis selamanya. Langsung buat akun dan mulai membuat nota."
         action={
           <Button href="/register" size="sm">
             Buat nota gratis
@@ -94,7 +94,7 @@ function CheckoutContent() {
   if (planParam === 'business') {
     return (
       <ErrorState
-        title="Plan Business sedang disiapkan"
+        title="Paket Business sedang disiapkan"
         message="Business belum bisa dibeli. Kalau butuh fitur lebih sekarang, kamu bisa memilih Pro."
         action={
           <Button href="/pricing" size="sm">
@@ -108,8 +108,8 @@ function CheckoutContent() {
   if (!isPaidPlan(planParam)) {
     return (
       <ErrorState
-        title="Plan tidak dikenali"
-        message="Pilih plan Pro dari halaman harga."
+        title="Paket tidak dikenali"
+        message="Pilih paket Pro dari halaman harga."
         action={
           <Button href="/pricing" size="sm">
             Lihat harga
@@ -201,7 +201,7 @@ function CheckoutContent() {
         <p className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-muted">
           <ShieldCheck size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
           <span>
-            Kamu akan diarahkan ke halaman pembayaran resmi DOKU. Plan aktif otomatis setelah
+            Kamu akan diarahkan ke halaman pembayaran resmi DOKU. Paket aktif otomatis setelah
             pembayaran dikonfirmasi — tidak perlu kirim bukti.
           </span>
         </p>

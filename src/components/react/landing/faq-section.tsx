@@ -41,12 +41,12 @@ const FAQS = [
   },
   {
     question: 'Berapa biayanya?',
-    answer: `Fitur dasar Free berlaku selamanya, termasuk ${FREE_PLAN_LIMITS.invoicesPerMonth} nota baru per bulan, template bawaan, dan template buatan sendiri. Pro seharga ${PLAN_PRICES.pro.amount} per 30 hari menambah nota tanpa batas selama plan aktif, tautan tagihan, dan laporan usaha. Business sedang disiapkan dan belum bisa dibeli.`
+    answer: `Fitur dasar Free berlaku selamanya, termasuk ${FREE_PLAN_LIMITS.invoicesPerMonth} nota baru per bulan, template bawaan, dan template buatan sendiri. Pro seharga ${PLAN_PRICES.pro.amount} per 30 hari menambah nota tanpa batas selama paket aktif, tautan tagihan, dan laporan usaha. Business sedang disiapkan dan belum bisa dibeli.`
   },
   {
     question: 'Bagaimana langganan dan perpanjangannya?',
     answer:
-      'Pro dibayar per 30 hari lewat DOKU. Plan aktif setelah pembayaran terkonfirmasi. Jika memperpanjang sebelum masa aktif berakhir, sisa masa aktif ditambahkan.',
+      'Pro dibayar per 30 hari lewat DOKU. Paket aktif setelah pembayaran terkonfirmasi. Jika memperpanjang sebelum masa aktif berakhir, sisa masa aktif ditambahkan.',
   },
   {
     question: 'Apa yang terjadi setelah masa aktif berakhir?',

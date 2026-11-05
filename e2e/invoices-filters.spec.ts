@@ -43,7 +43,7 @@ async function ensureInvoiceExists(page: Page): Promise<void> {
   await page.waitForTimeout(1_500);
   await closeTour(page);
   await page.getByLabel('Nama pelanggan *').fill('Smoke Filters');
-  await page.getByRole('button', { name: 'Simpan invoice' }).first().click();
+  await page.getByRole('button', { name: 'Simpan nota' }).first().click();
   await page.waitForURL('**/dashboard', { timeout: 20_000 });
 }
 
@@ -54,9 +54,9 @@ test.beforeEach(async ({ page }) => {
 test('seeds the filters from the URL instead of starting blank', async ({ page }) => {
   await page.goto('/invoices?keyword=budi&status=paid');
 
-  await expect(page.getByLabel('Cari invoice')).toHaveValue('budi', { timeout: 20_000 });
+  await expect(page.getByLabel('Cari nota')).toHaveValue('budi', { timeout: 20_000 });
   // The status select renders the label of the value it was seeded with.
-  await expect(page.getByRole('combobox', { name: 'Filter status' })).toContainText('Lunas');
+  await expect(page.getByRole('combobox', { name: 'Saring status' })).toContainText('Lunas');
   // The seeding must not eat the params it just read back.
   await expect(page).toHaveURL(/keyword=budi/);
   await expect(page).toHaveURL(/status=paid/);
@@ -66,10 +66,10 @@ test('writes filter changes into the URL and keeps foreign params', async ({ pag
   await page.goto('/invoices?utm_campaign=wa');
   await closeTour(page);
 
-  await page.getByLabel('Cari invoice').fill('kopiko');
+  await page.getByLabel('Cari nota').fill('kopiko');
   await expect(page).toHaveURL(/keyword=kopiko/, { timeout: 10_000 });
 
-  await page.getByRole('combobox', { name: 'Filter status' }).click();
+  await page.getByRole('combobox', { name: 'Saring status' }).click();
   await page.getByRole('option', { name: 'Batal' }).click();
   await expect(page).toHaveURL(/status=void/);
 
@@ -78,7 +78,7 @@ test('writes filter changes into the URL and keeps foreign params', async ({ pag
 
   // Clearing a filter removes its param rather than writing an empty value.
   await page
-    .getByRole('combobox', { name: 'Filter status' })
+    .getByRole('combobox', { name: 'Saring status' })
     .locator('..')
     .getByLabel('Hapus pilihan')
     .click();
@@ -91,7 +91,7 @@ test('round-trips the "Belum dikirim" (unset) status filter', async ({ page }) =
   await closeTour(page);
 
   // The sentinel re-seeds the select instead of being read as junk.
-  await expect(page.getByRole('combobox', { name: 'Filter status' })).toContainText(
+  await expect(page.getByRole('combobox', { name: 'Saring status' })).toContainText(
     'Belum dikirim',
     { timeout: 20_000 },
   );
@@ -104,14 +104,14 @@ test('round-trips the "Belum dikirim" (unset) status filter', async ({ page }) =
 
   // Clearing from the select drops the param rather than writing it empty…
   await page
-    .getByRole('combobox', { name: 'Filter status' })
+    .getByRole('combobox', { name: 'Saring status' })
     .locator('..')
     .getByLabel('Hapus pilihan')
     .click();
   await expect(page).not.toHaveURL(/status=/);
 
   // …and picking the unset option writes the sentinel back.
-  await page.getByRole('combobox', { name: 'Filter status' }).click();
+  await page.getByRole('combobox', { name: 'Saring status' }).click();
   await page.getByRole('option', { name: 'Belum dikirim' }).click();
   await expect(page).toHaveURL(/status=unset/);
 });

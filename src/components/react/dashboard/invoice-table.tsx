@@ -411,7 +411,7 @@ export function InvoiceTable() {
     const rows = await exportRows({
       snapshot: selection.getSnapshot(),
       loaders: invoiceLoaders,
-      noun: 'invoice',
+      noun: 'nota',
     });
     return toInvoiceRows(rows);
   }
@@ -513,7 +513,7 @@ export function InvoiceTable() {
         }),
         columnHelper.accessor('customerName', {
           id: 'customerName',
-          header: 'Customer',
+          header: 'Pelanggan',
           // Long names stretch an auto-layout column and shove everything
           // else off-screen; clamp per-cell instead, with the full value on
           // hover.
@@ -588,7 +588,7 @@ export function InvoiceTable() {
             const proof = invoice.paymentProof ?? null;
             return (
               <Menu
-                label={`Aksi ${invoice.invoiceNumber}`}
+                label={`Aksi nota ${invoice.invoiceNumber}`}
                 align="end"
                 items={[
                   {
@@ -698,7 +698,7 @@ export function InvoiceTable() {
           </div>
           <div data-tour="invoices-filter" className="w-full sm:w-auto">
             <label htmlFor={statusField.id} className="sr-only">
-              Filter status
+              Saring status
             </label>
             <Select
               id={statusField.id}
@@ -711,7 +711,7 @@ export function InvoiceTable() {
                     ? UNSET_STATUS_FILTER
                     : statusFilter
               }
-              aria-label="Filter status"
+              aria-label="Saring status"
               placeholder="Semua status"
               options={[
                 // "Belum dikirim" first: it is where every invoice starts,
@@ -918,7 +918,7 @@ export function InvoiceTable() {
         type="file"
         accept={PAYMENT_PROOF_ACCEPT}
         className="sr-only"
-        aria-label="Pilih file bukti pembayaran"
+        aria-label="Pilih berkas bukti pembayaran"
         onChange={(event) => void handleProofFile(event)}
       />
 
@@ -975,7 +975,7 @@ export function InvoiceTable() {
         size="md"
         ariaLabelledBy="proof-dialog-title"
         title={
-          <span id="proof-dialog-title">Bukti pembayaran {proofView?.invoiceNumber ?? ''}</span>
+          <span id="proof-dialog-title">Bukti pembayaran nota {proofView?.invoiceNumber ?? ''}</span>
         }
         actions={[{ label: 'Tutup', variant: 'secondary', onClick: () => setProofView(null) }]}
       >
@@ -983,7 +983,7 @@ export function InvoiceTable() {
           <div className="flex flex-col gap-3">
             <img
               src={`/api/proof/${encodeURIComponent(proofView.paymentProof.key)}`}
-              alt={`Bukti pembayaran ${proofView.invoiceNumber}`}
+              alt={`Bukti pembayaran nota ${proofView.invoiceNumber}`}
               className="mx-auto max-h-[60vh] rounded-control border border-border object-contain"
             />
             <p className="text-center text-xs text-muted">

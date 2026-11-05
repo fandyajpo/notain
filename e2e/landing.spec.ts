@@ -20,10 +20,10 @@ test('landing page renders and hydrates without errors', async ({ page }) => {
     timeout: 15_000,
   });
   await expect(
-    page.getByRole('heading', { name: 'Urus invoice lebih rapi. Fokus kembangkan usaha.' }),
+    page.getByRole('heading', { name: 'Buat nota lebih rapi. Biar urusan usaha lebih mudah.' }),
   ).toBeVisible();
   await expect(page.locator('[data-rich-output]').first()).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Buat invoice gratis' }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Buat nota gratis' }).first()).toBeVisible();
 
   // The island's module must have actually loaded — a stale dep-optimizer
   // makes this a 504 and hydration dies with a dynamic-import error.

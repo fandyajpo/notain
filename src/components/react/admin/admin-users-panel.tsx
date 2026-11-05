@@ -209,13 +209,13 @@ export function AdminUsersPanel() {
     // The PATCH endpoint re-validates the whole profile and requires a name,
     // so a nameless user would be rejected server-side. Say so up front.
     if (!subscribeTarget.name.trim()) {
-      toast('User ini belum punya nama. Lengkapi lewat Edit dulu.', { variant: 'error' });
+      toast('Akun ini belum punya nama. Lengkapi lewat Ubah profil dulu.', { variant: 'error' });
       return;
     }
     try {
       await updateAdminUser.mutateAsync(planUpdate(subscribeTarget, subPlan, subExpiry || null));
       toast(
-        `${subscribeTarget.name || subscribeTarget.email} kini berlangganan ${PLAN_LABELS[subPlan] ?? subPlan}.`,
+        `${subscribeTarget.name || subscribeTarget.email} kini menggunakan paket ${PLAN_LABELS[subPlan] ?? subPlan}.`,
         { variant: 'success' },
       );
       setSubscribeTarget(null);
@@ -227,12 +227,12 @@ export function AdminUsersPanel() {
   async function confirmUnsubscribe() {
     if (!unsubscribeTarget) return;
     if (!unsubscribeTarget.name.trim()) {
-      toast('User ini belum punya nama. Lengkapi lewat Edit dulu.', { variant: 'error' });
+      toast('Akun ini belum punya nama. Lengkapi lewat Ubah profil dulu.', { variant: 'error' });
       return;
     }
     try {
       await updateAdminUser.mutateAsync(planUpdate(unsubscribeTarget, 'free', null));
-      toast(`Langganan ${unsubscribeTarget.name || unsubscribeTarget.email} dilepas.`, {
+      toast(`Plan ${unsubscribeTarget.name || unsubscribeTarget.email} dikembalikan ke Free.`, {
         variant: 'success',
       });
       setUnsubscribeTarget(null);
@@ -263,8 +263,8 @@ export function AdminUsersPanel() {
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-muted">
           {total > 0
-            ? `${users.length} dari ${total} user dimuat`
-            : 'Kelola profil dan subscription plan user.'}
+            ? `${users.length} dari ${total} pengguna dimuat`
+            : 'Kelola profil dan paket langganan pengguna.'}
         </p>
         <Button
           variant="secondary"
@@ -284,20 +284,20 @@ export function AdminUsersPanel() {
           <SearchField
             value={query}
             placeholder="Cari nama, email, atau usaha…"
-            aria-label="Cari user"
+            aria-label="Cari pengguna"
             onChange={setQuery}
           />
           <div className="w-full sm:w-auto">
             <label htmlFor={planFilterIds.id} className="sr-only">
-              Filter plan
+              Saring paket
             </label>
             <Select
               id={planFilterIds.id}
               size="sm"
               clearable
               value={planFilter}
-              aria-label="Filter plan"
-              placeholder="Semua plan"
+              aria-label="Saring paket"
+              placeholder="Semua paket"
               options={PLAN_OPTIONS}
               onChange={setPlanFilter}
               className="w-full sm:w-auto"
@@ -307,17 +307,17 @@ export function AdminUsersPanel() {
       )}
 
       {isFetching && users.length === 0 ? (
-        <LoadingState label="Memuat user…" />
+        <LoadingState label="Memuat pengguna…" />
       ) : (
         <TableShell minWidth="840px">
           <thead>
             <tr className={THEAD_ROW}>
-              <Th>User</Th>
+              <Th>Pengguna</Th>
               <Th>Email</Th>
               <Th>Status</Th>
-              <Th>Plan</Th>
+              <Th>Paket</Th>
               <Th>Berlaku sampai</Th>
-              <Th>Daftar</Th>
+              <Th>Terdaftar</Th>
               <Th align="right">Aksi</Th>
             </tr>
           </thead>
@@ -329,7 +329,7 @@ export function AdminUsersPanel() {
                     // The list failed to load — don't claim there are no users.
                     <ErrorState
                       inline
-                      title="Gagal memuat user"
+                      title="Gagal memuat pengguna"
                       message="Periksa koneksi internet kamu, lalu muat ulang."
                       action={
                         <Button
@@ -345,7 +345,7 @@ export function AdminUsersPanel() {
                   ) : (
                     <div className="flex flex-col items-center gap-2 py-8">
                       <Users size={22} className="text-muted" aria-hidden="true" />
-                      <p className="text-section text-foreground">Belum ada user terdaftar.</p>
+                      <p className="text-section text-foreground">Belum ada pengguna terdaftar.</p>
                     </div>
                   )}
                 </td>
@@ -355,7 +355,7 @@ export function AdminUsersPanel() {
                 <td colSpan={7} className="px-4 py-12 text-center text-muted">
                   <div className="flex flex-col items-center gap-2">
                     <Search size={22} className="text-muted" aria-hidden="true" />
-                    <p className="text-section text-foreground">Tidak ada user yang cocok.</p>
+                    <p className="text-section text-foreground">Tidak ada pengguna yang cocok.</p>
                   </div>
                 </td>
               </tr>
@@ -393,7 +393,7 @@ export function AdminUsersPanel() {
                     <div className="flex items-center justify-end gap-1.5">
                       {user.plan === 'free' ? (
                         <Button variant="secondary" size="sm" onClick={() => openSubscribe(user)}>
-                          Subscribe
+                          Tetapkan paket
                         </Button>
                       ) : (
                         <Button
@@ -404,7 +404,7 @@ export function AdminUsersPanel() {
                             setUnsubscribeTarget(user);
                           }}
                         >
-                          Lepas
+                          Kembali ke Free
                         </Button>
                       )}
                       {user.status ? (
@@ -417,7 +417,7 @@ export function AdminUsersPanel() {
                           }}
                         >
                           <Ban size={14} aria-hidden="true" />
-                          Jeda
+                          Nonaktifkan
                         </Button>
                       ) : (
                         <Button
@@ -436,7 +436,7 @@ export function AdminUsersPanel() {
                         Detail
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => openEdit(user)}>
-                        Edit
+                        Ubah
                       </Button>
                     </div>
                   </Td>
@@ -460,8 +460,8 @@ export function AdminUsersPanel() {
         size="lg"
         title={
           <>
-            Edit Profil
-            <span className="block text-sm font-normal text-muted">{editing?.email} · login</span>
+            Ubah profil
+            <span className="block text-sm font-normal text-muted">{editing?.email} · email masuk</span>
           </>
         }
         actions={[
@@ -537,7 +537,7 @@ export function AdminUsersPanel() {
           </FieldShell>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FieldShell label="Plan" htmlFor="admin-plan">
+            <FieldShell label="Paket" htmlFor="admin-plan">
               <Select
                 id="admin-plan"
                 value={form.plan}
@@ -549,7 +549,7 @@ export function AdminUsersPanel() {
             <FieldShell
               label="Berlaku sampai"
               htmlFor="admin-expiry"
-              hint="Kosongkan untuk lifetime."
+              hint="Kosongkan jika paket tidak memiliki tanggal kedaluwarsa."
             >
               <Input
                 id="admin-expiry"
@@ -567,7 +567,7 @@ export function AdminUsersPanel() {
         open={subscribeTarget !== null}
         onClose={() => setSubscribeTarget(null)}
         size="sm"
-        title="Subscribe user"
+        title="Tetapkan paket berbayar"
         actions={[
           {
             label: 'Batal',
@@ -576,7 +576,7 @@ export function AdminUsersPanel() {
             onClick: () => setSubscribeTarget(null),
           },
           {
-            label: 'Subscribe',
+            label: 'Tetapkan paket',
             loading: updateAdminUser.isPending,
             onClick: () => void confirmSubscribe(),
           },
@@ -587,9 +587,9 @@ export function AdminUsersPanel() {
             <Notice variant="danger">{toAppError(updateAdminUser.error).message}</Notice>
           )}
           <p className="text-sm text-muted">
-            {subscribeTarget?.name || subscribeTarget?.email} akan diberi plan berbayar.
+            {subscribeTarget?.name || subscribeTarget?.email} akan menggunakan paket berbayar.
           </p>
-          <FieldShell label="Plan" htmlFor={subPlanIds.id}>
+          <FieldShell label="Paket" htmlFor={subPlanIds.id}>
             <Select
               id={subPlanIds.id}
               value={subPlan}
@@ -600,7 +600,7 @@ export function AdminUsersPanel() {
           <FieldShell
             label="Berlaku sampai"
             htmlFor={subExpiryIds.id}
-            hint="Kosongkan untuk lifetime."
+            hint="Kosongkan jika paket tidak memiliki tanggal kedaluwarsa."
           >
             <Input
               id={subExpiryIds.id}
@@ -619,11 +619,11 @@ export function AdminUsersPanel() {
         role="alertdialog"
         size="sm"
         ariaLabelledBy="unsubscribe-title"
-        title={<span id="unsubscribe-title">Lepas langganan?</span>}
+        title={<span id="unsubscribe-title">Kembalikan ke Free?</span>}
         actions={[
           { label: 'Batal', variant: 'secondary', onClick: () => setUnsubscribeTarget(null) },
           {
-            label: 'Lepas',
+            label: 'Kembalikan ke Free',
             variant: 'danger',
             loading: updateAdminUser.isPending,
             onClick: () => void confirmUnsubscribe(),
@@ -636,7 +636,7 @@ export function AdminUsersPanel() {
           </Notice>
         )}
         <p className="text-sm text-muted">
-          Plan{' '}
+          Paket{' '}
           <span className="font-medium text-foreground">
             {unsubscribeTarget?.name || unsubscribeTarget?.email}
           </span>{' '}

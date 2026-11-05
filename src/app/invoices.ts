@@ -18,7 +18,7 @@ import type { InvoicePage, ListInvoicesOptions } from '../ports/invoice-reposito
 function parseDraft(draft: InvoiceDraft): InvoiceDraft {
   const result = invoiceDraftSchema.safeParse(draft);
   if (!result.success) {
-    throw new AppError(ERROR_CODES.VALIDATION, 'Periksa kembali isian invoice kamu.', {
+    throw new AppError(ERROR_CODES.VALIDATION, 'Periksa kembali isian nota kamu.', {
       fieldErrors: flattenIssues(result.error.issues),
     });
   }
@@ -91,7 +91,7 @@ export async function getInvoice(id: string): Promise<Invoice> {
   await requireSession();
   const invoice = await container.invoices.getById(id);
   if (!invoice) {
-    throw new AppError(ERROR_CODES.NOT_FOUND, 'Invoice tidak ditemukan.');
+    throw new AppError(ERROR_CODES.NOT_FOUND, 'Nota tidak ditemukan.');
   }
   return invoice;
 }
@@ -109,7 +109,7 @@ export async function updateInvoice(id: string, draft: InvoiceDraft): Promise<In
   const parsed = parseDraft(draft);
   const current = await container.invoices.getById(id);
   if (!current) {
-    throw new AppError(ERROR_CODES.NOT_FOUND, 'Invoice tidak ditemukan.');
+    throw new AppError(ERROR_CODES.NOT_FOUND, 'Nota tidak ditemukan.');
   }
   // No lifecycle check here on purpose: the repository's `update` omits the
   // `status` column, so this call writes contents only. A stale form (or a
@@ -130,11 +130,11 @@ export async function updateInvoice(id: string, draft: InvoiceDraft): Promise<In
 export async function updateInvoiceStatus(id: string, status: InvoiceStatus): Promise<Invoice> {
   await requireSession();
   if (!(INVOICE_STATUSES as readonly string[]).includes(status)) {
-    throw new AppError(ERROR_CODES.VALIDATION, 'Status invoice tidak valid.');
+    throw new AppError(ERROR_CODES.VALIDATION, 'Status nota tidak valid.');
   }
   const current = await container.invoices.getById(id);
   if (!current) {
-    throw new AppError(ERROR_CODES.NOT_FOUND, 'Invoice tidak ditemukan.');
+    throw new AppError(ERROR_CODES.NOT_FOUND, 'Nota tidak ditemukan.');
   }
   if (!canChangeStatus(current.status, status)) {
     const message = statusFlowMessage(current.status, status);

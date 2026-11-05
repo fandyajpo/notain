@@ -62,7 +62,7 @@ export const PLAN_BENEFITS: Record<PlanTier, readonly string[]> = {
   pro: [
     'Semua fitur Free',
     'Buat beberapa usaha',
-    'Buat nota tanpa batas selama plan aktif',
+    'Buat nota tanpa batas selama paket aktif',
     'Bagikan tautan tagihan ke pelanggan',
     'Laporan usaha',
   ],

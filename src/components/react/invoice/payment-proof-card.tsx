@@ -127,7 +127,7 @@ export function PaymentProofCard({ proof, status, onUpload }: Props) {
           type="file"
           accept={PAYMENT_PROOF_ACCEPT}
           className="sr-only"
-          aria-label="Pilih file bukti pembayaran"
+          aria-label="Pilih berkas bukti pembayaran"
           onChange={(event) => void handlePick(event)}
           disabled={busy}
         />

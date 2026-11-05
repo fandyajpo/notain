@@ -59,7 +59,7 @@ export function LogoUploader({ logoUrl, busy = false, onUpload, onRemove }: Prop
             type="file"
             accept={LOGO_ALLOWED_TYPES.join(',')}
             className="sr-only"
-            aria-label="Pilih file logo"
+            aria-label="Pilih berkas logo"
             onChange={(event) => {
               handleFile(event.target.files?.[0]);
               event.target.value = '';

@@ -80,13 +80,11 @@ function SignedInPrintContent() {
       <PrintToolbar backLabel="Kembali">
         <p className="text-sm font-semibold">Pratinjau cetak</p>
         <p className="text-xs text-muted">
-          Pilih <span className="font-medium">Save as PDF</span> di dialog cetak untuk menyimpannya
-          sebagai file.
+          Di dialog cetak, pilih opsi untuk menyimpan nota sebagai PDF.
         </p>
         <p className="mt-0.5 text-xs text-muted">
-          Struktur invoice (garis, kartu, tabel) selalu ikut tercetak. Centang{' '}
-          <span className="font-medium">Background graphics</span> kalau mau warna dan wallpaper
-          ikut juga (opsional).
+          Struktur nota (garis, kartu, tabel) selalu ikut tercetak. Jika ingin warna dan latar ikut
+          tercetak, aktifkan opsi grafis latar di dialog cetak (opsional).
         </p>
       </PrintToolbar>
       <PrintSheet
@@ -105,7 +103,7 @@ function MissingPayload() {
       <EmptyState
         icon={FileText}
         className="w-full max-w-md"
-        title="Tidak ada invoice untuk dicetak"
+        title="Tidak ada nota untuk dicetak"
         description="Halaman ini hanya terisi saat kamu menekan tombol PDF dari builder."
         action={
           <div className="flex items-center gap-2">

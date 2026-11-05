@@ -40,7 +40,7 @@ test('serves the invoice editor at /invoice/<id>, address bar intact', async ({ 
   await expect(page).toHaveURL(new RegExp(`/invoice/${INVOICE_ID}$`));
   // The shell mounted, so the app read the id from the path, looked it up and
   // came back empty — a server-side 404 would never show this copy.
-  await expect(page.getByText('Invoice ini mungkin sudah dihapus')).toBeVisible({
+  await expect(page.getByText('Nota ini mungkin sudah dihapus')).toBeVisible({
     timeout: 20_000,
   });
 });
@@ -56,7 +56,7 @@ test('redirects the older /invoice/edit link onto the canonical route', async ({
   await page.goto(`/invoice/edit?id=${INVOICE_ID}`);
 
   await expect(page).toHaveURL(`/invoice/${INVOICE_ID}`);
-  await expect(page.getByText('Invoice ini mungkin sudah dihapus')).toBeVisible({
+  await expect(page.getByText('Nota ini mungkin sudah dihapus')).toBeVisible({
     timeout: 20_000,
   });
 });
@@ -100,7 +100,7 @@ test('leaves the routes that are files of their own alone', async ({ page }) => 
   });
 
   await page.goto('/invoice/print');
-  await expect(page.getByText('Tidak ada invoice untuk dicetak')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('Tidak ada nota untuk dicetak')).toBeVisible({ timeout: 20_000 });
 
   await page.goto('/templates/new');
   await settleTemplateEditor(page);
@@ -119,5 +119,5 @@ test('serves the public print shell at /invoice/print/<id>, address bar intact',
   await page.goto(`/invoice/print/${INVOICE_ID}`);
 
   await expect(page).toHaveURL(new RegExp(`/invoice/print/${INVOICE_ID}$`));
-  await expect(page.getByText('Invoice tidak ditemukan')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('Nota tidak ditemukan')).toBeVisible({ timeout: 20_000 });
 });

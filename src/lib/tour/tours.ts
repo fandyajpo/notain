@@ -32,26 +32,25 @@ export const TOURS: Record<string, TourDef> = {
         target: 'dash-hero',
         title: 'Selamat datang di Notain 👋',
         description:
-          'Notain bantu kamu bikin, kirim, dan melacak invoice dalam hitungan detik. Ini tur singkat supaya kamu cepat mulai.',
+          'Notain membantumu membuat dan mengelola nota. Ikuti tur singkat ini untuk mulai.',
         side: 'bottom',
       },
       {
         target: 'dash-summary',
         title: 'Ringkasan usaha kamu',
-        description:
-          'Jumlah invoice dan pelanggan tampil di sini, selalu terbaru. Semua otomatis terhitung.',
+        description: 'Jumlah nota dan pelanggan tampil di sini.',
         side: 'top',
       },
       {
         target: 'dash-create',
-        title: 'Bikin invoice baru',
+        title: 'Buat nota baru',
         description:
-          'Ketuk tombol ini kapan saja. Isi data pelanggan dan item, lalu totalnya dihitung otomatis: diskon, pajak, pembulatan.',
+          'Ketuk tombol ini, isi data pelanggan dan barang, lalu totalnya dihitung otomatis termasuk diskon dan pajak.'
         side: 'bottom',
       },
       {
         target: 'dash-recent',
-        title: 'Kelola & bagikan invoice',
+        title: 'Kelola dan bagikan nota',
         description:
           'Nota terbaru ada di sini. Buka satu untuk melihat detail, simpan PDF A4, atau siapkan pesan WhatsApp untuk pelanggan. Lampirkan PDF dan kirim sendiri. Selamat berkarya!',
         side: 'top',
@@ -65,8 +64,8 @@ export const TOURS: Record<string, TourDef> = {
     steps: [
       {
         target: 'invoices-create',
-        title: 'Buat invoice di sini',
-        description: 'Mulai dari tombol ini untuk membuat invoice baru.',
+        title: 'Buat nota di sini',
+        description: 'Mulai dari tombol ini untuk membuat nota baru.'
         side: 'bottom',
       },
       {
@@ -77,14 +76,14 @@ export const TOURS: Record<string, TourDef> = {
       },
       {
         target: 'invoices-filter',
-        title: 'Saring daftar invoice',
+        title: 'Saring daftar nota',
         description:
           'Pilih status (Terkirim, Lunas, Batal) atau template untuk menyaring daftar. Ketuk × pada salah satunya untuk menghapus saringan.',
         side: 'bottom',
       },
       {
         target: 'invoices-table',
-        title: 'Daftar invoice kamu',
+        title: 'Daftar nota kamu',
         description:
           'Setiap baris menampilkan nomor nota, pelanggan, tanggal, total, dan status. Buka nota untuk melihat rinciannya, mengubah status, mengunduh PDF, atau membagikannya lewat WhatsApp.',
         side: 'top',

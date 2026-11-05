@@ -18,13 +18,13 @@ export function AdminSupportPanel() {
   const rows = useMemo(() => data?.pages.flatMap((page) => page.rows) ?? [], [data]);
 
   if (isFetching && rows.length === 0) {
-    return <LoadingState label="Memuat pesan support…" />;
+    return <LoadingState label="Memuat pesan bantuan…" />;
   }
 
   if (error && rows.length === 0) {
     return (
       <ErrorState
-        title="Gagal memuat pesan support"
+        title="Gagal memuat pesan bantuan"
         message={toAppError(error).message}
         action={
           <Button variant="secondary" size="sm" loading={isFetching} onClick={() => void refetch()}>

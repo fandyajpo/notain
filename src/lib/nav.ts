@@ -67,7 +67,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     label: 'Usaha',
     items: [
       { href: '/dashboard', label: 'Dashboard', Icon: LayoutGrid },
-      { href: '/invoices', label: 'Invoice', Icon: FileText },
+      { href: '/invoices', label: 'Nota', Icon: FileText },
       { href: '/customers', label: 'Pelanggan', Icon: Users },
       { href: '/catalog', label: 'Katalog', Icon: Package },
       { href: '/templates', label: 'Template', Icon: Palette },

@@ -12,7 +12,7 @@ export function ApiKeysApp() {
           <div className="flex flex-col gap-6">
             <PageHeader
               title="Integrasi"
-              description="Buat dan atur kunci API untuk menghubungkan aplikasi lain."
+              description="Kunci API untuk menghubungkan aplikasi lain sedang disiapkan."
             />
             <ApiKeysPanel />
           </div>

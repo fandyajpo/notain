@@ -27,10 +27,10 @@ type ShortcutGroup = {
  */
 export const SHORTCUT_GROUPS: ShortcutGroup[] = [
   {
-    title: 'Di builder invoice',
+    title: 'Di editor nota',
     builderOnly: true,
     items: [
-      { keys: ['Mod', 'S'], label: 'Simpan invoice' },
+      { keys: ['Mod', 'S'], label: 'Simpan nota' },
       { keys: ['Mod', 'Enter'], label: 'Tambah item barang' },
       { keys: ['Mod', 'Shift', 'P'], label: 'Buka pratinjau cetak' },
     ],

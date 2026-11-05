@@ -179,7 +179,7 @@ function WallpaperForm({
       <div className="flex flex-col gap-1">
         <p className="text-sm font-medium text-foreground">Latar di balik kartu invoice</p>
         <p className="text-xs text-muted">
-          Ikut tercetak asalkan kotak <em>Background graphics</em> dicentang saat mencetak.
+          Warna latar ikut tercetak jika opsi grafis latar diaktifkan pada dialog cetak.
         </p>
       </div>
 

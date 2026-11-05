@@ -43,11 +43,11 @@ function InvoiceEditContent({ invoiceId }: { invoiceId: string | undefined }) {
   const org = orgs?.orgs.find((candidate) => candidate.id === getActiveOrgId()) ?? null;
 
   if (!invoiceId) {
-    return <NotFound message="Tautan invoice tidak lengkap." />;
+    return <NotFound message="Tautan nota tidak lengkap." />;
   }
 
   if (isLoading) {
-    return <LoadingState label="Memuat invoice…" />;
+    return <LoadingState label="Memuat nota…" />;
   }
 
   // A definitive 404 IS the answer — the invoice is gone, and retrying will
@@ -59,7 +59,7 @@ function InvoiceEditContent({ invoiceId }: { invoiceId: string | undefined }) {
   if (isError && !invoice && !notFound) {
     return (
       <ErrorState
-        title="Gagal memuat invoice"
+        title="Gagal memuat nota"
         message="Periksa koneksi internet kamu, lalu coba lagi. Data kamu tidak hilang."
         action={
           <Button loading={isFetching} onClick={() => void refetch()}>
@@ -72,7 +72,7 @@ function InvoiceEditContent({ invoiceId }: { invoiceId: string | undefined }) {
 
   if (!invoice) {
     return (
-      <NotFound message="Invoice ini mungkin sudah dihapus, atau kamu membuka tautan dari akun lain." />
+      <NotFound message="Nota ini mungkin sudah dihapus, atau kamu membuka tautan dari akun lain." />
     );
   }
 
@@ -91,7 +91,7 @@ function NotFound({ message }: { message: string }) {
   return (
     <EmptyState
       icon={FileText}
-      title="Invoice tidak ditemukan"
+      title="Nota tidak ditemukan"
       description={message}
       action={<Button href="/dashboard">Kembali ke dashboard</Button>}
     />

@@ -194,7 +194,7 @@ describe('selection resolvers', () => {
     const failure = await exportRows({
       snapshot: selection.getSnapshot(),
       loaders: loaders({ all: vi.fn(async () => []) }),
-      noun: 'invoice',
+      noun: 'nota',
     }).catch((error: unknown) => error);
 
     // An AppError (not a bare Error): `toAppError` passes its message through
@@ -210,7 +210,7 @@ describe('selection resolvers', () => {
     const rows = await exportRows({
       snapshot: selection.getSnapshot(),
       loaders: loaders(),
-      noun: 'invoice',
+      noun: 'nota',
     });
 
     expect(rows.map((row) => row.id)).toEqual(['a']);

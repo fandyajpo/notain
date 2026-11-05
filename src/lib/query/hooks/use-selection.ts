@@ -74,7 +74,7 @@ export function useSelectionScope<C, T extends { id: string }>(
 type ResolverOptions<C, T extends { id: string }> = {
   snapshot: SelectionSnapshot<C>;
   loaders: SelectionLoaders<T, C>;
-  /** Entity noun for the "deleted and skipped" toast: `pelanggan`, `invoice`, `entri`. */
+  /** Entity noun for the "deleted and skipped" toast: `pelanggan`, `nota`, `entri`. */
   noun: string;
 };
 

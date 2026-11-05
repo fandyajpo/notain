@@ -53,7 +53,7 @@ export async function getPublicInvoice(id: string): Promise<PublicInvoicePayload
     );
   }
   if (response.status === 404) {
-    throw new AppError(ERROR_CODES.NOT_FOUND, 'Invoice tidak ditemukan.');
+    throw new AppError(ERROR_CODES.NOT_FOUND, 'Nota tidak ditemukan.');
   }
   if (!response.ok) {
     // The one 4xx the server answers with copy a person should read is the
@@ -200,7 +200,7 @@ async function serverMessage(response: Response): Promise<string | undefined> {
 function parsePayload(raw: unknown): PublicInvoicePayload {
   const result = publicInvoicePayloadSchema.safeParse(raw);
   if (!result.success) {
-    throw new AppError(ERROR_CODES.NOT_FOUND, 'Invoice tidak ditemukan.');
+    throw new AppError(ERROR_CODES.NOT_FOUND, 'Nota tidak ditemukan.');
   }
   const { invoice, business, template } = result.data;
   return {

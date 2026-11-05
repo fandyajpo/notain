@@ -9,17 +9,17 @@ import { useAdminAudit } from '../../../lib/query/hooks/use-admin';
 import { toAppError } from '../../../app/errors';
 
 const ACTION_LABELS: Record<string, string> = {
-  'user.update': 'Edit profil',
+  'user.update': 'Ubah profil',
   'user.suspend': 'Nonaktifkan',
   'user.unsuspend': 'Aktifkan',
   'content.templates.create': 'Tambah template',
-  'content.templates.update': 'Edit template',
+  'content.templates.update': 'Ubah template',
   'content.templates.delete': 'Hapus template',
-  'content.invoices.create': 'Tambah invoice',
-  'content.invoices.update': 'Edit invoice',
-  'content.invoices.delete': 'Hapus invoice',
-  'support.solve': 'Selesaikan support',
-  'support.reopen': 'Buka ulang support',
+  'content.invoices.create': 'Tambah nota',
+  'content.invoices.update': 'Ubah nota',
+  'content.invoices.delete': 'Hapus nota',
+  'support.solve': 'Selesaikan pesan bantuan',
+  'support.reopen': 'Buka kembali pesan bantuan',
 };
 
 /** Log aktivitas tab: newest-first list of admin actions. */
@@ -53,7 +53,7 @@ export function AdminAuditPanel() {
         <ScrollText size={22} className="text-muted" aria-hidden="true" />
         <p className="text-sm text-foreground">Belum ada aktivitas tercatat.</p>
         <p className="text-xs text-muted">
-          Aksi admin (edit profil, jeda/aktifkan user) akan muncul di sini.
+          Tindakan admin (ubah profil, nonaktifkan atau aktifkan pengguna) akan muncul di sini.
         </p>
       </div>
     );
@@ -65,7 +65,7 @@ export function AdminAuditPanel() {
         <thead>
           <tr className={THEAD_ROW}>
             <Th>Waktu</Th>
-            <Th>Admin</Th>
+            <Th>Administrator</Th>
             <Th>Aksi</Th>
             <Th>Target</Th>
             <Th>Detail</Th>

@@ -9,7 +9,7 @@ import {
 
 const WORKSPACE = [
   { href: '/dashboard', label: 'Dashboard' },
-  { href: '/invoices', label: 'Invoice' },
+  { href: '/invoices', label: 'Nota' },
   { href: '/customers', label: 'Pelanggan' },
   { href: '/catalog', label: 'Katalog' },
   { href: '/templates', label: 'Template' },

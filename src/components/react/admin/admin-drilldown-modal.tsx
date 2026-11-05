@@ -20,7 +20,7 @@ import { toAppError } from '../../../app/errors';
 
 const RESOURCE_OPTIONS: ReadonlyArray<{ value: AdminDrillResource; label: string }> = [
   { value: 'overview', label: 'Ringkasan' },
-  { value: 'invoices', label: 'Invoice' },
+  { value: 'invoices', label: 'Nota' },
   { value: 'customers', label: 'Pelanggan' },
   { value: 'templates', label: 'Template' },
 ];
@@ -58,7 +58,7 @@ export function AdminDrilldownModal({
       size="xl"
       title={
         <>
-          Detail user
+          Detail pengguna
           <span className="block text-sm font-normal text-muted">{user?.name || user?.email}</span>
         </>
       }
@@ -69,7 +69,7 @@ export function AdminDrilldownModal({
           onChange={setResource}
           variant="accent"
           size="sm"
-          ariaLabel="Jenis data user"
+          ariaLabel="Jenis data pengguna"
           options={RESOURCE_OPTIONS}
         />
 
@@ -121,24 +121,24 @@ function OverviewPanel({ overview }: { overview: AdminDrillOverview }) {
   return (
     <div className="flex flex-col gap-4">
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-3">
-        <Field label="Email login" value={user.email} />
+        <Field label="Email masuk" value={user.email} />
         <Field label="Status" value={user.status ? 'Aktif' : 'Dinonaktifkan'} />
-        <Field label="Plan" value={user.plan} />
+        <Field label="Paket" value={user.plan} />
         <Field
           label="Berlaku sampai"
           value={
             user.planExpiresAt ? new Date(user.planExpiresAt).toLocaleDateString('id-ID') : '—'
           }
         />
-        <Field label="Daftar" value={new Date(user.createdAt).toLocaleDateString('id-ID')} />
+        <Field label="Terdaftar" value={new Date(user.createdAt).toLocaleDateString('id-ID')} />
         <Field label="Nama usaha" value={user.businessName || '—'} />
-        <Field label="Jenis bisnis" value={businessSubtypeLabel(user.businessType) || '—'} />
+        <Field label="Jenis usaha" value={businessSubtypeLabel(user.businessType) || '—'} />
         <Field label="WhatsApp" value={user.phone || '—'} />
         <Field label="Email bisnis" value={user.profileEmail || '—'} />
         <Field label="Alamat" value={user.address || '—'} />
       </dl>
       <div className="flex flex-wrap gap-2">
-        <Badge variant="neutral">Invoice: {counts.invoices}</Badge>
+        <Badge variant="neutral">Nota: {counts.invoices}</Badge>
         <Badge variant="neutral">Pelanggan: {counts.customers}</Badge>
         <Badge variant="neutral">Template: {counts.templates}</Badge>
       </div>
@@ -171,7 +171,7 @@ function ResourceTable({
       <TableShell minWidth="520px">
         <thead>
           <tr className={THEAD_ROW}>
-            <Th>No. Invoice</Th>
+            <Th>No. nota</Th>
             <Th>Pelanggan</Th>
             <Th>Status</Th>
             <Th>Tanggal</Th>

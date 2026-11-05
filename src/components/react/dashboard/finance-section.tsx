@@ -451,7 +451,7 @@ function FinanceUpsell() {
       <Card padding="lg">
         <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="max-w-md">
-            <p className="font-medium">Laporan usaha tersedia di plan Pro</p>
+            <p className="font-medium">Laporan usaha tersedia di paket Pro</p>
             <p className="mt-1 text-sm leading-relaxed text-muted">
               Ringkasan penjualan dan pendapatan periode ini, grafik enam bulan, serta daftar nota
               yang perlu ditagih — semuanya dalam satu layar.

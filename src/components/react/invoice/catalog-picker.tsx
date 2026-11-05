@@ -57,7 +57,7 @@ export function CatalogPickerDialog({ open, onClose, onPick }: Props) {
         <EmptyState
           icon={PackageSearch}
           title="Katalog kamu masih kosong"
-          description="Simpan barang atau jasa yang sering kamu jual supaya bisa dipakai ulang di invoice berikutnya."
+          description="Simpan barang atau jasa yang sering kamu jual supaya bisa dipakai ulang di nota berikutnya."
           action={
             <Button href="/catalog" size="sm">
               Buka katalog

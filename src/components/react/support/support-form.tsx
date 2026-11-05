@@ -145,7 +145,7 @@ export function SupportForm({ source }: { source: SupportSource }) {
           id={subjectIds.id}
           type="text"
           value={draft.subject}
-          placeholder="Misal: pertanyaan soal plan Business"
+          placeholder="Misal: pertanyaan soal paket Business"
           onChange={(event) => setField('subject', event.target.value)}
         />
       </FieldShell>
