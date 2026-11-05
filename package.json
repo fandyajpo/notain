@@ -33,7 +33,7 @@
     "lint": "vp lint .",
     "lint:fix": "vp lint . --fix",
     "format": "vp fmt .",
-    "format:check": "vp fmt --check .",
+    "format:check": "vp fmt . --check",
     "test": "vp test run",
     "test:watch": "vp test",
     "test:e2e": "playwright test",
