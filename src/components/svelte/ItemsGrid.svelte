@@ -1,7 +1,7 @@
 <svelte:options customElement={{ tag: 'notain-items-grid', shadow: 'none' }} />
 
 <script lang="ts">
-  import { ChevronDown, ChevronUp, PackageCheck, Plus, Trash2 } from 'lucide-svelte';
+  import { ChevronDown, ChevronUp, PackageCheck, Plus, Trash2 } from '@lucide/svelte';
   import { cubicOut } from 'svelte/easing';
   import { calculateItemSubtotal } from '../../core/invoice/calculator';
   import {
