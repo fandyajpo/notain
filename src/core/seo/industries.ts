@@ -344,7 +344,7 @@ export const INDUSTRY_PAGES: readonly SeoIndustryPage[] = [
     label: 'Freelancer',
     title: 'Aplikasi Invoice Freelancer & Jasa Lepas | Notain',
     description:
-      'Buat nota freelancer dari katalog jasa dan tarif, lalu catat tagihan per proyek. Siapkan pengingat pembayaran di WhatsApp. Pakai Notain gratis tanpa memasang aplikasi.',
+      'Buat nota freelancer dari katalog jasa dan tarif, lalu catat tagihan per proyek. Siapkan pengingat pembayaran di WhatsApp. Pakai Notain gratis tanpa instalasi.',
     h1: 'Invoice freelancer: profesional dalam hitungan detik',
     heroLead:
       'Kerja lepas berarti menjual jasa, bukan menagih. Notain mengubah daftar jasamu jadi invoice rapi yang siap dikirim ke klien.',
