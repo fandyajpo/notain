@@ -45,7 +45,13 @@ export function usePaymentStatus(invoice: string) {
     queryFn: () => fetchPaymentStatus(invoice),
     enabled: invoice !== '',
     ...queryPolicy('paymentStatus'),
-    refetchInterval: (query) => (query.state.data?.status === 'pending' ? POLL_MS : false),
+    refetchInterval: (query) => {
+      const payment = query.state.data;
+      return payment?.status === 'pending' ||
+        (payment?.status === 'paid' && payment.activationStatus === 'pending')
+        ? POLL_MS
+        : false;
+    },
   });
 }
 

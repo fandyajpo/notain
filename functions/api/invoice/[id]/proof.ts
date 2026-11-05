@@ -8,6 +8,7 @@ import { ID_SEGMENT_PATTERN } from '../../../../src/lib/edit-route';
 import { text } from '../../../../src/core/shared/text';
 import { checkTurnstile } from '../../../_lib/turnstile';
 import { verifySession } from '../../../_lib/appwrite';
+import { acquireProofUploadLock, releaseProofUploadLock } from '../../../_lib/proof-lock';
 import { getRow, patchRow, tableAuth } from '../../../_lib/rows';
 import { apiError, json } from '../../../_lib/http';
 import { enforceLimit, requestKey } from '../../../_lib/quota';
@@ -36,11 +37,11 @@ const RANDOM_HEX_LENGTH = 14;
  * 2. **Status gate** — once the invoice is Lunas or Batal the question is
  *    settled either way, so the endpoint answers 409 and the card on the
  *    public page stops offering the form altogether.
- * 3. **One-shot** — the invoice row's `paymentProofKey` is checked *and*
- *    written with the API key, so once a proof exists the endpoint answers
- *    409 until the owner deletes it. The row is the source of truth, not the
- *    bucket: a stray object without a row reference cannot resurrect the
- *    upload form.
+ * 3. **One-shot + lock** — a conditional R2 lock serializes uploads per
+ *    invoice. The row is re-read under that lock, then `paymentProofKey` is
+ *    written with the API key, so only one public upload can win. The row is
+ *    the source of truth, not the bucket: a stray object without a row
+ *    reference cannot resurrect the upload form.
  *
  * **The owner** (session JWT, from the dashboard): no status gate and no
  * one-shot — the owner may attach or replace a proof even on a Lunas/Batal
@@ -123,58 +124,81 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
     return apiError(413, 'validation', 'Bukti pembayaran terlalu besar. Maksimal 5 MB.');
   }
 
-  const row = await getRow(auth, 'invoices', id);
-  if (!row) return apiError(404, 'not_found', 'Invoice tidak ditemukan.');
-
-  if (owner) {
-    if (text(row.ownerId) !== owner.userId) {
-      return apiError(403, 'unauthenticated', 'Kamu tidak punya akses ke invoice ini.');
-    }
-  } else {
-    if (row.status === 'paid' || row.status === 'void') {
-      return apiError(
-        409,
-        'conflict',
-        row.status === 'paid'
-          ? 'Nota ini sudah ditandai lunas. Bukti pembayaran tidak bisa ditambahkan lagi.'
-          : 'Nota ini sudah dibatalkan. Bukti pembayaran tidak bisa ditambahkan lagi.',
-      );
-    }
-    if (typeof row.paymentProofKey === 'string' && row.paymentProofKey !== '') {
-      return apiError(409, 'conflict', 'Bukti pembayaran sudah pernah diunggah untuk invoice ini.');
-    }
+  const lockResult = await acquireProofUploadLock(env.LOGOS, id);
+  if (lockResult.kind === 'unavailable') {
+    return apiError(503, 'unavailable', 'Unggahan bukti sedang tidak tersedia. Coba lagi.');
+  }
+  if (lockResult.kind === 'busy') {
+    return apiError(409, 'conflict', 'Unggahan bukti sedang diproses. Coba lagi sebentar.');
   }
 
-  const previousKey =
-    typeof row.paymentProofKey === 'string' && row.paymentProofKey !== ''
-      ? row.paymentProofKey
-      : null;
-  const key = `${PAYMENT_PROOF_KEY_PREFIX}${id}_${randomHex()}.${extension}`;
-  const uploadedAt = new Date().toISOString();
-  await env.LOGOS.put(key, file.stream(), {
-    httpMetadata: { contentType },
-    customMetadata: { owner: text(row.ownerId), invoice: id },
-  });
+  const lock = lockResult.lock;
+  try {
+    // Re-read only after taking the per-invoice lock. This makes the public
+    // one-shot check and the pointer write serial, even across Worker isolates.
+    const row = await getRow(auth, 'invoices', id, env);
+    if (!row) return apiError(404, 'not_found', 'Invoice tidak ditemukan.');
 
-  // The row is what the one-shot check reads, so it is written after the
-  // object; if this fails the object is removed again rather than left as an
-  // orphan nobody's form knows about.
-  const saved = await patchRow(auth, 'invoices', id, {
-    paymentProofKey: key,
-    paymentProofUploadedAt: uploadedAt,
-  });
-  if (!saved) {
-    await env.LOGOS.delete(key).catch(() => undefined);
-    return apiError(500, 'validation', 'Gagal menyimpan bukti pembayaran. Coba lagi.');
+    if (owner) {
+      if (text(row.ownerId) !== owner.userId) {
+        return apiError(403, 'unauthenticated', 'Kamu tidak punya akses ke invoice ini.');
+      }
+    } else {
+      if (row.status === 'paid' || row.status === 'void') {
+        return apiError(
+          409,
+          'conflict',
+          row.status === 'paid'
+            ? 'Nota ini sudah ditandai lunas. Bukti pembayaran tidak bisa ditambahkan lagi.'
+            : 'Nota ini sudah dibatalkan. Bukti pembayaran tidak bisa ditambahkan lagi.',
+        );
+      }
+      if (typeof row.paymentProofKey === 'string' && row.paymentProofKey !== '') {
+        return apiError(409, 'conflict', 'Bukti pembayaran sudah pernah diunggah untuk invoice ini.');
+      }
+    }
+
+    const previousKey =
+      typeof row.paymentProofKey === 'string' && row.paymentProofKey !== ''
+        ? row.paymentProofKey
+        : null;
+    const key = `${PAYMENT_PROOF_KEY_PREFIX}${id}_${randomHex()}.${extension}`;
+    const uploadedAt = new Date().toISOString();
+    let stored: Awaited<ReturnType<typeof env.LOGOS.put>>;
+    try {
+      stored = await env.LOGOS.put(key, file.stream(), {
+        httpMetadata: { contentType },
+        customMetadata: { owner: text(row.ownerId), invoice: id },
+      });
+    } catch {
+      return apiError(503, 'unavailable', 'Gagal mengunggah bukti pembayaran. Coba lagi.');
+    }
+    if (!stored) {
+      return apiError(503, 'unavailable', 'Gagal mengunggah bukti pembayaran. Coba lagi.');
+    }
+
+    // The row is what the one-shot check reads, so it is written after the
+    // object; if this fails the object is removed again rather than left as an
+    // orphan nobody's form knows about.
+    const saved = await patchRow(auth, 'invoices', id, {
+      paymentProofKey: key,
+      paymentProofUploadedAt: uploadedAt,
+    });
+    if (!saved) {
+      await env.LOGOS.delete(key).catch(() => undefined);
+      return apiError(500, 'validation', 'Gagal menyimpan bukti pembayaran. Coba lagi.');
+    }
+
+    // Owner replace: only once the row points at the new proof does the
+    // superseded object go away, so a reader mid-flight never sees a gap.
+    if (owner && previousKey && previousKey !== key) {
+      await env.LOGOS.delete(previousKey).catch(() => undefined);
+    }
+
+    return json(200, { key, uploadedAt, url: proofUrl(key) });
+  } finally {
+    await releaseProofUploadLock(env.LOGOS, lock);
   }
-
-  // Owner replace: only once the row points at the new proof does the
-  // superseded object go away, so a reader mid-flight never sees a gap.
-  if (owner && previousKey && previousKey !== key) {
-    await env.LOGOS.delete(previousKey).catch(() => undefined);
-  }
-
-  return json(200, { key, uploadedAt, url: proofUrl(key) });
 };
 
 function proofUrl(key: string): string {

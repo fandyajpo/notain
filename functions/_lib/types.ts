@@ -76,9 +76,18 @@ export type PagesFunction<E> = (context: {
 
 export type R2HttpMetadata = { contentType?: string };
 
+export type R2Conditional = {
+  etagMatches?: string;
+  etagDoesNotMatch?: string;
+  uploadedBefore?: Date;
+  uploadedAfter?: Date;
+};
+
 export interface R2Object {
   key: string;
   size: number;
+  etag?: string;
+  uploaded?: Date;
   httpMetadata?: R2HttpMetadata;
   customMetadata?: Record<string, string>;
 }
@@ -94,7 +103,11 @@ export interface R2Bucket {
   put(
     key: string,
     value: ArrayBuffer | ArrayBufferView | string | ReadableStream,
-    options?: { httpMetadata?: R2HttpMetadata; customMetadata?: Record<string, string> },
-  ): Promise<R2Object>;
+    options?: {
+      httpMetadata?: R2HttpMetadata;
+      customMetadata?: Record<string, string>;
+      onlyIf?: R2Conditional;
+    },
+  ): Promise<R2Object | null>;
   delete(key: string | string[]): Promise<void>;
 }

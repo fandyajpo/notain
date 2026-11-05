@@ -24,6 +24,7 @@ type PaymentRow = {
   currency?: string | null;
   status?: string | null;
   paidAt?: string | null;
+  activationStatus?: string | null;
   checkoutUrl?: string | null;
   dokuExpiredAt?: string | null;
   createdAt?: string | null;
@@ -49,7 +50,8 @@ function normalizeStatus(value: unknown): 'pending' | 'paid' | 'expired' | 'fail
  *   way anyone sees orders. Tenancy is therefore filtered here *and* in the
  *   Appwrite query: the API key bypasses row permissions, so a dropped or
  *   ignored query must never widen the answer.
- * - It is strictly a read; nothing this endpoint returns can change it.
+ * - This endpoint is strictly a read; activation retries happen through the
+ *   verified notification or authenticated status endpoint, never this portal.
  */
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method !== 'GET') {
@@ -109,6 +111,12 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
         amount: typeof row.amount === 'number' ? row.amount : null,
         currency: typeof row.currency === 'string' ? row.currency : 'IDR',
         status,
+        activationStatus:
+          row.activationStatus === 'active'
+            ? 'active'
+            : status === 'paid'
+              ? 'pending'
+              : 'unknown',
         paidAt: row.paidAt ?? null,
         createdAt: row.createdAt ?? null,
         resumeUrl: resumable ? row.checkoutUrl : null,

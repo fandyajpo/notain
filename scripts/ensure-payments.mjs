@@ -59,6 +59,17 @@ const STRING_ATTRIBUTES = [
   { key: 'dokuExpiredAt', size: 32 },
   { key: 'paidAt', size: 32 },
   { key: 'createdAt', size: 32 },
+  // Checkout snapshots the subscription baseline so concurrent/retried
+  // settlement cannot compound a renewal on a later organization state.
+  { key: 'planAtCheckout', size: 16 },
+  { key: 'planExpiresAtSnapshot', size: 32 },
+  // Added for recoverable activation: the paid order keeps a fixed target and
+  // retry state so a transient organization write cannot lose a subscription.
+  { key: 'activationStatus', size: 16 },
+  { key: 'activationPlan', size: 16 },
+  { key: 'activationExpiresAt', size: 32 },
+  { key: 'activationRetryAfter', size: 32 },
+  { key: 'activationError', size: 64 },
 ];
 
 const INTEGER_ATTRIBUTES = [

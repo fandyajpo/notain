@@ -70,7 +70,8 @@ export function appwriteFake(
     fake.fetch.mockImplementation(async (input: RequestInfo | URL, init: RequestInit = {}) => {
       const url = requestUrl(input);
       const method = (init.method ?? 'GET').toUpperCase();
-      fake.calls.push({ method, url, body: init.body });
+      const body = typeof init.body === 'string' ? safeJson(init.body) : undefined;
+      fake.calls.push({ method, url, body });
       if ((method === 'POST' || method === 'PATCH') && url.includes(marker)) {
         return json(403, { message: 'write forbidden' });
       }

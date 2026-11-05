@@ -503,6 +503,39 @@ describe('PATCH /api/orgs/<id> — rename', () => {
 });
 
 describe('DELETE /api/orgs/<id> — cascade', () => {
+  it('blocks deletion for a live DOKU order and a paid order awaiting activation', async () => {
+    fake = appwriteFake();
+    const A = 'org_aaaaaaaaaaaaaaaa';
+    seedOrg(A);
+    seedMembership(A, OWNER.$id, { role: 'owner', email: OWNER.email });
+    fake.rows.set('payments/pay-live', {
+      $id: 'pay-live',
+      orgId: A,
+      status: 'pending',
+      dokuExpiredAt: new Date(Date.now() + 60_000).toISOString(),
+    } as Row);
+
+    const pending = await handle(orgOnRequest, req('DELETE', `/api/orgs/${A}`), { id: A });
+    expect(pending.status).toBe(409);
+    expect(fake.rows.has(`organizations/${A}`)).toBe(true);
+    expect(fake.rows.has(`memberships/mem_${A}_${OWNER.$id}`)).toBe(true);
+
+    fake.rows.get('payments/pay-live')!.status = 'expired';
+    fake.rows.set('payments/pay-activation', {
+      $id: 'pay-activation',
+      orgId: A,
+      status: 'paid',
+      activationStatus: 'pending',
+    } as Row);
+    const activationPending = await handle(
+      orgOnRequest,
+      req('DELETE', `/api/orgs/${A}`),
+      { id: A },
+    );
+    expect(activationPending.status).toBe(409);
+    expect(fake.rows.has(`organizations/${A}`)).toBe(true);
+  });
+
   it('wipes every table for that org, leaves other orgs alone, then answers done', async () => {
     fake = appwriteFake();
     const A = 'org_aaaaaaaaaaaaaaaa';

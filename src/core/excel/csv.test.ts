@@ -59,7 +59,20 @@ describe('buildCsv', () => {
     expect(buildCsv([['a'], ['b']])).toBe('a\r\nb');
   });
 
-  it('coerces numbers to strings', () => {
-    expect(buildCsv([[150000, 2]])).toBe('150000,2');
+  it('coerces numbers to strings without treating negative numbers as formulas', () => {
+    expect(buildCsv([[150000, 2, -3]])).toBe('150000,2,-3');
+  });
+
+  it.each(['=1+1', '+SUM(A1:A2)', '-cmd', '@SUM(A1)', '  =1+1', '\t=1+1', '\r@SUM(A1)', '\u0001+1'])(
+    'prefixes formula-leading text with a single quote (%s)',
+    (value) => {
+      expect(parseCsv(buildCsv([[value]]))).toEqual([[`'${value}`]]);
+    },
+  );
+
+  it('does not prefix safe strings or numeric cells', () => {
+    expect(buildCsv([['ordinary text', ' leading text', -42]])).toBe(
+      'ordinary text, leading text,-42',
+    );
   });
 });

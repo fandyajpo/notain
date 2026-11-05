@@ -18,6 +18,8 @@ import { PLAN_VALUES, type Plan } from '../core/profile/model';
 
 export type PaymentStatusValue = 'pending' | 'paid' | 'expired' | 'failed';
 
+export type PaymentActivationStatus = 'pending' | 'active' | 'unknown';
+
 export type PaymentStatusView = {
   invoiceNumber: string;
   plan: string;
@@ -26,6 +28,8 @@ export type PaymentStatusView = {
   status: PaymentStatusValue;
   paidAt: string | null;
   expiresAt: string | null;
+  activationStatus: PaymentActivationStatus;
+  activationError: string | null;
 };
 
 async function bearerFetch(path: string, init: RequestInit = {}): Promise<Response> {
@@ -135,6 +139,11 @@ export async function fetchPaymentStatus(invoice: string): Promise<PaymentStatus
     status,
     paidAt: typeof body.paidAt === 'string' ? body.paidAt : null,
     expiresAt: typeof body.expiresAt === 'string' ? body.expiresAt : null,
+    activationStatus:
+      body.activationStatus === 'active' || body.activationStatus === 'pending'
+        ? body.activationStatus
+        : 'unknown',
+    activationError: typeof body.activationError === 'string' ? body.activationError : null,
   };
 }
 
@@ -145,6 +154,7 @@ export type PortalPayment = {
   amount: number | null;
   currency: string;
   status: PaymentStatusValue;
+  activationStatus: PaymentActivationStatus;
   paidAt: string | null;
   createdAt: string | null;
   /** Hosted DOKU page for a still-payable pending order; null otherwise. */
@@ -205,6 +215,10 @@ export async function readPortalSession(): Promise<PortalSession> {
             amount: typeof row.amount === 'number' ? row.amount : null,
             currency: typeof row.currency === 'string' ? row.currency : 'IDR',
             status,
+            activationStatus:
+              row.activationStatus === 'active' || row.activationStatus === 'pending'
+                ? row.activationStatus
+                : 'unknown',
             paidAt: typeof row.paidAt === 'string' ? row.paidAt : null,
             createdAt: typeof row.createdAt === 'string' ? row.createdAt : null,
             resumeUrl:

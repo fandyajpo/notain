@@ -210,7 +210,9 @@ describe('POST /api/payments/doku-notify', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
-      applied: false,
+      applied: true,
+      status: 'paid',
+      activationStatus: 'pending',
       reason: 'org_missing',
     });
     // The money is recorded even though the upgrade needs manual resolution.

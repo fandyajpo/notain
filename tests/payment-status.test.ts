@@ -253,6 +253,62 @@ describe('GET /api/payments/status', () => {
     expect(writes()).toContain('PATCH organizations/' + ORG);
   });
 
+  it('retries paid activation from its fixed target without probing DOKU or extending twice', async () => {
+    const targetExpiry = new Date(NOW + 30 * 24 * 60 * 60 * 1000).toISOString();
+    fake = appwriteFake({
+      writeFailureFor: `/collections/organizations/documents/${ORG}`,
+    });
+    fake.rows.set(
+      'payments/' + INVOICE,
+      payment({
+        status: 'paid',
+        paidAt: new Date(NOW).toISOString(),
+        activationStatus: 'pending',
+        activationPlan: 'pro',
+        activationExpiresAt: targetExpiry,
+        activationRetryAfter: null,
+      }),
+    );
+    fake.rows.set('organizations/' + ORG, {
+      $id: ORG,
+      name: 'Kopi Senja',
+      ownerId: 'user-1',
+      plan: 'free',
+      planExpiresAt: null,
+    });
+
+    const first = await handle(get());
+    expect(first.status).toBe(200);
+    await expect(first.json()).resolves.toMatchObject({
+      status: 'paid',
+      activationStatus: 'pending',
+      activationError: 'organization_update_failed',
+    });
+    expect(fake.rows.get('payments/' + INVOICE)?.status).toBe('paid');
+    expect(fake.rows.get('organizations/' + ORG)?.plan).toBe('free');
+    expect(dokuCalls).toEqual([]);
+
+    const deferredPayment = { ...fake.rows.get('payments/' + INVOICE)! };
+    vi.setSystemTime(new Date(NOW + 16_000));
+    fake = appwriteFake();
+    fake.rows.set('payments/' + INVOICE, deferredPayment);
+    fake.rows.set('organizations/' + ORG, {
+      $id: ORG,
+      name: 'Kopi Senja',
+      ownerId: 'user-1',
+      plan: 'free',
+      planExpiresAt: null,
+    });
+
+    const retry = await handle(get());
+    expect(retry.status).toBe(200);
+    await expect(retry.json()).resolves.toMatchObject({ status: 'paid', activationStatus: 'active' });
+    expect(fake.rows.get('payments/' + INVOICE)?.status).toBe('paid');
+    expect(fake.rows.get('payments/' + INVOICE)?.activationStatus).toBe('active');
+    expect(fake.rows.get('organizations/' + ORG)?.planExpiresAt).toBe(targetExpiry);
+    expect(dokuCalls).toEqual([]);
+  });
+
   it('never extends the plan twice, however often it is polled after success', async () => {
     dokuHandler = () => json(200, statusBody({ status: 'SUCCESS' }));
 

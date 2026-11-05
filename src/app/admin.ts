@@ -149,12 +149,15 @@ export async function listAdminUsers(
   return parseAdminResponse<AdminUserPage>(response);
 }
 
-export async function updateAdminUser(update: AdminUserUpdate): Promise<void> {
+export async function updateAdminUser(
+  update: AdminUserUpdate,
+): Promise<{ auditWritten: boolean }> {
   const response = await adminFetch('/api/admin/users', {
     method: 'PATCH',
     body: JSON.stringify(update),
   });
-  await parseAdminResponse<unknown>(response);
+  const body = await parseAdminResponse<{ auditWritten?: unknown }>(response);
+  return { auditWritten: body.auditWritten !== false };
 }
 
 /** Suspends (blocks) or re-activates a user's Appwrite account. */

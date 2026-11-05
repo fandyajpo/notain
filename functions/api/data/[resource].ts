@@ -11,6 +11,9 @@ import {
 import { requireOrg } from '../../_lib/orgs';
 import type { TableId } from '../../_lib/rows';
 import type { Env, PagesFunction } from '../../_lib/types';
+import { invoiceDraftSchema } from '../../../src/core/invoice/schema';
+import { INVOICE_STATUSES, type InvoiceDraft, type InvoiceStatus } from '../../../src/core/invoice/model';
+import { canChangeStatus, statusFlowMessage } from '../../../src/core/invoice/status';
 
 /**
  * `GET|POST|PATCH|DELETE /api/data/<resource>?orgId=…` — the ONLY write path
@@ -170,18 +173,67 @@ const SEARCH_MIN_CHARS = 3;
 const BULK_DELETE_MAX = 20;
 
 const RESOURCE_ID = /^[A-Za-z0-9_-]{1,64}$/;
+const INVOICE_NULLABLE_FIELDS = new Set([
+  'dueDate',
+  'templateId',
+  'status',
+  'customerPhone',
+  'customerEmail',
+  'details',
+  'notes',
+]);
+const INVOICE_WRITE_FIELDS = new Set([
+  'invoiceNumber',
+  'date',
+  'dueDate',
+  'templateId',
+  'status',
+  'customerName',
+  'customerPhone',
+  'customerEmail',
+  'items',
+  'details',
+  'discountType',
+  'discountValue',
+  'taxType',
+  'taxValue',
+  'notes',
+  'headerHtml',
+  'contentHtml',
+  'footerHtml',
+]);
+const REQUIRED_INVOICE_FIELDS = [
+  'invoiceNumber',
+  'date',
+  'customerName',
+  'items',
+  'discountType',
+  'discountValue',
+  'taxType',
+  'taxValue',
+  'headerHtml',
+  'contentHtml',
+  'footerHtml',
+] as const;
 
 /**
  * Keeps plain JSON the Appwrite schema can judge: scalars, arrays and plain
  * objects only, strings bounded, forbidden keys dropped (silently — the same
  * "whitelist wins" rule the profile Function uses).
  */
-function sanitizeBody(raw: unknown): Record<string, unknown> | null {
+function sanitizeBody(
+  raw: unknown,
+  nullableFields: ReadonlySet<string> = new Set(),
+): Record<string, unknown> | null {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
     if (FORBIDDEN_BODY_KEYS.has(key)) continue;
-    if (value === null || typeof value === 'undefined') continue;
+    if (value === null) {
+      if (nullableFields.has(key)) out[key] = null;
+      continue;
+    }
+    if (typeof value === 'undefined') continue;
     const type = typeof value;
     if (type === 'string') {
       if ((value as string).length > MAX_STRING_CHARS) return null;
@@ -203,6 +255,86 @@ function sanitizeBody(raw: unknown): Record<string, unknown> | null {
     return null; // cycles / non-serialisable
   }
   return out;
+}
+
+function invoiceStatus(value: unknown): { valid: true; value: InvoiceStatus | null } | { valid: false } {
+  if (value == null || value === '') return { valid: true, value: null };
+  if ((INVOICE_STATUSES as readonly unknown[]).includes(value)) {
+    return { valid: true, value: value as InvoiceStatus };
+  }
+  return { valid: false };
+}
+
+function jsonColumn(value: unknown, fallback: unknown): unknown {
+  if (value == null || value === '') return fallback;
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+function validateInvoiceDraft(
+  row: Record<string, unknown>,
+  requireCreateFields: boolean,
+): { ok: true; draft: InvoiceDraft } | { ok: false; message: string } {
+  if (
+    requireCreateFields &&
+    REQUIRED_INVOICE_FIELDS.some((field) => !Object.prototype.hasOwnProperty.call(row, field))
+  ) {
+    return { ok: false, message: 'Data invoice belum lengkap.' };
+  }
+
+  const status = invoiceStatus(row.status);
+  if (!status.valid) return { ok: false, message: 'Status invoice tidak valid.' };
+  const parsed = invoiceDraftSchema.safeParse({
+    invoiceNumber: row.invoiceNumber,
+    date: row.date,
+    dueDate: row.dueDate == null ? undefined : row.dueDate,
+    templateId: row.templateId == null ? undefined : row.templateId,
+    status: status.value,
+    customerName: row.customerName,
+    customerPhone: row.customerPhone == null ? undefined : row.customerPhone,
+    customerEmail: row.customerEmail == null ? undefined : row.customerEmail,
+    items: jsonColumn(row.items, []),
+    discount: { type: row.discountType ?? 'amount', value: row.discountValue ?? 0 },
+    tax: { type: row.taxType ?? 'amount', value: row.taxValue ?? 0 },
+    sections: {
+      header: row.headerHtml ?? '',
+      content: row.contentHtml ?? '',
+      footer: row.footerHtml ?? '',
+    },
+    details: jsonColumn(row.details, {}),
+    notes: row.notes == null ? undefined : row.notes,
+  });
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0]?.message ?? 'Data invoice tidak valid.' };
+  }
+  return { ok: true, draft: parsed.data as InvoiceDraft };
+}
+
+function invoiceDraftToRowData(draft: InvoiceDraft): Record<string, unknown> {
+  return {
+    invoiceNumber: draft.invoiceNumber,
+    date: draft.date,
+    dueDate: draft.dueDate ?? null,
+    templateId: draft.templateId ?? null,
+    status: draft.status ?? '',
+    customerName: draft.customerName,
+    customerPhone: draft.customerPhone ?? null,
+    customerEmail: draft.customerEmail ?? null,
+    items: JSON.stringify(draft.items),
+    details: Object.keys(draft.details).length > 0 ? JSON.stringify(draft.details) : null,
+    discountType: draft.discount.type,
+    discountValue: draft.discount.value,
+    taxType: draft.tax.type,
+    taxValue: draft.tax.value,
+    notes: draft.notes ?? null,
+    headerHtml: draft.sections.header,
+    contentHtml: draft.sections.content,
+    footerHtml: draft.sections.footer,
+  };
 }
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, params }) => {
@@ -285,9 +417,24 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     }
     if (!body) return apiError(400, 'validation', 'Format permintaan tidak valid.');
 
-    const data = sanitizeBody(body.data);
+    let data = sanitizeBody(
+      body.data,
+      resource === 'invoices' ? INVOICE_NULLABLE_FIELDS : undefined,
+    );
     if (data === null || Object.keys(data).length === 0) {
       return apiError(400, 'validation', 'Data yang dikirim tidak valid.');
+    }
+
+    if (resource === 'invoices') {
+      if (Object.keys(data).some((key) => !INVOICE_WRITE_FIELDS.has(key))) {
+        return apiError(400, 'validation', 'Kolom invoice tidak dikenal.');
+      }
+      const parsed = validateInvoiceDraft(data, true);
+      if (!parsed.ok) return apiError(400, 'validation', parsed.message);
+      if (parsed.draft.status !== null) {
+        return apiError(400, 'validation', 'Invoice baru harus berstatus belum dikirim.');
+      }
+      data = invoiceDraftToRowData(parsed.draft);
     }
 
     // Stamp tenancy from the gate + session; the body cannot set these.
@@ -334,16 +481,55 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     } catch {
       body = null;
     }
-    const data = body ? sanitizeBody(body.data) : null;
+    const data =
+      body === null
+        ? null
+        : sanitizeBody(body.data, resource === 'invoices' ? INVOICE_NULLABLE_FIELDS : undefined);
     if (data === null || Object.keys(data).length === 0) {
       return apiError(400, 'validation', 'Data yang dikirim tidak valid.');
+    }
+    if (
+      resource === 'invoices' &&
+      Object.keys(data).some((key) => !INVOICE_WRITE_FIELDS.has(key))
+    ) {
+      return apiError(400, 'validation', 'Kolom invoice tidak dikenal.');
     }
 
     const existing = await getRow(auth, config.table, rowId, env);
     if (!existing || existing.orgId !== orgId) {
       return apiError(404, 'not_found', 'Data tidak ditemukan.');
     }
-    if (!(await patchRow(auth, config.table, rowId, data))) {
+
+    let updateData = data;
+    if (resource === 'invoices') {
+      const currentStatus = invoiceStatus(existing.status);
+      if (!currentStatus.valid) {
+        return apiError(409, 'conflict', 'Status invoice tersimpan tidak valid. Muat ulang data.');
+      }
+      const nextRow = { ...existing, ...data };
+      const parsed = validateInvoiceDraft(nextRow, false);
+      if (!parsed.ok) return apiError(400, 'validation', parsed.message);
+
+      if (Object.prototype.hasOwnProperty.call(data, 'status')) {
+        const nextStatus = invoiceStatus(data.status);
+        if (!nextStatus.valid) return apiError(400, 'validation', 'Status invoice tidak valid.');
+        if (!canChangeStatus(currentStatus.value, nextStatus.value)) {
+          return apiError(
+            409,
+            'conflict',
+            statusFlowMessage(currentStatus.value, nextStatus.value),
+          );
+        }
+      }
+
+      const normalized = invoiceDraftToRowData(parsed.draft);
+      updateData = {};
+      for (const key of Object.keys(data)) {
+        updateData[key] = key === 'status' ? (parsed.draft.status ?? '') : normalized[key];
+      }
+    }
+
+    if (!(await patchRow(auth, config.table, rowId, updateData))) {
       return apiError(503, 'unavailable', 'Gagal menyimpan data. Coba lagi.');
     }
     const updated = await getRow(auth, config.table, rowId, env);

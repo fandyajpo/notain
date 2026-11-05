@@ -111,6 +111,22 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     if (settled) {
       payment = ((await getRow(auth, 'payments', invoice)) as StatusRow | null) ?? payment;
     }
+  } else if (payment.status === 'paid' && payment.activationStatus !== 'active') {
+    // Payment confirmation and subscription activation are separate persisted
+    // steps. A later status read retries the fixed activation target without
+    // calling DOKU again or changing the paid state.
+    const settled = await settlePayment(env, auth, payment, {
+      status: 'SUCCESS',
+      invoiceNumber: payment.$id,
+      amount: typeof payment.amount === 'number' ? payment.amount : null,
+      transactionDate: payment.paidAt ?? null,
+    });
+    if (settled.kind === 'error') {
+      console.error('payments/status: activation retry failed for', payment.$id, settled.message);
+    }
+    if (settled.kind !== 'noop' && settled.kind !== 'unknown_order') {
+      payment = ((await getRow(auth, 'payments', invoice)) as StatusRow | null) ?? payment;
+    }
   }
 
   return json(
@@ -123,6 +139,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       status: payment.status ?? 'pending',
       paidAt: payment.paidAt ?? null,
       expiresAt: payment.dokuExpiredAt ?? null,
+      activationStatus:
+        payment.activationStatus === 'active'
+          ? 'active'
+          : payment.status === 'paid'
+            ? 'pending'
+            : 'unknown',
+      activationError: payment.activationError ?? null,
     },
     // Personalised billing state that this very request may have just changed:
     // never let an intermediary hold on to it.

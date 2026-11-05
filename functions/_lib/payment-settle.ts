@@ -1,61 +1,37 @@
 import { getRow, patchRow, type TableAuth } from './rows';
 import { writeAudit } from './audit';
-import { computePlanExpiry } from '../../src/core/billing/plans';
+import { computePlanExpiry, isSubscriptionActive, planRank } from '../../src/core/billing/plans';
 import { decideTransition } from '../../src/core/billing/payment-state';
 import type { DokuNotification } from '../../src/core/billing/doku';
 import type { Env } from './types';
 
 /**
  * The one place a payment row is allowed to move and a plan is allowed to be
- * activated. Two callers feed it, and both must behave identically because
- * they carry the same authority:
+ * activated. Both the signed webhook and our authenticated Check Status probe
+ * feed it, so they share the same trust boundary and retry behavior.
  *
- * - `POST /api/payments/doku-notify` — DOKU's HTTP notification, proven by the
- *   signature over the raw request body.
- * - `GET /api/payments/status` — our own Check Status probe, proven by having
- *   chosen the fixed HTTPS endpoint and asked about a row we already own.
- *
- * In both cases the payload is DOKU's, never the client's: a redirect
- * parameter, a query string or a browser request still cannot move money or
- * change `organizations.plan`. Everything downstream of `settlePayment`
- * therefore trusts `payment` (our own row) and `notification` (verified DOKU
- * data) and nothing else.
- *
- * Tenancy: the plan belongs to the ORGANIZATION the order was bought for
- * (`payment.orgId`, stamped by checkout from a membership-gated orgId), so
- * activation patches `organizations/<orgId>` — never a user-scoped row. A
- * legacy row without `orgId`, or an org deleted mid-flight, is left visible
- * as paid and audited for manual resolution.
- *
- * Idempotency: the transition is decided from the row's *current* state, so a
- * repeat of an already-final row is acknowledged without re-activating — expiry
- * math can never run twice for one payment. The payment row is flipped to
- * `paid` *before* the org write: that flip is the anchor, so if activation
- * then fails a retry sees `paid` and never double-extends the expiry. The
- * failure is audited (`payment.paid.activation-failed`) for manual resolution;
- * a paid row is never rolled back to pending, because the money is real.
+ * A verified payment is recorded as `paid` before activation. Activation is a
+ * separate, persisted state (`pending` → `active`) with a frozen target plan
+ * and expiry. If the organization write fails or the Worker stops between the
+ * writes, either payment path can retry that exact target without extending a
+ * subscription twice. The paid state is never rolled back: the money is real.
  */
 
 export type PaymentRow = {
   $id: string;
-  /** The organization the plan was bought for — tenancy. */
   orgId?: string | null;
   ownerId?: string | null;
   plan?: string | null;
   amount?: number | null;
   status?: string | null;
   paidAt?: string | null;
-  /**
-   * Frozen at checkout by the checkout Function: the ORGANIZATION's plan and
-   * expiry at order time. Settlement computes the new expiry from THIS
-   * baseline, so two isolates settling the same order race to write the SAME
-   * value (idempotent) instead of each reading the org after the other's
-   * patch and compounding the extension. Rows created before these columns
-   * existed simply lack them — the `in` check below falls back to the org's
-   * live values for those.
-   */
   planAtCheckout?: string | null;
   planExpiresAtSnapshot?: string | null;
+  activationStatus?: string | null;
+  activationPlan?: string | null;
+  activationExpiresAt?: string | null;
+  activationRetryAfter?: string | null;
+  activationError?: string | null;
 };
 
 export type OrgRow = {
@@ -65,17 +41,12 @@ export type OrgRow = {
 };
 
 export type SettleOutcome =
-  /** Signed by DOKU but for an order we never made — ignore it. */
   | { kind: 'unknown_order' }
-  /** Nothing to do: duplicate, or a non-final channel state (FAILED, PENDING…). */
   | { kind: 'noop'; reason: string }
-  /** Order outlived its due date without payment. */
   | { kind: 'expired' }
-  /** Payment recorded and the organization's plan upgraded. */
   | { kind: 'paid'; paidAt: string; plan: string; expiry: string }
-  /** Row is `paid` but no org row exists to upgrade — manual resolution. */
   | { kind: 'org_missing'; paidAt: string }
-  /** The payment row itself could not be written; the caller decides. */
+  | { kind: 'activation_pending'; paidAt: string }
   | { kind: 'error'; message: string };
 
 /** Payment states this module knows how to act on. */
@@ -83,17 +54,19 @@ function normalizeStatus(value: unknown): 'pending' | 'paid' | 'expired' {
   return value === 'paid' || value === 'expired' ? value : 'pending';
 }
 
+function paidPlan(value: unknown): 'pro' | 'business' {
+  return value === 'business' ? 'business' : 'pro';
+}
+
+const ACTIVATION_RETRY_DELAY_MS = 15_000;
+
 export async function settlePayment(
   env: Env,
   auth: TableAuth,
   payment: PaymentRow | null,
   notification: DokuNotification,
 ): Promise<SettleOutcome> {
-  if (!payment) {
-    // Verified by DOKU but for an order we never made (probe/stale replay):
-    // acknowledge and ignore — we will not activate anything unknown.
-    return { kind: 'unknown_order' };
-  }
+  if (!payment) return { kind: 'unknown_order' };
 
   const amountMatches =
     notification.amount !== null && Number(payment.amount) === notification.amount;
@@ -125,6 +98,16 @@ export async function settlePayment(
         }),
       });
     }
+
+    if (
+      transition.action === 'duplicate' &&
+      payment.status === 'paid' &&
+      notification.status === 'SUCCESS' &&
+      amountMatches &&
+      payment.activationStatus !== 'active'
+    ) {
+      return activatePaidPayment(env, auth, payment, payment.paidAt ?? new Date().toISOString());
+    }
     return { kind: 'noop', reason: transition.action };
   }
 
@@ -142,69 +125,133 @@ export async function settlePayment(
     return { kind: 'expired' };
   }
 
-  // --- activate ----------------------------------------------------------
-  const paidAt = transition.paidAt ?? new Date().toISOString();
+  // Record the confirmed money first, then make plan activation recoverable.
+  const paidAt = transition.paidAt ?? payment.paidAt ?? new Date().toISOString();
   const flipped = await patchRow(auth, 'payments', payment.$id, {
     status: 'paid',
     paidAt,
+    activationStatus: 'pending',
+    activationError: null,
+    activationRetryAfter: null,
   });
   if (!flipped) return { kind: 'error', message: 'Gagal memperbarui pembayaran.' };
 
-  const plan = payment.plan === 'business' ? 'business' : 'pro';
+  return activatePaidPayment(
+    env,
+    auth,
+    { ...payment, status: 'paid', paidAt, activationStatus: 'pending', activationRetryAfter: null },
+    paidAt,
+  );
+}
+
+async function activatePaidPayment(
+  env: Env,
+  auth: TableAuth,
+  payment: PaymentRow,
+  paidAt: string,
+): Promise<SettleOutcome> {
+  const retryAfter = payment.activationRetryAfter ? Date.parse(payment.activationRetryAfter) : NaN;
+  if (Number.isFinite(retryAfter) && retryAfter > Date.now()) {
+    return { kind: 'activation_pending', paidAt };
+  }
+
+  const plan = paidPlan(payment.plan);
   const org = payment.orgId
     ? ((await getRow(auth, 'organizations', payment.orgId)) as OrgRow | null)
     : null;
   if (!org) {
-    // Paid but no organization row to upgrade (legacy row without orgId, or
-    // the org was deleted mid-flight): keep the money visible as paid, surface
-    // loudly for manual resolution — never fabricate an organization.
-    await writeAudit(env, {
-      actorId: payment.ownerId ?? 'system',
-      actorEmail: '',
-      action: 'payment.paid.org-missing',
-      targetType: 'payment',
-      targetId: payment.$id,
-      detail: JSON.stringify({ plan, paidAt, orgId: payment.orgId ?? null }),
-    });
+    await deferActivation(env, auth, payment, 'organization_missing');
+    await writeActivationFailure(env, payment, 'organization_missing');
     console.error('payments: organization missing for payment', payment.$id, payment.orgId);
     return { kind: 'org_missing', paidAt };
   }
 
-  // The expiry baseline is the checkout-time snapshot frozen on the payment
-  // row (see the type above), not the org's live state: two isolates settling
-  // the same order — the webhook and the Check-Status probe, or two webhook
-  // deliveries landing on different isolates — both compute the SAME expiry
-  // and their org patches converge on one value. Reading the org at settle
-  // time (the pre-snapshot behaviour, kept for legacy rows) is what allowed
-  // the second settler to extend on top of the first's write.
-  const hasSnapshot = 'planExpiresAtSnapshot' in payment;
-  const currentPlan = hasSnapshot ? (payment.planAtCheckout ?? 'free') : (org.plan ?? 'free');
-  const currentExpiresAt = hasSnapshot
-    ? (payment.planExpiresAtSnapshot ?? null)
-    : (org.planExpiresAt ?? null);
-  const expiry = computePlanExpiry({
-    currentPlan,
-    currentExpiresAt,
-    newPlan: plan,
-    paidAt: new Date(paidAt),
-  });
-  const activated = await patchRow(auth, 'organizations', org.$id, {
-    plan,
-    planExpiresAt: expiry.toISOString(),
-  });
-  if (!activated) {
-    // Row is already `paid` (anchor above), so a DOKU retry lands on the
-    // duplicate path — that would NOT heal this. Audit for the admin path.
-    await writeAudit(env, {
-      actorId: payment.ownerId ?? 'system',
-      actorEmail: '',
-      action: 'payment.paid.activation-failed',
-      targetType: 'payment',
-      targetId: payment.$id,
-      detail: JSON.stringify({ plan, paidAt, expiry: expiry.toISOString() }),
+  let activationPlan = payment.activationPlan;
+  let activationExpiresAt = payment.activationExpiresAt;
+  const hasTarget =
+    activationPlan === 'pro' || activationPlan === 'business'
+      ? typeof activationExpiresAt === 'string' && Number.isFinite(Date.parse(activationExpiresAt))
+      : false;
+
+  // Old paid rows predate the activation marker. If their organization already
+  // has an active plan at least as strong as this order, preserve that state
+  // instead of calculating a second renewal from a later live expiry.
+  const hasCheckoutSnapshot = 'planExpiresAtSnapshot' in payment;
+  if (
+    !hasTarget &&
+    payment.activationStatus == null &&
+    !hasCheckoutSnapshot &&
+    planRank(org.plan ?? 'free') >= planRank(plan) &&
+    isSubscriptionActive(org.plan, org.planExpiresAt)
+  ) {
+    const expiry = org.planExpiresAt ?? '';
+    const marked = await patchRow(auth, 'payments', payment.$id, {
+      activationStatus: 'active',
+      activationPlan: plan,
+      activationExpiresAt: expiry,
+      activationRetryAfter: null,
+      activationError: null,
     });
-    console.error('payments: org activation failed for', payment.orgId);
-    return { kind: 'error', message: 'Aktivasi plan gagal.' };
+    if (!marked) return { kind: 'activation_pending', paidAt };
+    return { kind: 'paid', paidAt, plan, expiry };
+  }
+
+  if (!hasTarget) {
+    const baselinePlan = hasCheckoutSnapshot ? (payment.planAtCheckout ?? 'free') : (org.plan ?? 'free');
+    const baselineExpiry = hasCheckoutSnapshot
+      ? (payment.planExpiresAtSnapshot ?? null)
+      : (org.planExpiresAt ?? null);
+    activationPlan = plan;
+    activationExpiresAt = computePlanExpiry({
+      currentPlan: baselinePlan,
+      currentExpiresAt: baselineExpiry,
+      newPlan: plan,
+      paidAt: new Date(paidAt),
+    }).toISOString();
+  }
+
+  const nextRetryAt = new Date(Date.now() + ACTIVATION_RETRY_DELAY_MS).toISOString();
+  const prepared = await patchRow(auth, 'payments', payment.$id, {
+    activationStatus: 'pending',
+    activationPlan,
+    activationExpiresAt,
+    activationRetryAfter: nextRetryAt,
+    activationError: null,
+  });
+  if (!prepared) return { kind: 'activation_pending', paidAt };
+
+  const targetExpiryMs = Date.parse(activationExpiresAt!);
+  const currentExpiryMs =
+    org.planExpiresAt == null || org.planExpiresAt === ''
+      ? Number.POSITIVE_INFINITY
+      : Date.parse(org.planExpiresAt);
+  const alreadyCovered =
+    planRank(org.plan ?? 'free') >= planRank(activationPlan!) &&
+    isSubscriptionActive(org.plan, org.planExpiresAt) &&
+    currentExpiryMs >= targetExpiryMs;
+
+  if (!alreadyCovered) {
+    const activated = await patchRow(auth, 'organizations', org.$id, {
+      plan: activationPlan,
+      planExpiresAt: activationExpiresAt,
+    });
+    if (!activated) {
+      await deferActivation(env, auth, payment, 'organization_update_failed');
+      await writeActivationFailure(env, payment, 'organization_update_failed');
+      console.error('payments: org activation failed for', payment.orgId);
+      return { kind: 'activation_pending', paidAt };
+    }
+  }
+
+  const marked = await patchRow(auth, 'payments', payment.$id, {
+    activationStatus: 'active',
+    activationRetryAfter: null,
+    activationError: null,
+  });
+  if (!marked) {
+    await deferActivation(env, auth, payment, 'activation_marker_update_failed');
+    await writeActivationFailure(env, payment, 'activation_marker_update_failed');
+    return { kind: 'activation_pending', paidAt };
   }
 
   await writeAudit(env, {
@@ -213,8 +260,38 @@ export async function settlePayment(
     action: 'payment.paid',
     targetType: 'payment',
     targetId: payment.$id,
-    detail: JSON.stringify({ plan, amount: payment.amount, paidAt, expiry: expiry.toISOString() }),
+    detail: JSON.stringify({ plan: activationPlan, amount: payment.amount, paidAt, expiry: activationExpiresAt }),
   });
 
-  return { kind: 'paid', paidAt, plan, expiry: expiry.toISOString() };
+  return { kind: 'paid', paidAt, plan: activationPlan!, expiry: activationExpiresAt! };
+}
+
+async function deferActivation(
+  env: Env,
+  auth: TableAuth,
+  payment: PaymentRow,
+  reason: string,
+): Promise<void> {
+  const retryAfter = new Date(Date.now() + ACTIVATION_RETRY_DELAY_MS).toISOString();
+  const updated = await patchRow(auth, 'payments', payment.$id, {
+    activationStatus: 'pending',
+    activationRetryAfter: retryAfter,
+    activationError: reason,
+  });
+  if (!updated) console.error('payments: could not persist activation retry state for', payment.$id);
+}
+
+async function writeActivationFailure(
+  env: Env,
+  payment: PaymentRow,
+  reason: string,
+): Promise<void> {
+  await writeAudit(env, {
+    actorId: payment.ownerId ?? 'system',
+    actorEmail: '',
+    action: 'payment.paid.activation-failed',
+    targetType: 'payment',
+    targetId: payment.$id,
+    detail: JSON.stringify({ reason, orgId: payment.orgId ?? null }),
+  });
 }

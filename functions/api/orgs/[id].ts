@@ -1,7 +1,15 @@
 import { writeAudit } from '../../_lib/audit';
 import { verifySession } from '../../_lib/appwrite';
 import { apiError, json } from '../../_lib/http';
-import { deleteRow, getRow, listRows, patchRow, tableAuth, type TableAuth } from '../../_lib/rows';
+import {
+  deleteRow,
+  getRow,
+  listRows,
+  listRowsPage,
+  patchRow,
+  tableAuth,
+  type TableAuth,
+} from '../../_lib/rows';
 import { requireOrgOwner } from '../../_lib/orgs';
 import { isBusinessSubtypeSlug } from '../../../src/core/business/taxonomy';
 import type { Session } from '../../_lib/appwrite';
@@ -201,6 +209,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
       }
     }
 
+    const paymentGuard = await guardLivePayments(auth, orgId, env);
+    if (paymentGuard) return paymentGuard;
+
     let budget = BUDGET;
 
     // 1. Access is cut before anything else: even if this call runs out of
@@ -313,3 +324,48 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     allow: 'PATCH, DELETE',
   });
 };
+
+
+/** Refuse deletion while DOKU may still settle money or paid activation is incomplete. */
+async function guardLivePayments(
+  auth: TableAuth,
+  orgId: string,
+  env: Env,
+): Promise<Response | null> {
+  const page = await listRowsPage(
+    auth,
+    'payments',
+    [
+      { method: 'equal', attribute: 'orgId', values: [orgId] },
+      { method: 'orderAsc', attribute: '$id', values: [] },
+      { method: 'limit', values: [1000] },
+    ],
+    env,
+  );
+  if (!page) {
+    return apiError(503, 'unavailable', 'Status pembayaran tidak bisa diverifikasi. Coba lagi.');
+  }
+  if (page.total > page.rows.length) {
+    return apiError(503, 'unavailable', 'Riwayat pembayaran terlalu besar untuk diverifikasi.');
+  }
+
+  const now = Date.now();
+  const protectedOrder = page.rows.some((row) => {
+    if (row.status === 'paid' && row.activationStatus === 'pending') return true;
+    if (row.status !== 'pending') return false;
+    const expiry = typeof row.dokuExpiredAt === 'string' ? Date.parse(row.dokuExpiredAt) : NaN;
+    return (
+      row.dokuExpiredAt == null ||
+      row.dokuExpiredAt === '' ||
+      !Number.isFinite(expiry) ||
+      expiry > now
+    );
+  });
+  return protectedOrder
+    ? apiError(
+        409,
+        'conflict',
+        'Organisasi belum bisa dihapus selama pembayaran masih aktif atau aktivasi paket sedang diproses.',
+      )
+    : null;
+}

@@ -58,25 +58,48 @@ function seedMembership(orgId: string, userId: string): void {
   } as Row);
 }
 
+function validInvoiceData(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    invoiceNumber: 'INV-2026-001',
+    date: '2026-10-01',
+    dueDate: null,
+    templateId: null,
+    status: 'sent',
+    customerName: 'Budi Santoso',
+    customerPhone: null,
+    customerEmail: null,
+    items: JSON.stringify([{ id: 'item-1', name: 'Jasa', quantity: 1, unitPrice: 1000 }]),
+    details: null,
+    discountType: 'amount',
+    discountValue: 0,
+    taxType: 'amount',
+    taxValue: 0,
+    notes: null,
+    headerHtml: '',
+    contentHtml: '',
+    footerHtml: '',
+    ...overrides,
+  };
+}
+
 /** Seeds one invoice row in each of two orgs; returns the ids. */
 function seedInvoices(): { mine: string; theirs: string } {
   fake!.rows.set('invoices/inv_mine', {
     $id: 'inv_mine',
     orgId: A,
     ownerId: OWNER.$id,
-    invoiceNumber: 'INV-2026-001',
-    customerName: 'Budi Santoso',
-    status: 'lunas',
-    date: '2026-10-01',
+    ...validInvoiceData(),
   } as Row);
   fake!.rows.set('invoices/inv_theirs', {
     $id: 'inv_theirs',
     orgId: B,
     ownerId: 'user-2',
-    invoiceNumber: 'INV-2026-777',
-    customerName: 'Orang Lain',
-    status: 'draft',
-    date: '2026-10-02',
+    ...validInvoiceData({
+      invoiceNumber: 'INV-2026-777',
+      customerName: 'Orang Lain',
+      date: '2026-10-02',
+      status: 'sent',
+    }),
   } as Row);
   return { mine: 'inv_mine', theirs: 'inv_theirs' };
 }
@@ -153,7 +176,7 @@ describe('GET /api/data/<resource> — list isolation', () => {
     expect(((await range.json()) as { total: number }).total).toBe(0);
 
     // Equality incl. the empty-string status bucket.
-    const status = await invoices(`/api/data/invoices?orgId=${A}&eq_status=lunas`);
+    const status = await invoices(`/api/data/invoices?orgId=${A}&eq_status=sent`);
     expect(((await status.json()) as { rows: Row[] }).rows).toHaveLength(1);
   });
 
@@ -183,8 +206,11 @@ describe('POST /api/data/<resource> — create', () => {
           // Attacker-controlled attempt: the body cannot choose tenancy.
           orgId: B,
           ownerId: 'user-2',
-          invoiceNumber: 'INV-2026-010',
-          customerName: 'Baru',
+          ...validInvoiceData({
+            invoiceNumber: 'INV-2026-010',
+            customerName: 'Baru',
+            status: '',
+          }),
         },
         rowId: 'inv_new',
       }),
@@ -206,7 +232,7 @@ describe('POST /api/data/<resource> — create', () => {
     const response = await invoices(`/api/data/invoices?orgId=${A}`, {
       method: 'POST',
       body: JSON.stringify({
-        data: { invoiceNumber: 'INV-2026-001' },
+        data: validInvoiceData({ status: '' }),
         rowId: 'inv_mine',
       }),
     });
@@ -214,6 +240,26 @@ describe('POST /api/data/<resource> — create', () => {
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toMatchObject({ error: 'conflict' });
     expect(response.headers.get('cache-control')).toBe('no-store');
+  });
+
+  it('validates the invoice schema and requires new invoices to start unset', async () => {
+    fake = appwriteFake();
+    seedMembership(A, OWNER.$id);
+
+    const paid = await invoices(`/api/data/invoices?orgId=${A}`, {
+      method: 'POST',
+      body: JSON.stringify({ data: validInvoiceData({ status: 'paid' }) }),
+    });
+    expect(paid.status).toBe(400);
+
+    const invalidItem = await invoices(`/api/data/invoices?orgId=${A}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        data: validInvoiceData({ status: '', items: JSON.stringify([{ name: 'Tanpa harga' }]) }),
+      }),
+    });
+    expect(invalidItem.status).toBe(400);
+    expect([...fake.rows.keys()].filter((key) => key.startsWith('invoices/'))).toHaveLength(0);
   });
 
   it('rate-fences writes per the data-write budget', async () => {
@@ -244,7 +290,7 @@ describe('PATCH /api/data/<resource> — update isolation', () => {
 
     const ok = await invoices(`/api/data/invoices?orgId=${A}&rowId=${mine}`, {
       method: 'PATCH',
-      body: JSON.stringify({ data: { customerName: 'Nama Baru', status: 'lunas' } }),
+      body: JSON.stringify({ data: { customerName: 'Nama Baru', status: 'paid' } }),
     });
     expect(ok.status).toBe(200);
     expect(fake.rows.get(`invoices/${mine}`)).toMatchObject({ customerName: 'Nama Baru' });
@@ -257,16 +303,33 @@ describe('PATCH /api/data/<resource> — update isolation', () => {
     expect(fake.rows.get(`invoices/${theirs}`)).toMatchObject({ customerName: 'Orang Lain' });
   });
 
+  it('rejects invalid status values and backward or clearing transitions', async () => {
+    fake = appwriteFake();
+    seedMembership(A, OWNER.$id);
+    const { mine } = seedInvoices();
+    fake.rows.get(`invoices/${mine}`)!.status = 'paid';
+
+    for (const status of ['draft', 'sent', null]) {
+      const response = await invoices(`/api/data/invoices?orgId=${A}&rowId=${mine}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ data: { status } }),
+      });
+      expect(response.status).toBe(status === 'draft' ? 400 : 409);
+    }
+    expect(fake.rows.get(`invoices/${mine}`)?.status).toBe('paid');
+  });
+
   it('ignores a body that tries to reassign tenancy or createdBy', async () => {
     fake = appwriteFake();
     seedMembership(A, OWNER.$id);
     const { mine } = seedInvoices();
 
-    await invoices(`/api/data/invoices?orgId=${A}&rowId=${mine}`, {
+    const response = await invoices(`/api/data/invoices?orgId=${A}&rowId=${mine}`, {
       method: 'PATCH',
       body: JSON.stringify({ data: { orgId: B, ownerId: 'user-2', plan: 'pro' } }),
     });
 
+    expect(response.status).toBe(400);
     expect(fake.rows.get(`invoices/${mine}`)).toMatchObject({
       orgId: A,
       ownerId: OWNER.$id,

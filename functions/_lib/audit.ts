@@ -24,15 +24,17 @@ export type AuditEntry = {
 
 /**
  * Writes one row to the `audit_logs` table. Never throws and never blocks the
- * caller: an audit write failing (table not created yet, key lacks
- * `documents.write`, Appwrite hiccup) must not turn a successful admin action
- * into an error the user sees.
+ * business action: an audit failure is logged and returned as `false`, so a
+ * caller can expose the gap without claiming its already-committed write failed.
  */
-export async function writeAudit(env: Env, entry: AuditEntry): Promise<void> {
+export async function writeAudit(env: Env, entry: AuditEntry): Promise<boolean> {
   const endpoint = env.PUBLIC_APPWRITE_ENDPOINT?.replace(/\/+$/, '');
   const projectId = env.PUBLIC_APPWRITE_PROJECT_ID;
   const apiKey = env.APPWRITE_API_KEY;
-  if (!endpoint || !projectId || !apiKey) return;
+  if (!endpoint || !projectId || !apiKey) {
+    console.error('audit: write skipped because Appwrite is not configured');
+    return false;
+  }
 
   const data = {
     actorId: entry.actorId.slice(0, ACTOR_ID_MAX),
@@ -46,21 +48,30 @@ export async function writeAudit(env: Env, entry: AuditEntry): Promise<void> {
   };
 
   try {
-    await fetch(`${endpoint}/databases/${DATABASE_ID}/collections/${AUDIT_TABLE_ID}/documents`, {
-      method: 'POST',
-      headers: {
-        'X-Appwrite-Project': projectId,
-        'X-Appwrite-Key': apiKey,
-        'content-type': 'application/json',
+    const response = await fetch(
+      `${endpoint}/databases/${DATABASE_ID}/collections/${AUDIT_TABLE_ID}/documents`,
+      {
+        method: 'POST',
+        headers: {
+          'X-Appwrite-Project': projectId,
+          'X-Appwrite-Key': apiKey,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          documentId: 'unique()',
+          data,
+          permissions: ['read("team:admins")'],
+        }),
       },
-      body: JSON.stringify({
-        documentId: 'unique()',
-        data,
-        permissions: ['read("team:admins")'],
-      }),
-    });
-  } catch {
-    // Deliberately swallowed — see doc comment.
+    );
+    if (!response.ok) {
+      console.error(`audit: write failed with HTTP ${response.status}`);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error('audit: write failed:', error instanceof Error ? error.message : 'unknown error');
+    return false;
   }
 }
 

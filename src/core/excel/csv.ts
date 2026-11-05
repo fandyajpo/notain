@@ -89,7 +89,10 @@ export function parseCsv(text: string): string[][] {
 }
 
 function escapeCell(cell: string | number): string {
-  const value = cell === null || cell === undefined ? '' : String(cell);
+  let value = cell === null || cell === undefined ? '' : String(cell);
+  if (typeof cell === 'string' && /^[\\s\\u0000-\\u001f\\u007f]*[=+\\-@]/.test(value)) {
+    value = `'${value}`;
+  }
   return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }
 

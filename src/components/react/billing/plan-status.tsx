@@ -186,7 +186,11 @@ export function PaymentHistoryCard() {
       ) : (
         <ul className="mt-3 divide-y divide-border">
           {portal.data.payments.map((payment) => {
-            const badge = STATUS_BADGES[payment.status];
+            const activationPending =
+              payment.status === 'paid' && payment.activationStatus !== 'active';
+            const badge = activationPending
+              ? { label: 'Aktivasi diproses', variant: 'warning' as const }
+              : STATUS_BADGES[payment.status];
             return (
               <li
                 key={payment.invoiceNumber}

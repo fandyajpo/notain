@@ -287,9 +287,7 @@ async function updateUserProfile(
   const auth = { endpoint, headers };
 
   // Nothing tenanted is user-keyed: resolve which org this account works
-  // inside before touching anything. No active membership = nothing to edit
-  // (an account that never set up has no rows, and inventing a
-  // `profiles/<userId>` row would resurrect the pre-multi-tenancy contract).
+  // inside before touching anything. No active membership = nothing to edit.
   const orgId = await primaryOrgId(auth, userId, env);
   if (!orgId) {
     return apiError(
@@ -299,84 +297,137 @@ async function updateUserProfile(
     );
   }
 
-  // 1. The org's business identity. Plan columns are deliberately NOT on
-  //    this payload: they are vestigial on the profile row and billing state
-  //    belongs to `organizations` (written below and by payment settle).
-  //    `businessName` is the org's `name` — not a profile column — so it is
-  //    written to the org row in step 2.
-  const data = {
+  // Snapshot both rows before the first write. The API has no transaction, so
+  // these snapshots let us undo the profile half if the organization write fails.
+  const [profileSnapshot, orgSnapshot] = await Promise.all([
+    readAdminDocument(endpoint, headers, PROFILES_TABLE_ID, orgId),
+    readAdminDocument(endpoint, headers, ORGS_TABLE_ID, orgId),
+  ]);
+  if (profileSnapshot.kind === 'error' || orgSnapshot.kind === 'error') {
+    console.error('admin.users: could not read rows before update', { orgId });
+    return apiError(503, 'unavailable', 'Data organisasi tidak bisa dibaca. Coba lagi.');
+  }
+  if (orgSnapshot.kind === 'missing') {
+    return apiError(404, 'not_found', 'Organisasi tidak ditemukan.');
+  }
+
+  const profileData = {
     name: profile.name,
     phone: profile.phone,
     address: profile.address || null,
     email: profile.email || null,
   };
+  const profileUrl = adminDocumentUrl(endpoint, PROFILES_TABLE_ID, orgId);
+  let profileResponse: Response | null = null;
+  try {
+    profileResponse =
+      profileSnapshot.kind === 'found'
+        ? await fetch(profileUrl, {
+            method: 'PATCH',
+            headers: { ...headers, 'content-type': 'application/json' },
+            body: JSON.stringify({ data: profileData }),
+          })
+        : await fetch(
+            `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents`,
+            {
+              method: 'POST',
+              headers: { ...headers, 'content-type': 'application/json' },
+              body: JSON.stringify({
+                documentId: orgId,
+                data: { ...profileData, plan: 'free', planExpiresAt: null },
+                permissions: [],
+              }),
+            },
+          );
 
-  const updateResponse = await fetch(
-    `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents/${orgId}`,
-    {
-      method: 'PATCH',
-      headers: { ...headers, 'content-type': 'application/json' },
-      body: JSON.stringify({ data }),
-    },
-  );
-
-  if (!updateResponse.ok) {
-    const errorBody = await updateResponse.text().catch(() => '');
-    // 404 means the org has no profile row yet (org created, settings never
-    // opened) — create it keyed by the org id, API-key-only like every row
-    // the profile Function itself creates.
-    if (updateResponse.status === 404) {
-      const createResponse = await fetch(
+    // A profile can be removed between the snapshot and PATCH. Preserve the
+    // previous create-if-missing behavior, still under the same compensation.
+    if (profileResponse.status === 404 && profileSnapshot.kind === 'found') {
+      profileResponse = await fetch(
         `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents`,
         {
           method: 'POST',
           headers: { ...headers, 'content-type': 'application/json' },
           body: JSON.stringify({
             documentId: orgId,
-            data: { ...data, plan: 'free', planExpiresAt: null },
+            data: { ...profileData, plan: 'free', planExpiresAt: null },
             permissions: [],
           }),
         },
       );
-      if (!createResponse.ok) {
-        const createBody = await createResponse.text().catch(() => '');
-        // Upstream bodies carry provider internals — log, never echo.
-        console.error('admin.users: profile create failed:', createBody.slice(0, 200));
-        return apiError(500, 'validation', 'Gagal membuat profil organisasi.');
-      }
-    } else {
-      // Upstream bodies carry provider internals — log, never echo.
-      console.error('admin.users: profile update failed:', errorBody.slice(0, 200));
-      return apiError(500, 'validation', 'Gagal update profil.');
     }
+  } catch {
+    profileResponse = null;
   }
 
-  // 2. The plan (and the business name, which IS the org's `name`), on the
-  //    row that owns both. This is the admin's grant — the same two plan
-  //    columns checkout/subscribe write, so the app reads one place and the
-  //    plan applies to everyone in the org at once. The name is only written
-  //    when the admin actually supplied one, so a blank field cannot wipe it.
+  if (!profileResponse?.ok) {
+    const detail = profileResponse ? await profileResponse.text().catch(() => '') : 'network error';
+    console.error('admin.users: profile write failed:', detail.slice(0, 200));
+    const restored = await restoreProfileSnapshot(endpoint, headers, orgId, profileSnapshot);
+    return restored
+      ? apiError(503, 'unavailable', 'Profil tidak tersimpan. Perubahan sebelumnya dibatalkan.')
+      : apiError(
+          503,
+          'unavailable',
+          'Profil tidak tersimpan dan pemulihan data gagal. Verifikasi organisasi.',
+        );
+  }
+
+  // The plan and business name belong to the organization row. Blank business
+  // names intentionally leave the current org name untouched.
   const orgData: Record<string, unknown> = {
     plan: profile.plan,
     planExpiresAt: profile.planExpiresAt,
   };
   if (profile.businessName !== '') orgData.name = profile.businessName;
+  const orgUrl = adminDocumentUrl(endpoint, ORGS_TABLE_ID, orgId);
 
-  const planResponse = await fetch(
-    `${endpoint}/databases/${DATABASE_ID}/collections/${ORGS_TABLE_ID}/documents/${orgId}`,
-    {
+  let planResponse: Response | null = null;
+  try {
+    planResponse = await fetch(orgUrl, {
       method: 'PATCH',
       headers: { ...headers, 'content-type': 'application/json' },
       body: JSON.stringify({ data: orgData }),
-    },
-  );
+    });
+  } catch {
+    // A network failure is ambiguous: the server may have applied the org
+    // patch before the response was lost, so restore both snapshots.
+    const [profileRestored, orgRestored] = await Promise.all([
+      restoreProfileSnapshot(endpoint, headers, orgId, profileSnapshot),
+      restoreOrgSnapshot(endpoint, headers, orgId, orgSnapshot, orgData),
+    ]);
+    console.error('admin.users: organization update response was lost', { orgId });
+    return profileRestored && orgRestored
+      ? apiError(
+          503,
+          'unavailable',
+          'Update tidak bisa dikonfirmasi. Perubahan sebelumnya dibatalkan.',
+        )
+      : apiError(
+          503,
+          'unavailable',
+          'Update tidak bisa dikonfirmasi dan pemulihan gagal. Verifikasi organisasi.',
+        );
+  }
+
   if (!planResponse.ok) {
     const planBody = await planResponse.text().catch(() => '');
     console.error('admin.users: plan update failed:', planBody.slice(0, 200));
-    return apiError(500, 'validation', 'Gagal update plan organisasi.');
+    const restored = await restoreProfileSnapshot(endpoint, headers, orgId, profileSnapshot);
+    return restored
+      ? apiError(
+          503,
+          'unavailable',
+          'Gagal update plan organisasi. Perubahan profil sebelumnya dibatalkan.',
+        )
+      : apiError(
+          503,
+          'unavailable',
+          'Gagal update plan dan memulihkan profil. Verifikasi organisasi.',
+        );
   }
 
-  await writeAudit(env, {
+  const auditWritten = await writeAudit(env, {
     actorId: actor.userId,
     actorEmail: actor.email,
     action: 'user.update',
@@ -388,5 +439,98 @@ async function updateUserProfile(
       planExpiresAt: profile.planExpiresAt,
     }),
   });
-  return json(200, { success: true });
+  // The business writes already committed. An audit outage is surfaced as a
+  // warning flag, never as a failed update that might be retried blindly.
+  return json(200, { success: true, auditWritten });
+}
+
+type AdminDocumentSnapshot =
+  | { kind: 'found'; data: Record<string, unknown> }
+  | { kind: 'missing' }
+  | { kind: 'error' };
+
+function adminDocumentUrl(endpoint: string, table: string, id: string): string {
+  return `${endpoint}/databases/${DATABASE_ID}/collections/${table}/documents/${encodeURIComponent(id)}`;
+}
+
+async function readAdminDocument(
+  endpoint: string,
+  headers: Record<string, string>,
+  table: string,
+  id: string,
+): Promise<AdminDocumentSnapshot> {
+  let response: Response;
+  try {
+    response = await fetch(adminDocumentUrl(endpoint, table, id), { headers });
+  } catch {
+    return { kind: 'error' };
+  }
+  if (response.status === 404) return { kind: 'missing' };
+  if (!response.ok) return { kind: 'error' };
+  const data = (await response.json().catch(() => null)) as Record<string, unknown> | null;
+  return data && typeof data.$id === 'string' ? { kind: 'found', data } : { kind: 'error' };
+}
+
+async function restoreProfileSnapshot(
+  endpoint: string,
+  headers: Record<string, string>,
+  orgId: string,
+  snapshot: AdminDocumentSnapshot,
+): Promise<boolean> {
+  if (snapshot.kind === 'missing') {
+    const response = await fetch(adminDocumentUrl(endpoint, PROFILES_TABLE_ID, orgId), {
+      method: 'DELETE',
+      headers,
+    }).catch(() => null);
+    return response !== null && (response.ok || response.status === 404);
+  }
+  if (snapshot.kind !== 'found') return false;
+  return restoreDocument(
+    endpoint,
+    headers,
+    PROFILES_TABLE_ID,
+    orgId,
+    {
+      name: typeof snapshot.data.name === 'string' ? snapshot.data.name : '',
+      phone: typeof snapshot.data.phone === 'string' ? snapshot.data.phone : '',
+      address: snapshot.data.address ?? null,
+      email: snapshot.data.email ?? null,
+    },
+  );
+}
+
+async function restoreOrgSnapshot(
+  endpoint: string,
+  headers: Record<string, string>,
+  orgId: string,
+  snapshot: AdminDocumentSnapshot,
+  changed: Record<string, unknown>,
+): Promise<boolean> {
+  if (snapshot.kind !== 'found') return false;
+  const data: Record<string, unknown> = {
+    plan: snapshot.data.plan ?? 'free',
+    planExpiresAt: snapshot.data.planExpiresAt ?? null,
+  };
+  if (Object.prototype.hasOwnProperty.call(changed, 'name')) data.name = snapshot.data.name ?? '';
+  return restoreDocument(endpoint, headers, ORGS_TABLE_ID, orgId, data);
+}
+
+async function restoreDocument(
+  endpoint: string,
+  headers: Record<string, string>,
+  table: string,
+  id: string,
+  data: Record<string, unknown>,
+): Promise<boolean> {
+  const response = await fetch(adminDocumentUrl(endpoint, table, id), {
+    method: 'PATCH',
+    headers: { ...headers, 'content-type': 'application/json' },
+    body: JSON.stringify({ data }),
+  }).catch(() => null);
+  if (!response?.ok) {
+    const detail = response ? await response.text().catch(() => '') : 'network error';
+    console.error(`admin.users: ${table} rollback failed:`, detail.slice(0, 200));
+    return false;
+  }
+  return true;
 }

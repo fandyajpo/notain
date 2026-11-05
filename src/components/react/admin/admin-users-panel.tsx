@@ -174,7 +174,7 @@ export function AdminUsersPanel() {
     }
     setFormErrors({});
     try {
-      await updateAdminUser.mutateAsync({
+      const result = await updateAdminUser.mutateAsync({
         userId: editing.userId,
         name: parsed.data.name,
         businessName: form.businessName.trim(),
@@ -184,6 +184,12 @@ export function AdminUsersPanel() {
         plan: form.plan,
         planExpiresAt: expiryDate || null,
       });
+      if (!result.auditWritten) {
+        toast('Perubahan tersimpan, tetapi audit log gagal ditulis.', {
+          variant: 'info',
+          duration: 7000,
+        });
+      }
       setEditing(null);
     } catch {
       // Error is surfaced via updateAdminUser.isError / error below.
@@ -213,10 +219,12 @@ export function AdminUsersPanel() {
       return;
     }
     try {
-      await updateAdminUser.mutateAsync(planUpdate(subscribeTarget, subPlan, subExpiry || null));
+      const result = await updateAdminUser.mutateAsync(
+        planUpdate(subscribeTarget, subPlan, subExpiry || null),
+      );
       toast(
-        `${subscribeTarget.name || subscribeTarget.email} kini menggunakan paket ${PLAN_LABELS[subPlan] ?? subPlan}.`,
-        { variant: 'success' },
+        `${subscribeTarget.name || subscribeTarget.email} kini menggunakan paket ${PLAN_LABELS[subPlan] ?? subPlan}.${result.auditWritten ? '' : ' Audit log gagal ditulis.'}`,
+        { variant: result.auditWritten ? 'success' : 'info', duration: 7000 },
       );
       setSubscribeTarget(null);
     } catch {
@@ -231,10 +239,11 @@ export function AdminUsersPanel() {
       return;
     }
     try {
-      await updateAdminUser.mutateAsync(planUpdate(unsubscribeTarget, 'free', null));
-      toast(`Plan ${unsubscribeTarget.name || unsubscribeTarget.email} dikembalikan ke Free.`, {
-        variant: 'success',
-      });
+      const result = await updateAdminUser.mutateAsync(planUpdate(unsubscribeTarget, 'free', null));
+      toast(
+        `Plan ${unsubscribeTarget.name || unsubscribeTarget.email} dikembalikan ke Free.${result.auditWritten ? '' : ' Audit log gagal ditulis.'}`,
+        { variant: result.auditWritten ? 'success' : 'info', duration: 7000 },
+      );
       setUnsubscribeTarget(null);
     } catch {
       // Surfaced via updateAdminUser.error in the banner.

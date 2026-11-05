@@ -46,22 +46,23 @@ function PaymentResultContent() {
 
   const status = usePaymentStatus(invoice);
   const paid = status.data?.status === 'paid';
+  const activated = paid && status.data?.activationStatus === 'active';
 
   // Activation happened in the webhook while this tab was away on DOKU. The
   // cached profile still says `free`; refresh it so the dashboard the user
   // heads to next shows the plan they just bought.
   const queryClient = useQueryClient();
   useEffect(() => {
-    if (!paid) return;
+    if (!activated) return;
     void queryClient.invalidateQueries({ queryKey: queryKeys.profile });
     // …and the billing portal's history, so the settings card shows this
     // order as paid on the very next visit.
     void queryClient.invalidateQueries({ queryKey: queryKeys.portalSession });
-  }, [paid, queryClient]);
+  }, [activated, queryClient]);
 
-  // Only fetched for a paid order: the expiry date is the profile's, not the
+  // Only fetched after activation: the expiry date is the profile's, not the
   // payment row's (that one tracks the DOKU session, which is over by now).
-  const { data: profile } = useProfile(paid);
+  const { data: profile } = useProfile(activated);
 
   // An expired JWT on the way back from DOKU lands here as a 401. Send them
   // through login and back — the payment itself is already recorded.
@@ -118,6 +119,30 @@ function PaymentResultContent() {
         <p className="mt-2 text-sm leading-relaxed text-muted">
           Selesaikan pembayaran di halaman DOKU. Halaman ini memeriksa status secara berkala. Plan
           aktif setelah DOKU mengonfirmasi pembayaran.
+        </p>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="mt-6"
+          loading={status.isFetching}
+          onClick={() => void status.refetch()}
+        >
+          <RefreshCw size={15} aria-hidden="true" />
+          Periksa lagi
+        </Button>
+      </Card>
+    );
+  }
+
+  if (value === 'paid' && !activated) {
+    return (
+      <Card padding="lg" className="w-full text-center">
+        <Clock size={28} className="mx-auto text-muted" aria-hidden="true" />
+        <h1 className="mt-4 text-title">Pembayaran diterima</h1>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          DOKU sudah mengonfirmasi pembayaran
+          {amount != null && ` sebesar ${formatRupiah(amount)}`}, tetapi aktivasi paket masih diproses.
+          Halaman ini akan memeriksa ulang otomatis. Jangan membayar ulang.
         </p>
         <Button
           variant="secondary"

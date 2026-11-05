@@ -23,13 +23,10 @@ import type { Env, PagesFunction } from '../../_lib/types';
  *
  * Idempotency: DOKU may deliver the same event more than once (documented
  * retry behaviour). The transition is decided from the row's *current* state,
- * so a repeat of an already-final row is acknowledged without re-activating —
- * expiry math can never run twice for one payment. If profile activation ever
- * fails after the row flipped to `paid`, the row stays `paid` (money is real),
- * the failure is audited as `payment.paid.activation-failed` for manual
- * resolution — there is no automated retry and no admin-panel retry for this
- * case, so that audit row is the only signal; we never roll a paid row back to
- * pending.
+ * so a repeat of an already-final row cannot compound expiry math. If activation
+ * fails after the row flips to `paid`, the fixed target and retry state stay on
+ * the payment row; a later signed notification or authenticated status read can
+ * retry activation without changing the confirmed payment back to pending.
  *
  * Always answers 2xx once the signature is valid and the payload parsed —
  * DOKU's best practice is to acknowledge fast and not to treat business
@@ -108,7 +105,20 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     case 'paid':
       return json(200, { received: true, applied: true, status: 'paid' });
     case 'org_missing':
-      return json(200, { received: true, applied: false, reason: 'org_missing' });
+      return json(200, {
+        received: true,
+        applied: true,
+        status: 'paid',
+        activationStatus: 'pending',
+        reason: 'org_missing',
+      });
+    case 'activation_pending':
+      return json(200, {
+        received: true,
+        applied: true,
+        status: 'paid',
+        activationStatus: 'pending',
+      });
     case 'error':
       return apiError(500, 'validation', outcome.message);
   }

@@ -50,8 +50,9 @@ function patch(path: string, body: unknown): Request {
 }
 
 /** Seeds user-1 with two orgs (newest wins) plus the org-keyed rows. */
-function seed(): void {
+function seed(writeFailureFor?: string): void {
   fake = appwriteFake({
+    ...(writeFailureFor ? { writeFailureFor } : {}),
     users: {
       'user-1': { $id: 'user-1', email: 'budi@example.com' },
       'user-2': { $id: 'user-2', email: 'tamu@example.com' },
@@ -100,7 +101,7 @@ function seed(): void {
   } as Row);
 }
 
-beforeEach(seed);
+beforeEach(() => seed());
 
 describe('GET /api/admin/users', () => {
   it('joins the primary org’s identity and plan, never a user-keyed row', async () => {
@@ -239,6 +240,36 @@ describe('PATCH /api/admin/users', () => {
     expect(fake!.rows.get('profiles/user-2')).toBeUndefined();
     const writes = (fake as AppwriteFake).calls.filter((call) => call.method !== 'GET');
     expect(writes).toEqual([]);
+  });
+
+  it('restores the profile snapshot when the organization update fails', async () => {
+    seed(`/collections/organizations/documents/${ORG_NEW}`);
+
+    const response = await handle(onRequest, update({}));
+
+    expect(response.status).toBe(503);
+    expect(fake!.rows.get('profiles/' + ORG_NEW)).toMatchObject({
+      name: 'Budi',
+      phone: '081234567890',
+      address: null,
+      email: null,
+    });
+    expect(fake!.rows.get('organizations/' + ORG_NEW)).toMatchObject({
+      name: 'Kopi Senja',
+      plan: 'pro',
+      planExpiresAt: '2999-01-01T00:00:00.000Z',
+    });
+  });
+
+  it('returns success with an audit warning when the audit write fails', async () => {
+    seed('/collections/audit_logs/documents');
+
+    const response = await handle(onRequest, update({}));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ success: true, auditWritten: false });
+    expect(fake!.rows.get('profiles/' + ORG_NEW)).toMatchObject({ name: 'Budi Santoso' });
+    expect(fake!.rows.get('organizations/' + ORG_NEW)).toMatchObject({ plan: 'business' });
   });
 
   it('rejects an unknown plan before touching any row', async () => {
