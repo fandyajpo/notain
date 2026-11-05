@@ -219,13 +219,11 @@ describe('POST /api/payments/doku-notify', () => {
     expect(fake.rows.get('payments/' + INVOICE)?.status).toBe('paid');
   });
 
-  it('computes the expiry from the checkout-time snapshot, immune to interleaved settlements', async () => {
-    // The row carries what the ORGANIZATION looked like AT CHECKOUT: free,
-    // no expiry. The org row has since drifted (an admin grant, say) — if
-    // settlement read the live row it would start its 30 days on top of
-    // 2999, and a second settler landing after the first's patch would
-    // compound the extension again. The snapshot pins the baseline, so two
-    // racing settlements converge on the same value instead of stacking.
+  it('freezes the checkout-based activation target without shortening a later org grant', async () => {
+    // The row carries what the organization looked like at checkout: free, no
+    // expiry. The org row has since received a longer admin grant. The payment
+    // keeps its fixed 30-day activation target, while settlement preserves the
+    // stronger existing entitlement instead of shortening it to that target.
     fake.rows.set('payments/' + INVOICE, {
       $id: INVOICE,
       orgId: ORG,
@@ -250,9 +248,12 @@ describe('POST /api/payments/doku-notify', () => {
     expect(response.status).toBe(200);
     const org = fake.rows.get('organizations/' + ORG);
     const payment = fake.rows.get('payments/' + INVOICE);
-    const expiry = new Date(String(org?.planExpiresAt)).getTime();
+    const activationExpiry = new Date(String(payment?.activationExpiresAt)).getTime();
     const paidAt = new Date(String(payment?.paidAt)).getTime();
-    // A fresh 30-day period from payment time — NOT 30 days on top of 2999.
-    expect(expiry - paidAt).toBe(30 * 24 * 60 * 60 * 1000);
+    // The persisted activation target starts at payment time, independent of
+    // the later organization grant.
+    expect(activationExpiry - paidAt).toBe(30 * 24 * 60 * 60 * 1000);
+    expect(payment?.activationStatus).toBe('active');
+    expect(org?.planExpiresAt).toBe('2999-01-01T00:00:00.000Z');
   });
 });
