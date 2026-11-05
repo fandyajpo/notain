@@ -99,11 +99,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       // Keep the earlier read-only fallback for rows created before a name was
       // stored. Never overwrite an intentional profile value from this GET.
       const fallback = session.name || (await legacyIdentity(auth, session.userId, env)).name;
-      return json(
-        200,
-        fallback === '' ? identity : { ...identity, username: fallback },
-        { 'cache-control': 'no-store' },
-      );
+      return json(200, fallback === '' ? identity : { ...identity, username: fallback }, {
+        'cache-control': 'no-store',
+      });
     }
 
     // Create the shared profile on the user's first authenticated app visit.
