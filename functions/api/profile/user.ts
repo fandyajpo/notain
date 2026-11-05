@@ -13,10 +13,10 @@ import { fetchUpstream as fetch } from '../../_lib/http';
 import type { Env, PagesFunction } from '../../_lib/types';
 
 /**
- * `GET /api/profile/user` — the account identity: username and phone, one row
- * per Appwrite account in the SAME `profiles` table the organization identity
- * uses (keyed by userId here, by orgId there — the id spaces never collide).
- * `PUT /api/profile/user` — updates either field.
+ * `GET /api/profile/user` — reads or initializes the account identity (username
+ * and phone), one row per Appwrite account in the SAME `profiles` table the
+ * organization identity uses (keyed by userId here, by orgId there — the id
+ * spaces never collide). `PUT /api/profile/user` updates either field.
  *
  * Deliberately NOT org-gated: this is the account's identity, shared across
  * every organization the user owns or joins, and it remains editable while
@@ -50,13 +50,17 @@ function identityView(row: Record<string, unknown> | null): UserIdentity {
 }
 
 /**
- * The name an account gave BEFORE its `profiles/<userId>` row existed:
+ * Identity data saved before the shared `profiles/<userId>` row existed:
  * onboarding wrote it to the per-org profile row (whose id IS the org id) of
- * the organization it created. One membership read plus one row read, and only
- * for accounts that have neither a shared identity nor an account name — a
- * brand-new account never pays for this.
+ * the user's latest active organization. Initialization runs this lookup only
+ * when a shared row is missing, so existing accounts keep their old details
+ * while new accounts can use the name supplied by Appwrite.
  */
-async function legacyUsername(auth: TableAuth, userId: string, env: Env): Promise<string> {
+async function legacyIdentity(
+  auth: TableAuth,
+  userId: string,
+  env: Env,
+): Promise<{ name: string; phone: string }> {
   const queries: ListQuery[] = [
     { method: 'equal', attribute: 'userId', values: [userId] },
     { method: 'equal', attribute: 'status', values: ['active'] },
@@ -65,9 +69,12 @@ async function legacyUsername(auth: TableAuth, userId: string, env: Env): Promis
   ];
   const memberships = await listRows(auth, 'memberships', queries, env);
   const orgId = memberships?.[0]?.orgId;
-  if (typeof orgId !== 'string' || orgId === '') return '';
+  if (typeof orgId !== 'string' || orgId === '') return { name: '', phone: '' };
   const row = await getRow(auth, 'profiles', orgId, env);
-  return typeof row?.name === 'string' ? row.name : '';
+  return {
+    name: typeof row?.name === 'string' ? row.name : '',
+    phone: typeof row?.phone === 'string' ? row.phone : '',
+  };
 }
 
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
@@ -84,17 +91,49 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const current = await getRow(auth, 'profiles', session.userId, env);
 
   if (request.method === 'GET') {
-    const identity = identityView(current);
-    // Accounts that onboarded BEFORE this row existed have no account row,
-    // document, so the shared identity would render blank even though they
-    // already told us their name. Two read-only fallbacks, in order of
-    // freshness — neither is persisted from here, so the first save still
-    // creates the row properly.
-    if (identity.username === '') {
-      const fallback = session.name || (await legacyUsername(auth, session.userId, env));
-      if (fallback !== '') return json(200, { ...identity, username: fallback });
+    if (current) {
+      const identity = identityView(current);
+      if (identity.username !== '') {
+        return json(200, identity, { 'cache-control': 'no-store' });
+      }
+      // Keep the earlier read-only fallback for rows created before a name was
+      // stored. Never overwrite an intentional profile value from this GET.
+      const fallback = session.name || (await legacyIdentity(auth, session.userId, env)).name;
+      return json(
+        200,
+        fallback === '' ? identity : { ...identity, username: fallback },
+        { 'cache-control': 'no-store' },
+      );
     }
-    return json(200, identity);
+
+    // Create the shared profile on the user's first authenticated app visit.
+    // Preserve details from an older org profile when present; otherwise use
+    // the Appwrite account name (including one supplied by social sign-in).
+    // Login email remains owned by Appwrite and is not duplicated in this row.
+    const legacy = await legacyIdentity(auth, session.userId, env);
+    const username = legacy.name || session.name;
+    const created = await createRow(
+      auth,
+      'profiles',
+      session.userId,
+      {
+        name: username,
+        phone: legacy.phone,
+        address: null,
+        email: '',
+        logoFileId: null,
+        plan: 'free',
+        planExpiresAt: null,
+      },
+      [],
+    );
+    if (created) return json(200, identityView(created), { 'cache-control': 'no-store' });
+
+    // Two tabs can sign in at the same time. If the other request won the
+    // deterministic document-id race, return its row rather than failing.
+    const raced = await getRow(auth, 'profiles', session.userId, env);
+    if (raced) return json(200, identityView(raced), { 'cache-control': 'no-store' });
+    return apiError(503, 'unavailable', 'Profil belum bisa disiapkan. Coba lagi.');
   }
 
   let body: Record<string, unknown> | null = null;
@@ -168,7 +207,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
           // Same attribute set the org-create Function writes, so the row
           // satisfies the table without inventing billing values.
           address: null,
-          email: session.email,
+          email: '',
           logoFileId: null,
           plan: 'free',
           planExpiresAt: null,

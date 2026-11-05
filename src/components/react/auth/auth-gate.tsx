@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { Ban } from 'lucide-react';
 import { useSession, useSignOut } from '../../../lib/query/hooks/use-session';
+import { useUserIdentity } from '../../../lib/query/hooks/use-user-profile';
 import { toast } from '../../../lib/ui/toast';
 import { ERROR_CODES, isAppError } from '../../../core/shared/errors';
 import { Button } from '../ui/button';
@@ -16,6 +17,9 @@ type Props = {
 /** Client-side session gate for the statically rendered protected pages. */
 export function AuthGate({ children, fallback }: Props) {
   const { data: session, isLoading, isError, error, refetch, isFetching } = useSession();
+  // Ensure every signed-in account has a shared profile row on its first app
+  // visit, regardless of whether it used email/password, Google, or Discord.
+  useUserIdentity(Boolean(session));
 
   useEffect(() => {
     if (isLoading || isError || session) return;

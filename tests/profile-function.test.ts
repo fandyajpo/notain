@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { onRequest } from '../functions/api/profile';
+import { onRequest as userProfileOnRequest } from '../functions/api/profile/user';
 import { appwriteFake, type AppwriteFake, type Row } from './appwrite-fake';
 import type { Env } from '../functions/_lib/types';
 
@@ -61,6 +62,15 @@ function put(body: unknown, authorization = 'Bearer jwt-token', url = PROFILE_UR
 
 function handle(request: Request): Promise<Response> {
   return (onRequest as unknown as (ctx: unknown) => Promise<Response>)({
+    request,
+    params: {},
+    env,
+    waitUntil: () => {},
+  });
+}
+
+function handleUserProfile(request: Request): Promise<Response> {
+  return (userProfileOnRequest as unknown as (ctx: unknown) => Promise<Response>)({
     request,
     params: {},
     env,
@@ -186,6 +196,115 @@ describe('profile gate', () => {
 
     const response = await handle(put(bodyWithPlan()));
     expect(response.status).toBe(404);
+    expect(writes()).toEqual([]);
+  });
+});
+
+describe('GET /api/profile/user — first sign-in initialization', () => {
+  const request = () =>
+    new Request('https://notain.pages.dev/api/profile/user', {
+      headers: { authorization: 'Bearer jwt-token' },
+    });
+
+  it('creates one shared profile row on first read and reuses it afterward', async () => {
+    const first = await handleUserProfile(request());
+
+    expect(first.status).toBe(200);
+    await expect(first.json()).resolves.toEqual({ username: '', phone: '' });
+    expect(fake.rows.get('profiles/user-1')).toMatchObject({
+      $id: 'user-1',
+      name: '',
+      phone: '',
+      email: '',
+      plan: 'free',
+    });
+    expect(writes()).toEqual(['POST profiles/user-1']);
+    const create = fake.calls.find((call) => call.method === 'POST')?.body as {
+      documentId: string;
+      permissions: string[];
+    };
+    expect(create.documentId).toBe('user-1');
+    expect(create.permissions).toEqual([]);
+
+    const second = await handleUserProfile(request());
+
+    expect(second.status).toBe(200);
+    expect(writes()).toEqual(['POST profiles/user-1']);
+  });
+
+  it('uses the Appwrite account name when initializing a social or email account', async () => {
+    fake.account = { $id: 'user-1', email: 'budi@example.com', name: 'Budi Santoso' };
+
+    const response = await handleUserProfile(request());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ username: 'Budi Santoso', phone: '' });
+    expect(fake.rows.get('profiles/user-1')?.name).toBe('Budi Santoso');
+  });
+
+  it('preserves name and phone from an older organization profile', async () => {
+    fake.account = { $id: 'user-1', email: 'budi@example.com', name: 'Budi dari OAuth' };
+    fake.rows.set(
+      `profiles/${ORG}`,
+      storedProfile({ name: 'Budi Santoso', phone: '081234567890' }),
+    );
+
+    const response = await handleUserProfile(request());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      username: 'Budi Santoso',
+      phone: '081234567890',
+    });
+    expect(fake.rows.get('profiles/user-1')).toMatchObject({
+      name: 'Budi Santoso',
+      phone: '081234567890',
+    });
+  });
+
+  it('leaves an existing shared profile unchanged', async () => {
+    fake.rows.set('profiles/user-1', {
+      $id: 'user-1',
+      name: 'Nama tersimpan',
+      phone: '081234567890',
+      email: '',
+      plan: 'free',
+    });
+
+    const response = await handleUserProfile(request());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      username: 'Nama tersimpan',
+      phone: '081234567890',
+    });
+    expect(writes()).toEqual([]);
+  });
+
+  it('uses the Appwrite name as a read-only fallback for an existing blank row', async () => {
+    fake.account = { $id: 'user-1', email: 'budi@example.com', name: 'Budi Santoso' };
+    fake.rows.set('profiles/user-1', {
+      $id: 'user-1',
+      name: '',
+      phone: '',
+      email: '',
+      plan: 'free',
+    });
+
+    const response = await handleUserProfile(request());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ username: 'Budi Santoso', phone: '' });
+    expect(fake.rows.get('profiles/user-1')?.name).toBe('');
+    expect(writes()).toEqual([]);
+  });
+
+  it('does not create a profile without an authenticated session', async () => {
+    fake.account = null;
+
+    const response = await handleUserProfile(request());
+
+    expect(response.status).toBe(401);
     expect(writes()).toEqual([]);
   });
 });

@@ -15,7 +15,7 @@ export type RecordedCall = { method: string; url: string; body?: unknown };
 
 export type AppwriteFake = {
   /** What `GET /account` answers for the bearer JWT; `null` = signed out. */
-  account: { $id: string; email: string } | null;
+  account: { $id: string; email: string; name?: string } | null;
   /** Rows keyed by `${table}/${id}`. */
   rows: Map<string, Row>;
   /** Documents returned by collection queries, keyed by table. */
@@ -31,7 +31,7 @@ export type AppwriteFake = {
 
 export function appwriteFake(
   options: {
-    account?: { $id: string; email: string } | null;
+    account?: { $id: string; email: string; name?: string } | null;
     /**
      * Called for URLs on any origin OTHER than the fake Appwrite endpoint
      * (DOKU's sandbox API, audit-log side channels, …), so a test can answer
