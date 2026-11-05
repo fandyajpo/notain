@@ -235,7 +235,7 @@ function TemplatesContent() {
                           href="/pricing"
                           variant="secondary"
                           size="sm"
-                          title="Lihat paket dan fitur yang tersedia"}},{
+                          title="Lihat paket dan fitur yang tersedia"
                         >
                           <Pencil size={13} aria-hidden="true" />
                           Lihat paket
