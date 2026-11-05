@@ -149,9 +149,7 @@ export async function listAdminUsers(
   return parseAdminResponse<AdminUserPage>(response);
 }
 
-export async function updateAdminUser(
-  update: AdminUserUpdate,
-): Promise<{ auditWritten: boolean }> {
+export async function updateAdminUser(update: AdminUserUpdate): Promise<{ auditWritten: boolean }> {
   const response = await adminFetch('/api/admin/users', {
     method: 'PATCH',
     body: JSON.stringify(update),

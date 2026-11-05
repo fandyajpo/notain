@@ -64,7 +64,11 @@ async function remove(request: Request, key: string, env: Env): Promise<Response
     if (!auth) return apiError(503, 'unavailable', 'Layanan sedang tidak tersedia.');
     const lockResult = await acquireProofUploadLock(env.LOGOS, invoiceId);
     if (lockResult.kind === 'unavailable') {
-      return apiError(503, 'unavailable', 'Bukti pembayaran tidak bisa dihapus saat ini. Coba lagi.');
+      return apiError(
+        503,
+        'unavailable',
+        'Bukti pembayaran tidak bisa dihapus saat ini. Coba lagi.',
+      );
     }
     if (lockResult.kind === 'busy') {
       return apiError(409, 'conflict', 'Unggahan bukti sedang diproses. Coba lagi sebentar.');
@@ -79,23 +83,37 @@ async function remove(request: Request, key: string, env: Env): Promise<Response
       let invoiceResponse: Response;
       try {
         invoiceResponse = await fetch(
-          `${auth.endpoint}/databases/notain_db/collections/invoices/documents/${encodeURIComponent(invoiceId)}`,
+          `${auth.endpoint}/databases/notain_db/collections/invoices/documents/${encodeURIComponent(
+            invoiceId,
+          )}`,
           { headers: auth.headers },
         );
       } catch {
-        return apiError(503, 'unavailable', 'Invoice tidak bisa diverifikasi. Bukti tetap tersimpan.');
+        return apiError(
+          503,
+          'unavailable',
+          'Invoice tidak bisa diverifikasi. Bukti tetap tersimpan.',
+        );
       }
 
       if (invoiceResponse.status !== 404) {
         if (!invoiceResponse.ok) {
-          return apiError(503, 'unavailable', 'Invoice tidak bisa diverifikasi. Bukti tetap tersimpan.');
+          return apiError(
+            503,
+            'unavailable',
+            'Invoice tidak bisa diverifikasi. Bukti tetap tersimpan.',
+          );
         }
         const invoice = (await invoiceResponse.json().catch(() => null)) as {
           ownerId?: unknown;
           paymentProofKey?: unknown;
         } | null;
         if (!invoice) {
-          return apiError(503, 'unavailable', 'Invoice tidak bisa diverifikasi. Bukti tetap tersimpan.');
+          return apiError(
+            503,
+            'unavailable',
+            'Invoice tidak bisa diverifikasi. Bukti tetap tersimpan.',
+          );
         }
         if (invoice.ownerId !== session.userId) {
           return apiError(404, 'not_found', 'Bukti pembayaran tidak ditemukan.');
@@ -108,7 +126,11 @@ async function remove(request: Request, key: string, env: Env): Promise<Response
             paymentProofUploadedAt: null,
           });
           if (!cleared) {
-            return apiError(503, 'unavailable', 'Gagal memperbarui invoice. Bukti tetap tersimpan.');
+            return apiError(
+              503,
+              'unavailable',
+              'Gagal memperbarui invoice. Bukti tetap tersimpan.',
+            );
           }
         }
       }

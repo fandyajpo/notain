@@ -34,14 +34,20 @@ describe('writeAudit', () => {
 
   it('returns false for an upstream failure without throwing', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 503 })));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(null, { status: 503 })),
+    );
 
     await expect(writeAudit(configuredEnv, entry)).resolves.toBe(false);
     expect(error).toHaveBeenCalled();
   });
 
   it('returns true when the audit document is written', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 201 })));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('{}', { status: 201 })),
+    );
 
     await expect(writeAudit(configuredEnv, entry)).resolves.toBe(true);
   });

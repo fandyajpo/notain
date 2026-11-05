@@ -228,7 +228,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
         env,
       );
       if (rows === null) {
-        return apiError(503, 'unavailable', 'penghapusan terhenti, coba lagi.'); // retry continues where this stopped
+        // Retry continues where this stopped.
+        return apiError(503, 'unavailable', 'penghapusan terhenti, coba lagi.');
       }
       for (const row of rows) {
         if (budget <= 0) break;
@@ -324,7 +325,6 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     allow: 'PATCH, DELETE',
   });
 };
-
 
 /** Refuse deletion while DOKU may still settle money or paid activation is incomplete. */
 async function guardLivePayments(

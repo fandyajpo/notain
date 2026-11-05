@@ -361,7 +361,9 @@ async function updateUserProfile(
   }
 
   if (!profileResponse?.ok) {
-    const detail = profileResponse ? await profileResponse.text().catch(() => '') : 'network error';
+    const detail = profileResponse
+      ? await profileResponse.text().catch(() => '')
+      : 'network error';
     console.error('admin.users: profile write failed:', detail.slice(0, 200));
     const restored = await restoreProfileSnapshot(endpoint, headers, orgId, profileSnapshot);
     return restored
@@ -450,7 +452,9 @@ type AdminDocumentSnapshot =
   | { kind: 'error' };
 
 function adminDocumentUrl(endpoint: string, table: string, id: string): string {
-  return `${endpoint}/databases/${DATABASE_ID}/collections/${table}/documents/${encodeURIComponent(id)}`;
+  return `${endpoint}/databases/${DATABASE_ID}/collections/${table}/documents/${encodeURIComponent(
+    id,
+  )}`;
 }
 
 async function readAdminDocument(

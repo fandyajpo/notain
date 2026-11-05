@@ -141,8 +141,8 @@ function PaymentResultContent() {
         <h1 className="mt-4 text-title">Pembayaran diterima</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted">
           DOKU sudah mengonfirmasi pembayaran
-          {amount != null && ` sebesar ${formatRupiah(amount)}`}, tetapi aktivasi paket masih diproses.
-          Halaman ini akan memeriksa ulang otomatis. Jangan membayar ulang.
+          {amount != null && ` sebesar ${formatRupiah(amount)}`}, tetapi aktivasi paket masih
+          diproses. Halaman ini akan memeriksa ulang otomatis. Jangan membayar ulang.
         </p>
         <Button
           variant="secondary"

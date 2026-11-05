@@ -116,7 +116,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
   }
 
   const extension = paymentProofExtension(file.name);
-  const contentType = extension === null ? undefined : PAYMENT_PROOF_CONTENT_TYPE_BY_EXT[extension];
+  const contentType =
+    extension === null ? undefined : PAYMENT_PROOF_CONTENT_TYPE_BY_EXT[extension];
   if (!extension || !contentType) {
     return apiError(400, 'validation', 'Format bukti pembayaran harus PNG, JPG, atau WEBP.');
   }
@@ -154,7 +155,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
         );
       }
       if (typeof row.paymentProofKey === 'string' && row.paymentProofKey !== '') {
-        return apiError(409, 'conflict', 'Bukti pembayaran sudah pernah diunggah untuk invoice ini.');
+        return apiError(
+          409,
+          'conflict',
+          'Bukti pembayaran sudah pernah diunggah untuk invoice ini.',
+        );
       }
     }
 

@@ -139,7 +139,13 @@ export async function settlePayment(
   return activatePaidPayment(
     env,
     auth,
-    { ...payment, status: 'paid', paidAt, activationStatus: 'pending', activationRetryAfter: null },
+    {
+      ...payment,
+      status: 'paid',
+      paidAt,
+      activationStatus: 'pending',
+      activationRetryAfter: null,
+    },
     paidAt,
   );
 }
@@ -197,7 +203,9 @@ async function activatePaidPayment(
   }
 
   if (!hasTarget) {
-    const baselinePlan = hasCheckoutSnapshot ? (payment.planAtCheckout ?? 'free') : (org.plan ?? 'free');
+    const baselinePlan = hasCheckoutSnapshot
+      ? (payment.planAtCheckout ?? 'free')
+      : (org.plan ?? 'free');
     const baselineExpiry = hasCheckoutSnapshot
       ? (payment.planExpiresAtSnapshot ?? null)
       : (org.planExpiresAt ?? null);
@@ -260,7 +268,12 @@ async function activatePaidPayment(
     action: 'payment.paid',
     targetType: 'payment',
     targetId: payment.$id,
-    detail: JSON.stringify({ plan: activationPlan, amount: payment.amount, paidAt, expiry: activationExpiresAt }),
+    detail: JSON.stringify({
+      plan: activationPlan,
+      amount: payment.amount,
+      paidAt,
+      expiry: activationExpiresAt,
+    }),
   });
 
   return { kind: 'paid', paidAt, plan: activationPlan!, expiry: activationExpiresAt! };
@@ -277,7 +290,9 @@ async function deferActivation(
     activationRetryAfter: retryAfter,
     activationError: reason,
   });
-  if (!updated) console.error('payments: could not persist activation retry state for', payment.$id);
+  if (!updated) {
+    console.error('payments: could not persist activation retry state for', payment.$id);
+  }
 }
 
 async function writeActivationFailure(

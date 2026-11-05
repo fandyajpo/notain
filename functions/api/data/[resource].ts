@@ -12,7 +12,11 @@ import { requireOrg } from '../../_lib/orgs';
 import type { TableId } from '../../_lib/rows';
 import type { Env, PagesFunction } from '../../_lib/types';
 import { invoiceDraftSchema } from '../../../src/core/invoice/schema';
-import { INVOICE_STATUSES, type InvoiceDraft, type InvoiceStatus } from '../../../src/core/invoice/model';
+import {
+  INVOICE_STATUSES,
+  type InvoiceDraft,
+  type InvoiceStatus,
+} from '../../../src/core/invoice/model';
 import { canChangeStatus, statusFlowMessage } from '../../../src/core/invoice/status';
 
 /**
@@ -257,7 +261,9 @@ function sanitizeBody(
   return out;
 }
 
-function invoiceStatus(value: unknown): { valid: true; value: InvoiceStatus | null } | { valid: false } {
+function invoiceStatus(
+  value: unknown,
+): { valid: true; value: InvoiceStatus | null } | { valid: false } {
   if (value == null || value === '') return { valid: true, value: null };
   if ((INVOICE_STATUSES as readonly unknown[]).includes(value)) {
     return { valid: true, value: value as InvoiceStatus };
