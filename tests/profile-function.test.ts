@@ -218,7 +218,7 @@ describe('GET /api/profile/user — first sign-in initialization', () => {
       email: '',
       plan: 'free',
     });
-    expect(writes()).toEqual(['POST profiles/user-1']);
+    expect(writes()).toEqual(['POST profiles/(create)']);
     const create = fake.calls.find((call) => call.method === 'POST')?.body as {
       documentId: string;
       permissions: string[];
@@ -229,7 +229,7 @@ describe('GET /api/profile/user — first sign-in initialization', () => {
     const second = await handleUserProfile(request());
 
     expect(second.status).toBe(200);
-    expect(writes()).toEqual(['POST profiles/user-1']);
+    expect(writes()).toEqual(['POST profiles/(create)']);
   });
 
   it('uses the Appwrite account name when initializing a social or email account', async () => {
