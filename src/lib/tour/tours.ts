@@ -45,7 +45,7 @@ export const TOURS: Record<string, TourDef> = {
         target: 'dash-create',
         title: 'Buat nota baru',
         description:
-          'Ketuk tombol ini, isi data pelanggan dan barang, lalu totalnya dihitung otomatis termasuk diskon dan pajak.'
+          'Ketuk tombol ini, isi data pelanggan dan barang, lalu totalnya dihitung otomatis termasuk diskon dan pajak.',
         side: 'bottom',
       },
       {
@@ -65,7 +65,7 @@ export const TOURS: Record<string, TourDef> = {
       {
         target: 'invoices-create',
         title: 'Buat nota di sini',
-        description: 'Mulai dari tombol ini untuk membuat nota baru.'
+        description: 'Mulai dari tombol ini untuk membuat nota baru.',
         side: 'bottom',
       },
       {
