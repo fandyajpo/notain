@@ -318,7 +318,7 @@ async function updateUserProfile(
     email: profile.email || null,
   };
   const profileUrl = adminDocumentUrl(endpoint, PROFILES_TABLE_ID, orgId);
-  let profileResponse: Response | null = null;
+  let profileResponse: Response | null;
   try {
     profileResponse =
       profileSnapshot.kind === 'found'
@@ -382,7 +382,7 @@ async function updateUserProfile(
   if (profile.businessName !== '') orgData.name = profile.businessName;
   const orgUrl = adminDocumentUrl(endpoint, ORGS_TABLE_ID, orgId);
 
-  let planResponse: Response | null = null;
+  let planResponse: Response;
   try {
     planResponse = await fetch(orgUrl, {
       method: 'PATCH',

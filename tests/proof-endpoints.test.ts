@@ -67,7 +67,7 @@ function makeBucket(): { bucket: R2Bucket; objects: Map<string, StoredObject> } 
 }
 
 function handle(
-  handler: typeof uploadOnRequest | typeof proofOnRequest,
+  handler: typeof uploadOnRequest,
   request: Request,
   keyOrId: string,
 ): Promise<Response> {
@@ -117,7 +117,8 @@ beforeEach(() => {
   objects = made.objects;
   fake = appwriteFake({
     passthrough: (input) => {
-      if (String(input).includes('/siteverify')) {
+      const url = input instanceof Request ? input.url : input instanceof URL ? input.href : input;
+      if (url.includes('/siteverify')) {
         return new Response(JSON.stringify({ success: true }), {
           status: 200,
           headers: { 'content-type': 'application/json' },
@@ -142,7 +143,7 @@ describe('POST /api/invoice/<id>/proof', () => {
       handle(uploadOnRequest, uploadRequest(), INVOICE),
     ]);
 
-    expect([first.status, second.status].sort()).toEqual([200, 409]);
+    expect([first.status, second.status].sort((a, b) => a - b)).toEqual([200, 409]);
     const savedKey = fake.rows.get(`invoices/${INVOICE}`)?.paymentProofKey;
     expect(typeof savedKey).toBe('string');
     expect([...objects.keys()].filter((key) => key.startsWith('proofs_'))).toEqual([savedKey]);

@@ -71,7 +71,9 @@ describe('buildCsv', () => {
     '  =1+1',
     '\t=1+1',
     '\r@SUM(A1)',
+    '\u0000=1+1',
     '\u0001+1',
+    '\u007f=1+1',
   ])('prefixes formula-leading text with a single quote (%s)', (value) => {
     expect(parseCsv(buildCsv([[value]]))).toEqual([[`'${value}`]]);
   });

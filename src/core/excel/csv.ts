@@ -88,9 +88,19 @@ export function parseCsv(text: string): string[][] {
   return rows;
 }
 
+function hasFormulaPrefix(value: string): boolean {
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value.charAt(index);
+    const code = value.charCodeAt(index);
+    if (/\s/.test(character) || code <= 0x1f || code === 0x7f) continue;
+    return character === '=' || character === '+' || character === '-' || character === '@';
+  }
+  return false;
+}
+
 function escapeCell(cell: string | number): string {
   let value = cell === null || cell === undefined ? '' : String(cell);
-  if (typeof cell === 'string' && /^[\s\u0000-\u001f\u007f]*[=+\-@]/.test(value)) {
+  if (typeof cell === 'string' && hasFormulaPrefix(value)) {
     value = `'${value}`;
   }
   return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
