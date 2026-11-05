@@ -217,17 +217,21 @@ async function listUsers(
     // this page (Appwrite would otherwise stop at its default 25).
     const [orgsResponse, profilesResponse] = await Promise.all([
       fetch(
-        `${endpoint}/databases/${DATABASE_ID}/collections/${ORGS_TABLE_ID}/documents?${querySearchAll([
-          { method: 'equal', attribute: '$id', values: orgIds },
-          { method: 'limit', values: [orgIds.length] },
-        ])}`,
+        `${endpoint}/databases/${DATABASE_ID}/collections/${ORGS_TABLE_ID}/documents?${querySearchAll(
+          [
+            { method: 'equal', attribute: '$id', values: orgIds },
+            { method: 'limit', values: [orgIds.length] },
+          ],
+        )}`,
         { headers },
       ),
       fetch(
-        `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents?${querySearchAll([
-          { method: 'equal', attribute: '$id', values: orgIds },
-          { method: 'limit', values: [orgIds.length] },
-        ])}`,
+        `${endpoint}/databases/${DATABASE_ID}/collections/${PROFILES_TABLE_ID}/documents?${querySearchAll(
+          [
+            { method: 'equal', attribute: '$id', values: orgIds },
+            { method: 'limit', values: [orgIds.length] },
+          ],
+        )}`,
         { headers },
       ),
     ]);
