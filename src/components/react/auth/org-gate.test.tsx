@@ -5,8 +5,8 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { OrgGate } from './org-gate';
 import { getActiveOrgId, setActiveOrgId } from '../../../app/active-org';
-import { beginOrgSwitch, endOrgSwitch, getOrgSwitch } from '../../../app/org-switch';
-import type { OrgView } from '../../../app/orgs';
+import { endOrgSwitch, getOrgSwitch, switchActiveOrg } from '../../../app/org-switch';
+import type { OrgView, PendingInvite } from '../../../app/orgs';
 
 /**
  * OrgGate — the tenancy stage between "signed in" and organization-scoped
@@ -250,22 +250,27 @@ describe('OrgGate', () => {
     await until(() => expect(getActiveOrgId()).toBe(ORG_A.id));
     await until(() => expect(container.textContent).toContain('APP'));
 
-    // Exactly what the dropdown does: flag the transition (carrying the
-    // target's name), then move the selection. The overlay is portalled to
-    // `document.body`, above the app.
-    act(() => {
-      beginOrgSwitch(ORG_A.id, ORG_B.id, ORG_B.name);
-      setActiveOrgId(ORG_B.id);
+    // Keep the switch's validating refetch pending so the overlay cannot
+    // disappear before its name is asserted, even on a heavily loaded runner.
+    let resolveSwitchOrgs!: (value: { orgs: OrgView[]; pending: PendingInvite[] }) => void;
+    const switchOrgs = new Promise<{ orgs: OrgView[]; pending: PendingInvite[] }>((resolve) => {
+      resolveSwitchOrgs = resolve;
     });
+    mocks.listOrgs.mockReturnValueOnce(switchOrgs);
+
+    // Use the same entry point as the dropdown. The overlay is portalled to
+    // `document.body`, above the app.
+    act(() => switchActiveOrg(ORG_B.id, ORG_B.name));
 
     // The name comes from the switch store, not the orgs cache — the cache is
     // mid-reset at this point, so a cache-derived label would read
     // "Berpindah ke organisasi…" for the whole transition.
     await until(() => expect(document.body.textContent).toContain('Berpindah ke Toko Sebelah…'));
+    expect(getOrgSwitch()?.to).toBe(ORG_B.id);
 
-    // The refetch settles (the harness resolves immediately), so once the
-    // minimum display time passes the gate must clear the switch by itself
-    // and remount the children for the target org.
+    // Resolve the validation fetch. Once it settles and the minimum display
+    // time has passed, the gate must clear the switch and remount the target.
+    resolveSwitchOrgs({ orgs: [ORG_A, ORG_B], pending: [] });
     await until(() => expect(getOrgSwitch()).toBeNull(), 750);
     expect(document.body.textContent).not.toContain('Berpindah ke');
     expect(getActiveOrgId()).toBe(ORG_B.id);
