@@ -1,8 +1,8 @@
 # Pembayaran (DOKU Checkout)
 
-Langganan Pro (Rp 49.000/30 hari) dan Business (Rp 99.000/30 hari) dibayar lewat
-**DOKU Checkout** (hosted page, integrasi non-SNAP, **sandbox only** untuk saat
-ini). Dokumen resmi: <https://developers.doku.com/accept-payments/doku-checkout/integration-guide>.
+> **Status: operational notes are stale; do not follow the old checkout, migration, or production steps below.** Current billing is per organization, Pro checkout is available through DOKU sandbox, and Business checkout is disabled/coming soon. The current flow is documented in [`BUSINESS_FLOWS.md`](./BUSINESS_FLOWS.md). In particular, old references below to profile-based plan storage, an onboarding/profile prerequisite, and purchasable Business must not be treated as current behavior. No real payment or production operation was performed for the current-flow guide.
+
+Langganan Pro (Rp 49.000/30 hari) tersedia melalui **DOKU Checkout sandbox**. Business belum bisa dibeli. Dokumen resmi: <https://developers.doku.com/accept-payments/doku-checkout/integration-guide>.
 
 ## Alur
 

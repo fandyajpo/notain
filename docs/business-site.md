@@ -1,8 +1,8 @@
 # Halaman usaha publik — `/site/<ownerId>`
 
-Halaman publik per-pemilik yang menampilkan profil usaha dan katalognya lewat satu
-tautan capability URL. Tidak ada akun, tidak ada login: ID pemilik di path adalah
-kredensialnya, persis seperti tautan `/invoice/print/<id>`.
+> **Status: historical route/payload notes are superseded.** Current public site URLs are `/site/<orgId>`, not owner-ID URLs. Current business identity/contact data is read from the organization row, with limited legacy-profile fallbacks; the owner profile supplies the person's display name. See [`BUSINESS_FLOWS.md`](./BUSINESS_FLOWS.md) and `functions/api/site/[id].ts` before using details below. This file's route examples, payload description, and proposed data-model additions are not the current contract.
+
+Halaman ini sekarang dibuka melalui capability URL organisasi `/site/<orgId>`; halaman dan API tetap publik tanpa login.
 
 ## Alur request
 

@@ -1,6 +1,8 @@
 # Notain — Test Scenarios for Runtime Verification
 
-Companion to [`CODEBASE_AUDIT.md`](./CODEBASE_AUDIT.md). These scenarios cover findings that **cannot be confirmed by static analysis alone** — they require running the deployed Functions (Cloudflare Pages, `notain.pages.dev` or a preview deployment) or the live Appwrite project. Nothing here was executed during the audit; everything below is a design, not a result.
+> **Status and safety:** This is an audit-oriented scenario set, not a complete functional test plan; use [`BUSINESS_FLOWS.md`](./BUSINESS_FLOWS.md) for current product behavior and flow-level good/bad candidates. Several scenarios below had assumptions superseded by later code; TS-04, TS-10, and TS-13 are updated below. Nothing in this document was executed during this documentation work. Run only with isolated test accounts/data in preview or staging. Never use real payment credentials, send test webhooks to production, or delete production organizations.
+
+Companion to [`CODEBASE_AUDIT.md`](./CODEBASE_AUDIT.md). These scenarios cover findings that **cannot be confirmed by static analysis alone** — they require running Pages Functions or the live Appwrite project. Nothing here was executed during the audit; everything below is a design, not a result.
 
 Conventions:
 
@@ -52,18 +54,18 @@ Priority legend: **P1** = do before next payment/launch milestone; **P2** = next
 
 ## B. Payments (P1 — money)
 
-### TS-04 — Concurrent duplicate checkout (CONC-001) · P1 · integration testing (sandbox)
+### TS-04 — Concurrent duplicate checkout backstop · P1 · integration testing (sandbox)
 
-- **Related finding:** CONC-001 — non-atomic pending-row guard.
-- **Objective:** Determine whether two concurrent checkouts for one org+plan create two DOKU orders.
-- **Preconditions:** DOKU sandbox credentials configured; one org on the free plan owned by the test account; deployed Functions.
+- **Status:** The old CONC-001 assumption that the duplicate guard is only a non-atomic query is superseded. Checkout now derives a deterministic payment-row ID per organization, plan, and month; Appwrite's unique document ID is the cross-isolate backstop, in addition to pending-row reuse/conflict handling.
+- **Objective:** Regression-check that concurrent submissions do not create duplicate live DOKU orders.
+- **Preconditions:** DOKU sandbox credentials; an isolated test organization owned by the test account; preview/staging deployment. Never use production credentials or a real paid checkout.
 - **Test steps:**
-  1. Fire `POST /api/payments/checkout` twice concurrently (same org, same `plan: 'pro'`), e.g. `Promise.all` from two tabs or a script with two JWTs of the same user.
-  2. Repeat 10× with staggered starts (0 ms, 50 ms, 250 ms).
-  3. Query `GET /api/payments/portal?orgId=…` after each burst and count rows with `status: 'pending'`.
-- **Expected result (desired):** Exactly one pending row per org+plan; the second request receives the same checkout URL (200) or a 409.
-- **Failure indicators:** Two distinct pending rows with distinct checkout URLs from one burst — the cross-isolate guard leak, confirmed.
-- **Cleanup:** mark both rows expired via the Appwrite console; DOKU sandbox orders expire on their own.
+  1. Fire `POST /api/payments/checkout` twice concurrently for the same org and `plan: 'pro'`.
+  2. Repeat with staggered starts (0 ms, 50 ms, 250 ms), checking each response and the test organization's payment history.
+  3. Repeat with two organizations to confirm the pending order is not shared across orgs.
+- **Expected result:** One live pending order per org+plan submission window. The second request reuses the same checkout URL or receives a controlled 409 while creation is in flight. Different orgs remain isolated.
+- **Failure indicators:** Two distinct live DOKU orders for the same concurrent org+plan submissions, or one org receiving another org's checkout URL.
+- **Cleanup:** Use only sandbox test rows/orders and the provider's sandbox cleanup/expiry process; do not manipulate production payments.
 
 ### TS-05 — Webhook/status double settlement → double plan extension (CONC-002) · P1 · integration testing (sandbox)
 
@@ -112,12 +114,15 @@ Priority legend: **P1** = do before next payment/launch milestone; **P2** = next
 - **Expected (staging, single isolate):** requests 4+ are 429 with `retry-after`. On production (fleet): measure the same script — the number of allowed requests ≈ limit × (number of distinct isolates hit) reveals the multiplier.
 - **Failure indicators:** On staging, more than limit requests succeed (limiter not working at all).
 
-### TS-10 — Public invoice endpoint cost amplification (RATE-002, SEC-011) · P2 · manual testing
+### TS-10 — Public invoice endpoint rate fence and cost · P2 · manual testing (staging)
 
-- **Objective:** Confirm there is currently no fence on `GET /api/invoice/<id>` and estimate its per-hit read cost.
-- **Steps:** (1) Call it 50× in a loop for a known paid-org invoice id; verify no 429 ever occurs (confirming RATE-002). (2) Watch the Appwrite Console → Usage → Database reads during the loop to measure reads/second attributable to the endpoint. (3) Separately, attempt 20 sequential `GET`s with invalid-but-well-formed ids to confirm 404 shape and no rate-limit response.
-- **Expected:** No 429s (gap confirmed); reads scale linearly with hits (≈3–5 per hit).
-- **Failure indicators:** 429s appear (finding already partially mitigated), or read cost per hit far above 5 (unexpected query fan-out).
+- **Status:** The old “no rate fence” assumption is outdated. `GET /api/invoice/<id>` currently uses the `invoice-read` per-IP fence (60/minute by default), like the public site read.
+- **Objective:** Verify the configured fence and bound read behavior without generating avoidable production traffic.
+- **Preconditions:** Preview/staging test invoice in an active paid test organization, or an admin-owned test org; use only a controlled test IP.
+- **Steps:** Make a small number of successful reads, then exceed the staging limit (lower it only in staging) and verify the rate-limited response and `retry-after`. Separately check malformed/unknown IDs return 404 and do not bypass the fence.
+- **Expected:** Requests below the configured limit return the public payload; excess requests are rate-limited. Payload remains narrow and `no-store`.
+- **Failure indicators:** The configured staging limit is not applied, foreign/internal data leaks, or the rate-limited response shape is uncontrolled.
+- **Safety:** Do not run a high-volume loop against production or use provider usage counters as a justification for generating production reads.
 
 ### TS-11 — Turnstile bypass resilience on auth flows (RATE-004) · P2 · manual testing
 
@@ -138,12 +143,15 @@ Priority legend: **P1** = do before next payment/launch milestone; **P2** = next
 - **Expected:** All 12 succeed (documented behavior — the meter refuses via the claim, the endpoint does not re-count); `GET /api/quota/invoices` afterwards reports `used: 12, remaining: 0`.
 - **Failure indicators:** Create #11+ is refused by the endpoint (finding does not exist as described); or `used` never reaches 12 (count walk broken).
 
-### TS-13 — Quota meter cost for a large org (DB-002) · P2 · manual testing
+### TS-13 — Quota meter read cost by plan · P2 · manual testing (staging)
 
-- **Objective:** Measure the read cost of one meter load for an org with a long invoice history.
-- **Steps:** On an org with N ≳ 1,000 invoices (paid plan), load `/dashboard` (or call `GET /api/quota/invoices`) once; diff Appwrite Console read counters before/after.
-- **Expected (current behavior):** reads ≈ N (full pagination walk), i.e. ~1,000+ reads for one page view.
-- **Failure indicators:** Reads ≈ a few (an early exit already exists — then DB-002 is lower severity than assessed).
+- **Status:** The old paid-org full-history-walk assumption is outdated. Active paid organizations skip invoice-history counting; their quota response is unlimited (`remaining: null`). Free organizations perform the paginated count using invoice creation timestamps.
+- **Objective:** Verify that the active-paid path stays cheap and that a Free meter reports the right calendar-month count.
+- **Preconditions:** An isolated staging organization with an active paid test entitlement and a separate Free test organization. No production seed data.
+- **Steps:** Read the quota for the paid org with a large synthetic invoice history, then read the Free org's quota with a small known set of invoices created in the current and prior months. Inspect scoped query behavior or staging-only provider counters.
+- **Expected:** Paid org reports `remaining: null` without a history count walk. Free org counts current-month invoices by `$createdAt`, not invoice-entered date; a provider read failure returns 503 rather than zero remaining.
+- **Failure indicators:** Paid org triggers a full invoice-history walk; Free monthly count includes the wrong month/date field; an outage is presented as an empty quota.
+- **Safety:** Keep any large-history fixture and usage measurement in staging. Do not create large production datasets for this test.
 
 ### TS-14 — Org cascade delete completeness (CONC-004 context, orgs/[id]) · P2 · integration testing
 
