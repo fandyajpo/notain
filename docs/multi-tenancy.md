@@ -2,7 +2,6 @@
 
 > **Status: historical and partially superseded.** This document contains stale claims about mandatory/automatic organization creation, profile ownership, and working invitation creation. The current source allows an account with no organization, stores shared account identity separately, and returns 503 for new member invitations. Use [`BUSINESS_FLOWS.md`](./BUSINESS_FLOWS.md) and [`ORG_LIFECYCLE.md`](./ORG_LIFECYCLE.md) for current user behavior. The server-side membership gate and tenant-data API details below may still be useful, but verify them against source before operational use.
 
-
 ## 1. Data model
 
 | Table                                           | Keyed by            | Contents                                                                                          |

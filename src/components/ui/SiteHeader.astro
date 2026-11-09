@@ -1,25 +1,20 @@
 ---
-import { Menu, X } from "@lucide/astro";
-import {
-  isActiveSiteLink,
-  SITE_NAV_VISIBILITY,
-  siteNavLinks,
-} from "../../lib/site-nav";
+import { Menu, X } from '@lucide/astro';
+import { isActiveSiteLink, SITE_NAV_VISIBILITY, siteNavLinks } from '../../lib/site-nav';
 
 interface Props {
   /** Prefix for on-page anchors: `'/'` on every static content page. */
   anchorPrefix?: string;
 }
 
-const { anchorPrefix = "/" } = Astro.props;
+const { anchorPrefix = '/' } = Astro.props;
 const links = siteNavLinks(anchorPrefix);
 const current = Astro.url.pathname;
 const isCurrent = (href: string) => isActiveSiteLink(current, href);
 
-const DESKTOP_LINK =
-  "site-nav-link relative px-3 py-2 text-sm transition-colors focus-ring";
+const DESKTOP_LINK = 'site-nav-link relative px-3 py-2 text-sm transition-colors focus-ring';
 const MOBILE_LINK =
-  "site-mobile-link block rounded-control px-3 py-2.5 text-base transition-colors focus-ring";
+  'site-mobile-link block rounded-control px-3 py-2.5 text-base transition-colors focus-ring';
 
 /**
  * The sticky marketing header as a static Astro component.
@@ -38,10 +33,7 @@ const MOBILE_LINK =
  */
 ---
 
-<header
-  data-site-header
-  class="site-header sticky top-0 z-40 border-b transition-colors"
->
+<header data-site-header class="site-header sticky top-0 z-40 border-b transition-colors">
   <div class="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 sm:px-8">
     <a
       href="/"
@@ -65,10 +57,10 @@ const MOBILE_LINK =
             DESKTOP_LINK,
             SITE_NAV_VISIBILITY[link.show],
             isCurrent(link.href)
-              ? "font-medium text-foreground"
-              : "text-muted hover:text-foreground",
+              ? 'font-medium text-foreground'
+              : 'text-muted hover:text-foreground',
           ]}
-          aria-current={isCurrent(link.href) ? "page" : undefined}
+          aria-current={isCurrent(link.href) ? 'page' : undefined}
         >
           {link.label}
         </a>
@@ -112,10 +104,10 @@ const MOBILE_LINK =
           class:list={[
             MOBILE_LINK,
             isCurrent(link.href)
-              ? "bg-accent-soft font-medium text-accent"
-              : "text-foreground hover:bg-accent-soft",
+              ? 'bg-accent-soft font-medium text-accent'
+              : 'text-foreground hover:bg-accent-soft',
           ]}
-          aria-current={isCurrent(link.href) ? "page" : undefined}
+          aria-current={isCurrent(link.href) ? 'page' : undefined}
         >
           {link.label}
         </a>
@@ -216,19 +208,13 @@ const MOBILE_LINK =
   }
 
   .site-nav-overlay {
-    background-color: color-mix(
-      in srgb,
-      var(--color-background) 50%,
-      transparent
-    );
+    background-color: color-mix(in srgb, var(--color-background) 50%, transparent);
     backdrop-filter: blur(8px);
     transition: opacity 0.25s var(--ease-smooth);
   }
 
   [data-nav-drawer] {
-    transition:
-      height 0.28s var(--ease-smooth),
-      opacity 0.28s var(--ease-smooth);
+    transition: height 0.28s var(--ease-smooth), opacity 0.28s var(--ease-smooth);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -244,37 +230,34 @@ const MOBILE_LINK =
    * Delegated from `document`/`window` rather than attached to these nodes:
    * Astro's ClientRouter replaces the markup above on a soft navigation, and
    * listeners bound to the old nodes would die with them.
-   */ const HEADER = "[data-site-header]";
-  const TOGGLE = "[data-nav-toggle]";
-  const DRAWER = "[data-nav-drawer]";
-  const OVERLAY = "[data-nav-overlay]";
+   */
+  const HEADER = '[data-site-header]';
+  const TOGGLE = '[data-nav-toggle]';
+  const DRAWER = '[data-nav-drawer]';
+  const OVERLAY = '[data-nav-overlay]';
 
   function setScrolled(): void {
     const header = document.querySelector(HEADER);
-    if (header) header.classList.toggle("is-scrolled", window.scrollY > 16);
+    if (header) header.classList.toggle('is-scrolled', window.scrollY > 16);
   }
 
   /** Animate an element between 0 and its natural height, then settle on auto. */
-  function animateHeight(
-    panel: HTMLElement,
-    opening: boolean,
-    done?: () => void,
-  ): void {
+  function animateHeight(panel: HTMLElement, opening: boolean, done?: () => void): void {
     const from = opening ? 0 : panel.scrollHeight;
     const to = opening ? panel.scrollHeight : 0;
-    panel.style.opacity = opening ? "0" : "1";
+    panel.style.opacity = opening ? '0' : '1';
     panel.style.height = `${from}px`;
     // Force a frame so the browser has a start value to interpolate from.
     requestAnimationFrame(() => {
       panel.style.height = `${to}px`;
-      panel.style.opacity = opening ? "1" : "0";
+      panel.style.opacity = opening ? '1' : '0';
     });
     const settle = () => {
-      panel.removeEventListener("transitionend", settle);
-      if (opening) panel.style.height = "auto";
+      panel.removeEventListener('transitionend', settle);
+      if (opening) panel.style.height = 'auto';
       done?.();
     };
-    panel.addEventListener("transitionend", settle);
+    panel.addEventListener('transitionend', settle);
   }
 
   function closeDrawer(): void {
@@ -284,15 +267,15 @@ const MOBILE_LINK =
     if (!panel || panel.hidden) return;
     animateHeight(panel, false, () => {
       panel.hidden = true;
-      panel.style.height = "";
-      panel.style.opacity = "";
+      panel.style.height = '';
+      panel.style.opacity = '';
     });
     if (overlay) overlay.hidden = true;
     if (toggle) {
-      toggle.setAttribute("aria-expanded", "false");
-      toggle.setAttribute("aria-label", "Buka menu");
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.setAttribute('aria-label', 'Buka menu');
     }
-    document.body.style.overflow = "";
+    document.body.style.overflow = '';
   }
 
   function openDrawer(): void {
@@ -304,21 +287,19 @@ const MOBILE_LINK =
     animateHeight(panel, true);
     if (overlay) overlay.hidden = false;
     if (toggle) {
-      toggle.setAttribute("aria-expanded", "true");
-      toggle.setAttribute("aria-label", "Tutup menu");
+      toggle.setAttribute('aria-expanded', 'true');
+      toggle.setAttribute('aria-label', 'Tutup menu');
     }
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = 'hidden';
     // The drawer is the focused surface: land on its first link.
-    (panel.querySelector("a") as HTMLElement | null)?.focus();
+    (panel.querySelector('a') as HTMLElement | null)?.focus();
   }
 
   function isOpen(): boolean {
-    return (
-      document.querySelector(TOGGLE)?.getAttribute("aria-expanded") === "true"
-    );
+    return document.querySelector(TOGGLE)?.getAttribute('aria-expanded') === 'true';
   }
 
-  document.addEventListener("click", (event) => {
+  document.addEventListener('click', (event) => {
     const target = event.target as Element | null;
     if (!target) return;
     if (target.closest(TOGGLE)) {
@@ -337,8 +318,8 @@ const MOBILE_LINK =
     if (target.closest(`${DRAWER} a`) || target.closest(OVERLAY)) closeDrawer();
   });
 
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && isOpen()) {
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && isOpen()) {
       closeDrawer();
       document.querySelector<HTMLButtonElement>(TOGGLE)?.focus();
     }
@@ -346,11 +327,11 @@ const MOBILE_LINK =
 
   // Soft navigation replaces the markup and must never inherit an open drawer
   // (body scroll lock included).
-  document.addEventListener("astro:page-load", () => {
+  document.addEventListener('astro:page-load', () => {
     closeDrawer();
     setScrolled();
   });
 
-  window.addEventListener("scroll", setScrolled, { passive: true });
+  window.addEventListener('scroll', setScrolled, { passive: true });
   setScrolled();
 </script>
