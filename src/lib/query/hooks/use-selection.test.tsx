@@ -136,7 +136,7 @@ describe('useSelectionScope', () => {
     expect(view?.has('z')).toBe(false);
   });
 
-  it('stays optimistic while a filtered walk is pending (no unchecked flicker)', async () => {
+  it('does not guess membership while a filtered walk is pending and reconciles overlap', async () => {
     let resolveWalk!: (rows: Row[]) => void;
     const source = loaders({
       matching: vi.fn(
@@ -146,13 +146,21 @@ describe('useSelectionScope', () => {
           }),
       ),
     });
-    render(<Probe scope={{ kind: 'filtered', criteria: { query: 'x' } }} loaders={source} />);
+    const scope = { kind: 'filtered', criteria: { query: 'x' } } as const;
+    const selection = getSelectionStore<Criteria>('scope-test');
+    selection.toggle('a');
+    selection.selectScope(scope);
+    render(<Probe scope={scope} loaders={source} />);
 
     expect(probeText()).toBe('pending');
-    expect(view?.has('anything')).toBe(true);
+    expect(view?.has('anything')).toBe(false);
 
     await act(async () => resolveWalk([{ id: 'a' }]));
-    await until(() => expect(probeText()).toBe('1'));
+    await until(() => {
+      expect(probeText()).toBe('1');
+      expect(selection.getSnapshot().included.has('a')).toBe(false);
+    });
+    expect(selection.count(1)).toBe(1);
     expect(view?.has('a')).toBe(true);
     expect(view?.has('z')).toBe(false);
   });

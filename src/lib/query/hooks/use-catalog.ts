@@ -11,6 +11,11 @@ import {
 } from '../../../app/catalog';
 import { queryPolicy } from '../policies';
 import { queryKeys } from '../keys';
+import {
+  assertOrgMutationCurrent,
+  captureOrgMutationContext,
+  isCurrentOrgMutation,
+} from '../org-mutation';
 import type { CatalogDraft, CatalogItem } from '../../../core/catalog/model';
 
 /**
@@ -55,8 +60,13 @@ export function useCatalogCount() {
 export function useCreateCatalogItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (draft: CatalogDraft) => createCatalogItem(draft),
-    onSuccess: (item) => {
+    mutationFn: (draft: CatalogDraft) => {
+      assertOrgMutationCurrent(draft);
+      return createCatalogItem(draft);
+    },
+    onMutate: (draft) => captureOrgMutationContext(draft),
+    onSuccess: (item, _draft, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       queryClient.setQueryData(queryKeys.catalogItem(item.id), item);
       void queryClient.invalidateQueries({ queryKey: queryKeys.catalog });
       void queryClient.invalidateQueries({ queryKey: queryKeys.catalogPage });
@@ -69,9 +79,13 @@ export function useCreateCatalogItem() {
 export function useUpdateCatalogItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, draft }: { id: string; draft: CatalogDraft }) =>
-      updateCatalogItem(id, draft),
-    onSuccess: (item) => {
+    mutationFn: (variables: { id: string; draft: CatalogDraft }) => {
+      assertOrgMutationCurrent(variables);
+      return updateCatalogItem(variables.id, variables.draft);
+    },
+    onMutate: (variables) => captureOrgMutationContext(variables),
+    onSuccess: (item, _variables, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       queryClient.setQueryData(queryKeys.catalogItem(item.id), item);
       void queryClient.invalidateQueries({ queryKey: queryKeys.catalog });
       void queryClient.invalidateQueries({ queryKey: queryKeys.catalogPage });
@@ -86,8 +100,13 @@ export function useUpdateCatalogItem() {
 export function useRememberCatalogItems() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (drafts: CatalogDraft[]) => rememberCatalogItems(drafts),
-    onSuccess: () => {
+    mutationFn: (drafts: CatalogDraft[]) => {
+      assertOrgMutationCurrent(drafts);
+      return rememberCatalogItems(drafts);
+    },
+    onMutate: (drafts) => captureOrgMutationContext(drafts),
+    onSuccess: (_result, _drafts, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       void queryClient.invalidateQueries({ queryKey: queryKeys.catalog });
       void queryClient.invalidateQueries({ queryKey: queryKeys.catalogPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.catalogCount });
@@ -98,21 +117,29 @@ export function useRememberCatalogItems() {
 export function useDeleteCatalogItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deleteCatalogItem(id),
-    onMutate: async (id) => {
+    mutationFn: (variables: { id: string }) => {
+      assertOrgMutationCurrent(variables);
+      return deleteCatalogItem(variables.id);
+    },
+    onMutate: async (variables) => {
+      const { id } = variables;
+      const orgContext = captureOrgMutationContext(variables);
       await queryClient.cancelQueries({ queryKey: queryKeys.catalog });
+      if (!isCurrentOrgMutation(orgContext)) return { ...orgContext, previous: undefined };
       const previous = queryClient.getQueryData<CatalogItem[]>(queryKeys.catalog);
 
       queryClient.setQueryData<CatalogItem[]>(queryKeys.catalog, (current) =>
         current ? current.filter((item) => item.id !== id) : current,
       );
 
-      return { previous };
+      return { ...orgContext, previous };
     },
     onError: (_error, _id, context) => {
-      if (context?.previous) queryClient.setQueryData(queryKeys.catalog, context.previous);
+      if (!isCurrentOrgMutation(context)) return;
+      if (context.previous) queryClient.setQueryData(queryKeys.catalog, context.previous);
     },
-    onSettled: () => {
+    onSettled: (_result, _error, _id, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       void queryClient.invalidateQueries({ queryKey: queryKeys.catalog });
       void queryClient.invalidateQueries({ queryKey: queryKeys.catalogPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.catalogCount });
@@ -124,22 +151,29 @@ export function useDeleteCatalogItem() {
 export function useDeleteCatalogItems() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (ids: string[]) => deleteCatalogItems(ids),
+    mutationFn: (ids: string[]) => {
+      assertOrgMutationCurrent(ids);
+      return deleteCatalogItems(ids);
+    },
     onMutate: async (ids) => {
+      const orgContext = captureOrgMutationContext(ids);
       const dropping = new Set(ids);
       await queryClient.cancelQueries({ queryKey: queryKeys.catalog });
+      if (!isCurrentOrgMutation(orgContext)) return { ...orgContext, previous: undefined };
       const previous = queryClient.getQueryData<CatalogItem[]>(queryKeys.catalog);
 
       queryClient.setQueryData<CatalogItem[]>(queryKeys.catalog, (current) =>
         current ? current.filter((item) => !dropping.has(item.id)) : current,
       );
 
-      return { previous };
+      return { ...orgContext, previous };
     },
     onError: (_error, _ids, context) => {
-      if (context?.previous) queryClient.setQueryData(queryKeys.catalog, context.previous);
+      if (!isCurrentOrgMutation(context)) return;
+      if (context.previous) queryClient.setQueryData(queryKeys.catalog, context.previous);
     },
-    onSettled: () => {
+    onSettled: (_result, _error, _ids, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       void queryClient.invalidateQueries({ queryKey: queryKeys.catalog });
       void queryClient.invalidateQueries({ queryKey: queryKeys.catalogPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.catalogCount });

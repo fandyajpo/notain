@@ -13,6 +13,11 @@ import {
 } from '../../../app/customers';
 import { queryPolicy } from '../policies';
 import { queryKeys } from '../keys';
+import {
+  assertOrgMutationCurrent,
+  captureOrgMutationContext,
+  isCurrentOrgMutation,
+} from '../org-mutation';
 import type { Customer, CustomerDraft } from '../../../core/customer/model';
 
 /**
@@ -64,8 +69,13 @@ export function useCustomerCount() {
 export function useCreateCustomer() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (draft: CustomerDraft) => createCustomer(draft),
-    onSuccess: (customer) => {
+    mutationFn: (draft: CustomerDraft) => {
+      assertOrgMutationCurrent(draft);
+      return createCustomer(draft);
+    },
+    onMutate: (draft) => captureOrgMutationContext(draft),
+    onSuccess: (customer, _draft, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       queryClient.setQueryData(queryKeys.customer(customer.id), customer);
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
@@ -80,8 +90,13 @@ export function useCreateCustomer() {
 export function useUpdateCustomer() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, draft }: { id: string; draft: CustomerDraft }) => updateCustomer(id, draft),
-    onSuccess: (customer) => {
+    mutationFn: (variables: { id: string; draft: CustomerDraft }) => {
+      assertOrgMutationCurrent(variables);
+      return updateCustomer(variables.id, variables.draft);
+    },
+    onMutate: (variables) => captureOrgMutationContext(variables),
+    onSuccess: (customer, _variables, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       queryClient.setQueryData(queryKeys.customer(customer.id), customer);
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
@@ -96,9 +111,13 @@ export function useUpdateCustomer() {
 export function useMergeCustomers() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { targetId: string; sourceIds: string[]; draft: CustomerDraft }) =>
-      mergeCustomers(input),
-    onSuccess: (customer) => {
+    mutationFn: (input: { targetId: string; sourceIds: string[]; draft: CustomerDraft }) => {
+      assertOrgMutationCurrent(input);
+      return mergeCustomers(input);
+    },
+    onMutate: (input) => captureOrgMutationContext(input),
+    onSuccess: (customer, _input, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       queryClient.setQueryData(queryKeys.customer(customer.id), customer);
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
@@ -116,9 +135,13 @@ export function useMergeCustomers() {
 export function useRememberCustomer() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ draft, lastUsedAt }: { draft: CustomerDraft; lastUsedAt?: string }) =>
-      rememberCustomer(draft, lastUsedAt),
-    onSuccess: () => {
+    mutationFn: (variables: { draft: CustomerDraft; lastUsedAt?: string }) => {
+      assertOrgMutationCurrent(variables);
+      return rememberCustomer(variables.draft, variables.lastUsedAt);
+    },
+    onMutate: (variables) => captureOrgMutationContext(variables),
+    onSuccess: (_result, _variables, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
@@ -131,21 +154,29 @@ export function useRememberCustomer() {
 export function useDeleteCustomer() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deleteCustomer(id),
-    onMutate: async (id) => {
+    mutationFn: (variables: { id: string }) => {
+      assertOrgMutationCurrent(variables);
+      return deleteCustomer(variables.id);
+    },
+    onMutate: async (variables) => {
+      const { id } = variables;
+      const orgContext = captureOrgMutationContext(variables);
       await queryClient.cancelQueries({ queryKey: queryKeys.customers });
+      if (!isCurrentOrgMutation(orgContext)) return { ...orgContext, previous: undefined };
       const previous = queryClient.getQueryData<Customer[]>(queryKeys.customers);
 
       queryClient.setQueryData<Customer[]>(queryKeys.customers, (current) =>
         current ? current.filter((customer) => customer.id !== id) : current,
       );
 
-      return { previous };
+      return { ...orgContext, previous };
     },
     onError: (_error, _id, context) => {
-      if (context?.previous) queryClient.setQueryData(queryKeys.customers, context.previous);
+      if (!isCurrentOrgMutation(context)) return;
+      if (context.previous) queryClient.setQueryData(queryKeys.customers, context.previous);
     },
-    onSettled: () => {
+    onSettled: (_result, _error, _id, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
@@ -159,22 +190,29 @@ export function useDeleteCustomer() {
 export function useDeleteCustomers() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (ids: string[]) => deleteCustomers(ids),
+    mutationFn: (ids: string[]) => {
+      assertOrgMutationCurrent(ids);
+      return deleteCustomers(ids);
+    },
     onMutate: async (ids) => {
+      const orgContext = captureOrgMutationContext(ids);
       const dropping = new Set(ids);
       await queryClient.cancelQueries({ queryKey: queryKeys.customers });
+      if (!isCurrentOrgMutation(orgContext)) return { ...orgContext, previous: undefined };
       const previous = queryClient.getQueryData<Customer[]>(queryKeys.customers);
 
       queryClient.setQueryData<Customer[]>(queryKeys.customers, (current) =>
         current ? current.filter((customer) => !dropping.has(customer.id)) : current,
       );
 
-      return { previous };
+      return { ...orgContext, previous };
     },
     onError: (_error, _ids, context) => {
-      if (context?.previous) queryClient.setQueryData(queryKeys.customers, context.previous);
+      if (!isCurrentOrgMutation(context)) return;
+      if (context.previous) queryClient.setQueryData(queryKeys.customers, context.previous);
     },
-    onSettled: () => {
+    onSettled: (_result, _error, _ids, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });
@@ -188,8 +226,13 @@ export function useDeleteCustomers() {
 export function useImportCustomers() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (drafts: CustomerDraft[]) => importCustomers(drafts),
-    onSuccess: () => {
+    mutationFn: (drafts: CustomerDraft[]) => {
+      assertOrgMutationCurrent(drafts);
+      return importCustomers(drafts);
+    },
+    onMutate: (drafts) => captureOrgMutationContext(drafts),
+    onSuccess: (_customers, _drafts, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customersPage });
       void queryClient.invalidateQueries({ queryKey: queryKeys.customerCount });

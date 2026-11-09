@@ -3,10 +3,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import { setActiveOrgId } from '../../../app/active-org';
 import { createEmptyDraft, type Invoice } from '../../../core/invoice/model';
 import type { InvoicePage } from '../../../ports/invoice-repository';
 import { queryKeys } from '../keys';
-import { useInvoices, useUpdateInvoiceStatus } from './use-invoices';
+import { useDeleteInvoice, useInvoices, useUpdateInvoiceStatus } from './use-invoices';
 
 /**
  * The two cache behaviours the tables depend on, exercised end-to-end against
@@ -20,14 +21,15 @@ import { useInvoices, useUpdateInvoiceStatus } from './use-invoices';
  *    what stops the full-card spinner) until the new page lands.
  */
 
-const { listInvoicesPage, updateInvoiceStatus } = vi.hoisted(() => ({
+const { deleteInvoice, listInvoicesPage, updateInvoiceStatus } = vi.hoisted(() => ({
+  deleteInvoice: vi.fn(),
   listInvoicesPage: vi.fn(),
   updateInvoiceStatus: vi.fn(),
 }));
 
 vi.mock('../../../app/invoices', () => ({
   createInvoice: vi.fn(),
-  deleteInvoice: vi.fn(),
+  deleteInvoice,
   deleteInvoices: vi.fn(),
   getInvoice: vi.fn(),
   listAllInvoiceNumbers: vi.fn(),
@@ -117,8 +119,12 @@ function probe(): HTMLElement {
   return node as HTMLElement;
 }
 
+const ORG_A = 'org_aaaaaaaaaaaaaaaa';
+const ORG_B = 'org_bbbbbbbbbbbbbbbb';
+
 beforeEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  setActiveOrgId(ORG_A);
   queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -136,6 +142,7 @@ beforeEach(() => {
 afterEach(() => {
   act(() => root.unmount());
   container.remove();
+  setActiveOrgId(null);
   vi.resetAllMocks();
 });
 
@@ -145,10 +152,25 @@ function FlipButton() {
     <button
       type="button"
       data-flip
+      data-error={String(flip.isError)}
       disabled={flip.isPending}
       onClick={() => flip.mutate({ id: 'inv-1', status: 'sent' })}
     >
       flip
+    </button>
+  );
+}
+
+function DeleteButton() {
+  const remove = useDeleteInvoice();
+  return (
+    <button
+      type="button"
+      data-delete
+      data-error={String(remove.isError)}
+      onClick={() => remove.mutate({ id: 'inv-1' })}
+    >
+      delete
     </button>
   );
 }
@@ -198,6 +220,80 @@ describe('useUpdateInvoiceStatus — optimistic write', () => {
       (container.querySelector('[data-flip]') as HTMLButtonElement).click();
     });
     await until(() => expect(readStatus()).toBe('sent'));
+  });
+
+  it('does not roll back old-organization data over the newly selected organization', async () => {
+    queryClient.setQueryData(queryKeys.invoices(''), seededList([invoice({ status: null })]));
+    render(<FlipButton />);
+
+    const inFlight = deferred<Invoice>();
+    updateInvoiceStatus.mockReturnValue(inFlight.promise);
+    await act(async () => {
+      (container.querySelector('[data-flip]') as HTMLButtonElement).click();
+    });
+    await until(() => expect(readStatus()).toBe('sent'));
+
+    setActiveOrgId(ORG_B);
+    queryClient.setQueryData(queryKeys.invoices(''), seededList([invoice({ status: 'paid' })]));
+    await act(async () => inFlight.reject(new Error('server said no')));
+
+    await until(() => expect(readStatus()).toBe('paid'));
+  });
+
+  it('does not start an old-org request if the organization changes during optimistic setup', async () => {
+    queryClient.setQueryData(queryKeys.invoices(''), seededList([invoice()]));
+    render(<FlipButton />);
+
+    const cancellation = deferred<void>();
+    vi.spyOn(queryClient, 'cancelQueries').mockReturnValue(cancellation.promise);
+    await act(async () => {
+      (container.querySelector('[data-flip]') as HTMLButtonElement).click();
+    });
+
+    setActiveOrgId(ORG_B);
+    await act(async () => cancellation.resolve());
+    await until(() =>
+      expect((container.querySelector('[data-flip]') as HTMLButtonElement).dataset.error).toBe('true'),
+    );
+    expect(updateInvoiceStatus).not.toHaveBeenCalled();
+  });
+});
+
+describe('useDeleteInvoice — quota refresh', () => {
+  it('does not send a delete request after the org changes during optimistic setup', async () => {
+    render(<DeleteButton />);
+
+    const cancellation = deferred<void>();
+    vi.spyOn(queryClient, 'cancelQueries').mockReturnValue(cancellation.promise);
+    await act(async () => {
+      (container.querySelector('[data-delete]') as HTMLButtonElement).click();
+    });
+
+    setActiveOrgId(ORG_B);
+    await act(async () => cancellation.resolve());
+    await until(() =>
+      expect((container.querySelector('[data-delete]') as HTMLButtonElement).dataset.error).toBe('true'),
+    );
+    expect(deleteInvoice).not.toHaveBeenCalled();
+  });
+
+  it('invalidates the monthly quota meter after deletion', async () => {
+    queryClient.setQueryData(queryKeys.invoiceQuota, {
+      remaining: 1,
+      used: 9,
+      limit: 10,
+      resetsAt: '2026-11-01T00:00:00.000Z',
+    });
+    deleteInvoice.mockResolvedValue(undefined);
+    render(<DeleteButton />);
+
+    await act(async () => {
+      (container.querySelector('[data-delete]') as HTMLButtonElement).click();
+    });
+
+    await until(() =>
+      expect(queryClient.getQueryState(queryKeys.invoiceQuota)?.isInvalidated).toBe(true),
+    );
   });
 });
 

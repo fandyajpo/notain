@@ -263,7 +263,7 @@ export function InvoiceTable() {
   async function confirmDelete() {
     if (!pendingDelete) return;
     try {
-      await deleteInvoice.mutateAsync(pendingDelete.id);
+      await deleteInvoice.mutateAsync({ id: pendingDelete.id });
       toast('Nota berhasil dihapus.', { variant: 'success' });
     } catch {
       toast('Nota belum bisa dihapus. Coba lagi ya.', { variant: 'error' });

@@ -227,7 +227,7 @@ function CustomersContent() {
   function confirmDelete() {
     if (!deleteTarget) return;
     const { id, name } = deleteTarget;
-    deleteCustomer.mutate(id, {
+    deleteCustomer.mutate({ id }, {
       onSuccess: () => {
         setDeleteTarget(null);
         toast(`Pelanggan "${name}" dihapus.`, { variant: 'success' });

@@ -20,6 +20,12 @@ import {
 } from '../../../app/invoices';
 import { queryPolicy } from '../policies';
 import { queryKeys } from '../keys';
+import {
+  assertOrgContextCurrent,
+  assertOrgMutationCurrent,
+  captureOrgMutationContext,
+  isCurrentOrgMutation,
+} from '../org-mutation';
 import type { Invoice, InvoiceDraft, InvoiceStatus } from '../../../core/invoice/model';
 import type { InvoicePage } from '../../../ports/invoice-repository';
 
@@ -117,6 +123,7 @@ export function useCreateInvoice() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (draft: InvoiceDraft) => {
+      const orgContext = assertOrgMutationCurrent(draft);
       // The free tier's monthly cap lives here, on the create path only:
       // edits never consume allowance. The server counts this owner's rows
       // and answers 402 when the month is spent (or 503 when it cannot tell
@@ -124,13 +131,17 @@ export function useCreateInvoice() {
       // where it is meant to bind). Either way the failure reaches the
       // builder's own error surface with the server's copy.
       await claimInvoiceQuota();
+      assertOrgContextCurrent(orgContext);
       return createInvoice(draft);
     },
-    onSuccess: (invoice) => {
+    onMutate: (draft) => captureOrgMutationContext(draft),
+    onSuccess: (invoice, _draft, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       queryClient.setQueryData(queryKeys.invoice(invoice.id), invoice);
       invalidateCollections(queryClient);
     },
-    onSettled: () => {
+    onSettled: (_invoice, _error, _draft, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       // A successful save consumed allowance; a failed one may have changed
       // the month. Either way the meter must not keep its old number.
       void queryClient.invalidateQueries({ queryKey: queryKeys.invoiceQuota });
@@ -141,8 +152,13 @@ export function useCreateInvoice() {
 export function useUpdateInvoice() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, draft }: { id: string; draft: InvoiceDraft }) => updateInvoice(id, draft),
-    onSuccess: (invoice) => {
+    mutationFn: (variables: { id: string; draft: InvoiceDraft }) => {
+      assertOrgMutationCurrent(variables);
+      return updateInvoice(variables.id, variables.draft);
+    },
+    onMutate: (variables) => captureOrgMutationContext(variables),
+    onSuccess: (invoice, _variables, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       queryClient.setQueryData(queryKeys.invoice(invoice.id), invoice);
       invalidateCollections(queryClient);
     },
@@ -158,10 +174,15 @@ export function useUpdateInvoice() {
 export function useUpdateInvoiceStatus() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: InvoiceStatus }) =>
-      updateInvoiceStatus(id, status),
-    onMutate: async ({ id, status }) => {
+    mutationFn: (variables: { id: string; status: InvoiceStatus }) => {
+      assertOrgMutationCurrent(variables);
+      return updateInvoiceStatus(variables.id, variables.status);
+    },
+    onMutate: async (variables) => {
+      const { id, status } = variables;
+      const orgContext = captureOrgMutationContext(variables);
       await queryClient.cancelQueries({ queryKey: ['invoices'] });
+      if (!isCurrentOrgMutation(orgContext)) return { ...orgContext, previousLists: [] };
       const previousLists = queryClient.getQueriesData<InvoiceListData>({
         queryKey: ['invoices'],
       });
@@ -182,19 +203,22 @@ export function useUpdateInvoiceStatus() {
           : current,
       );
 
-      return { previousLists };
+      return { ...orgContext, previousLists };
     },
     onError: (_error, _variables, context) => {
-      context?.previousLists.forEach(([key, data]) => {
+      if (!isCurrentOrgMutation(context)) return;
+      context.previousLists.forEach(([key, data]) => {
         if (data) queryClient.setQueryData(key, data);
       });
     },
-    onSuccess: (invoice) => {
+    onSuccess: (invoice, _variables, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       queryClient.setQueryData(queryKeys.invoice(invoice.id), invoice);
     },
     // Refetch rather than trust the optimistic write: the server is the source
     // of truth for the stored enum.
-    onSettled: () => {
+    onSettled: (_invoice, _error, _variables, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       void queryClient.invalidateQueries({ queryKey: ['invoices'] });
       // A paid/void flip is exactly what the dashboard's revenue and
       // receivable metrics turn on — recompute every cached period.
@@ -206,9 +230,15 @@ export function useUpdateInvoiceStatus() {
 export function useDeleteInvoice() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deleteInvoice(id),
-    onMutate: async (id) => {
+    mutationFn: (variables: { id: string }) => {
+      assertOrgMutationCurrent(variables);
+      return deleteInvoice(variables.id);
+    },
+    onMutate: async (variables) => {
+      const { id } = variables;
+      const orgContext = captureOrgMutationContext(variables);
       await queryClient.cancelQueries({ queryKey: ['invoices'] });
+      if (!isCurrentOrgMutation(orgContext)) return { ...orgContext, previousLists: [] };
       const previousLists = queryClient.getQueriesData<InvoiceListData>({
         queryKey: ['invoices'],
       });
@@ -227,15 +257,18 @@ export function useDeleteInvoice() {
       );
       queryClient.removeQueries({ queryKey: queryKeys.invoice(id) });
 
-      return { previousLists };
+      return { ...orgContext, previousLists };
     },
     onError: (_error, _id, context) => {
-      context?.previousLists.forEach(([key, data]) => {
+      if (!isCurrentOrgMutation(context)) return;
+      context.previousLists.forEach(([key, data]) => {
         if (data) queryClient.setQueryData(key, data);
       });
     },
-    onSettled: () => {
+    onSettled: (_invoice, _error, _id, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       invalidateCollections(queryClient);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.invoiceQuota });
     },
   });
 }
@@ -244,10 +277,15 @@ export function useDeleteInvoice() {
 export function useDeleteInvoices() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (ids: string[]) => deleteInvoices(ids),
+    mutationFn: (ids: string[]) => {
+      assertOrgMutationCurrent(ids);
+      return deleteInvoices(ids);
+    },
     onMutate: async (ids) => {
+      const orgContext = captureOrgMutationContext(ids);
       const dropping = new Set(ids);
       await queryClient.cancelQueries({ queryKey: ['invoices'] });
+      if (!isCurrentOrgMutation(orgContext)) return { ...orgContext, previousLists: [] };
       const previousLists = queryClient.getQueriesData<InvoiceListData>({
         queryKey: ['invoices'],
       });
@@ -265,15 +303,18 @@ export function useDeleteInvoices() {
       );
       for (const id of ids) queryClient.removeQueries({ queryKey: queryKeys.invoice(id) });
 
-      return { previousLists };
+      return { ...orgContext, previousLists };
     },
     onError: (_error, _ids, context) => {
-      context?.previousLists.forEach(([key, data]) => {
+      if (!isCurrentOrgMutation(context)) return;
+      context.previousLists.forEach(([key, data]) => {
         if (data) queryClient.setQueryData(key, data);
       });
     },
-    onSettled: () => {
+    onSettled: (_invoices, _error, _ids, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       invalidateCollections(queryClient);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.invoiceQuota });
     },
   });
 }

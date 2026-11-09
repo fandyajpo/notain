@@ -236,7 +236,7 @@ function CatalogContent() {
   function confirmDelete() {
     if (!deleteTarget) return;
     const { id, name } = deleteTarget;
-    deleteItem.mutate(id, {
+    deleteItem.mutate({ id }, {
       onSuccess: () => {
         setDeleteTarget(null);
         toast(`"${name}" dihapus.`, { variant: 'success' });

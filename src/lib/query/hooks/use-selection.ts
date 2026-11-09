@@ -1,7 +1,13 @@
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../keys';
 import { queryPolicy } from '../policies';
-import { resolveSelection, type Scope, type SelectionSnapshot } from '../../selection';
+import {
+  getSelectionStore,
+  resolveSelection,
+  type Scope,
+  type SelectionSnapshot,
+} from '../../selection';
 import { toast } from '../../ui/toast';
 import { AppError, ERROR_CODES } from '../../../core/shared/errors';
 
@@ -55,6 +61,14 @@ export function useSelectionScope<C, T extends { id: string }>(
     ...queryPolicy('selectionScope'),
   });
 
+  useEffect(() => {
+    if (scope?.kind !== 'filtered' || !query.data) return;
+    getSelectionStore<C>(entity).reconcileScopeMembers(
+      scope,
+      query.data.map((row) => row.id),
+    );
+  }, [entity, query.data, scope]);
+
   if (!scope) return { size: null, has: () => false };
   if (scope.kind === 'dataset') {
     if (datasetTotal != null) return { size: datasetTotal, has: () => true };
@@ -62,11 +76,10 @@ export function useSelectionScope<C, T extends { id: string }>(
     // is already known even though the exact size is not.
     return { size: query.data?.length ?? null, has: () => true };
   }
-  // Filtered scope: while the walk runs, report membership optimistically —
-  // the rows on screen are exactly the ones the snapshot criteria matched a
-  // moment ago, so an unchecked flicker would lie the other way. The walk
-  // corrects it within the same second and caches under `selectionScope`.
-  if (!query.data) return { size: null, has: () => true };
+  // Filtered scope: do not guess membership while its snapshot walk is pending.
+  // The table's live filter may already differ, so optimistic `true` can mark
+  // unrelated visible rows selected or record exclusions outside this scope.
+  if (!query.data) return { size: null, has: () => false };
   const ids = new Set(query.data.map((row) => row.id));
   return { size: ids.size, has: (id) => ids.has(id) };
 }

@@ -8,6 +8,11 @@ import {
 } from '../../../app/templates';
 import { queryPolicy } from '../policies';
 import { queryKeys } from '../keys';
+import {
+  assertOrgMutationCurrent,
+  captureOrgMutationContext,
+  isCurrentOrgMutation,
+} from '../org-mutation';
 import type { AuthoredTemplate, InvoiceTemplate } from '../../../core/template/model';
 
 /**
@@ -39,8 +44,13 @@ export function useTemplatesPage() {
 export function useCreateTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: AuthoredTemplate) => createTemplate(input),
-    onSuccess: (template) => {
+    mutationFn: (input: AuthoredTemplate) => {
+      assertOrgMutationCurrent(input);
+      return createTemplate(input);
+    },
+    onMutate: (input) => captureOrgMutationContext(input),
+    onSuccess: (template, _input, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       queryClient.setQueryData(queryKeys.template(template.id), template);
       void queryClient.invalidateQueries({ queryKey: queryKeys.templates });
       void queryClient.invalidateQueries({ queryKey: queryKeys.templatesPage });
@@ -51,9 +61,13 @@ export function useCreateTemplate() {
 export function useUpdateTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, template }: { id: string; template: AuthoredTemplate }) =>
-      updateTemplate(id, template),
-    onSuccess: (saved) => {
+    mutationFn: (variables: { id: string; template: AuthoredTemplate }) => {
+      assertOrgMutationCurrent(variables);
+      return updateTemplate(variables.id, variables.template);
+    },
+    onMutate: (variables) => captureOrgMutationContext(variables),
+    onSuccess: (saved, _variables, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       queryClient.setQueryData(queryKeys.template(saved.id), saved);
       void queryClient.invalidateQueries({ queryKey: queryKeys.templates });
       void queryClient.invalidateQueries({ queryKey: queryKeys.templatesPage });
@@ -69,21 +83,29 @@ export function useUpdateTemplate() {
 export function useDeleteTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deleteTemplate(id),
-    onMutate: async (id) => {
+    mutationFn: (variables: { id: string }) => {
+      assertOrgMutationCurrent(variables);
+      return deleteTemplate(variables.id);
+    },
+    onMutate: async (variables) => {
+      const { id } = variables;
+      const orgContext = captureOrgMutationContext(variables);
       await queryClient.cancelQueries({ queryKey: queryKeys.templates });
+      if (!isCurrentOrgMutation(orgContext)) return { ...orgContext, previous: undefined };
       const previous = queryClient.getQueryData<InvoiceTemplate[]>(queryKeys.templates);
 
       queryClient.setQueryData<InvoiceTemplate[]>(queryKeys.templates, (current) =>
         current ? current.filter((template) => template.id !== id) : current,
       );
 
-      return { previous };
+      return { ...orgContext, previous };
     },
     onError: (_error, _id, context) => {
-      if (context?.previous) queryClient.setQueryData(queryKeys.templates, context.previous);
+      if (!isCurrentOrgMutation(context)) return;
+      if (context.previous) queryClient.setQueryData(queryKeys.templates, context.previous);
     },
-    onSettled: () => {
+    onSettled: (_result, _error, _id, context) => {
+      if (!isCurrentOrgMutation(context)) return;
       void queryClient.invalidateQueries({ queryKey: queryKeys.templates });
       void queryClient.invalidateQueries({ queryKey: queryKeys.templatesPage });
     },

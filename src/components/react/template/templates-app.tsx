@@ -66,7 +66,7 @@ function TemplatesContent() {
 
   function confirmDelete(template: InvoiceTemplate) {
     setPendingDelete(null);
-    remove.mutate(template.id, {
+    remove.mutate({ id: template.id }, {
       onError: (error) => {
         const message = isAppError(error) ? error.message : GENERIC_ERROR_MESSAGE;
         toast(message, { variant: 'error' });

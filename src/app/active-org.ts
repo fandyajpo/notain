@@ -19,6 +19,7 @@
 const STORAGE_KEY = 'notain.activeOrgId';
 
 let activeOrgId: string | null = readPersisted();
+let activeOrgGeneration = 0;
 const listeners = new Set<(orgId: string | null) => void>();
 
 function readPersisted(): string | null {
@@ -44,6 +45,11 @@ export function getActiveOrgId(): string | null {
   return activeOrgId;
 }
 
+/** Monotonic generation for detecting work that outlived an organization switch. */
+export function getActiveOrgGeneration(): number {
+  return activeOrgGeneration;
+}
+
 /**
  * The active org for repositories — throws (as a domain error the UI already
  * renders) when none is selected, rather than silently issuing an unscoped
@@ -60,6 +66,7 @@ export function requireActiveOrgId(): string {
 export function setActiveOrgId(orgId: string | null): void {
   if (orgId === activeOrgId) return;
   activeOrgId = orgId;
+  activeOrgGeneration += 1;
   persist(orgId);
   for (const listener of listeners) listener(orgId);
 }

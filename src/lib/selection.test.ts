@@ -140,11 +140,32 @@ describe('all-scope mode', () => {
     expect(store.getSnapshot().included.size).toBe(0);
   });
 
-  it('keeps out-of-scope picks when a filtered scope is chosen', () => {
+  it('keeps out-of-scope picks and removes overlapping picks once the scope resolves', () => {
     const store = freshStore();
-    store.toggle('x'); // ticked before any scope existed
+    store.toggle('a');
+    const scope = { kind: 'filtered', criteria: CRITERIA } as const;
+    store.selectScope(scope);
+    expect(store.count(2)).toBe(3);
+
+    store.reconcileScopeMembers(scope, ['a', 'b']);
+
+    expect(store.getSnapshot().included.size).toBe(0);
+    expect(store.count(2)).toBe(2);
+    expect(store.isSelected('a', true)).toBe(true);
+  });
+
+  it('publishes a deselection when a pending scope overlaps an explicit pick', () => {
+    const store = freshStore();
+    store.toggle('a');
     store.selectScope({ kind: 'filtered', criteria: CRITERIA });
-    expect(store.count(10)).toBe(11);
+    const before = store.getSnapshot();
+
+    store.toggle('a', true);
+
+    expect(store.getSnapshot()).not.toBe(before);
+    expect(store.getSnapshot().included.has('a')).toBe(false);
+    expect(store.getSnapshot().excluded.has('a')).toBe(true);
+    expect(store.isSelected('a', true)).toBe(false);
   });
 
   it('resets exclusions when a new scope is taken', () => {

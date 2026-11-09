@@ -23,9 +23,10 @@ import { useSyncExternalStore } from 'react';
  * - `excluded` only ever holds ids *inside* the current scope — a row outside
  *   the scope was never selected by the scope, so there is nothing to exclude
  *   (ticking such a row records it in `included` instead).
- * - `included` in all-mode only ever holds ids *outside* the scope — ids the
- *   scope already covers would double-count. Entering a dataset scope
- *   therefore clears `included` outright (the scope covers everything).
+ * - After a filtered scope walk reconciles, `included` only holds ids
+ *   *outside* the scope — ids the scope already covers would double-count.
+ *   Entering a dataset scope clears `included` outright (the scope covers
+ *   everything).
  *
  * The store is module-scoped per entity key so it outlives the table
  * component's re-renders and remounts; it deliberately does not persist to
@@ -57,6 +58,8 @@ export type SelectionStore<C> = {
   setMany(ids: readonly string[], selected: boolean, inScope?: boolean): void;
   /** Enters all-scope mode. Kept `included` picks are unioned, never dropped. */
   selectScope(scope: Scope<C>): void;
+  /** Reconciles explicit picks/exclusions once a filtered scope is resolved. */
+  reconcileScopeMembers(scope: Scope<C>, ids: readonly string[]): void;
   /** Deselect everything — the toolbar's clear action. */
   clear(): void;
   /** Current selection size. `null` while an all-scope is still resolving. */
@@ -100,10 +103,11 @@ function createSelectionStore<C>(): SelectionStore<C> {
 
     if (inScope) {
       // Covered by the scope: untick = exclude, tick = lift the exclusion.
-      // `included` never carries scope members (see invariants).
-      included.delete(id);
-      if (selected) return excluded.delete(id);
-      if (excluded.has(id)) return false;
+      // A resolved scope walk normally removes overlapping explicit picks, but
+      // account for one during the brief pending window as well.
+      const removedPick = included.delete(id);
+      if (selected) return excluded.delete(id) || removedPick;
+      if (excluded.has(id)) return removedPick;
       excluded.add(id);
       return true;
     }
@@ -126,7 +130,7 @@ function createSelectionStore<C>(): SelectionStore<C> {
     toggle(id, inScope = false) {
       const selected = all
         ? inScope
-          ? !excluded.has(id) && !included.has(id)
+          ? !excluded.has(id)
           : included.has(id)
         : included.has(id);
       if (apply(id, !selected, inScope)) commit();
@@ -138,12 +142,23 @@ function createSelectionStore<C>(): SelectionStore<C> {
     },
     selectScope(scope) {
       all = scope;
-      // A fresh scope gets fresh exclusions; explicit picks outside it
-      // survive (never silently dropped). Picks the new scope already covers
-      // would double-count, so a dataset scope absorbs them entirely.
+      // A fresh scope gets fresh exclusions; explicit picks survive until the
+      // filtered walk can distinguish in-scope picks from genuine extras.
       excluded = new Set();
       if (scope.kind === 'dataset') included = new Set();
       commit();
+    },
+    reconcileScopeMembers(scope, ids) {
+      if (all !== scope || scope.kind !== 'filtered') return;
+      const members = new Set(ids);
+      let changed = false;
+      for (const id of included) {
+        if (members.has(id)) changed = included.delete(id) || changed;
+      }
+      for (const id of excluded) {
+        if (!members.has(id)) changed = excluded.delete(id) || changed;
+      }
+      if (changed) commit();
     },
     clear() {
       included = new Set();
@@ -158,9 +173,8 @@ function createSelectionStore<C>(): SelectionStore<C> {
     },
     isSelected(id, inScope) {
       if (!all) return included.has(id);
-      if (included.has(id)) return true;
-      if (!inScope) return false;
-      return !excluded.has(id);
+      if (inScope) return !excluded.has(id);
+      return included.has(id);
     },
   };
 }
