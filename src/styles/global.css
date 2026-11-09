@@ -264,6 +264,76 @@
   }
 }
 
+/* Raw buttons share the same pressed feedback as the design-system buttons. */
+:where(button:not(.button-interaction):not(:disabled):not([aria-disabled='true'])) {
+  transition-property: scale, background-color, border-color, color, box-shadow, opacity;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-spring);
+}
+
+:where(button:not(.button-interaction):not(:disabled):not([aria-disabled='true'])):active {
+  scale: 0.98;
+}
+
+:where(button:disabled, button[aria-disabled='true']) {
+  scale: none;
+}
+
+/* ---- Shared control micro-interactions ------------------------------------ */
+.button-interaction {
+  transition:
+    transform var(--duration-fast) var(--ease-spring),
+    box-shadow var(--duration-fast) var(--ease-smooth),
+    background-color var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth),
+    opacity var(--duration-fast) var(--ease-smooth);
+}
+
+@media (hover: hover) {
+  .button-interaction:not(:disabled):not([aria-disabled='true']):hover {
+    transform: translateY(-1px);
+  }
+}
+
+.button-interaction:not(:disabled):not([aria-disabled='true']):active {
+  transform: translateY(0) scale(0.98);
+}
+
+.button-interaction:disabled,
+.button-interaction[aria-disabled='true'] {
+  transform: none;
+  box-shadow: none;
+}
+
+.field-control {
+  transition:
+    border-color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth),
+    background-color var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth);
+}
+
+.field-control:not(:disabled):not([aria-invalid='true']):not(.border-danger):focus-visible {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 0.12);
+}
+
+@keyframes field-type-feedback {
+  0%,
+  100% {
+    background-color: var(--color-card);
+  }
+
+  45% {
+    background-color: color-mix(in srgb, var(--color-accent-soft) 65%, var(--color-card));
+  }
+}
+
+.field-control[data-typing='true'] {
+  animation: field-type-feedback 180ms var(--ease-smooth);
+}
+
 /* ---- Rich text editor (TipTap) and its read-only rendered output */
 
 /*

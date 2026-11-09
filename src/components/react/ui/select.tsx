@@ -288,14 +288,17 @@ export function Select({
         onKeyDown={onTriggerKeyDown}
         className={
           bare
-            ? ['relative inline-flex items-center gap-1.5 focus-ring', triggerClassName ?? '']
+            ? [
+                'button-interaction relative inline-flex items-center gap-1.5 focus-ring',
+                triggerClassName ?? '',
+              ]
                 .filter(Boolean)
                 .join(' ')
             : controlClass({
                 invalid,
                 size,
                 className: [
-                  'relative',
+                  'button-interaction relative',
                   'flex items-center justify-between gap-2 text-left',
                   showClear ? 'pr-16' : 'pr-9',
                   'cursor-pointer disabled:cursor-not-allowed',

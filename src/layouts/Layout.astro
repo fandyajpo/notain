@@ -91,6 +91,9 @@ const isIndexable = meta.indexable;
          changes — all of which would otherwise fail silently in production. -->
     <script>
       import { toast } from '../lib/ui/toast';
+      import { installTypingFeedback } from '../lib/ui/typing-feedback';
+
+      installTypingFeedback(document);
 
       // Debounce so a burst of rejections toasts once, not once each.
       let rejectionToastTimer = 0;

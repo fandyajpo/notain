@@ -6,11 +6,13 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'danger-soft';
 type Size = 'sm' | 'md' | 'lg';
 
 const BASE =
-  'inline-flex select-none items-center justify-center gap-2 rounded-control font-medium whitespace-nowrap transition-colors focus-ring disabled:pointer-events-none disabled:opacity-50 [aria-disabled=true]:opacity-50';
+  'button-interaction inline-flex select-none items-center justify-center gap-2 rounded-control font-medium whitespace-nowrap focus-ring disabled:pointer-events-none disabled:opacity-50 [aria-disabled=true]:pointer-events-none [aria-disabled=true]:opacity-50';
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-accent text-accent-foreground hover:bg-accent/90 active:bg-accent/80',
-  secondary: 'border border-border bg-card text-foreground shadow-card hover:bg-background',
+  primary:
+    'bg-accent text-accent-foreground shadow-accent hover:bg-accent/90 active:bg-accent/80',
+  secondary:
+    'border border-border bg-card text-foreground shadow-card hover:bg-background hover:shadow-raised',
   ghost: 'text-foreground hover:bg-border/70',
   danger: 'bg-danger text-danger-foreground hover:bg-danger/90 active:bg-danger/80',
   // Destructive, but not the page's primary action: quiet until hovered.
@@ -77,12 +79,22 @@ export function Button({
 
   if ('href' in rest && rest.href !== undefined) {
     const { href, ...anchorRest } = rest as LinkProps & { href?: string };
+    const anchorProps = anchorRest as AnchorHTMLAttributes<HTMLAnchorElement>;
+    const { onClick, ...otherAnchorProps } = anchorProps;
     return (
       <a
-        href={href}
+        href={disabled ? undefined : href}
         className={cls}
-        aria-disabled={disabled ? 'true' : undefined}
-        {...(anchorRest as AnchorHTMLAttributes<HTMLAnchorElement>)}
+        {...otherAnchorProps}
+        aria-disabled={disabled || anchorProps['aria-disabled']}
+        tabIndex={disabled ? -1 : anchorProps.tabIndex}
+        onClick={(event) => {
+          if (disabled) {
+            event.preventDefault();
+            return;
+          }
+          onClick?.(event);
+        }}
       >
         {children}
       </a>

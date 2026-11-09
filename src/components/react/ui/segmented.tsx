@@ -71,7 +71,7 @@ export function SegmentedControl<T extends string>({
             className={cx(
               // `shrink-0` matters in the builder's scrollable tab strip, where
               // a flex child would otherwise compress below its label.
-              'inline-flex shrink-0 items-center justify-center gap-1.5 rounded-item font-medium transition-colors focus-ring',
+              'button-interaction inline-flex shrink-0 items-center justify-center gap-1.5 rounded-item font-medium focus-ring',
               PADDING[size],
               active
                 ? variant === 'accent'

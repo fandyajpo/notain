@@ -59,8 +59,8 @@ export function controlClass({
   className = '',
 }: ControlOptions = {}): string {
   return [
-    'w-full rounded-control border bg-card px-3.5 text-sm text-foreground shadow-card',
-    'transition-colors placeholder:text-muted focus-ring',
+    'field-control w-full rounded-control border bg-card px-3.5 text-sm text-foreground shadow-card',
+    'placeholder:text-muted focus-ring',
     invalid ? 'border-danger' : 'border-border hover:border-border-strong',
     'disabled:cursor-not-allowed disabled:bg-background disabled:text-muted disabled:shadow-none disabled:hover:border-border',
     'read-only:cursor-default read-only:bg-background',
@@ -77,8 +77,8 @@ export function controlClass({
  */
 export function iconButtonClass(size: 'sm' | 'md' = 'md'): string {
   return cx(
-    'inline-flex shrink-0 select-none items-center justify-center rounded-control text-muted',
-    'transition-colors hover:bg-background hover:text-foreground focus-ring',
+    'button-interaction inline-flex shrink-0 select-none items-center justify-center rounded-control text-muted',
+    'hover:bg-background hover:text-foreground focus-ring',
     'disabled:pointer-events-none disabled:opacity-50',
     size === 'sm' ? 'p-1.5' : 'p-2',
   );
