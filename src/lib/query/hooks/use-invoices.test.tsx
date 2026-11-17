@@ -7,7 +7,12 @@ import { setActiveOrgId } from '../../../app/active-org';
 import { createEmptyDraft, type Invoice } from '../../../core/invoice/model';
 import type { InvoicePage } from '../../../ports/invoice-repository';
 import { queryKeys } from '../keys';
-import { useDeleteInvoice, useInvoices, useUpdateInvoiceStatus } from './use-invoices';
+import {
+  useDeleteInvoice,
+  useInvoiceQuota,
+  useInvoices,
+  useUpdateInvoiceStatus,
+} from './use-invoices';
 
 /**
  * The two cache behaviours the tables depend on, exercised end-to-end against
@@ -21,10 +26,18 @@ import { useDeleteInvoice, useInvoices, useUpdateInvoiceStatus } from './use-inv
  *    what stops the full-card spinner) until the new page lands.
  */
 
-const { deleteInvoice, listInvoicesPage, updateInvoiceStatus } = vi.hoisted(() => ({
-  deleteInvoice: vi.fn(),
-  listInvoicesPage: vi.fn(),
-  updateInvoiceStatus: vi.fn(),
+const { deleteInvoice, fetchInvoiceQuota, listInvoicesPage, updateInvoiceStatus } = vi.hoisted(
+  () => ({
+    deleteInvoice: vi.fn(),
+    fetchInvoiceQuota: vi.fn(),
+    listInvoicesPage: vi.fn(),
+    updateInvoiceStatus: vi.fn(),
+  }),
+);
+
+vi.mock('../../../app/invoice-quota', () => ({
+  claimInvoiceQuota: vi.fn(),
+  fetchInvoiceQuota,
 }));
 
 vi.mock('../../../app/invoices', () => ({
@@ -175,6 +188,21 @@ function DeleteButton() {
   );
 }
 
+function QuotaProbe() {
+  const quota = useInvoiceQuota();
+  return (
+    <div data-probe>
+      {quota.data
+        ? `${quota.data.used}/${quota.data.limit}`
+        : quota.isError
+          ? 'error'
+          : quota.isFetching
+            ? 'loading'
+            : 'idle'}
+    </div>
+  );
+}
+
 function ListProbe({ search }: { search: string }) {
   const query = useInvoices(search);
   const rows = query.data?.pages.flatMap((pageEntry) => pageEntry.items) ?? [];
@@ -278,7 +306,8 @@ describe('useDeleteInvoice — quota refresh', () => {
   });
 
   it('invalidates the monthly quota meter after deletion', async () => {
-    queryClient.setQueryData(queryKeys.invoiceQuota, {
+    const quotaKey = [...queryKeys.invoiceQuota, ORG_A];
+    queryClient.setQueryData(quotaKey, {
       remaining: 1,
       used: 9,
       limit: 10,
@@ -291,9 +320,38 @@ describe('useDeleteInvoice — quota refresh', () => {
       (container.querySelector('[data-delete]') as HTMLButtonElement).click();
     });
 
-    await until(() =>
-      expect(queryClient.getQueryState(queryKeys.invoiceQuota)?.isInvalidated).toBe(true),
-    );
+    await until(() => expect(queryClient.getQueryState(quotaKey)?.isInvalidated).toBe(true));
+  });
+});
+
+describe('useInvoiceQuota — sidebar startup and org changes', () => {
+  it('waits for an active organization, then fetches quota for each selected org', async () => {
+    act(() => setActiveOrgId(null));
+    fetchInvoiceQuota
+      .mockResolvedValueOnce({
+        remaining: 7,
+        used: 3,
+        limit: 10,
+        resetsAt: '2026-11-01T00:00:00.000Z',
+      })
+      .mockResolvedValueOnce({
+        remaining: 2,
+        used: 8,
+        limit: 10,
+        resetsAt: '2026-11-01T00:00:00.000Z',
+      });
+    render(<QuotaProbe />);
+
+    expect(probe().textContent).toBe('idle');
+    expect(fetchInvoiceQuota).not.toHaveBeenCalled();
+
+    act(() => setActiveOrgId(ORG_A));
+    await until(() => expect(probe().textContent).toBe('3/10'));
+    expect(fetchInvoiceQuota).toHaveBeenNthCalledWith(1, ORG_A);
+
+    act(() => setActiveOrgId(ORG_B));
+    await until(() => expect(probe().textContent).toBe('8/10'));
+    expect(fetchInvoiceQuota).toHaveBeenNthCalledWith(2, ORG_B);
   });
 });
 

@@ -2,23 +2,19 @@ import { useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getShellClient } from '../../../lib/query/shell-client';
 import { useInvoiceQuota } from '../../../lib/query/hooks/use-invoices';
+import { useSession } from '../../../lib/query/hooks/use-session';
 
 /**
  * The free tier's monthly invoice allowance, parked in the sidebar next to
  * the nav — the place where "should I make one more invoice" is decided.
  *
- * It reads the SAME query the builder's meter uses (one shared shell client,
- * one `invoiceQuota` key), so the sidebar and the create page can never show
- * different numbers, and a save invalidates both.
+ * It reads the same org-scoped query as the builder (one shared shell client),
+ * so both surfaces agree and a save invalidates both. The sidebar lives outside
+ * AuthGate, so it waits for the session and active organization before fetching.
  *
- * Rendering rules:
- * - Paid plans (`remaining === null`) render nothing: a meter with no ceiling
- *   is noise.
- * - A fetch error renders nothing either. The server owns the limit and
- *   enforces it with a 402 on create, so a widget that cannot know the number
- *   must not paint a guess.
- * - The whole block carries `sidebar-label`, so collapsing the rail to its
- *   icon column drops it along with the group labels.
+ * Paid plans (`remaining === null`) have no meter; a loading or error state is
+ * shown instead of silently hiding the allowance while the query resolves.
+ * The whole block carries `sidebar-label`, so the collapsed rail hides it too.
  */
 export function QuotaMeter() {
   // Every island root supplies the shared shell client itself — the provider
@@ -34,9 +30,36 @@ export function QuotaMeter() {
 }
 
 function QuotaMeterBody() {
-  const { data, isError } = useInvoiceQuota();
+  const { data: session } = useSession();
+  const { data, isError, isFetching, refetch } = useInvoiceQuota(Boolean(session));
 
-  if (isError || !data || data.remaining === null) return null;
+  if (data?.remaining === null) return null;
+  if (!data) {
+    if (!isFetching && !isError) return null;
+    return (
+      <div
+        data-tour="quota-meter"
+        className="sidebar-label rounded-control bg-background p-3"
+        aria-live="polite"
+      >
+        <div className="flex items-center justify-between gap-2 text-xs">
+          <p className="text-muted">
+            {isError ? 'Kuota nota gagal dimuat' : 'Memuat kuota nota…'}
+          </p>
+          {isError && (
+            <button
+              type="button"
+              disabled={isFetching}
+              onClick={() => void refetch()}
+              className="font-medium text-accent hover:underline disabled:opacity-50"
+            >
+              Coba lagi
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const used = Math.min(data.used, data.limit);
   const percent = Math.round((used / data.limit) * 100);

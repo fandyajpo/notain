@@ -6,6 +6,8 @@ import {
   useQueryClient,
   type InfiniteData,
 } from '@tanstack/react-query';
+import { useSyncExternalStore } from 'react';
+import { getActiveOrgId, subscribeActiveOrg } from '../../../app/active-org';
 import { claimInvoiceQuota, fetchInvoiceQuota } from '../../../app/invoice-quota';
 import {
   createInvoice,
@@ -108,13 +110,19 @@ export function usePickerHistory() {
   });
 }
 
-/** The free tier's monthly allowance, for the builder's meter. */
+/** The free tier's monthly allowance, shared by the sidebar and create page. */
 export function useInvoiceQuota(enabled = true) {
+  const orgId = useSyncExternalStore(subscribeActiveOrg, getActiveOrgId, () => null);
+
   return useQuery({
-    queryKey: queryKeys.invoiceQuota,
-    queryFn: () => fetchInvoiceQuota(),
-    // Edits never consume allowance, so only the create page asks.
-    enabled,
+    queryKey: [...queryKeys.invoiceQuota, orgId],
+    queryFn: () => {
+      if (!orgId) throw new Error('Belum ada organisasi aktif.');
+      return fetchInvoiceQuota(orgId);
+    },
+    // Stay dormant until OrgGate selects a workspace. The sidebar also waits
+    // for a signed-in session; edits opt out because they never consume quota.
+    enabled: enabled && orgId !== null,
     ...queryPolicy('invoiceQuota'),
   });
 }

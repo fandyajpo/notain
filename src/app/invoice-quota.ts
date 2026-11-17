@@ -15,7 +15,7 @@ import { getActiveOrgId } from './active-org';
  * Two calls, both on the same org-scoped endpoint — the active organization
  * rides as the `orgId` hint the server re-verifies against the caller's
  * membership row:
- * - `fetchInvoiceQuota` — the meter, read when the builder mounts.
+ * - `fetchInvoiceQuota` — the sidebar/builder meter, read for the active org.
  * - `claimInvoiceQuota` — asked immediately before saving a *new* invoice.
  *   A denial arrives as a 402, mapped to a permanent, non-retriable
  *   `FORBIDDEN` error carrying the server's own upgrade copy.
@@ -57,8 +57,7 @@ async function bearerFetch(path: string, init: { method?: string } = {}): Promis
  * use when no organization is selected: a domain error the UI already knows
  * how to render, not an unscoped request the server would reject anyway.
  */
-function quotaPath(): string {
-  const orgId = getActiveOrgId();
+function quotaPath(orgId: string | null = getActiveOrgId()): string {
   if (!orgId) {
     throw new AppError(ERROR_CODES.FORBIDDEN, 'Pilih organisasi dulu.');
   }
@@ -89,8 +88,8 @@ async function serverMessage(response: Response): Promise<string | undefined> {
 }
 
 /** The organization's current allowance — the number the builder's meter paints. */
-export async function fetchInvoiceQuota(): Promise<InvoiceQuota> {
-  const response = await bearerFetch(quotaPath());
+export async function fetchInvoiceQuota(orgId: string): Promise<InvoiceQuota> {
+  const response = await bearerFetch(quotaPath(orgId));
   if (!response.ok) {
     throw appErrorFromStatus(response.status, await serverMessage(response));
   }
