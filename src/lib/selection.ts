@@ -128,11 +128,7 @@ function createSelectionStore<C>(): SelectionStore<C> {
       return () => listeners.delete(listener);
     },
     toggle(id, inScope = false) {
-      const selected = all
-        ? inScope
-          ? !excluded.has(id)
-          : included.has(id)
-        : included.has(id);
+      const selected = all ? (inScope ? !excluded.has(id) : included.has(id)) : included.has(id);
       if (apply(id, !selected, inScope)) commit();
     },
     setMany(ids, selected, inScope = false) {

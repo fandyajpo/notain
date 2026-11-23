@@ -20,7 +20,12 @@ that call it are documented in [`docs/features/email.md`](../docs/features/email
 `POST /send` — bearer `MAIL_SERVICE_TOKEN`, JSON body:
 
 ```json
-{ "type": "welcome", "to": "kamu@email.com", "name": "Budi", "loginUrl": "https://notain.pages.dev/login" }
+{
+  "type": "welcome",
+  "to": "kamu@email.com",
+  "name": "Budi",
+  "loginUrl": "https://notain.pages.dev/login"
+}
 ```
 
 ```json

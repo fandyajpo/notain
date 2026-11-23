@@ -145,7 +145,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     await patchRow(auth, 'invoices', row.$id, { status: 'sent' });
   }
 
-  return json(200, { ok: true, to, status: statusChanged ? 'sent' : row.status ?? null });
+  return json(200, { ok: true, to, status: statusChanged ? 'sent' : (row.status ?? null) });
 };
 
 function customerEmailOf(row: Record<string, unknown>): string {

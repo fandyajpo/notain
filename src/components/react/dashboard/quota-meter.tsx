@@ -43,9 +43,7 @@ function QuotaMeterBody() {
         aria-live="polite"
       >
         <div className="flex items-center justify-between gap-2 text-xs">
-          <p className="text-muted">
-            {isError ? 'Kuota nota gagal dimuat' : 'Memuat kuota nota…'}
-          </p>
+          <p className="text-muted">{isError ? 'Kuota nota gagal dimuat' : 'Memuat kuota nota…'}</p>
           {isError && (
             <button
               type="button"

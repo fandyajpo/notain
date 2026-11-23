@@ -227,16 +227,19 @@ function CustomersContent() {
   function confirmDelete() {
     if (!deleteTarget) return;
     const { id, name } = deleteTarget;
-    deleteCustomer.mutate({ id }, {
-      onSuccess: () => {
-        setDeleteTarget(null);
-        toast(`Pelanggan "${name}" dihapus.`, { variant: 'success' });
+    deleteCustomer.mutate(
+      { id },
+      {
+        onSuccess: () => {
+          setDeleteTarget(null);
+          toast(`Pelanggan "${name}" dihapus.`, { variant: 'success' });
+        },
+        onError: (error) => {
+          setDeleteTarget(null);
+          toast(toAppError(error).message, { variant: 'error' });
+        },
       },
-      onError: (error) => {
-        setDeleteTarget(null);
-        toast(toAppError(error).message, { variant: 'error' });
-      },
-    });
+    );
   }
 
   function exitMergeMode() {

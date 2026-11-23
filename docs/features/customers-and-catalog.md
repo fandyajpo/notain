@@ -30,7 +30,7 @@ existing row left empty.
 
 - Create validates `name` (1–128), optional `email` (≤255, shape-checked) and
   optional `phone` (≤32, Indonesian mobile pattern). An exact duplicate
-  (identical normalised email *and* phone) is rejected with 409.
+  (identical normalised email _and_ phone) is rejected with 409.
 - Edit patches the row and refreshes `lastUsedAt`.
 - Delete removes one row. Invoices are untouched.
 - Bulk delete removes up to 20 rows per server call; the client batches larger
@@ -47,7 +47,7 @@ After a successful invoice write, the builder calls `rememberCustomer` and
 ignores failures.
 
 - Nothing is recorded when the draft has no customer name.
-- A match is looked for in two steps: the same identity (email *and* phone,
+- A match is looked for in two steps: the same identity (email _and_ phone,
   normalised), then the same name ignoring case. So "Budi" with a new number
   updates the existing Budi row instead of creating a second one.
 - A non-empty field in the draft overwrites the stored value; an empty field
@@ -102,7 +102,7 @@ still copies the row, and public pages render "Hubungi" instead of Rp 0.
 ### Identity
 
 Names are compared by `catalogKey`: trimmed, lowercased, repeated whitespace
-collapsed. "Nasi Goreng" and "nasi  goreng" are the same product. A manual
+collapsed. "Nasi Goreng" and "nasi goreng" are the same product. A manual
 create with an existing key is rejected with 409.
 
 ### Catalog × invoice

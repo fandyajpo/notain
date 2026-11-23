@@ -164,10 +164,9 @@ async function findUserByEmail(
     { method: 'limit', values: [1] },
   ];
   try {
-    const response = await fetch(
-      `${auth.endpoint}/users?${querySearchAll(queries)}`,
-      { headers: auth.headers },
-    );
+    const response = await fetch(`${auth.endpoint}/users?${querySearchAll(queries)}`, {
+      headers: auth.headers,
+    });
     if (!response.ok) return null;
     const body = (await response.json()) as { users?: Array<Record<string, unknown>> };
     const row = Array.isArray(body.users) ? body.users[0] : undefined;

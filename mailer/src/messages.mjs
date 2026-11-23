@@ -121,7 +121,9 @@ export function invoiceMessage({
 
   const paragraphs = [];
   if (typeof note === 'string' && note.trim() !== '') paragraphs.push(note.trim());
-  paragraphs.push('Buka halaman tagihan di bawah untuk melihat nota lengkap dan mengirim bukti pembayaran.');
+  paragraphs.push(
+    'Buka halaman tagihan di bawah untuk melihat nota lengkap dan mengirim bukti pembayaran.',
+  );
 
   const rendered = renderEmail({
     appName,

@@ -33,12 +33,7 @@ type Props = {
  * Pro benefit, and the server answers 402), and a successful send flips an
  * unset invoice to Terkirim.
  */
-export function EmailNotaDialog({
-  invoiceId,
-  invoiceNumber,
-  customerName,
-  defaultEmail,
-}: Props) {
+export function EmailNotaDialog({ invoiceId, invoiceNumber, customerName, defaultEmail }: Props) {
   const [open, setOpen] = useState(false);
   const [to, setTo] = useState(defaultEmail ?? '');
   const [note, setNote] = useState('');
@@ -81,7 +76,9 @@ export function EmailNotaDialog({
       );
     } catch (cause) {
       setServerError(
-        cause instanceof Error ? cause.message : 'Nota belum terkirim. Coba lagi beberapa saat lagi.',
+        cause instanceof Error
+          ? cause.message
+          : 'Nota belum terkirim. Coba lagi beberapa saat lagi.',
       );
     }
   }

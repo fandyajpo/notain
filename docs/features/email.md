@@ -15,7 +15,7 @@ receipts, and nothing mails a payment reminder.
 
 ## Why there is a separate process
 
-`@sendust/ts` is a *native* library: a Rust SMTP engine behind a Node-API
+`@sendust/ts` is a _native_ library: a Rust SMTP engine behind a Node-API
 binding, published as prebuilt binaries per platform. Cloudflare Workers — where
 every `/api/*` route in this app runs — cannot load a native addon at all. There
 is no flag, plan or polyfill that changes that.
@@ -29,8 +29,8 @@ browser → Pages Function (gate, validate, address)
 ```
 
 The Functions never hold SMTP credentials, and the mailer never sees an Appwrite
-session. Each side knows only what it needs: the Function knows *who* may send
-*what*, the mailer knows *how* to deliver it.
+session. Each side knows only what it needs: the Function knows _who_ may send
+_what_, the mailer knows _how_ to deliver it.
 
 `mailer/README.md` covers running and deploying it (Docker, or an Appwrite
 Function). If `MAIL_SERVICE_URL`/`MAIL_SERVICE_TOKEN` are unset the mail
@@ -41,11 +41,11 @@ never a dependency of saving an invoice or signing in.
 
 `functions/_lib/mail.ts` defines one union and one function:
 
-| Type             | Fields                                                                                       | Rendered by                     |
-| ---------------- | -------------------------------------------------------------------------------------------- | ------------------------------- |
-| `welcome`        | `to`, `name`, `loginUrl`                                                                     | `welcomeMessage()`              |
-| `password-reset` | `to`, `name`, `resetUrl`, `expiresMinutes`                                                   | `passwordResetMessage()`        |
-| `invoice`        | `to`, `customerName`, `invoiceNumber`, `businessName`, `total`, `date`, `dueDate?`, `note?`, `invoiceUrl`, `senderName` | `invoiceMessage()` |
+| Type             | Fields                                                                                                                  | Rendered by              |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `welcome`        | `to`, `name`, `loginUrl`                                                                                                | `welcomeMessage()`       |
+| `password-reset` | `to`, `name`, `resetUrl`, `expiresMinutes`                                                                              | `passwordResetMessage()` |
+| `invoice`        | `to`, `customerName`, `invoiceNumber`, `businessName`, `total`, `date`, `dueDate?`, `note?`, `invoiceUrl`, `senderName` | `invoiceMessage()`       |
 
 Templates live in `mailer/src/messages.mjs` and are pure functions of that
 payload: no clock, no configuration read, no I/O. `mailer/src/render.mjs` renders

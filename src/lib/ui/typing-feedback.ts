@@ -10,8 +10,7 @@ export function installTypingFeedback(document: Document): () => void {
     const target = event.target;
     if (
       target === null ||
-      (!(target instanceof view.HTMLInputElement) &&
-        !(target instanceof view.HTMLTextAreaElement))
+      (!(target instanceof view.HTMLInputElement) && !(target instanceof view.HTMLTextAreaElement))
     ) {
       return;
     }

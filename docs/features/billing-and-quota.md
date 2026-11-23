@@ -185,7 +185,7 @@ Source: `functions/_lib/invoice-quota.ts`, `src/core/billing/plans.ts`
 - Paid and admin: unlimited (`remaining: null`). Their counts are not walked at
   all.
 - Read path: `GET` returns the meter. Unreadable data is a 503, never a zero.
-- Claim path: `POST` checks the allowance before the builder creates a *new*
+- Claim path: `POST` checks the allowance before the builder creates a _new_
   invoice. A spent month answers 402 `plan_required` with the upgrade copy and
   the quota. Editing an existing invoice does not claim.
 - Walk: up to 100 pages of 100 rows, selecting only `date` and `$createdAt`,

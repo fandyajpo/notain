@@ -1,9 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  confirmPasswordReset,
-  requestPasswordReset,
-  sendInvoiceEmail,
-} from '../../../app/mail';
+import { confirmPasswordReset, requestPasswordReset, sendInvoiceEmail } from '../../../app/mail';
 import { queryKeys } from '../keys';
 
 /**

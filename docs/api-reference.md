@@ -219,7 +219,7 @@ Two conventions differ from the rest of this reference:
   - `search=term` — full text across `invoiceNumber`, `customerName`, `items`
     (invoices), or `name`; ignored below 3 characters,
   - `orderAsc=`/`orderDesc=` — only `date`, `$createdAt`, `name` where declared.
-- **GET, single row:** `?rowId=…`. The row must exist *and* carry the gated
+- **GET, single row:** `?rowId=…`. The row must exist _and_ carry the gated
   `orgId`; otherwise `404 not_found` (foreign and missing are indistinguishable).
 - **POST:** body `{ data, rowId? }`.
   - `rowId` is optional and validated against `/^[A-Za-z0-9_-]{1,64}$/`; the
@@ -277,7 +277,7 @@ Two conventions differ from the rest of this reference:
 
 - **Gate:** session, then the plan gate.
 - **Body:** `{ name }`, trimmed, 1–128 characters.
-- **Rules:** the first organization a user *owns* is always allowed. Creating
+- **Rules:** the first organization a user _owns_ is always allowed. Creating
   another requires an active paid plan on at least one organization the caller
   owns; otherwise `403 forbidden` with the upgrade copy. Admins skip the gate.
 - **Writes:** an `organizations` row (`org_…`, `slug`, empty contact block,
@@ -413,7 +413,7 @@ Two conventions differ from the rest of this reference:
 - **Response shape:** `{ remaining: number | null, used, limit, resetsAt }`.
   `remaining: null` means unlimited (paid plan or admin).
 - **GET:** the meter's number. Paid organizations skip the count walk entirely.
-- **POST:** the "claim" asked immediately before creating a *new* invoice.
+- **POST:** the "claim" asked immediately before creating a _new_ invoice.
   `200 { ok: true, quota }` when there is room; `402 plan_required` with
   `INVOICE_QUOTA_MESSAGE` and the quota when the month is spent.
 - **Counting:** invoices whose `$createdAt` falls in the current calendar month

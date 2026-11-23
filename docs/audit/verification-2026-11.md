@@ -104,7 +104,7 @@ the original audit.
    profile editor and the tour control only. Billing is at `/billing`. The
    guide is out of date; the code is authoritative.
 2. **`importCustomers` identity mismatch.** A docstring in
-   `src/app/customers.ts` says identity is email *or* phone. The code calls
+   `src/app/customers.ts` says identity is email _or_ phone. The code calls
    `isSameCustomer`, which requires both. The guide describes the code. The
    docstring should be corrected.
 3. **Business plan benefit copy.** `src/core/billing/plan-benefits.ts` lists an

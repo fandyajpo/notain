@@ -50,7 +50,7 @@ every request.
    detail fields, discount, tax, three rich-text zones, notes. Totals come from
    one pure module, `src/core/invoice/calculator.ts`.
 5. **Save** — the builder asks the server for one free-tier allowance before a
-   *new* invoice, then writes through `POST /api/data/invoices`. The row is
+   _new_ invoice, then writes through `POST /api/data/invoices`. The row is
    stamped with the verified `orgId` and the caller's `ownerId`.
 6. **Print or share** — `/invoice/print` renders the document and calls
    `window.print()`. The share link is `/invoice/print/<invoiceId>`, which the
@@ -150,7 +150,7 @@ on the invoice point at it.
 **Quota** — the free tier's monthly invoice allowance: 10 per calendar month,
 per organization.
 
-**Capability URL** — a URL whose id *is* the credential: `/invoice/print/<id>`,
+**Capability URL** — a URL whose id _is_ the credential: `/invoice/print/<id>`,
 `/site/<orgId>`, `/api/logo/<key>`, `/api/proof/<key>`.
 
 **Isolate** — one Cloudflare Workers instance. Rate-limit windows, session

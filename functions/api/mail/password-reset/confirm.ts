@@ -74,14 +74,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     return invalidLink();
   }
 
-  const updated = await fetch(
-    `${auth.endpoint}/users/${encodeURIComponent(userId)}/password`,
-    {
-      method: 'PATCH',
-      headers: { ...auth.headers, 'content-type': 'application/json' },
-      body: JSON.stringify({ password }),
-    },
-  ).catch(() => null);
+  const updated = await fetch(`${auth.endpoint}/users/${encodeURIComponent(userId)}/password`, {
+    method: 'PATCH',
+    headers: { ...auth.headers, 'content-type': 'application/json' },
+    body: JSON.stringify({ password }),
+  }).catch(() => null);
   if (updated === null || !updated.ok) {
     return apiError(503, 'unavailable', 'Kata sandi belum bisa disimpan. Coba lagi.');
   }

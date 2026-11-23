@@ -139,7 +139,7 @@ file must never be imported by an `.astro` file or from outside
    (cached 60 s per user; denials cached too).
 2. The handler talks to Appwrite with the API key and writes an audit row for
    every mutation.
-3. Where an admin acts on a user, `primaryOrgId` resolves *which* organization
+3. Where an admin acts on a user, `primaryOrgId` resolves _which_ organization
    that user means (newest active membership), because nothing tenanted is
    user-keyed any more.
 

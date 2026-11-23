@@ -281,7 +281,9 @@ describe('useUpdateInvoiceStatus — optimistic write', () => {
     setActiveOrgId(ORG_B);
     await act(async () => cancellation.resolve());
     await until(() =>
-      expect((container.querySelector('[data-flip]') as HTMLButtonElement).dataset.error).toBe('true'),
+      expect((container.querySelector('[data-flip]') as HTMLButtonElement).dataset.error).toBe(
+        'true',
+      ),
     );
     expect(updateInvoiceStatus).not.toHaveBeenCalled();
   });
@@ -300,7 +302,9 @@ describe('useDeleteInvoice — quota refresh', () => {
     setActiveOrgId(ORG_B);
     await act(async () => cancellation.resolve());
     await until(() =>
-      expect((container.querySelector('[data-delete]') as HTMLButtonElement).dataset.error).toBe('true'),
+      expect((container.querySelector('[data-delete]') as HTMLButtonElement).dataset.error).toBe(
+        'true',
+      ),
     );
     expect(deleteInvoice).not.toHaveBeenCalled();
   });

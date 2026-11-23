@@ -72,16 +72,7 @@ export function formatDate(value) {
  * @returns {{ html: string, text: string }}
  */
 export function renderEmail(input) {
-  const {
-    appName,
-    logoUrl,
-    heading,
-    greeting,
-    paragraphs = [],
-    facts = [],
-    cta,
-    footnote,
-  } = input;
+  const { appName, logoUrl, heading, greeting, paragraphs = [], facts = [], cta, footnote } = input;
 
   const brand = logoUrl
     ? `<img src="${escapeHtml(logoUrl)}" alt="" width="28" height="28" style="display:block;border-radius:6px">`
@@ -154,9 +145,7 @@ ${footnoteHtml}
     heading,
     greeting ? `\n${greeting}` : '',
     ...paragraphs.map((text_) => `\n${text_}`),
-    facts.length > 0
-      ? `\n${facts.map((fact) => `${fact.label}: ${fact.value}`).join('\n')}`
-      : '',
+    facts.length > 0 ? `\n${facts.map((fact) => `${fact.label}: ${fact.value}`).join('\n')}` : '',
     cta ? `\n${cta.label}: ${cta.url}` : '',
     footnote ? `\n${footnote}` : '',
   ]

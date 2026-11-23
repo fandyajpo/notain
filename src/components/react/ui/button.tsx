@@ -9,8 +9,7 @@ const BASE =
   'button-interaction inline-flex select-none items-center justify-center gap-2 rounded-control font-medium whitespace-nowrap focus-ring disabled:pointer-events-none disabled:opacity-50 [aria-disabled=true]:pointer-events-none [aria-disabled=true]:opacity-50';
 
 const VARIANTS: Record<Variant, string> = {
-  primary:
-    'bg-accent text-accent-foreground shadow-accent hover:bg-accent/90 active:bg-accent/80',
+  primary: 'bg-accent text-accent-foreground shadow-accent hover:bg-accent/90 active:bg-accent/80',
   secondary:
     'border border-border bg-card text-foreground shadow-card hover:bg-background hover:shadow-raised',
   ghost: 'text-foreground hover:bg-border/70',

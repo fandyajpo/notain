@@ -35,9 +35,10 @@ function json(status, body) {
  * same as any other wrong guess.
  */
 function authorized(header, expected) {
-  const raw = typeof header === 'string' && header.toLowerCase().startsWith('bearer ')
-    ? header.slice(7).trim()
-    : '';
+  const raw =
+    typeof header === 'string' && header.toLowerCase().startsWith('bearer ')
+      ? header.slice(7).trim()
+      : '';
   if (raw === '' || expected === '') return false;
   const provided = createHash('sha256').update(raw).digest();
   const required = createHash('sha256').update(expected).digest();

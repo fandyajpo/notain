@@ -66,13 +66,16 @@ function TemplatesContent() {
 
   function confirmDelete(template: InvoiceTemplate) {
     setPendingDelete(null);
-    remove.mutate({ id: template.id }, {
-      onError: (error) => {
-        const message = isAppError(error) ? error.message : GENERIC_ERROR_MESSAGE;
-        toast(message, { variant: 'error' });
+    remove.mutate(
+      { id: template.id },
+      {
+        onError: (error) => {
+          const message = isAppError(error) ? error.message : GENERIC_ERROR_MESSAGE;
+          toast(message, { variant: 'error' });
+        },
+        onSuccess: () => toast(`Template "${template.name}" dihapus.`, { variant: 'success' }),
       },
-      onSuccess: () => toast(`Template "${template.name}" dihapus.`, { variant: 'success' }),
-    });
+    );
   }
 
   return (

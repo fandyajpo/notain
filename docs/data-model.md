@@ -32,7 +32,7 @@ database.
 - **Payment**: the DOKU `invoice_number`. For the first checkout of a plan in a
   month it is deterministic (`NOTAIN-P-<16 hex org><YYMM>`); renewals and
   retries use a random form (`NOTAIN-P-<time36>-<8 hex>`). Either way the row id
-  *is* what DOKU is told, which makes the webhook lookup a single document read.
+  _is_ what DOKU is told, which makes the webhook lookup a single document read.
 - **Customer, catalog, template, audit log, support**: Appwrite-assigned
   (`unique()`), except templates which may carry a client-supplied id.
 - **Password-reset token**: `pwreset_` + 16 hex of `sha256(userId)`. Derived from
@@ -288,7 +288,7 @@ Bucket `notain`, private, bound as `LOGOS`.
 Reading is public by capability (`GET /api/logo/<key>`, `GET /api/proof/<key>`)
 with `nosniff`, `cross-origin-resource-policy: same-origin`, a
 `default-src 'none'; sandbox` CSP, and immutable caching. Deleting requires a
-session *and* `customMetadata.owner` matching it; someone else's object answers
+session _and_ `customMetadata.owner` matching it; someone else's object answers
 404, not 403, so key existence does not leak.
 
 ## Cross-table invariants

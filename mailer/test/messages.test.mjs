@@ -101,8 +101,14 @@ test('user input is escaped in the HTML body', () => {
 
 test('parseRequest accepts the three templates and rejects everything else', () => {
   assert.equal(parseRequest({ type: 'nope', to: 'a@b.co' }).ok, false);
-  assert.equal(parseRequest({ type: 'welcome', to: 'not-an-email', loginUrl: 'https://x.test' }).ok, false);
-  assert.equal(parseRequest({ type: 'welcome', to: 'a@b.co', loginUrl: 'javascript:alert(1)' }).ok, false);
+  assert.equal(
+    parseRequest({ type: 'welcome', to: 'not-an-email', loginUrl: 'https://x.test' }).ok,
+    false,
+  );
+  assert.equal(
+    parseRequest({ type: 'welcome', to: 'a@b.co', loginUrl: 'javascript:alert(1)' }).ok,
+    false,
+  );
   assert.equal(
     parseRequest({ type: 'password-reset', to: 'a@b.co', resetUrl: 'https://x.test/r?token=1' }).ok,
     true,
@@ -139,6 +145,9 @@ test('handleSend reports what the transport decided, never more', async () => {
   assert.equal(broken.status, 502);
   assert.equal(broken.body.error, 'unavailable');
 
-  const invalid = await handleSend({ type: 'nope' }, { config: CONFIG, deliver: async () => ({ status: 'accepted' }) });
+  const invalid = await handleSend(
+    { type: 'nope' },
+    { config: CONFIG, deliver: async () => ({ status: 'accepted' }) },
+  );
   assert.equal(invalid.status, 400);
 });

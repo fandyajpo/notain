@@ -236,16 +236,19 @@ function CatalogContent() {
   function confirmDelete() {
     if (!deleteTarget) return;
     const { id, name } = deleteTarget;
-    deleteItem.mutate({ id }, {
-      onSuccess: () => {
-        setDeleteTarget(null);
-        toast(`"${name}" dihapus.`, { variant: 'success' });
+    deleteItem.mutate(
+      { id },
+      {
+        onSuccess: () => {
+          setDeleteTarget(null);
+          toast(`"${name}" dihapus.`, { variant: 'success' });
+        },
+        onError: (error) => {
+          setDeleteTarget(null);
+          toast(toAppError(error).message, { variant: 'error' });
+        },
       },
-      onError: (error) => {
-        setDeleteTarget(null);
-        toast(toAppError(error).message, { variant: 'error' });
-      },
-    });
+    );
   }
 
   /**
