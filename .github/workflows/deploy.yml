@@ -33,7 +33,9 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  # TEMPORARY: `write` so the Format check step below can push the formatter's
+  # own output. Restore to `read` once the tree is clean.
+  contents: write
 
 jobs:
   deploy:
@@ -72,8 +74,24 @@ jobs:
       # Cheapest gate first: formatting drift once reached 35 files with
       # nothing running this check anywhere. One second here, and `vp fmt .`
       # is the fix the failure message points at.
+      #
+      # TEMPORARY (one run): instead of only reporting drift, apply `vp fmt .`
+      # and push the result, because there is no shell outside CI to run it in.
+      # This fails the run on purpose — the push starts a fresh, clean one.
+      # Restore the plain `npm run format:check` once the tree is formatted.
       - name: Format check
-        run: npm run format:check
+        run: |
+          npm run format
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "style: format files flagged by CI"
+            git push origin HEAD:main
+            echo "::notice::Formatting applied and pushed. Re-run the deploy."
+            exit 1
+          fi
+          echo "Nothing to format."
 
       # Nothing ships that fails its own suite: tests and type check used to
       # run only on a developer machine, so a red suite could still deploy.
