@@ -115,10 +115,38 @@ alone no longer implies it.
 
 ## Deploying it
 
-**Docker** (`Dockerfile` in this folder): a two-stage-free, single-stage
-`node:22-bookworm-slim` image that installs production dependencies, copies
-`src/`, runs as `node`, and listens on `0.0.0.0:$PORT` (default 8080). Debian
-rather than Alpine because the published Linux binary is the glibc target.
+### Cloudflare Containers (what this repo ships)
+
+Notain's site is already on Cloudflare, so the sender lives there too — a Worker
+plus a Container, in this folder:
+
+- `worker.mjs` — a Durable Object that starts the container, waits for
+  `/healthz`, and forwards requests to it. It also checks the bearer token, so a
+  wrong one never boots a container.
+- `wrangler.toml` — the container, the Durable Object binding and the image
+  built from `./Dockerfile`.
+
+```bash
+cd mailer
+npx wrangler deploy         # builds the image with Docker, then ships the Worker
+```
+
+The URL is `https://notain-mailer.<your-subdomain>.workers.dev`, and that is what
+`MAIL_SERVICE_URL` points at. `npx wrangler deploy` needs Docker running wherever
+you run it; `.github/workflows/deploy.yml` does it on the GitHub runner instead,
+so no local Docker is required.
+
+**Requires the Workers Paid plan** — Containers are not offered on Free. Set the
+four secrets once (`wrangler secret bulk`, or the repository secrets the workflow
+reads): `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`, `MAIL_SERVICE_TOKEN`.
+
+### Anywhere else with Docker
+
+`Dockerfile` in this folder is a single-stage `node:22-bookworm-slim` image that
+installs production dependencies, copies `src/`, runs as `node`, and listens on
+`0.0.0.0:$PORT` (default 8080). Debian rather than Alpine because the published
+Linux binary is the glibc target. `render.yaml` at the repository root describes a
+free Render service built from it, if you would rather not use Containers.
 
 The first `npm install` also writes `mailer/package-lock.json` — commit it and
 switch the Dockerfile to `npm ci` if you want reproducible installs.
@@ -127,6 +155,7 @@ switch the Dockerfile to `npm ci` if you want reproducible installs.
 command `npm install && node src/appwrite.mjs`, SMTP credentials as function
 variables. No shared token is needed in that mode — Appwrite decides who may
 execute the function. Point `MAIL_SERVICE_URL` at the function's execution URL.
+
 
 **Never** put `SMTP_PASS` or `MAIL_SERVICE_TOKEN` in `wrangler.toml`, `.env`
 (for Vite) or any committed file. The token pairs with the encrypted Pages

@@ -43,6 +43,17 @@ export type MailMessage =
 
 export type MailResult = 'sent' | 'skipped' | 'failed';
 
+/**
+ * How long one send may take, before the request is abandoned.
+ *
+ * Deliberately longer than the shared 10 s (`UPSTREAM_TIMEOUT_MS`): a mailer on
+ * a free host sleeps when idle, and the first request of the day has to wake a
+ * container before it can even open the SMTP session. Ten seconds turns that
+ * cold start into a reported failure; 25 s usually absorbs it. Anything slower
+ * than that is a wedged relay, not a wake-up.
+ */
+const MAIL_TIMEOUT_MS = 25_000;
+
 function serviceBaseUrl(env: Env): string | null {
   const raw = env.MAIL_SERVICE_URL?.trim();
   if (!raw) return null;
@@ -82,11 +93,15 @@ export async function sendMail(env: Env, message: MailMessage): Promise<MailResu
   }
 
   try {
-    const response = await fetch(`${base}/send`, {
-      method: 'POST',
-      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
-      body: JSON.stringify(message),
-    });
+    const response = await fetch(
+      `${base}/send`,
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify(message),
+      },
+      MAIL_TIMEOUT_MS,
+    );
     if (!response.ok) {
       count(`mail.failed.${response.status}`);
       logQuota('mail', 'rejected', { type: message.type, status: response.status });

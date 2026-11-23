@@ -103,3 +103,36 @@ jobs:
         # `dist/` = static assets, `functions/` = Pages Functions. Both are
         # read from the repo root; `wrangler.toml` supplies [vars] + R2 binding.
         run: npm run deploy -- --branch main
+
+      # --- Mailer (Worker + Container) --------------------------------------
+      # A second Cloudflare project: `mailer/wrangler.toml` builds
+      # `mailer/Dockerfile` into a container image, because `@sendust/ts` is a
+      # native addon and no Worker can load it. Docker is available on this
+      # runner, which is why nobody needs it on a laptop.
+      #
+      # Needs the Workers PAID plan, and a CLOUDFLARE_API_TOKEN that also has
+      # Workers Scripts: Edit and Cloudflare Containers: Edit.
+      #
+      # Skipped rather than failed when the SMTP values are absent, so a fresh
+      # clone or a fork still deploys the site.
+      - name: Deploy mailer (Worker + Container)
+        working-directory: mailer
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          MAIL_SERVICE_TOKEN: ${{ secrets.MAIL_SERVICE_TOKEN }}
+        run: |
+          if [ -z "$SMTP_PASS" ] || [ -z "$MAIL_SERVICE_TOKEN" ]; then
+            echo "::notice::Mailer secrets are not set — skipping the container deploy. Email stays off."
+            exit 0
+          fi
+          npx wrangler deploy
+          # `jq` builds the JSON so a value containing a quote cannot break it.
+          jq -n \
+            --arg user "$SMTP_USER" --arg pass "$SMTP_PASS" \
+            --arg from "$MAIL_FROM" --arg token "$MAIL_SERVICE_TOKEN" \
+            '{SMTP_USER:$user,SMTP_PASS:$pass,MAIL_FROM:$from,MAIL_SERVICE_TOKEN:$token}' \
+            > secrets.json
+          npx wrangler secret bulk secrets.json
+          rm -f secrets.json

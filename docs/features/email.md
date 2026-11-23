@@ -212,13 +212,67 @@ space stripping and the warnings.
 - `src/components/react/invoice/email-nota-dialog.tsx` — "Email" in the builder.
 - `scripts/ensure-password-resets.mjs` — the table, columns and index.
 
-## Operational checklist
+## Getting it running
 
-1. `npm run password-resets:ensure -- --yes` (once).
-2. Run `mailer/`: `npm install && npm start`, with `SMTP_*`, `MAIL_FROM`,
-   `MAIL_SERVICE_TOKEN` set (see `mailer/.env.example`).
-3. Set the Pages side: `MAIL_SERVICE_URL` (plain variable) and
-   `MAIL_SERVICE_TOKEN` (encrypted:
-   `wrangler pages secret put MAIL_SERVICE_TOKEN`).
-4. Send one welcome mail from a throwaway account, and one reset from
-   `/forgot-password`, before trusting either.
+Three steps, in this order. Steps 1 and 3 take minutes; step 2 is the only one
+that needs a second service, and `render.yaml` makes it a handful of clicks.
+
+### 1. The table (once)
+
+`npm run password-resets:ensure -- --yes`. Without it the reset endpoint still
+answers 204, but no link can be stored, so no reset email is ever sent.
+
+### 2. The mailer process
+
+`@sendust/ts` is a native addon, so it needs a real Node process. The site is on
+Cloudflare, so the process is on Cloudflare too: **Workers + Containers**.
+
+**Cloudflare Containers (what this repository ships).**
+
+1. `mailer/wrangler.toml` + `mailer/worker.mjs` describe it: a Durable Object
+   starts the image built from `mailer/Dockerfile`, waits for `/healthz`, then
+   forwards `/send` and `/healthz` to it. The token is checked before a container
+   is even booted.
+2. `npx wrangler deploy` from `mailer/` builds the image with Docker and ships the
+   Worker. `.github/workflows/deploy.yml` does this on every push to `main`, so no
+   local Docker is needed.
+3. Set the four secrets once — `SMTP_USER`, `SMTP_PASS` (the Gmail App Password),
+   `MAIL_FROM`, `MAIL_SERVICE_TOKEN` — with `wrangler secret bulk` or as repository
+   secrets for the workflow.
+4. The URL is `https://notain-mailer.<your-subdomain>.workers.dev`;
+   `https://<it>/healthz` answers `{"ok":true,"configured":true}`.
+
+Two things this costs: the **Workers Paid plan** (Containers are not on Free), and
+a container boot of a few seconds on the first send after the container has gone
+cold — which is why a send is allowed 25 s (`MAIL_TIMEOUT_MS`) instead of the
+usual 10.
+
+**Alternative: Render.** `render.yaml` at the repository root describes a free
+service built from the same Dockerfile: render.com → New → Blueprint → pick the
+repository → Apply, then paste the three SMTP values. Free instances sleep after
+~15 minutes; the first send afterwards can take ~30 s.
+
+**Alternative: Appwrite Function.** `mailer/src/appwrite.mjs` on the `node-22`
+runtime, with the same values as function variables. No shared token is needed in
+that mode — Appwrite decides who may execute it.
+
+
+### 3. Cloudflare Pages
+
+Project `notain` → **Settings** → **Environment variables** (production):
+
+- `MAIL_SERVICE_URL` — the URL from step 2, no trailing slash. Plain value.
+- `MAIL_SERVICE_TOKEN` — the token from step 2. **Encrypt** it
+  (`wrangler pages secret put MAIL_SERVICE_TOKEN` does the same).
+
+Save, then redeploy (Actions → `Run workflow`, or push anything). Variables are
+read at request time, but the deploy makes the change visible in the logs.
+
+### 4. Prove it
+
+Register a throwaway account (welcome mail), use "Lupa password" on it (link
+valid 30 minutes, single use), and send a nota from a Pro organization's invoice.
+Until steps 1–3 are done, every `/api/mail/*` route answers 503 and the welcome
+mail is skipped silently — sign-in, invoices and payments are unaffected.
+
+## Limits and what they do not promise

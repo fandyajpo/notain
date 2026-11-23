@@ -1,0 +1,8 @@
+# Keep the container build context to what the image actually copies.
+node_modules
+test
+worker.mjs
+wrangler.toml
+README.md
+.env
+.env.*
