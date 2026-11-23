@@ -38,12 +38,18 @@ tenant table is written and read through the API key behind a membership check.
   a round trip is single use. On success it calls `completeGoogleOAuth` (the
   provider-agnostic exchange) and returns the stored `next` path after the
   same-origin check.
-- **Password recovery** — `/forgot-password` calls `createRecovery(email)`;
-  `/reset-password` takes `userId` and `secret` from the emailed link and calls
-  `completeRecovery`. The reset link is built from `window.location.origin`, so
-  each deployed hostname must be registered as a Web platform in the Appwrite
-  console. `architecture/README.md` records that `localhost:4321` is registered
-  and that the production host must be added separately.
+- **Password recovery** — `/forgot-password` asks
+  `POST /api/mail/password-reset` for a link; `/reset-password` redeems it with
+  `POST /api/mail/password-reset/confirm`. The link is
+  `<origin>/reset-password?token=…` — a 256-bit single-use token, stored only as
+  a SHA-256 in `password_resets`, valid 30 minutes, deleted as the new password
+  is written. The origin comes from the request, not from configuration, so the
+  same build works on `notain.pages.dev`, a preview host and `localhost:4321`;
+  https is required outside loopback. Appwrite's own `?userId=…&secret=…` link
+  still works (the page accepts both), because messages sent before the mailer
+  existed are still in inboxes. `architecture/README.md` records that
+  `localhost:4321` is registered as a Web platform; the production host must be
+  added separately for the legacy path. Full design: `features/email.md`.
 - **Sign-out** — `signOut()` tolerates `unauthenticated` and `suspended` from
   the server (a blocked account cannot end its own session) and then calls
   `forgetSession()`. Any other failure is re-thrown, so the user is not silently

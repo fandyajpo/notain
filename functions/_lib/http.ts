@@ -19,6 +19,23 @@ export function json(status: number, body: unknown, headers: HeadersInit = {}): 
   return new Response(JSON.stringify(body), { status, headers: responseHeaders });
 }
 
+/**
+ * An empty success answer — 204 by default, with the same cache rule as
+ * [`json`].
+ *
+ * A handler that has nothing to say returns nothing: a JSON body on a 204 is a
+ * protocol violation, and intermediaries are entitled to trim, rewrite or choke
+ * on it. Used by the endpoints whose whole contract is "accepted, no payload" —
+ * the password-reset pair.
+ */
+export function noContent(status = 204, headers: HeadersInit = {}): Response {
+  const responseHeaders = new Headers({ 'cache-control': 'no-store' });
+  new Headers(headers).forEach((value, key) => {
+    responseHeaders.set(key, value);
+  });
+  return new Response(null, { status, headers: responseHeaders });
+}
+
 /** Uniform error body so the client can branch on `error` instead of copy. */
 export function apiError(
   status: number,

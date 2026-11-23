@@ -110,8 +110,11 @@ Legend: **Live** means implemented end to end and reachable in the app.
 - **Real-time collaboration — Absent.** Plain HTTP with TanStack Query caches.
 - **Automated WhatsApp sending — Absent.** The app opens a prefilled `wa.me`
   handoff; nothing is sent on the user's behalf.
-- **Email delivery (invites, receipts, reminders) — Absent.** No mail provider
-  is wired up.
+- **Email delivery — Live for three messages.** A welcome note after sign-up, the
+  password-reset link, and "kirim nota" from the invoice builder (Pro: the email
+  carries the invoice link). All three leave through `mailer/`, a Node service
+  using `@sendust/ts`; nothing else emails. Invitations are still disabled, and
+  there are no billing receipts or payment reminders. See `features/email.md`.
 - **Localization — Indonesian only.** User-facing copy is Indonesian; code
   comments are English.
 

@@ -1,4 +1,4 @@
-import { mintJwt } from '../appwrite/client';
+import { bearerFetch } from './bearer-fetch';
 import { appErrorFromStatus } from './errors';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 import { getActiveOrgId } from './active-org';
@@ -31,26 +31,6 @@ export type InvoiceQuota = {
   /** ISO instant at which the month (and the counter with it) rolls over. */
   resetsAt: string;
 };
-
-async function bearerFetch(path: string, init: { method?: string } = {}): Promise<Response> {
-  let jwt: string;
-  try {
-    jwt = await mintJwt();
-  } catch (error) {
-    throw new AppError(ERROR_CODES.UNAUTHENTICATED, 'Silakan masuk terlebih dahulu.', {
-      cause: error,
-    });
-  }
-  try {
-    const headers = { Authorization: `Bearer ${jwt}` };
-    return await fetch(path, init.method ? { method: init.method, headers } : { headers });
-  } catch {
-    throw new AppError(
-      ERROR_CODES.NETWORK,
-      'Tidak bisa terhubung ke server. Cek koneksi internet kamu.',
-    );
-  }
-}
 
 /**
  * `orgId` for the quota endpoint — the same failure mode the repositories

@@ -40,6 +40,25 @@ export interface Env {
    */
   APPWRITE_API_KEY?: string;
   /**
+   * Where the `mailer/` service listens (its `/send` route). Everything the app
+   * mails — the welcome message, password-reset links, a nota to a customer —
+   * goes through that one service, because the email library is a native Node
+   * addon and a Worker cannot load one.
+   *
+   * A plain Pages variable, not a secret: it is a URL. Set it in
+   * `wrangler.toml`'s `[vars]` (or the dashboard) with no trailing slash.
+   * Missing it disables every mail endpoint (they answer 503) without touching
+   * anything else the app does.
+   */
+  MAIL_SERVICE_URL?: string;
+  /**
+   * Bearer token the mailer requires on `/send`. Set as an *encrypted* Pages
+   * variable (`wrangler pages secret put MAIL_SERVICE_TOKEN`), and give the
+   * mailer the same value as its own `MAIL_SERVICE_TOKEN`. Never in
+   * `wrangler.toml`, `.env`, or a commit.
+   */
+  MAIL_SERVICE_TOKEN?: string;
+  /**
    * DOKU sandbox checkout credentials (never the production ones — this
    * integration is sandbox-only). `DOKU_CLIENT_ID` goes in the `Client-Id`
    * header of every Checkout API call and must match the one DOKU signs

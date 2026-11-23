@@ -14,11 +14,15 @@ import { DEFAULT_REDIRECT, isSelfRedirect, resolveRedirectTarget } from '../../.
 import { TURNSTILE_SITE_KEY, turnstileEnabled, verifyTurnstile } from '../../../lib/turnstile';
 import {
   useCompleteRecovery,
-  useCreateRecovery,
   useSession,
   useSignIn,
   useSignUp,
 } from '../../../lib/query/hooks/use-session';
+import {
+  useConfirmPasswordReset,
+  useRequestPasswordReset,
+} from '../../../lib/query/hooks/use-mail';
+import { sendWelcomeEmail } from '../../../app/mail';
 import { Button } from '../ui/button';
 import { FieldShell, useFieldIds } from '../ui/field';
 import { Input } from '../ui/input';
@@ -222,6 +226,10 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
           email: value.email.trim(),
           password: value.password,
         });
+        // Best effort by contract: the account and session already exist, so a
+        // mail failure must never look like a failed registration. The helper
+        // swallows its own errors.
+        void sendWelcomeEmail();
         goTo(redirectTo);
       } catch (error) {
         setServerError(toErrorMessage(error));
@@ -318,12 +326,12 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
 
 /**
  * Step 1: ask for the email, send the link. The confirmation screen is shown
- * whether or not the account exists — the Appwrite layer already swallows
- * "no such user" so this form never learns the difference, which is what keeps
- * the endpoint from becoming an account-existence oracle.
+ * whether or not the account exists — `POST /api/mail/password-reset` answers
+ * 204 for every outcome, so this form never learns the difference, which is what
+ * keeps the endpoint from becoming an account-existence oracle.
  */
 function ForgotPasswordForm() {
-  const createRecovery = useCreateRecovery();
+  const requestReset = useRequestPasswordReset();
   const [serverError, setServerError] = useState<string | null>(null);
   const [sent, setSent] = useState<string | null>(null);
 
@@ -333,7 +341,7 @@ function ForgotPasswordForm() {
     onSubmit: async ({ value }) => {
       setServerError(null);
       try {
-        await createRecovery.mutateAsync(value.email.trim());
+        await requestReset.mutateAsync(value.email.trim());
         setSent(value.email.trim());
       } catch (error) {
         setServerError(toErrorMessage(error));
@@ -392,20 +400,31 @@ function ForgotPasswordForm() {
 }
 
 /**
- * Step 2: reached from the emailed link, which Appwrite appends
- * `?userId=…&secret=…` to. The user only fills in the new password — the
- * tokens are read off the query string, never typed.
+ * Step 2: reached from the emailed link.
+ *
+ * Two link shapes land here. `?token=…` is the one this app mails today — a
+ * 256-bit single-use token, redeemed by `POST /api/mail/password-reset/confirm`.
+ * `?userId=…&secret=…` is Appwrite's own recovery link, still honoured because
+ * messages sent before the mailer existed are sitting in inboxes. Either way the
+ * user only fills in the new password: the tokens are read off the query
+ * string, never typed.
  */
 function ResetPasswordForm() {
   const completeRecovery = useCompleteRecovery();
+  const confirmReset = useConfirmPasswordReset();
   const [serverError, setServerError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
   const [tokens] = useState(() => {
-    if (typeof window === 'undefined') return { userId: '', secret: '' };
+    if (typeof window === 'undefined') return { token: '', userId: '', secret: '' };
     const params = new URLSearchParams(window.location.search);
-    return { userId: params.get('userId') ?? '', secret: params.get('secret') ?? '' };
+    return {
+      token: params.get('token') ?? '',
+      userId: params.get('userId') ?? '',
+      secret: params.get('secret') ?? '',
+    };
   });
+  const viaToken = tokens.token !== '';
 
   const form = useForm({
     defaultValues: { password: '', confirmPassword: '' },
@@ -413,11 +432,15 @@ function ResetPasswordForm() {
     onSubmit: async ({ value }) => {
       setServerError(null);
       try {
-        await completeRecovery.mutateAsync({
-          userId: tokens.userId,
-          secret: tokens.secret,
-          password: value.password,
-        });
+        if (viaToken) {
+          await confirmReset.mutateAsync({ token: tokens.token, password: value.password });
+        } else {
+          await completeRecovery.mutateAsync({
+            userId: tokens.userId,
+            secret: tokens.secret,
+            password: value.password,
+          });
+        }
         setDone(true);
       } catch (error) {
         setServerError(toErrorMessage(error));
@@ -438,7 +461,7 @@ function ResetPasswordForm() {
     );
   }
 
-  if (!tokens.userId || !tokens.secret) {
+  if (!viaToken && (!tokens.userId || !tokens.secret)) {
     return (
       <div className="flex flex-col gap-6">
         <Notice variant="danger">

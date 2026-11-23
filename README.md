@@ -18,6 +18,9 @@ Pembayaran langganan (DOKU Checkout sandbox): [`docs/payments.md`](./docs/paymen
 - TanStack (Form, Query, Hotkeys, Pacer, Store) + TipTap
 - Appwrite 28 TablesDB (database `notain_db`)
 - Cloudflare Pages (host statis + Pages Functions) + R2 (bucket `notain`)
+- `mailer/` — layanan Node 22 terpisah untuk email, memakai `@sendust/ts`
+  (native addon, tidak bisa jalan di Worker). Lihat
+  [`docs/features/email.md`](./docs/features/email.md).
 - Vitest + Playwright + ESLint + Prettier
 
 ## Perintah

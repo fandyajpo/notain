@@ -35,6 +35,9 @@ database.
   *is* what DOKU is told, which makes the webhook lookup a single document read.
 - **Customer, catalog, template, audit log, support**: Appwrite-assigned
   (`unique()`), except templates which may carry a client-supplied id.
+- **Password-reset token**: `pwreset_` + 16 hex of `sha256(userId)`. Derived from
+  the account, not from the token, so the row is stable across re-issues; the
+  token's own hash is a column, not the id.
 
 ## Tables
 
@@ -238,6 +241,34 @@ Actions currently written: `org.create`, `org.create.compensation-failed`,
 `payment.paid.activation-failed`, `payment.expired`, `payment.amount-mismatch`,
 `user.suspend`, `user.unsuspend`, `support.solve`, `support.reopen`, and the
 admin content mutations.
+
+### `password_resets` — server-only reset tokens
+
+Columns: `tokenHash` (string 64), `userId` (string 36), `expiresAt` (string 32,
+ISO-8601), `origin` (string 128).
+
+Indexes: `byTokenHash` on `tokenHash` — the confirm endpoint knows the token, not
+the account, so redemption is a lookup.
+
+Permissions: none, `rowSecurity: true`. Only
+`functions/api/mail/password-reset*` reads or writes these rows, with the API key.
+
+Written by: `POST /api/mail/password-reset` (create, or patch over the account's
+existing row). Deleted by: a successful confirm, and on sight when an expired row
+is redeemed.
+
+Rules encoded in code:
+
+- The row id is `pwreset_` + 16 hex of `sha256(userId)` (`resetRowId`), so one
+  account has at most one live link; a second request invalidates the first.
+- Only `sha256(token)` is stored. The token itself exists in the email and
+  nowhere else, so a dump of this table cannot be replayed.
+- `expiresAt` is 30 minutes after minting (`RESET_TOKEN_TTL_MINUTES`).
+- Unset `origin` cannot happen: the endpoint refuses a request whose origin is
+  not https (or loopback), so a link is never built for a plain-http host.
+
+Created by `scripts/ensure-password-resets.mjs`
+(`npm run password-resets:ensure`).
 
 ## R2 object layout
 

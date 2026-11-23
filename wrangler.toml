@@ -27,6 +27,17 @@ PUBLIC_APPWRITE_DATABASE_ID = "notain_db"
 # variables in the dashboard or via `wrangler pages secret put <NAME>`. They
 # are only read by the payment Functions under `functions/api/payments/`.
 
+# Mail delivery goes through `mailer/`, a Node service that runs
+# `@sendust/ts` — a native Node-API addon, which a Worker cannot load. The
+# Functions reach it over HTTPS at MAIL_SERVICE_URL with MAIL_SERVICE_TOKEN.
+#
+# The URL is public by nature and may live here as a plain variable:
+#   MAIL_SERVICE_URL = "https://<your-mailer-host>"
+# The token is a credential and MUST be an encrypted Pages variable instead
+# (`wrangler pages secret put MAIL_SERVICE_TOKEN`). Leaving both unset is safe:
+# every mail endpoint answers 503 and nothing else changes. See
+# `docs/features/email.md`.
+
 # The logo bucket stays private. Nothing outside this app can read it; every
 # read and write goes through the Pages Function, which authorises the caller
 # against Appwrite first. Binding name is what `env.LOGOS` resolves to.

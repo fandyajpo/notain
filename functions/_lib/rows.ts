@@ -27,7 +27,13 @@ export type TableId =
   | 'support'
   | 'audit_logs'
   | 'organizations'
-  | 'memberships';
+  | 'memberships'
+  /**
+   * One row per account holding a hashed password-reset token. Server-only:
+   * empty permissions, written and read exclusively with the API key by
+   * `functions/api/mail/password-reset*`.
+   */
+  | 'password_resets';
 
 /** API-key headers against Appwrite, or `null` when the env is incomplete. */
 export type TableAuth = { endpoint: string; headers: Record<string, string> };

@@ -9,9 +9,11 @@ Conventions used throughout:
   `GET /account`), `requireOrg` (session plus an active membership row),
   `requireOrgOwner` (plus `role === 'owner'`), `requireAdmin` (plus `admins`
   team membership), or `public` (no session).
-- **Auth** is always the caller's Appwrite JWT as `Authorization: Bearer …`,
-  minted in the browser by `mintJwt()`. Only the Appwrite proxy and the
-  capability-URL reads accept no bearer.
+- **Auth** is usually the caller's Appwrite JWT as `Authorization: Bearer …`,
+  minted in the browser by `mintJwt()`. The Appwrite proxy, the capability-URL
+  reads, the public forms (support, turnstile, csp-report) and both
+  password-reset routes accept no bearer — each for a reason stated at the
+  route.
 - **Errors** are `{ error, message }` with `error` from a fixed vocabulary:
   `unauthenticated`, `forbidden`, `not_found`, `validation`, `conflict`,
   `method_not_allowed`, `plan_required`, `rate_limited`, `unavailable`.
@@ -23,8 +25,9 @@ Conventions used throughout:
   user id. The buckets are `support` 5/h, `proof-upload` 6/h,
   `proof-upload-owner` 30/h, `logo-upload` 10/h, `checkout` 10/h, `org-create`
   10/h, `org-invite` 30/h, `data-write` 120/min, `invoice-quota` 60/min,
-  `invoice-read` 60/min, `site` 60/min, `turnstile` 30/min and `csp-report`
-  30/min. Each has a `QUOTA_LIMIT_*` override. See `quota.md` and
+  `invoice-read` 60/min, `site` 60/min, `mail-welcome` 3/h, `mail-nota` 30/h,
+  `password-reset` 5/h, `password-reset-address` 3/h, `turnstile` 30/min and
+  `csp-report` 30/min. Each has a `QUOTA_LIMIT_*` override. See `quota.md` and
   `functions/_lib/quota.ts`.
 
 ## Route map
@@ -40,6 +43,10 @@ Conventions used throughout:
 /api/profile                    org-scoped profile row (legacy letterhead)
 /api/profile/user               account identity
 /api/quota/invoices             free-tier allowance (read + claim)
+/api/mail/welcome                greeting after sign-up (session)
+/api/mail/password-reset         request a reset link (anonymous)
+/api/mail/password-reset/confirm  redeem the token and set the password (anonymous)
+/api/mail/nota                   mail one invoice to its customer
 /api/invoice/<id>               public invoice payload
 /api/invoice/<id>/proof         payment-proof upload (customer or owner)
 /api/proof/<key>                payment-proof bytes + owner delete
@@ -99,6 +106,94 @@ Conventions used throughout:
   API-key check (`isAdminUser`). Deliberately bypasses the `checkAdmin` cache so
   a JWT-shaped denial cannot poison the fallback.
 - **Errors:** `401 unauthenticated`.
+
+---
+
+## Email
+
+Four routes, one delivery service. None of them sends SMTP itself: each builds a
+validated payload and hands it to `mailer/` over HTTPS
+(`MAIL_SERVICE_URL`, bearer `MAIL_SERVICE_TOKEN`), because the email library is a
+native Node addon that cannot load in a Worker. See `features/email.md` for the
+architecture, the templates and the reset-token design.
+
+Two conventions differ from the rest of this reference:
+
+- `sendMail()` **never throws**. A relay failure becomes `'failed'` and the
+  endpoint decides: 503 where a person asked for the mail, silence where nobody
+  did (the welcome message).
+- Every route answers 503 `unavailable` when `MAIL_SERVICE_URL` or
+  `MAIL_SERVICE_TOKEN` is unset. Nothing else in the app depends on them.
+
+### `POST /api/mail/welcome`
+
+`functions/api/mail/welcome.ts`
+
+- **Gate:** session.
+- **Input:** none. The address is taken from the verified session, so this cannot
+  be pointed at a third party.
+- **Limit:** `mail-welcome`, 3/hour per user id.
+- **Side effects:** one mail. No row is written.
+- **Output:** `202 { ok: true }`.
+- **Errors:** `401 unauthenticated`, `400 validation` (account without an email),
+  `429 rate_limited`, `503 unavailable` (mailer unset or refused).
+- **Client:** `sendWelcomeEmail()` after a successful sign-up, fire-and-forget.
+
+### `POST /api/mail/password-reset`
+
+`functions/api/mail/password-reset.ts`
+
+- **Gate:** none — a locked-out user has no session.
+- **Input:** `{ email }`.
+- **Limits:** `password-reset` 5/hour per IP (a real 429); the per-address fence
+  (3/hour, keyed by a hash) is silent.
+- **Side effects:** one `password_resets` row (created, or patched over the
+  account's existing one so only the newest link works) and one mail carrying
+  `<origin>/reset-password?token=<64 hex>`. Only the token's SHA-256 is stored.
+- **Output:** `204` for **every** outcome — unknown address, over-limit address,
+  provider failure, mailer failure. That is the anti-enumeration contract; only
+  the inbox can prove an address is registered.
+- **Errors:** `400 validation` (malformed email or body), `429 rate_limited` (IP
+  fence only), `503 unavailable` (server config missing).
+- **Notes:** the link origin comes from `Origin` (falling back to the request
+  URL) and must be https outside loopback.
+
+### `POST /api/mail/password-reset/confirm`
+
+`functions/api/mail/password-reset/confirm.ts`
+
+- **Gate:** none; the token is the credential.
+- **Input:** `{ token, password }`.
+- **Limit:** `password-reset` 5/hour per IP.
+- **Validation:** `passwordSchema` from `src/core/auth/schema.ts` — the same rule
+  the sign-up and reset forms use.
+- **Side effects:** `PATCH /users/<id>/password` with the API key, the token row
+  deleted (single use), then every session of that account ended (best effort).
+- **Output:** `204`.
+- **Errors:** `400 validation` — one shared message for a wrong, spent or expired
+  token, or the schema's own copy for a weak password; `503 unavailable` when
+  Appwrite refuses the write (so an outage never burns the link).
+
+### `POST /api/mail/nota`
+
+`functions/api/mail/nota.ts`
+
+- **Gate:** session + an active membership row in the invoice's organization.
+  A missing id and a foreign id both answer `404 not_found`, in that order.
+- **Plan gate:** active paid plan, or the organization's owner is an admin —
+  the same rule as `GET /api/invoice/<id>`, because the email carries that link.
+- **Input:** `{ invoiceId, to?, note? }`. `to` falls back to the invoice's
+  `customerEmail`.
+- **Limit:** `mail-nota`, 30/hour per organization.
+- **Side effects:** one mail (number, dates, total, note, capability link) and —
+  only when the invoice's status is unset — a write to `status = 'sent'`.
+  `paid` and `void` are never touched.
+- **Output:** `200 { ok: true, to, status }`.
+- **Errors:** `400 validation` (no usable recipient), `401 unauthenticated`,
+  `402 plan_required` (Free or expired), `404 not_found`, `429 rate_limited`,
+  `503 unavailable` (mailer unset, relay refused, organization unreadable).
+- **Client:** `EmailNotaDialog` in the invoice builder; it invalidates the
+  invoice, all invoice lists and every dashboard finance period on success.
 
 ---
 

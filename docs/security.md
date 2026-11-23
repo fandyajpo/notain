@@ -111,6 +111,39 @@ Principal threats considered in the code:
 - Object deletion requires a session and owner metadata; another owner's key
   answers 404.
 
+### Email
+
+- SMTP credentials (`SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`) exist
+  only in the `mailer/` process' environment. No Function, no bundle and no
+  browser ever sees them; the Pages side holds only a URL and a shared bearer
+  token, the token encrypted. `@sendust/ts` refuses plaintext SMTP and always
+  verifies the relay's certificate and hostname — there is no option to turn
+  that off.
+- Mailing a nota requires a session **and** an active membership of the
+  invoice's organization, checked after the row is read and before anything is
+  sent; a foreign or missing id answers 404, so ids cannot be probed. The plan
+  gate matches the public invoice link, because that link is what the email
+  carries.
+- The welcome mail cannot be aimed: the recipient is the verified session's own
+  address, never a body field.
+- Password reset is the one deliberately anonymous write with real power, so it
+  is built to leak nothing and to be unusable when stolen:
+  - 256-bit token, stored only as a SHA-256, valid 30 minutes, one row per
+    account (re-requesting invalidates the previous link), deleted the moment it
+    is redeemed;
+  - every outcome of the request endpoint is 204 — unknown address, over-limit
+    address, provider failure and mailer failure are indistinguishable from
+    success, and no `user_not_found`/`invalid_credentials` code escapes;
+  - the password is validated with the same Zod schema the forms use, then
+    written with the API key (`users.updatePassword`), and every other session of
+    the account is ended afterwards;
+  - `Origin` (not configuration) builds the link, and it must be https outside
+    loopback, so a token is never mailed as a plain-http URL.
+- The mailer's HTTP surface is `/send` plus `/healthz`, no CORS, bearer-only,
+  compared in constant time after hashing both sides; its `MAIL_SERVICE_TOKEN`
+  is required at boot, so a misconfigured deploy fails loudly instead of running
+  open.
+
 ### Input handling
 
 - Zod schemas (`src/core/**/schema.ts`) validate every form on the client and

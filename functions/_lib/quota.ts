@@ -64,7 +64,11 @@ export type LimitName =
   | 'org-create'
   | 'org-invite'
   | 'data-write'
-  | 'site';
+  | 'site'
+  | 'mail-welcome'
+  | 'mail-nota'
+  | 'password-reset'
+  | 'password-reset-address';
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -115,6 +119,24 @@ const DEFAULT_LIMITS: Record<LimitName, { limit: number; windowMs: number }> = {
   // against the Appwrite read quota). The fence stops a flood from burning
   // read quota; 60/min is far above what one real visitor's page load costs.
   site: { limit: 60, windowMs: MINUTE },
+  // Three messages per caller per hour. The welcome mail is sent once, right
+  // after sign-up; the allowance exists so a retrying client cannot turn one
+  // registration into a mailbox full of greetings.
+  'mail-welcome': { limit: 3, windowMs: HOUR },
+  // One "kirim nota" is one SMTP transaction — a real cost at the relay and the
+  // one fence that matters against a loop. 30/hour per ORGANIZATION is far
+  // above a busy day's manual sending and useless as a spam cannon. Paid orgs
+  // only reach this endpoint at all (the plan gate runs first).
+  'mail-nota': { limit: 30, windowMs: HOUR },
+  // Password-reset requests are anonymous, so the fence is per IP: 5/hour is
+  // enough for a person who mistyped their address twice, and small enough that
+  // a script cannot enumerate addresses at speed.
+  'password-reset': { limit: 5, windowMs: HOUR },
+  // The same fence shape per ADDRESS, keyed by a hash so no email is stored in
+  // the map. Deliberately unobservable: a 429 that only real accounts could
+  // trigger would be an account-existence oracle (see the endpoint's comment),
+  // so the caller answers 204 whether or not this allowed the request.
+  'password-reset-address': { limit: 3, windowMs: HOUR },
 };
 
 const LIMIT_ENV_OVERRIDES: Record<LimitName, string> = {
@@ -131,6 +153,10 @@ const LIMIT_ENV_OVERRIDES: Record<LimitName, string> = {
   'org-invite': 'QUOTA_LIMIT_ORG_INVITE_PER_HOUR',
   'data-write': 'QUOTA_LIMIT_DATA_WRITE_PER_MINUTE',
   site: 'QUOTA_LIMIT_SITE_PER_MINUTE',
+  'mail-welcome': 'QUOTA_LIMIT_MAIL_WELCOME_PER_HOUR',
+  'mail-nota': 'QUOTA_LIMIT_MAIL_NOTA_PER_HOUR',
+  'password-reset': 'QUOTA_LIMIT_PASSWORD_RESET_PER_HOUR',
+  'password-reset-address': 'QUOTA_LIMIT_PASSWORD_RESET_ADDRESS_PER_HOUR',
 };
 
 /** Reads `env[name]` as a positive integer, else `fallback`. */

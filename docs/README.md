@@ -57,6 +57,9 @@ validation, failure modes, and the files that own each rule.
   stats cache, finance window, metric definitions, activity feed.
 - [`features/billing-and-quota.md`](./features/billing-and-quota.md) — plans,
   entitlements, DOKU checkout, settlement state machine, the free invoice quota.
+- [`features/email.md`](./features/email.md) — the `mailer/` service on
+  `@sendust/ts`, the three messages, the reset-token design, why the mailer is a
+  separate process, and its operational checklist.
 - [`features/public-pages.md`](./features/public-pages.md) — public invoice
   capability URL, payment-proof upload, public business site, marketing and SEO
   pages.

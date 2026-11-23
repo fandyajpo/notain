@@ -176,6 +176,13 @@ filter, sorting, cursor pagination, row selection, and a selection toolbar.
 - **WhatsApp**: when the customer has a phone number, the builder opens a
   prefilled `wa.me` message. Nothing is sent on the user's behalf and no file is
   attached automatically.
+- **Email** (`EmailNotaDialog` in the builder): mails the saved invoice to the
+  customer through `POST /api/mail/nota` — number, dates, total, an optional
+  note and the `/invoice/print/<id>` link. No PDF is attached (there is no
+  server-side renderer; ADR 0007), so the print dialog is still how a file is
+  produced. Pro only: the server applies the same plan gate as the public link
+  and answers 402 otherwise. A successful send moves an unset invoice to
+  `sent`. Full design and limits: `email.md`.
 
 ## Payment proofs (invoice side)
 

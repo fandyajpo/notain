@@ -20,6 +20,17 @@ const password = z
   .min(AUTH_LIMITS.minPassword, `Kata sandi minimal ${AUTH_LIMITS.minPassword} karakter.`)
   .max(AUTH_LIMITS.maxPassword, 'Kata sandi terlalu panjang.');
 
+/**
+ * The password rule on its own, for the server.
+ *
+ * `functions/api/mail/password-reset/confirm.ts` applies exactly what the form
+ * applies: a reset must not be able to store a password the sign-up form would
+ * have rejected, and the copy a user sees for "too short" must be the same on
+ * both screens. Exporting the inner schema is cheaper than a second copy of the
+ * rule that can drift.
+ */
+export const passwordSchema = password;
+
 export const signInSchema = z.object({
   email,
   password,

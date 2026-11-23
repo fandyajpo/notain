@@ -49,6 +49,17 @@ Functions (encrypted Pages variables or `.dev.vars`):
   form answers 500 `unconfigured`.
 - `DOKU_CLIENT_ID`, `DOKU_SECRET_KEY`, `DOKU_API_KEY` — sandbox credentials.
   Without the first two, checkout and the webhook answer 500.
+- `MAIL_SERVICE_TOKEN` — the bearer the `mailer/` service requires on `/send`.
+  Generate one with `openssl rand -hex 32` and give the mailer the same value.
+  Without it (or without `MAIL_SERVICE_URL`) every `/api/mail/*` endpoint answers
+  503 and no email is sent; nothing else changes.
+- `MAIL_SERVICE_URL` — where the mailer listens, no trailing slash. A plain URL,
+  so it may live in `wrangler.toml` `[vars]` instead of here;
+  `http://localhost:8080` is accepted for `wrangler pages dev`. SMTP
+  credentials (`SMTP_USER`, `SMTP_PASS`, and optionally `SMTP_HOST`,
+  `SMTP_PORT`, `SMTP_SECURITY`, `MAIL_FROM`) belong to the mailer process and
+  never reach a Function. With Gmail only the first two are needed — the host,
+  port and sender default from the account. See `mailer/.env.example`.
 - `QUOTA_*` — optional overrides (not secret): session and admin cache TTLs,
   next-number cache TTL, Appwrite read retries and base delay, DOKU breaker
   threshold and cooldown, and the `QUOTA_LIMIT_*` family. Defaults are in
@@ -211,6 +222,28 @@ a read or delete failed; retry once Appwrite is healthy.
 The `admins` team membership is cached for up to 60 seconds per isolate, and
 denials are cached too. Wait a minute, or confirm the account is a member of the
 team `admins` in Appwrite.
+
+### Email does not arrive
+
+1. `GET {MAIL_SERVICE_URL}/healthz` — 200 means the service is up and its
+   configuration parsed. A connection error means the host, port or TLS is wrong.
+2. Check `/api/mail/*` in the browser's network log. `503 unavailable` with
+   "belum aktif" means `MAIL_SERVICE_URL` or `MAIL_SERVICE_TOKEN` is unset on the
+   Pages project; a 401 from the mailer means the two tokens differ.
+3. `npx wrangler pages secret list` shows whether `MAIL_SERVICE_TOKEN` is
+   registered; rotate with `wrangler pages secret put MAIL_SERVICE_TOKEN` and
+   restart the mailer with the same value.
+4. `mailer` logs one line per failed send (`send.failed`) and one per execution
+   in the Appwrite-Function mode. A `502` there is the relay's answer, not
+   Notain's: check the SMTP credentials, the sender domain's SPF/DKIM, and whether
+   the relay has started rate-limiting the account.
+5. For a reset link that "does nothing": confirm the row exists in
+   `password_resets` (`byTokenHash`), that `expiresAt` is in the future, and that
+   the link's host is the one the request came from — an https origin is required
+   outside loopback.
+6. Remember the limits: `password-reset` is 5/hour per IP (a shared office IP can
+   exhaust it), `mail-welcome` 3/hour per user, `mail-nota` 30/hour per
+   organization. They are per isolate, so a retry may succeed on another one.
 
 ## Monitoring
 

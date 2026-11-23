@@ -85,6 +85,7 @@ import { DetailFieldsCard } from './detail-fields-card';
 import { TemplateCard } from '../template/template-picker';
 import { Picker } from './picker';
 import { CatalogPickerDialog } from './catalog-picker';
+import { EmailNotaDialog } from './email-nota-dialog';
 import { LazyRichEditor } from './lazy-rich-editor';
 import { TotalsPanel } from './totals-panel';
 
@@ -951,6 +952,16 @@ export function InvoiceBuilder({
                   <MessageCircle size={14} aria-hidden="true" />
                   WhatsApp
                 </Button>
+                {/* Same delivery moment, different channel: the email carries
+                    the numbers and the invoice link, and flips an unset nota to
+                    Terkirim on the server. Pro only — the link it mails is the
+                    paid feature, so a Free org gets a 402 with upgrade copy. */}
+                <EmailNotaDialog
+                  invoiceId={invoiceId}
+                  invoiceNumber={values.invoiceNumber}
+                  customerName={values.customerName}
+                  defaultEmail={values.customerEmail}
+                />
               </>
             )}
           </div>

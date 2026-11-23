@@ -22,6 +22,7 @@
     "catalog:ensure": "node --env-file=.env scripts/ensure-catalog.mjs",
     "audit:ensure": "node --env-file=.env scripts/ensure-audit.mjs",
     "support:ensure": "node --env-file=.env scripts/ensure-support.mjs",
+    "password-resets:ensure": "node --env-file=.env scripts/ensure-password-resets.mjs",
     "payments:ensure": "node --env-file=.env scripts/ensure-payments.mjs",
     "orgs:ensure": "node --env-file=.env scripts/ensure-orgs.mjs",
     "org-columns:ensure": "node --env-file=.env scripts/ensure-org-columns.mjs",
