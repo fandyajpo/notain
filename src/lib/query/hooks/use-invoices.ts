@@ -190,7 +190,7 @@ export function useUpdateInvoiceStatus() {
       const { id, status } = variables;
       const orgContext = captureOrgMutationContext(variables);
       await queryClient.cancelQueries({ queryKey: ['invoices'] });
-      if (!isCurrentOrgMutation(orgContext)) return { ...orgContext, previousLists: [] };
+      if (!isCurrentOrgMutation(orgContext)) return undefined;
       const previousLists = queryClient.getQueriesData<InvoiceListData>({
         queryKey: ['invoices'],
       });
@@ -246,7 +246,7 @@ export function useDeleteInvoice() {
       const { id } = variables;
       const orgContext = captureOrgMutationContext(variables);
       await queryClient.cancelQueries({ queryKey: ['invoices'] });
-      if (!isCurrentOrgMutation(orgContext)) return { ...orgContext, previousLists: [] };
+      if (!isCurrentOrgMutation(orgContext)) return undefined;
       const previousLists = queryClient.getQueriesData<InvoiceListData>({
         queryKey: ['invoices'],
       });
@@ -293,7 +293,7 @@ export function useDeleteInvoices() {
       const orgContext = captureOrgMutationContext(ids);
       const dropping = new Set(ids);
       await queryClient.cancelQueries({ queryKey: ['invoices'] });
-      if (!isCurrentOrgMutation(orgContext)) return { ...orgContext, previousLists: [] };
+      if (!isCurrentOrgMutation(orgContext)) return undefined;
       const previousLists = queryClient.getQueriesData<InvoiceListData>({
         queryKey: ['invoices'],
       });

@@ -91,7 +91,7 @@ export function useDeleteTemplate() {
       const { id } = variables;
       const orgContext = captureOrgMutationContext(variables);
       await queryClient.cancelQueries({ queryKey: queryKeys.templates });
-      if (!isCurrentOrgMutation(orgContext)) return { ...orgContext, previous: undefined };
+      if (!isCurrentOrgMutation(orgContext)) return undefined;
       const previous = queryClient.getQueryData<InvoiceTemplate[]>(queryKeys.templates);
 
       queryClient.setQueryData<InvoiceTemplate[]>(queryKeys.templates, (current) =>

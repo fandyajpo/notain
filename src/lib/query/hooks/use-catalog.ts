@@ -125,7 +125,7 @@ export function useDeleteCatalogItem() {
       const { id } = variables;
       const orgContext = captureOrgMutationContext(variables);
       await queryClient.cancelQueries({ queryKey: queryKeys.catalog });
-      if (!isCurrentOrgMutation(orgContext)) return { ...orgContext, previous: undefined };
+      if (!isCurrentOrgMutation(orgContext)) return undefined;
       const previous = queryClient.getQueryData<CatalogItem[]>(queryKeys.catalog);
 
       queryClient.setQueryData<CatalogItem[]>(queryKeys.catalog, (current) =>
@@ -159,7 +159,7 @@ export function useDeleteCatalogItems() {
       const orgContext = captureOrgMutationContext(ids);
       const dropping = new Set(ids);
       await queryClient.cancelQueries({ queryKey: queryKeys.catalog });
-      if (!isCurrentOrgMutation(orgContext)) return { ...orgContext, previous: undefined };
+      if (!isCurrentOrgMutation(orgContext)) return undefined;
       const previous = queryClient.getQueryData<CatalogItem[]>(queryKeys.catalog);
 
       queryClient.setQueryData<CatalogItem[]>(queryKeys.catalog, (current) =>

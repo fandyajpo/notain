@@ -162,7 +162,7 @@ export function useDeleteCustomer() {
       const { id } = variables;
       const orgContext = captureOrgMutationContext(variables);
       await queryClient.cancelQueries({ queryKey: queryKeys.customers });
-      if (!isCurrentOrgMutation(orgContext)) return { ...orgContext, previous: undefined };
+      if (!isCurrentOrgMutation(orgContext)) return undefined;
       const previous = queryClient.getQueryData<Customer[]>(queryKeys.customers);
 
       queryClient.setQueryData<Customer[]>(queryKeys.customers, (current) =>
@@ -198,7 +198,7 @@ export function useDeleteCustomers() {
       const orgContext = captureOrgMutationContext(ids);
       const dropping = new Set(ids);
       await queryClient.cancelQueries({ queryKey: queryKeys.customers });
-      if (!isCurrentOrgMutation(orgContext)) return { ...orgContext, previous: undefined };
+      if (!isCurrentOrgMutation(orgContext)) return undefined;
       const previous = queryClient.getQueryData<Customer[]>(queryKeys.customers);
 
       queryClient.setQueryData<Customer[]>(queryKeys.customers, (current) =>
