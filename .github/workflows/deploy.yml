@@ -82,6 +82,14 @@ jobs:
       - name: Test
         run: npm test
 
+      # `mailer/` is its own package, so the root Vitest include (`src/**`,
+      # `tests/**`) never sees these files and they used to run nowhere. No
+      # `npm install` is needed in `mailer/`: the tests import only the
+      # configuration, the message builders and the request validator, never
+      # the native addon, so this stays offline and fast.
+      - name: Test (mailer)
+        run: npm run test:mailer
+
       - name: Type check
         run: npm run typecheck
 

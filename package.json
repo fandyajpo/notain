@@ -37,8 +37,12 @@
     "format:check": "vp fmt . --check",
     "test": "vp test run",
     "test:watch": "vp test",
+    "test:mailer": "node --test mailer/test/",
+    "test:all": "npm run test && npm run test:mailer",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "test:e2e:install": "playwright install chromium",
+    "check": "npm run format:check && npm run lint && npm run test:all && npm run typecheck",
     "smoke": "vp test run --config vitest.smoke.config.ts",
     "typecheck": "astro check && tsc --noEmit -p tsconfig.json"
   },

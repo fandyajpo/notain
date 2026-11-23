@@ -81,7 +81,8 @@ silent fallback to something slower.
 
 `npm test` runs the configuration, message-rendering and request-validation
 tests with Node's own runner. They import nothing native, so they pass before
-`npm install` too.
+`npm install` too — which is why the root project can run them with
+`npm run test:mailer`, no `mailer/` install required.
 
 ## Gmail / Google Workspace
 

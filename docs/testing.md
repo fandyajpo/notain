@@ -11,9 +11,14 @@ repository.
   `src/**/*.test.ts(x)`. Runs in CI as `npm test`. Needs no network.
 - **Endpoint** — Vitest in the node environment, files in `tests/*.test.ts`.
   Runs in CI. Uses an in-memory Appwrite double, so no network.
+- **Mailer** — Node's own runner (`npm run test:mailer`), files in
+  `mailer/test/*.test.mjs`. Runs in CI. Needs nothing at all: the tests import
+  the configuration, the message builders and the request validator, never the
+  native `@sendust/ts` addon, so they pass before `npm install` in `mailer/`.
 - **Browser** — Playwright (`npm run test:e2e`), files in `e2e/*.spec.ts`. Not
-  run in CI. Needs a dev server on port 4321 and Appwrite for the signed-in
-  flows.
+  run in CI. Needs the Chromium download once (`npm run test:e2e:install`), a
+  dev server on port 4321 (started for you if it is not already up) and Appwrite
+  for the signed-in flows.
 - **Live smoke** — Vitest with `vitest.smoke.config.ts` (`npm run smoke`), files
   in `smoke/*.test.ts`. Not run in CI. Talks to live Appwrite and the deployed
   logo Function.
@@ -23,9 +28,36 @@ repository.
   `format:check`.
 - **Lint** — `vp lint` with the rules in `vite.config.ts`. **Not** run in CI.
 
-Ordinary `npm test` picks up `src/**` and `tests/**` only. Pages Function code
-is tested from `tests/`, not from `functions/`, because Cloudflare compiles
+Ordinary `npm test` picks up `src/**` and `tests/**` only — the mailer suite is a
+separate package, which is why it has its own command. Pages Function code is
+tested from `tests/`, not from `functions/`, because Cloudflare compiles
 everything under `functions/` into the Worker.
+
+## Running them
+
+Everything offline, in one place:
+
+- `npm run check` — format check → lint → `test:all` → typecheck. The gate to
+  run before pushing; it needs `npm install` once and nothing else.
+- `npm run test:all` — both offline suites: `npm test` (Vitest) then
+  `npm run test:mailer` (Node's own runner).
+- `npm test` — unit, component and endpoint tests (Vitest). `npm run test:watch`
+  keeps the same suite running while you edit.
+- `npm run test:mailer` — `mailer/test/*.test.mjs`. No install, no network: it
+  never imports the native addon.
+- `npm run test:e2e` — Playwright, which starts the dev server itself if nothing
+  is listening on 4321. Run `npm run test:e2e:install` once to fetch Chromium;
+  the plan-gated specs additionally need Appwrite. `npm run test:e2e:ui` opens
+  the same suite in Playwright's UI mode.
+- `npm run smoke` — live smoke against Appwrite and the deployed logo Function;
+  needs a real `.env`.
+
+`npm run check` is the local equivalent of what CI runs, minus the build and the
+deploy: format, tests, typecheck. CI does not run `lint` today, so a clean
+`check` is stricter than a green pipeline, not looser.
+
+Neither offline suite touches the network, so both are safe to run with no
+`.env`, no Appwrite session and no mailer process.
 
 ## Unit and component tests (`src/`)
 
