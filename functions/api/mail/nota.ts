@@ -4,7 +4,7 @@ import { ID_SEGMENT_PATTERN } from '../../../src/lib/edit-route';
 import { invoiceRowToDomain, type InvoiceRow } from '../../../src/appwrite/mappers';
 import { isAdminUser } from '../../_lib/admin';
 import { verifySession } from '../../_lib/appwrite';
-import { apiError, json } from '../../_lib/http';
+import { apiError, json, readJson } from '../../_lib/http';
 import { mailConfigured, sendMail } from '../../_lib/mail';
 import { findMembership } from '../../_lib/orgs';
 import { enforceLimit } from '../../_lib/quota';
@@ -52,17 +52,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     return apiError(401, 'unauthenticated', 'Silakan masuk terlebih dahulu.');
   }
 
-  let invoiceId = '';
-  let recipient = '';
-  let note = '';
-  try {
-    const body = (await request.json()) as { invoiceId?: unknown; to?: unknown; note?: unknown };
-    invoiceId = typeof body.invoiceId === 'string' ? body.invoiceId.trim() : '';
-    recipient = typeof body.to === 'string' ? body.to.trim() : '';
-    note = typeof body.note === 'string' ? body.note.trim().slice(0, 1_000) : '';
-  } catch {
-    return apiError(400, 'validation', 'Format permintaan tidak valid.');
-  }
+  const body = await readJson(request);
+  if (body === null) return apiError(400, 'validation', 'Format permintaan tidak valid.');
+
+  const invoiceId = typeof body.invoiceId === 'string' ? body.invoiceId.trim() : '';
+  const recipient = typeof body.to === 'string' ? body.to.trim() : '';
+  const note = typeof body.note === 'string' ? body.note.trim().slice(0, 1_000) : '';
+
   if (!ID_SEGMENT_PATTERN.test(invoiceId)) {
     return apiError(404, 'not_found', 'Nota tidak ditemukan.');
   }

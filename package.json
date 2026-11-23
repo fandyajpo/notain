@@ -37,7 +37,7 @@
     "format:check": "vp fmt . --check",
     "test": "vp test run",
     "test:watch": "vp test",
-    "test:mailer": "node --test mailer/test/",
+    "test:mailer": "node --test mailer/test/config.test.mjs mailer/test/messages.test.mjs",
     "test:all": "npm run test && npm run test:mailer",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

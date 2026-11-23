@@ -14,7 +14,9 @@
 
 import { createTransport } from '@sendust/ts';
 
-/** @type {import('@sendust/ts').Transport | null} */
+// The transport, created once per process on first use. Deliberately untyped:
+// `@sendust/ts` is installed in this folder only, so a JSDoc `import('…')` type
+// resolves to `any` under the repo-wide lint and trips its redundant-union rule.
 let transport = null;
 
 function getTransport(config) {

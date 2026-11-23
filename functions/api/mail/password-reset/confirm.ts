@@ -1,5 +1,5 @@
 import { passwordSchema } from '../../../../src/core/auth/schema';
-import { fetchUpstream as fetch, apiError } from '../../../_lib/http';
+import { fetchUpstream as fetch, apiError, readJson } from '../../../_lib/http';
 import { enforceLimit, logQuota } from '../../../_lib/quota';
 import { hashResetToken, isResetToken } from '../../../_lib/reset-token';
 import { deleteRow, listRows, tableAuth } from '../../../_lib/rows';
@@ -33,15 +33,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const limited = enforceLimit('password-reset', requestKey(request), env);
   if (limited) return limited;
 
-  let token = '';
-  let password = '';
-  try {
-    const body = (await request.json()) as { token?: unknown; password?: unknown };
-    token = typeof body.token === 'string' ? body.token.trim() : '';
-    password = typeof body.password === 'string' ? body.password : '';
-  } catch {
-    return apiError(400, 'validation', 'Format permintaan tidak valid.');
-  }
+  const body = await readJson(request);
+  if (body === null) return apiError(400, 'validation', 'Format permintaan tidak valid.');
+
+  const token = typeof body.token === 'string' ? body.token.trim() : '';
+  const password = typeof body.password === 'string' ? body.password : '';
 
   if (!isResetToken(token)) return invalidLink();
 

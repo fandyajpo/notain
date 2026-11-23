@@ -116,3 +116,23 @@ export async function fetchUpstream(
     clearTimeout(timer);
   }
 }
+
+/**
+ * The request body as a plain object, or `null` when it is missing, not JSON,
+ * or not an object.
+ *
+ * Handlers here read a couple of optional strings out of the body and validate
+ * them by `typeof`; the only thing they need from the parser is "an object or
+ * nothing". Doing that in one place keeps the `let` plus `try/catch` pattern —
+ * and the dead initial value lint rightly objects to — out of every endpoint.
+ */
+export async function readJson(request: Request): Promise<Record<string, unknown> | null> {
+  try {
+    const value: unknown = await request.json();
+    return typeof value === 'object' && value !== null && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}

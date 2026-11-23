@@ -1,5 +1,5 @@
 import { querySearchAll } from '../../_lib/appwrite';
-import { apiError, noContent } from '../../_lib/http';
+import { apiError, noContent, readJson } from '../../_lib/http';
 import { mailConfigured, sendMail } from '../../_lib/mail';
 import { enforceLimit, quotaPolicy, rateLimit } from '../../_lib/quota';
 import {
@@ -49,13 +49,10 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const limited = enforceLimit('password-reset', requestKeyOf(request), env);
   if (limited) return limited;
 
-  let email = '';
-  try {
-    const body = (await request.json()) as { email?: unknown };
-    email = typeof body.email === 'string' ? body.email.trim() : '';
-  } catch {
-    return apiError(400, 'validation', 'Format permintaan tidak valid.');
-  }
+  const body = await readJson(request);
+  if (body === null) return apiError(400, 'validation', 'Format permintaan tidak valid.');
+
+  const email = typeof body.email === 'string' ? body.email.trim() : '';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
     return apiError(400, 'validation', 'Masukkan email yang valid.');
   }
