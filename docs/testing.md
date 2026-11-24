@@ -37,8 +37,11 @@ everything under `functions/` into the Worker.
 
 Everything offline, in one place:
 
-- `npm run check` — format check → lint → `test:all` → typecheck. The gate to
-  run before pushing; it needs `npm install` once and nothing else.
+- `npm run check` — **formats first** (`vp fmt .`), then verifies: format check,
+  lint, `test:all`, typecheck. The gate to run before pushing; it needs
+  `npm install` once and nothing else. Formatting before checking is deliberate:
+  a push should never fail on something the formatter can fix by itself, and the
+  check afterwards proves the tree is now stable.
 - `npm run test:all` — both offline suites: `npm test` (Vitest) then
   `npm run test:mailer` (Node's own runner).
 - `npm test` — unit, component and endpoint tests (Vitest). `npm run test:watch`

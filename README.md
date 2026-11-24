@@ -43,8 +43,9 @@ Pembayaran langganan (DOKU Checkout sandbox): [`docs/payments.md`](./docs/paymen
 
 Tiga perintah tambahan supaya tidak perlu menghafal urutannya:
 
-- `npm run check` — format + lint + semua test + typecheck, sekali jalan. Isinya
-  sama dengan gate CI (ditambah lint), jadi jalankan sebelum push.
+- `npm run check` — rapikan dulu (`vp fmt .`), lalu verifikasi: format check,
+  lint, semua test, typecheck. Jalankan sebelum push; kalau ada yang bisa
+  dirapikan formatter, perintah ini yang merapikannya.
 - `npm run test:mailer` — test `mailer/` dengan runner bawaan Node. Tidak perlu
   `npm install` di `mailer/` dan tidak menyentuh jaringan.
 - `npm run test:e2e:install` — unduh Chromium sekali sebelum `npm run test:e2e`.
