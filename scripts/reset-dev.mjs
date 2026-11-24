@@ -19,37 +19,35 @@
  * bulk-delete endpoint, so concurrency is what keeps a big wipe quick.
  */
 
+import {
+  apiKey,
+  confirmed,
+  databaseId,
+  endpoint,
+  fail,
+  hasFlag,
+  projectId,
+  requireApiKey,
+  sleep,
+} from './lib/appwrite-admin.mjs';
+
 const PAGE_SIZE = 100;
 /** Appwrite has no bulk-delete: throughput comes from parallel DELETEs per page. */
 const DELETE_CONCURRENCY = 8;
 /** Refuse to loop forever if something upstream keeps re-creating rows. */
 const MAX_DELETES = 100_000;
 
-const endpoint = (
-  process.env.PUBLIC_APPWRITE_ENDPOINT ?? 'https://sgp.cloud.appwrite.io/v1'
-).replace(/\/+$/, '');
-const projectId = process.env.PUBLIC_APPWRITE_PROJECT_ID ?? '6aca66fb003071c0ef43';
-const databaseId = process.env.PUBLIC_APPWRITE_DATABASE_ID ?? 'notain_db';
-const apiKey = (process.env.APPWRITE_API_KEY ?? '').trim();
+const SCOPES = [
+  'collections.read',
+  'documents.read',
+  'documents.write',
+  'users.read',
+  'users.delete',
+];
 
-const args = process.argv.slice(2);
-const confirmed = args.includes('--yes');
-const alsoUsers = args.includes('--users');
+const alsoUsers = hasFlag('users');
 
-function fail(message) {
-  console.error(`✖ ${message}`);
-  process.exit(1);
-}
-
-if (!apiKey) {
-  fail(
-    'APPWRITE_API_KEY belum diisi.\n' +
-      '  1. Appwrite Console → project ini → Settings → API keys → Create\n' +
-      '  2. Centang scope: collections.read, documents.read, documents.write,\n' +
-      '     users.read, users.delete\n' +
-      '  3. Tambahkan ke .env: APPWRITE_API_KEY=key_...',
-  );
-}
+requireApiKey(SCOPES);
 
 async function api(method, path) {
   for (let attempt = 1; ; attempt += 1) {
@@ -63,7 +61,7 @@ async function api(method, path) {
       const waitMs =
         Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2000 * attempt;
       console.log(`  rate-limited, tunggu ${Math.round(waitMs / 1000)}s…`);
-      await new Promise((resolve) => setTimeout(resolve, waitMs));
+      await sleep(waitMs);
       continue;
     }
 
