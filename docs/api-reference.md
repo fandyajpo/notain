@@ -135,14 +135,15 @@ Two conventions differ from the rest of this reference:
 - **Limit:** `mail-welcome`, 3/hour per user id — a backstop behind the marker.
 - **Side effects:** at most one mail per account, plus one `welcomeSentAt` stamp in
   the account's own prefs (`PATCH /users/<id>/prefs`). Stamped only after the
-  relay accepted it, so a refused greeting is retried by the next sign-in.
+  relay accepted it, so a refused greeting is not remembered as done — a retried
+  call sends again.
 - **Output:** `202 { ok: true, sent: true }` when it sends, `200 { ok: true,
   sent: false }` when the account was already greeted.
 - **Errors:** `401 unauthenticated`, `400 validation` (account without an email),
   `429 rate_limited`, `503 unavailable` (mailer unset or refused).
-- **Client:** `sendWelcomeEmail()` after sign-up, after sign-in, and at the end of
-  an OAuth round trip — fire-and-forget with `keepalive`, since each call site
-  navigates immediately.
+- **Client:** `sendWelcomeEmail()` after sign-up and at the end of an OAuth round
+  trip — the two ways an account is created — fire-and-forget with `keepalive`,
+  since each call site navigates immediately. Not on a password sign-in.
 
 ### `POST /api/mail/password-reset`
 

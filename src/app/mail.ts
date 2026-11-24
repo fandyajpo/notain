@@ -106,10 +106,11 @@ export async function sendInvoiceEmail(input: {
  * already live, so a mail failure must not be shown as a failed sign-in. Every
  * error is swallowed here rather than at each call site.
  *
- * Called after sign-up, after sign-in and at the end of an OAuth round trip. The
- * endpoint remembers the send (`welcomeSentAt` on the account), so the repeat
- * calls are what reach an OAuth sign-up — which never touches the register form —
- * and an account that predates the greeting.
+ * Called after sign-up, and at the end of an OAuth round trip — the two ways an
+ * account is created. Not on a password sign-in: that account already had its
+ * greeting, so asking again would cost a request and a prefs read for nothing.
+ * The endpoint remembers the send (`welcomeSentAt` on the account), so a repeat
+ * call cannot greet twice.
  *
  * `keepalive` is not incidental: every call site navigates immediately after it,
  * and without `keepalive` the browser may abort the request as the document goes

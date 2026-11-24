@@ -79,18 +79,22 @@ All four live under `functions/api/mail/`. Request/response detail is in
   body, so this cannot be aimed at a third party.
 - Limit: `mail-welcome`, 3/hour per user — a backstop behind the marker, not the
   rule.
-- Called **once per account**, and the client asks on every way in: after sign-up,
-  after sign-in, and at the end of an OAuth round trip. Fire-and-forget with
-  `keepalive`, because each call site navigates immediately: a mail failure must
-  never look like a failed sign-up or sign-in.
+- Called **once per account**, right after the account is created: the register
+  form asks, and so does the end of an OAuth round trip — those are the only two
+  ways in. A password sign-in does **not** ask; that account already had its
+  greeting. Fire-and-forget with `keepalive`, because both call sites navigate
+  immediately: a mail failure must never look like a failed sign-up.
 - The first call sends; every later one answers `200 { sent: false }`. The marker
   is the account's own `welcomeSentAt` pref (`functions/_lib/welcome.ts`), so an
-  OAuth sign-up — which never touches the register form — and an account that
-  predates this feature are greeted on its next sign-in. No table is involved.
-- Stamped only after the relay accepted it, so a refused greeting is retried by
-  the next sign-in instead of being remembered as done. When the marker cannot be
-  read (no `APPWRITE_API_KEY`, or Appwrite refusing it) the call sends: a second
-  greeting is a small annoyance, a missing one is what this endpoint exists for.
+  OAuth round trip that is a sign-in rather than a sign-up cannot greet twice. No
+  table is involved.
+- Stamped only after the relay accepted it, so a refused greeting is **not**
+  remembered as done: the next attempt (a second submit, or the next OAuth round
+  trip) sends again. A password account whose sign-up send failed therefore stays
+  ungreeted rather than being greeted on a later sign-in — that is the trade for
+  not mailing people every time they log in. When the marker cannot be read (no
+  `APPWRITE_API_KEY`, or Appwrite refusing it) the call sends: a second greeting
+  is a small annoyance, a missing one is what this endpoint exists for.
 - 202 `{ sent: true }` when it sends, 200 `{ sent: false }` when the account was
   already greeted, 503 when the mailer is unset or refused.
 
