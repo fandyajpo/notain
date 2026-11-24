@@ -136,3 +136,7 @@ jobs:
             > secrets.json
           npx wrangler secret bulk secrets.json
           rm -f secrets.json
+          # The Pages side checks the same token, so push it there too — the
+          # service binding in the dashboard supplies the address.
+          printf '%s' "$MAIL_SERVICE_TOKEN" |
+            npx wrangler pages secret put MAIL_SERVICE_TOKEN --project-name notain

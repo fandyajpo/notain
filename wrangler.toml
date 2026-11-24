@@ -28,15 +28,25 @@ PUBLIC_APPWRITE_DATABASE_ID = "notain_db"
 # are only read by the payment Functions under `functions/api/payments/`.
 
 # Mail delivery goes through `mailer/`, a Node service that runs
-# `@sendust/ts` — a native Node-API addon, which a Worker cannot load. The
-# Functions reach it over HTTPS at MAIL_SERVICE_URL with MAIL_SERVICE_TOKEN.
+# `@sendust/ts` — a native Node-API addon, which a Worker cannot load. It is
+# deployed as its own Worker + Container (`mailer/wrangler.toml`).
 #
-# The URL is public by nature and may live here as a plain variable:
-#   MAIL_SERVICE_URL = "https://<your-mailer-host>"
-# The token is a credential and MUST be an encrypted Pages variable instead
-# (`wrangler pages secret put MAIL_SERVICE_TOKEN`). Leaving both unset is safe:
-# every mail endpoint answers 503 and nothing else changes. See
-# `docs/features/email.md`.
+# RECOMMENDED: bind it, don't URL it. In the dashboard — Workers & Pages →
+# notain → Settings → Bindings → Add → Service binding, name `MAILER`, service
+# `notain-mailer` — or uncomment this block once the Worker exists:
+#
+#   [[services]]
+#   binding = "MAILER"
+#   service = "notain-mailer"
+#
+# A binding needs no hostname and no public address: `functions/_lib/mail.ts`
+# calls `env.MAILER.fetch()` and the request never leaves Cloudflare.
+#
+# `MAIL_SERVICE_URL` remains for the alternatives (a Render service, an Appwrite
+# Function), where a URL is the only way to reach it. The token is a credential
+# and must be an encrypted Pages variable (`wrangler pages secret put
+# MAIL_SERVICE_TOKEN`). Leaving both unset is safe: every mail endpoint answers
+# 503 and nothing else changes. See `docs/features/email.md`.
 
 # The logo bucket stays private. Nothing outside this app can read it; every
 # read and write goes through the Pages Function, which authorises the caller

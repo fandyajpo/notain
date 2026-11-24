@@ -72,36 +72,67 @@ function serviceToken(env: Env): string | null {
 
 /** Whether this deployment can send at all — the four endpoints check it first. */
 export function mailConfigured(env: Env): boolean {
+  if (env.MAILER !== undefined) return true;
   return serviceBaseUrl(env) !== null && serviceToken(env) !== null;
+}
+
+/**
+ * Hands one payload to the mailer, whichever way it is reachable.
+ *
+ * A service binding wins when it exists: the call never leaves Cloudflare, so
+ * there is no public hostname, no DNS, and no shared secret crossing the
+ * internet. `MAIL_SERVICE_URL` stays for the cases where the mailer is not a
+ * Worker in this account — a Render service or an Appwrite Function.
+ */
+async function deliver(
+  env: Env,
+  body: string,
+  headers: Record<string, string>,
+): Promise<Response | null> {
+  if (env.MAILER !== undefined) {
+    return env.MAILER.fetch(
+      new Request('https://mailer/send', {
+        method: 'POST',
+        headers,
+        body,
+        signal: AbortSignal.timeout(MAIL_TIMEOUT_MS),
+      }),
+    );
+  }
+
+  const base = serviceBaseUrl(env);
+  if (base === null) return null;
+  return fetch(`${base}/send`, { method: 'POST', headers, body }, MAIL_TIMEOUT_MS);
 }
 
 /**
  * Submits one message to the mailer.
  *
- * 10 s deadline through `fetchUpstream`, so a wedged relay cannot hold a Pages
- * invocation open. A non-2xx answer is a failure, not a retry: the mailer has
- * already applied its own bounded retry policy for transient SMTP failures,
- * and retrying here would double-send on the next attempt instead of the next
- * user action.
+ * The deadline is `MAIL_TIMEOUT_MS` (25 s, not the shared 10) because a cold
+ * container has to boot before it can answer. A non-2xx answer is a failure, not
+ * a retry: the mailer has already applied its own bounded retry policy for
+ * transient SMTP failures, and retrying here would double-send on the next
+ * attempt instead of the next user action.
  */
 export async function sendMail(env: Env, message: MailMessage): Promise<MailResult> {
-  const base = serviceBaseUrl(env);
   const token = serviceToken(env);
-  if (!base || !token) {
+  // The binding is configuration enough on its own; the URL path needs both.
+  if (env.MAILER === undefined && (serviceBaseUrl(env) === null || token === null)) {
     count('mail.skipped');
     return 'skipped';
   }
 
+  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  // Sent when it exists: the Worker checks it either way, so the binding path
+  // gets the same double gate as the public one.
+  if (token !== null) headers.authorization = `Bearer ${token}`;
+
   try {
-    const response = await fetch(
-      `${base}/send`,
-      {
-        method: 'POST',
-        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
-        body: JSON.stringify(message),
-      },
-      MAIL_TIMEOUT_MS,
-    );
+    const response = await deliver(env, JSON.stringify(message), headers);
+    if (response === null) {
+      count('mail.skipped');
+      return 'skipped';
+    }
     if (!response.ok) {
       count(`mail.failed.${response.status}`);
       logQuota('mail', 'rejected', { type: message.type, status: response.status });

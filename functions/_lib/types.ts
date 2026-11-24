@@ -17,6 +17,16 @@ export interface AssetsBinding {
   fetch(request: Request): Promise<Response>;
 }
 
+/**
+ * A service binding: a Function calling another Worker in this account without
+ * a public hostname, an internet round trip or a shared secret crossing the
+ * wire. Declared here for the same reason as the rest of this file — the shape
+ * is one method, not a package.
+ */
+export interface ServiceBinding {
+  fetch(request: Request): Promise<Response>;
+}
+
 export interface Env {
   /** R2 bucket binding declared in `wrangler.toml`. */
   LOGOS: R2Bucket;
@@ -58,6 +68,17 @@ export interface Env {
    * `wrangler.toml`, `.env`, or a commit.
    */
   MAIL_SERVICE_TOKEN?: string;
+  /**
+   * Service binding to the `notain-mailer` Worker (Workers + Container).
+   *
+   * When it exists, `sendMail` calls that Worker directly instead of going out
+   * to `MAIL_SERVICE_URL`: no public hostname to know, no `workers.dev` address
+   * to remember, and nothing on the internet can reach the mailer at all.
+   * Configure it once in the Pages project (Settings → Bindings → Add →
+   * Service binding, name `MAILER`, service `notain-mailer`), or with a
+   * `[[services]]` block in `wrangler.toml`.
+   */
+  MAILER?: ServiceBinding;
   /**
    * DOKU sandbox checkout credentials (never the production ones — this
    * integration is sandbox-only). `DOKU_CLIENT_ID` goes in the `Client-Id`

@@ -239,8 +239,10 @@ Cloudflare, so the process is on Cloudflare too: **Workers + Containers**.
 3. Set the four secrets once — `SMTP_USER`, `SMTP_PASS` (the Gmail App Password),
    `MAIL_FROM`, `MAIL_SERVICE_TOKEN` — with `wrangler secret bulk` or as repository
    secrets for the workflow.
-4. The URL is `https://notain-mailer.<your-subdomain>.workers.dev`;
-   `https://<it>/healthz` answers `{"ok":true,"configured":true}`.
+4. The Worker gets a `https://notain-mailer.<account>.workers.dev` address
+   automatically — free, and nothing to configure. You do not need to know it:
+   step 3 connects the two with a service binding. Asking that address for
+   `/healthz` is still the quickest proof the container came up.
 
 Two things this costs: the **Workers Paid plan** (Containers are not on Free), and
 a container boot of a few seconds on the first send after the container has gone
@@ -257,16 +259,25 @@ runtime, with the same values as function variables. No shared token is needed i
 that mode — Appwrite decides who may execute it.
 
 
-### 3. Cloudflare Pages
+### 3. Connect Pages to it — a binding, not a URL
 
-Project `notain` → **Settings** → **Environment variables** (production):
+Project `notain` → **Settings** → **Bindings** → **Add** → **Service binding**:
 
-- `MAIL_SERVICE_URL` — the URL from step 2, no trailing slash. Plain value.
-- `MAIL_SERVICE_TOKEN` — the token from step 2. **Encrypt** it
-  (`wrangler pages secret put MAIL_SERVICE_TOKEN` does the same).
+- Variable name: `MAILER`
+- Service: `notain-mailer`
 
-Save, then redeploy (Actions → `Run workflow`, or push anything). Variables are
-read at request time, but the deploy makes the change visible in the logs.
+Save, then redeploy (Actions → `Run workflow`, or push anything). That is the
+whole connection: `functions/_lib/mail.ts` calls `env.MAILER.fetch()`, the request
+never leaves Cloudflare, and there is no public hostname for the mailer at all.
+
+The shared token still needs to exist on the Pages side, because the Worker checks
+it. The deploy workflow pushes it for you (`wrangler pages secret put
+MAIL_SERVICE_TOKEN`, from the same repository secret); to do it by hand it is
+**Settings → Variables and Secrets → Add**, name `MAIL_SERVICE_TOKEN`, value, then
+**Encrypt**.
+
+`MAIL_SERVICE_URL` is only for the alternatives below — a Render service or an
+Appwrite Function — where a URL is the only way to reach the mailer.
 
 ### 4. Prove it
 
