@@ -24,8 +24,10 @@ repository.
   logo Function.
 - **Type check** — `astro check` plus `tsc --noEmit` over the whole project.
   Runs in CI.
-- **Format** — Prettier through `vp fmt`, over the whole project. Runs in CI as
-  `format:check`.
+- **Format** — Prettier through `vp fmt`, over the whole project. CI **applies**
+  it (`npm run format`) rather than failing on it: the build uses the formatted
+  tree and a warning reports how many files it rewrote. `format:check` is the
+  local command, and `npm run check` runs it for you.
 - **Lint** — `vp lint` with the rules in `vite.config.ts`. **Not** run in CI.
 
 Ordinary `npm test` picks up `src/**` and `tests/**` only — the mailer suite is a
@@ -165,8 +167,9 @@ Run it only against a test project and test accounts. It writes data.
   configuration: `noUncheckedIndexedAccess`, `noImplicitOverride`,
   `noFallthroughCasesInSwitch`, `allowUnreachableCode: false`.
 - `npm run format:check` fails on any unformatted file in the repository,
-  Markdown included. `.prettierignore` excludes `dist/`, `.astro/`,
-  `node_modules/`, `package-lock.json`, `coverage/` and `*.svelte`.
+  Markdown included. It is a local check: CI runs `npm run format` instead, so
+  formatting can never block a deploy. `.prettierignore` excludes `dist/`,
+  `.astro/`, `node_modules/`, `package-lock.json`, `coverage/` and `*.svelte`.
 
 ## Lint
 

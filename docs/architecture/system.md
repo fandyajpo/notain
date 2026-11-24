@@ -250,10 +250,10 @@ revalidatable so deploys go live immediately, and ships the security headers
 (HSTS, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`,
 `Permissions-Policy`, CSP with `report-uri /api/csp-report`).
 
-Deployment is GitHub Actions on push to `main`: format check → tests →
-typecheck → build → `wrangler pages deploy dist --branch main`. Cloudflare's own
-auto-build is switched off, so Actions is the only deploy path. Details and the
-required secrets are in `operations.md`.
+Deployment is GitHub Actions on push to `main`: format (applied, not enforced) →
+tests → typecheck → build → `wrangler pages deploy dist --branch main`.
+Cloudflare's own auto-build is switched off, so Actions is the only deploy path.
+Details and the required secrets are in `operations.md`.
 
 ## Invariants worth remembering
 

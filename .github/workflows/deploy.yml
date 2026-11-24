@@ -69,11 +69,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Cheapest gate first: formatting drift once reached 35 files with
-      # nothing running this check anywhere. One second here, and `vp fmt .`
-      # is the fix the failure message points at.
-      - name: Format check
-        run: npm run format:check
+      # Formatting is APPLIED, not enforced. A push must never fail because the
+      # formatter would rewrap a line, so this step rewrites the tree and the
+      # build uses the result. Drift is still visible: the notice names how many
+      # files were rewritten, so nobody is surprised later.
+      - name: Format
+        run: |
+          npm run format
+          changed=$(git status --porcelain | wc -l | tr -d ' ')
+          if [ "$changed" -gt 0 ]; then
+            echo "::warning::$changed file(s) were reformatted by CI — run `npm run format` before pushing."
+          fi
 
       # Nothing ships that fails its own suite: tests and type check used to
       # run only on a developer machine, so a red suite could still deploy.

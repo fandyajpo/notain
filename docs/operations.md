@@ -126,7 +126,10 @@ dispatch. Steps, in order:
 
 1. Check that the three secrets are present; fail with a readable message if not.
 2. `npm ci` on Node 22.
-3. `npm run format:check` (Prettier via `vp fmt --check`).
+3. `npm run format` — **applied, not enforced**: the step rewrites the tree so the
+   build uses formatted output, and warns when it had to. Formatting never fails
+   a deploy; run `npm run format` (or `npm run check`) before pushing to keep the
+   commit and the build identical.
 4. `npm test` (`vp test run`, Vitest, offline).
 5. `npm run typecheck` (`astro check && tsc --noEmit`).
 6. `npm run build`.
@@ -153,12 +156,13 @@ a fingerprint of the build: the count of `rel="modulepreload"` links on `/`, or
 
 ## Runbooks
 
-### Deploy failed in CI on the format check
+### CI reformatted files on a push
 
-Run `npm run format` locally, commit the reformatted files, push. The check uses
-the same formatter and config (`printWidth 100`, single quotes, trailing commas).
-This has happened after documentation edits: Markdown tables are reformatted by
-the same tool.
+Not a failure — the Format step applies `vp fmt` and the deploy continues, with a
+warning naming how many files it rewrote. The deployed build is formatted; the
+commit is not, so the next push reformats again. Run `npm run format` (or
+`npm run check`, which formats first) and commit the result to stop the warning.
+Markdown tables and long import lines are the usual culprits.
 
 ### Deploy failed on a missing secret
 
