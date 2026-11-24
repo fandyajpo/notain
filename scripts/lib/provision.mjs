@@ -82,7 +82,11 @@ async function createCollection(spec) {
 /** Re-asserts row security and the table-level permission set. */
 async function alignPermissions(spec, collection, confirmed) {
   const current = collection.$permissions ?? [];
-  const securityOff = collection.documentSecurity !== true;
+  // The WRITE field is `documentSecurity`; the READ field Appwrite returns is
+  // `rowSecurity`. Comparing only the write name reads `undefined` on every
+  // table, which turns this check into a permanent false positive — it printed
+  // "+ aktifkan documentSecurity" even for tables that already had it on.
+  const securityOff = (collection.rowSecurity ?? collection.documentSecurity) !== true;
   const permissionsDiffer = !samePermissions(current, spec.permissions);
 
   if (!securityOff && !permissionsDiffer) {

@@ -77,7 +77,8 @@ try {
   // With documentSecurity off, Appwrite ignores every row-level permission — a
   // row reset would silently protect nothing. `false` therefore needs the same
   // PUT as a non-empty permission list.
-  const docSecurityOff = table.documentSecurity !== true;
+  // Read side is `rowSecurity`; `documentSecurity` is the write-side name.
+  const docSecurityOff = (table.rowSecurity ?? table.documentSecurity) !== true;
 
   if (tablePermissions.length === 0 && !docSecurityOff) {
     console.log('  ✓ izin tabel sudah kosong, documentSecurity true');
@@ -99,7 +100,7 @@ try {
       permissions: [],
     });
     const verify = await api('GET', collectionPath(COLLECTION));
-    if (verify.documentSecurity !== true) {
+    if ((verify.rowSecurity ?? verify.documentSecurity) !== true) {
       fail('documentSecurity tidak kembali true setelah PUT — periksa manual di Console.');
     }
     console.log('  ✔ izin tabel dikosongkan, documentSecurity true (diverifikasi)');
