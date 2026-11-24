@@ -10,7 +10,7 @@ import { requireSession } from './session';
  *
  * Reading the cache is best-effort on purpose: the row only ever *speeds up*
  * the dashboard, so a missing `stats` table (fresh environment, or
- * `stats:ensure` not run yet) must degrade to "no cache" instead of an error
+ * `npm run db:ensure` not run yet) must degrade to "no cache" instead of an error
  * the UI would have to special-case.
  */
 export async function getDashboardStats(): Promise<DashboardStats | null> {

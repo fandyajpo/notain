@@ -122,8 +122,8 @@ dengan Secret Key, di-base64, diawali literal `HMACSHA256=`.
 2. Buat tabel pembayaran di Appwrite (idempoten, aman dijalankan berulang):
 
    ```bash
-   npm run payments:ensure              # dry-run: hanya menampilkan rencana
-   npm run payments:ensure -- --yes     # eksekusi (butuh APPWRITE_API_KEY di .env)
+   npm run db:ensure -- --only payments           # dry-run: hanya menampilkan rencana
+   npm run db:ensure -- --yes --only payments     # eksekusi (butuh APPWRITE_API_KEY di .env)
    ```
 
 3. Set tiga encrypted Pages variables (lihat tabel di atas), atau untuk `wrangler pages dev`:

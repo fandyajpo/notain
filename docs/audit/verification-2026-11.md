@@ -126,7 +126,8 @@ the original audit.
    reconfirmed. It is resumable and guarded; a partial state is possible after a
    failure mid-cascade.
 8. **Invoice-number uniqueness is conditional.** The unique index on
-   `(orgId, invoiceNumber)` is created by `scripts/ensure-indexes.mjs`. If that
+   `(orgId, invoiceNumber)` is created by `npm run db:ensure` (declared in
+   `scripts/schema.mjs`). If that
    script has not run in an environment, duplicate numbers are possible there.
    The deterministic id prevents the same number from being saved twice by the
    same owner, but only within one database.
@@ -165,7 +166,7 @@ the original audit.
 - Proof upload under concurrency (CONC-003).
 - Live `admins` membership check and its 60-second cache.
 - Cookie attributes of a real Appwrite sign-in through the proxy (SEC-004).
-- Index creation state in the production Appwrite project (`indexes:ensure`).
+- Index creation state in the production Appwrite project (`npm run db:ensure`).
 
 These map to `TEST_SCENARIOS.md`. None was run as part of this pass.
 

@@ -2,7 +2,7 @@
 
 This guide describes the business behavior implemented in the current source tree. It is a static source review, not a claim that the flows were run against a live deployment. If an older document or source comment conflicts with executable behavior, follow the endpoint and current tests.
 
-**Test-scene status:** The good and bad scenes below are candidates for a later test plan. They have not been executed. Use isolated test accounts, organizations, and synthetic records in a preview/staging environment. Use DOKU sandbox only. Do not send real payments or webhooks to production, delete production organizations, or run the production-oriented `scripts/ensure-payments.mjs` as a test.
+**Test-scene status:** The good and bad scenes below are candidates for a later test plan. They have not been executed. Use isolated test accounts, organizations, and synthetic records in a preview/staging environment. Use DOKU sandbox only. Do not send real payments or webhooks to production, delete production organizations, or run the production-oriented `npm run db:ensure` as a test.
 
 ## Actors and tenancy model
 

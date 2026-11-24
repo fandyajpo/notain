@@ -13,9 +13,29 @@ Manage the background server with `astro dev stop`, `astro dev status`, and `ast
 (never `astro build` alone), or the built pages will silently lose those links. `public/_headers`
 adds `immutable` caching for `/_astro/*`; do not remove it.
 
+## Database schema
+
+`scripts/schema.mjs` is the single list of tables, columns and indexes this app
+owns; `npm run db:ensure` applies it (dry-run by default, `-- --yes` to apply,
+`-- --list` to print the inventory, `-- --only <table>` to scope a run). Adding a
+table or a column is one edit in that file — do not add a new `ensure-*.mjs`
+script. The pass is additive and idempotent: it creates what is missing and
+re-asserts `documentSecurity` plus table permissions, and never drops anything.
+
+`invoices`, `templates` and `customers` were created in the Appwrite Console, so
+their entries are marked `create: false` and only their later columns and indexes
+are managed. `profiles` is not in the file at all: it has two id spaces and its
+row permissions are rewritten by `npm run harden:profiles`, which must run only
+after the `/api/profile` deploy is green.
+
+Two one-off backfills remain for data written before the profile→organization
+split: `npm run migrate:org-identity` (name, business type) and
+`npm run migrate:org-contacts` (contacts, slug, account identity rows). Both are
+only-empty-wins and safe to re-run.
+
 ## Deploy
 
-Deploys go through GitHub Actions, not from your machine: push to `main` and `.github/workflows/deploy.yml` runs `npm ci` → `npm run build` → `wrangler pages deploy dist --branch main`. Cloudflare's own auto-build (production _and_ preview) is switched off, so a push triggers nothing on the Cloudflare side — Actions is the only deploy path; running `wrangler pages deploy` by hand still works but silently overrides whatever Actions just shipped. The workflow needs three repository secrets: `CLOUDFLARE_API_TOKEN` (permission `Cloudflare Pages: Edit` plus `Workers R2 Storage: Edit`), `CLOUDFLARE_ACCOUNT_ID`, and `PUBLIC_TURNSTILE_SITE_KEY` (the public Turnstile sitekey, baked into the client build; the build fails without it rather than shipping with the bot gate missing). CI deliberately has no `.env` — the build otherwise falls back to the defaults in `src/appwrite/config.ts`, and the Pages Function reads its `[vars]` and R2 binding from `wrangler.toml`, which is why those values must stay in sync across `.env`, `src/appwrite/config.ts`, and `wrangler.toml`. Logos are stored in the private R2 bucket and served by the `/api/logo` Pages Function.
+Deploys go through GitHub Actions, not from your machine: push to `main` and `.github/workflows/deploy.yml` runs `npm ci` → `npm run build` → `wrangler pages deploy dist --branch main`. Cloudflare's own auto-build (production _and_ preview) is switched off, so a push triggers nothing on the Cloudflare side — Actions is the only deploy path; running `wrangler pages deploy` by hand still works but silently overrides whatever Actions just shipped. The workflow needs three repository secrets — plus one optional, `MAIL_SERVICE_TOKEN`, which turns email on (see `docs/features/email.md`): `CLOUDFLARE_API_TOKEN` (permission `Cloudflare Pages: Edit` plus `Workers R2 Storage: Edit`), `CLOUDFLARE_ACCOUNT_ID`, and `PUBLIC_TURNSTILE_SITE_KEY` (the public Turnstile sitekey, baked into the client build; the build fails without it rather than shipping with the bot gate missing). CI deliberately has no `.env` — the build otherwise falls back to the defaults in `src/appwrite/config.ts`, and the Pages Function reads its `[vars]` and R2 binding from `wrangler.toml`, which is why those values must stay in sync across `.env`, `src/appwrite/config.ts`, and `wrangler.toml`. Logos are stored in the private R2 bucket and served by the `/api/logo` Pages Function.
 
 ### Knowing when a build finished
 

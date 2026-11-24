@@ -8,7 +8,7 @@ import type { Env, PagesFunction } from '../_lib/types';
  * `GET  /api/profile?orgId=…` — read the org's PERSONAL profile row.
  * `PUT  /api/profile?orgId=…` — the only writer of that row.
  *
- * Multi-tenancy: the row id IS the org id (`ensure-orgs.mjs` rekeys it), so
+ * Multi-tenancy: the row id IS the org id (`npm run db:ensure` rekeys it), so
  * one organization has exactly one profile row no matter how many members
  * edit it. Both methods walk `requireOrg` first: the caller's membership row
  * is the only authority, and the `orgId` query value is just a hint that

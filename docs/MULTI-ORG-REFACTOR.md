@@ -29,14 +29,14 @@ Relationship rules honored: many-to-many via `memberships`; one shared profile p
 
 ## 3. What was added / removed
 
-**Added:** `userProfiles` table; `organizations` contact columns (slug unique, email, phone, website, address, taxId, logoFileId); `GET/PUT /api/profile/user`; contact fields on `PATCH /api/orgs/<id>` (owner-only) + `GET` identity read (owner-only); `GET /api/orgs/<id>` identity read; `Settings → Kelola Profil` shared identity editor; `Settings → Kelola Organisasi` org contact editor; onboarding writes the shared identity; slug generation on create; migration script `scripts/ensure-user-profile-org-model.mjs` (`npm run profile-org-model:ensure`).
+**Added:** `userProfiles` table; `organizations` contact columns (slug unique, email, phone, website, address, taxId, logoFileId); `GET/PUT /api/profile/user`; contact fields on `PATCH /api/orgs/<id>` (owner-only) + `GET` identity read (owner-only); `GET /api/orgs/<id>` identity read; `Settings → Kelola Profil` shared identity editor; `Settings → Kelola Organisasi` org contact editor; onboarding writes the shared identity; slug generation on create; migration script `scripts/schema.mjs` (`npm run profile-org-model:ensure`).
 
 **Removed:** the Letterhead entity introduced mid-stream (`letterheads` table usage, `GET/PUT /api/orgs/<id>/letterhead`, letterhead rows on create, letterhead reads in the public invoice endpoint) — deleted per the revised spec; no renamed equivalent exists. The legacy per-org `profiles` table is no longer edited by any UI; it remains as a read-fallback/backfill source and its rows are preserved (no destructive ops).
 
 ## 4. Migration runbook
 
-1. `npm run profile-org-model:ensure` — dry-run preview.
-2. `npm run profile-org-model:ensure --yes` — creates `userProfiles`, adds the organizations contact columns + unique `bySlug` index, and backfills (only-empty-wins, from every `profiles/<orgId>` row): org slug/email/phone/address/logoFileId, and `userProfiles/<ownerId>` username/phone. If the earlier letterhead variant was already run, re-running is safe: the letterheads table may exist in Appwrite as an orphan (never dropped — non-destructive §10) and can be removed in the Console after verification.
+1. `npm run db:ensure` — dry-run preview.
+2. `npm run db:ensure -- --yes` — creates `userProfiles`, adds the organizations contact columns + unique `bySlug` index, and backfills (only-empty-wins, from every `profiles/<orgId>` row): org slug/email/phone/address/logoFileId, and `userProfiles/<ownerId>` username/phone. If the earlier letterhead variant was already run, re-running is safe: the letterheads table may exist in Appwrite as an orphan (never dropped — non-destructive §10) and can be removed in the Console after verification.
 3. Rollback/recovery: no columns are dropped and no rows deleted; the legacy `profiles` rows remain the data of record until §7 completes. Reverting the code restores the previous behavior with no data loss.
 
 ## 5. Query scoping & authorization audit

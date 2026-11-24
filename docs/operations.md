@@ -107,18 +107,18 @@ carries the immutable cache rule for `/_astro/*` and the security headers.
 
 ## Schema provisioning
 
-The database is created and changed by scripts in `scripts/`. Each one is
-dry-run by default; `-- --yes` applies. Each is idempotent. The order and the
-purpose of each are in `data-model.md`, under "Provisioning order". Summary:
+The database is created and changed by `npm run db:ensure`, which reads every
+table, column and index from `scripts/schema.mjs`. It is dry-run by default
+(`-- --yes` applies), idempotent, and additive — it never drops or rewrites
+anything. `npm run db:ensure -- --list` prints the inventory.
 
-- `npm run orgs:ensure`, `org-columns:ensure`, `indexes:ensure`,
-  `payments:ensure`, `profile-org-model:ensure`, `stats:ensure`,
-  `catalog:ensure`, `audit:ensure`, `support:ensure`,
-  `payment-proof:ensure`, `business-type:ensure`.
-- One-off migrations: `migrate:invoice-status`, `migrate:customer-email`,
-  `migrate:org-identity`.
-- Hardening: `scripts/harden-profile-permissions.mjs` (not in `package.json`
-  scripts; run it directly with the same `--env-file` pattern).
+- One-off data backfills: `migrate:org-identity`, `migrate:org-contacts`.
+- Hardening: `npm run harden:profiles` — rewrites `profiles` row permissions and
+  drops its table-level create permission.
+- Wipe: `npm run reset:dev` (development projects only).
+
+Adding a table or a column is one edit in `scripts/schema.mjs`; there is no new
+script to copy. `data-model.md` documents what each entry means.
 
 A column a feature writes must exist before that feature deploys. A missing
 column does not fail at build time; it fails at runtime, usually as a 503 from

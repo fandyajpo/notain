@@ -214,7 +214,7 @@ space stripping and the warnings.
 - `src/app/mail.ts` — client calls; `src/lib/query/hooks/use-mail.ts` — mutations.
 - `src/components/react/auth/auth-form.tsx` — the three auth screens.
 - `src/components/react/invoice/email-nota-dialog.tsx` — "Email" in the builder.
-- `scripts/ensure-password-resets.mjs` — the table, columns and index.
+- `scripts/schema.mjs` — the `password_resets` table, columns and index.
 
 ## Getting it running
 
@@ -224,8 +224,9 @@ already uses.
 
 ### 1. The table (once)
 
-`npm run password-resets:ensure -- --yes`. Without it the reset endpoint still
-answers 204, but no link can be stored, so no reset email is ever sent.
+`npm run db:ensure -- --yes --only password_resets`. Without it the reset
+endpoint still answers 204, but no link can be stored, so no reset email is ever
+sent.
 
 ### 2. The mailer as an Appwrite Function
 
@@ -237,16 +238,22 @@ passes `POST /send` straight through, so the Pages Functions call it exactly as
 they would any other mailer host.
 
 1. Appwrite Console → **Functions** → **Create function**.
-2. Name it `notain-mailer`, runtime **Node.js 22** (`node-22`), and connect it to
-   the `notain` repository on branch `main`. If the form has a **root directory**
-   field, set it to `mailer` with build command `npm install --omit=dev` and
-   entrypoint `src/appwrite.mjs`; without that field, build
-   `cd mailer && npm install --omit=dev` and entrypoint `mailer/src/appwrite.mjs`.
+2. Name it anything (`notain-mailer` reads well), runtime **Node.js 22 or newer**
+   (`node-22` … `node-26` all satisfy `@sendust/ts`'s Node ≥ 22.23.5 floor), and
+   connect it to the `notain` repository on branch `main`. If the form has a
+   **root directory** field, set it to `mailer` with build command
+   `npm install --omit=dev` and entrypoint `src/appwrite.mjs`; without that
+   field, build `cd mailer && npm install --omit=dev` and entrypoint
+   `mailer/src/appwrite.mjs`.
 3. Function → **Settings → Variables**: `SMTP_USER` (the Gmail address),
    `SMTP_PASS` (its 16-character App Password — `myaccount.google.com/apppasswords`,
    needs 2-Step Verification), `MAIL_FROM` (the same address),
    `MAIL_APP_NAME` = `Notain`, and `MAIL_SERVICE_TOKEN`: a random string of
-   **32+ characters** you invent once and keep.
+   **32+ characters** you invent once and keep. Mark all of them **secret** (the
+   toggle on each variable): a secret value is readable only by the function at
+   build and runtime, and Appwrite returns it masked from then on — so copy the
+   token before you flip that switch, or rotate it by typing a new value in both
+   places.
 4. **Settings → Execute access → Any.** The domain is public; the bearer token
    from step 3 is what actually decides who may send.
 5. **Domains** tab → copy the generated domain

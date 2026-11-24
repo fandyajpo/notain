@@ -41,6 +41,7 @@ Pembayaran langganan (DOKU Checkout sandbox): [`docs/payments.md`](./docs/paymen
 | `npm run lint`       | ESLint                                             |
 | `npm run format`     | Format dengan Prettier                             |
 | `npm run typecheck`  | `astro check` (typecheck TS + Astro)               |
+| `npm run db:ensure`  | Appwrite schema: dry-run; `-- --yes` menerapkan     |
 
 Tiga perintah tambahan supaya tidak perlu menghafal urutannya:
 
@@ -87,6 +88,9 @@ src/
 
 functions/            # Pages Function: API logo di atas bucket R2
 └── api/logo.ts       # POST unggah | logo/[key].ts GET baca, DELETE hapus
+
+scripts/              # Tooling Appwrite: schema.mjs (satu daftar tabel) +
+                      # ensure.mjs (satu perintah), migrasi, reset dev
 ```
 
 ## Data & privasi
@@ -99,9 +103,14 @@ functions/            # Pages Function: API logo di atas bucket R2
   Pages Function `functions/api/logo.ts`, yang memverifikasi sesi Appwrite
   pemanggil lewat JWT sebelum menyentuh R2. Lihat
   [catatan arsitektur](./docs/architecture/README.md).
-- Tabel: `profiles`, `invoices`, `templates`. Tabel `templates` menyimpan layout,
-  tema, dan default rich text; invoice menyimpan **referensi** `templateId`
-  (tanpa snapshot), jadi mengedit template memperbarui invoice yang memakainya.
+- Tabel: `organizations`, `memberships`, `profiles`, `invoices`, `templates`,
+  `customers`, `catalog`, `stats`, `payments`, `audit_logs`, `support`,
+  `password_resets`. Kolom, index, dan izinnya di
+  [`docs/data-model.md`](./docs/data-model.md); semuanya dideklarasikan di
+  `scripts/schema.mjs` dan diterapkan dengan `npm run db:ensure`. Tabel
+  `templates` menyimpan layout, tema, dan default rich text; invoice menyimpan
+  **referensi** `templateId` (tanpa snapshot), jadi mengedit template
+  memperbarui invoice yang memakainya.
 - PDF dihasilkan lewat dialog cetak browser (`/invoice/print`), bukan library
   sisi klien — lihat [ADR 0007](./docs/architecture/adr/0007-print-based-pdf.md).
 

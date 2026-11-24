@@ -18,10 +18,12 @@ person's contact card. Invoices join the two at render time
 (`toBusinessIssuer`), so renaming the org or changing its type never touches a
 profile row and the two can never drift.
 
-Migrations: [`scripts/ensure-orgs.mjs`](../scripts/ensure-orgs.mjs) creates the
-tables and permissions; [`scripts/ensure-org-columns.mjs`](../scripts/ensure-org-columns.mjs)
-adds the `orgId` columns and indexes on existing tables. Run both with
-`npm run orgs:ensure` / `npm run org-columns:ensure` (see `package.json`).
+Migrations: the `organizations` and `memberships` tables, the `orgId` columns
+and every org-scoped index are declared in
+[`scripts/schema.mjs`](../scripts/schema.mjs) and applied with
+`npm run db:ensure -- --yes`. (This document predates that consolidation; the
+`ensure-orgs.mjs` / `ensure-org-columns.mjs` scripts it used to name are in
+`git log`.)
 
 ## 2. Server gates (`functions/_lib/orgs.ts`)
 

@@ -16,8 +16,8 @@ implying it was run.
   `architecture/system.md`.
 - **Changing an endpoint** — `api-reference.md` plus the matching file under
   `features/`.
-- **Changing the database** — `data-model.md` and the `scripts/ensure-*.mjs`
-  it describes.
+- **Changing the database** — `data-model.md` and the `scripts/schema.mjs` it
+  describes (one table = one entry; `npm run db:ensure` applies it).
 - **Shipping something** — `operations.md` (CI gates, deploy path, runbooks)
   and `testing.md`.
 - **Reviewing risk** — `security.md` and
@@ -77,6 +77,9 @@ validation, failure modes, and the files that own each rule.
   (2026-11): findings and reasoning. Some line numbers have moved since.
 - [`CODEBASE_REMEDIATION.md`](./CODEBASE_REMEDIATION.md) — remediation tracker
   with per-finding status.
+- [`audit/simplification-2026-11.md`](./audit/simplification-2026-11.md) —
+  **current.** The development-experience pass: what was duplicated, what was
+  actually broken, and what it changed.
 - [`TEST_SCENARIOS.md`](./TEST_SCENARIOS.md) — runtime verification scenarios
   (TS-01…). These are proposals, not a record of executions.
 - [`architecture/README.md`](./architecture/README.md) — architecture decision

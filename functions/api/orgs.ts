@@ -34,7 +34,7 @@ import type { Env, PagesFunction } from '../_lib/types';
  * Server-generated public-URL key: the ASCII slug of the org name plus a
  * deterministic slice of the org id, so two orgs named alike (or identical
  * names created concurrently) can never collide on the unique `bySlug` index.
- * Kept in step with `scripts/ensure-user-profile-org-model.mjs`, which
+ * Kept in step with `scripts/migrate-org-contacts.mjs`, which
  * backfills the same rule for orgs created before this column existed.
  */
 function slugFor(name: string, orgId: string): string {

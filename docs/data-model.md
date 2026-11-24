@@ -1,8 +1,8 @@
 # Data model
 
 Everything persistent: Appwrite tables, their columns, indexes and permissions,
-the R2 object layout, and the provisioning scripts that create it. The schema
-scripts in `scripts/` are the authoritative description — this document is the
+the R2 object layout, and the provisioning script that creates it.
+`scripts/schema.mjs` is the authoritative description — this document is the
 readable map and records the invariants that live in code rather than in the
 database.
 
@@ -125,7 +125,7 @@ nullable), `items` (string/JSON), `details` (string/JSON, nullable),
 nullable), `paymentProofUploadedAt` (string 32, nullable), plus Appwrite's
 `$createdAt`/`$updatedAt`.
 
-Indexes (`scripts/ensure-indexes.mjs`):
+Indexes (declared in `scripts/schema.mjs`, applied by `npm run db:ensure`):
 
 - `org_date` (`orgId`, `date`) — the org's list, the quota walk, finance window.
 - `org_template_date` (`orgId`, `templateId`, `date`) — template filter.
@@ -207,8 +207,8 @@ Id = the DOKU invoice number. Columns: `orgId`, `ownerId`, `plan` (string 16),
 `activationRetryAfter` (string 32), `activationError` (string 64).
 
 Indexes: `byInvoiceNumber` unique (`invoiceNumber`), `byOwnerStatus`
-(`ownerId`, `status`), plus `byOrgStatus` (`orgId`, `status`) from
-`ensure-indexes.mjs`.
+(`ownerId`, `status`), plus `byOrgStatus` (`orgId`, `status`) — all three are
+declared in `scripts/schema.mjs`.
 
 The snapshot columns (`planAtCheckout`, `planExpiresAtSnapshot`) and the
 activation quartet are what make settlement idempotent across isolates — see
@@ -267,8 +267,8 @@ Rules encoded in code:
 - Unset `origin` cannot happen: the endpoint refuses a request whose origin is
   not https (or loopback), so a link is never built for a plain-http host.
 
-Created by `scripts/ensure-password-resets.mjs`
-(`npm run password-resets:ensure`).
+Created by `npm run db:ensure` (the `password_resets` entry in
+`scripts/schema.mjs`).
 
 ## R2 object layout
 
@@ -308,32 +308,31 @@ session _and_ `customMetadata.owner` matching it; someone else's object answers
 
 ## Provisioning order
 
-Run these with an API key in `.env` (`APPWRITE_API_KEY`), dry-run by default,
-`-- --yes` to apply. They are idempotent: re-running skips what exists.
+Every table, column and index in this document is declared in
+`scripts/schema.mjs`, and `npm run db:ensure` applies all of it. Put an API key
+in `.env` as `APPWRITE_API_KEY` with `collections.read` and
+`collections.write`, and revoke it afterwards.
 
-1. `npm run orgs:ensure` — `organizations`, `memberships`, their indexes.
-2. `npm run org-columns:ensure` — `orgId` on `invoices`, `customers`,
-   `catalog`, `templates`, `stats`, `payments`, `audit_logs`; and empties their
-   table permissions (API key only).
-3. `npm run indexes:ensure` — every index the app's queries rely on, including
-   the `org_*` twins and the unique invoice-number index.
-4. `npm run payments:ensure` — the `payments` table.
-5. `npm run profile-org-model:ensure` — organization contact columns and slug,
-   plus the backfill of account identities and org contacts.
-6. `npm run stats:ensure`, `npm run catalog:ensure`, `npm run audit:ensure`,
-   `npm run support:ensure` — the remaining tables.
-7. `npm run payment-proof:ensure` — `invoices.paymentProofKey` and
-   `paymentProofUploadedAt`.
-8. `npm run business-type:ensure` — `businessType` on `templates` and
-   `organizations`.
-9. `npm run migrate:invoice-status`, `npm run migrate:customer-email`,
-   `npm run migrate:org-identity` — one-off data migrations for older rows.
-10. `node --env-file=.env scripts/harden-profile-permissions.mjs` — removes
-    session write access to `profiles`. This one has no npm script.
+1. `npm run db:ensure` — dry-run: lists what is missing or has drifted.
+2. `npm run db:ensure -- --yes` — creates and aligns everything. Idempotent and
+   additive: existing tables, columns and indexes are skipped, row security and
+   table permissions are re-asserted, and nothing is ever dropped.
+3. `npm run migrate:org-identity -- --yes` and
+   `npm run migrate:org-contacts -- --yes` — the one-off profile→organization
+   backfills, for rows written before that split. Both are only-empty-wins.
+4. `npm run harden:profiles -- --yes` — removes session write access to
+   `profiles`. Run it only once the `/api/profile` deploy is green; its header
+   explains why.
 
-Order matters where a script assumes an earlier one: `org-columns` expects the
-tables to exist, `indexes` expects the columns, and the feature that writes a
-column must not deploy before the script that creates it.
+`invoices`, `templates` and `customers` predate this repository: their full
+column set was created in the Console, so `db:ensure` only adds the columns and
+indexes listed for them, and reports a missing table instead of inventing one.
+`npm run db:ensure -- --list` prints the inventory; `-- --only <table>` scopes a
+run to one of them. Order no longer matters — each entry is self-contained, so
+there is no "run this one first" for a new environment to get wrong.
+
+`profiles` is deliberately not in `schema.mjs`: it holds two id spaces and its
+row permissions are rewritten one row at a time by `harden:profiles`.
 
 ## Query shapes and why the indexes exist
 

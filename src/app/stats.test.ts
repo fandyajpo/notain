@@ -89,7 +89,7 @@ describe('getDashboardStats', () => {
   });
 
   it('returns null when the read fails — a missing stats table must not break the dashboard', async () => {
-    // `stats:ensure` has not been run in this environment: the collection is
+    // `npm run db:ensure` has not been run in this environment: the collection is
     // missing and the read 404s. The UI degrades to "no cache yet".
     findByOwner.mockRejectedValue(new Error('Collection not found'));
 

@@ -200,7 +200,7 @@ export async function createRow(
     // A refused create is the one write failure that is invisible to the
     // caller (it only learns "did not happen"), and by far the most common
     // cause is schema drift: a column the payload names does not exist yet, so
-    // `npm run <model>:ensure` is missing a step. Log the provider's own
+    // `npm run db:ensure` (scripts/schema.mjs) is missing a column. Log the provider's own
     // reason server-side — the client still only sees a generic message.
     const detail = (await response.text().catch(() => '')).slice(0, 300).replace(/\s+/g, ' ');
     console.error(`rows: create ${table}/${rowId} failed: ${response.status} ${detail}`);

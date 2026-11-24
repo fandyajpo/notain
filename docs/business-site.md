@@ -86,7 +86,7 @@ ditampilkan hanya jika tersedia, dan tidak pernah diisi placeholder:
 ### Perpanjangan terkecil yang diusulkan
 
 Semua bisa ditambahkan sebagai kolom baru di tabel `profiles` yang sudah ada, lewat
-pola `scripts/ensure-*.mjs` + whitelist `PUT /api/profile` yang sudah ada — **tanpa
+pola `scripts/schema.mjs` + whitelist `PUT /api/profile` yang sudah ada — **tanpa
 tabel, layanan, atau dependensi baru**:
 
 1. `sitePublished` (boolean, default `false`) — gerbang opt-in: `GET /api/site/<id>`

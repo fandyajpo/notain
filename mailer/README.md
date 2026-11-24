@@ -123,9 +123,8 @@ Node-API addon inside `@sendust/ts` loads normally — and the Appwrite
 organization this app already uses runs it free, with no card and no second
 provider.
 
-1. Appwrite Console → **Functions** → **Create function** → name `notain-mailer`,
-   runtime **Node.js 22** (`node-22`), connected to the `notain` repository on
-   `main`.
+1. Appwrite Console → **Functions** → **Create function** → any name, runtime
+   **Node.js 22 or newer**, connected to the `notain` repository on `main`.
 2. Root directory `mailer`, build `npm install --omit=dev`, entrypoint
    `src/appwrite.mjs` — or, when the console has no root-directory field, build
    `cd mailer && npm install --omit=dev` and entrypoint
