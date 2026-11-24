@@ -1,5 +1,6 @@
 import { appErrorFromStatus } from './errors';
 import { bearerFetch } from './bearer-fetch';
+import { serverMessage } from './response';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 
 /**
@@ -29,15 +30,6 @@ async function postJson(path: string, body: unknown): Promise<Response> {
       ERROR_CODES.NETWORK,
       'Tidak bisa terhubung ke server. Cek koneksi internet kamu.',
     );
-  }
-}
-
-async function serverMessage(response: Response): Promise<string | undefined> {
-  try {
-    const body = (await response.json()) as { message?: unknown };
-    return typeof body.message === 'string' ? body.message : undefined;
-  } catch {
-    return undefined;
   }
 }
 

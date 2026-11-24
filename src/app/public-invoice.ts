@@ -5,6 +5,7 @@ import { businessSubtypeSlugSchema } from '../core/business/schema';
 import { prepareProofFile } from '../lib/payment-proof';
 import { appErrorFromStatus, toAppError } from '../app/errors';
 import { mintJwt } from '../appwrite/client';
+import { serverMessage } from './response';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 import type { InvoiceDraft, InvoicePaymentProof } from '../core/invoice/model';
 import type { InvoiceTemplate } from '../core/template/model';
@@ -179,15 +180,6 @@ export async function deletePaymentProof(key: string): Promise<void> {
     throw appErrorFromStatus(response.status, await serverMessage(response));
   } catch (error) {
     throw toAppError(error);
-  }
-}
-
-async function serverMessage(response: Response): Promise<string | undefined> {
-  try {
-    const body = (await response.json()) as { message?: unknown };
-    return typeof body.message === 'string' ? body.message : undefined;
-  } catch {
-    return undefined;
   }
 }
 

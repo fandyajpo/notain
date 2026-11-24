@@ -1,4 +1,5 @@
 import { bearerFetch } from './bearer-fetch';
+import { serverMessage } from './response';
 import { appErrorFromStatus } from './errors';
 import { AppError, ERROR_CODES } from '../core/shared/errors';
 import { getActiveOrgId } from './active-org';
@@ -56,15 +57,6 @@ function parseQuota(body: unknown): InvoiceQuota | null {
     limit: value.limit,
     resetsAt: value.resetsAt,
   };
-}
-
-async function serverMessage(response: Response): Promise<string | undefined> {
-  try {
-    const body = (await response.json()) as { message?: unknown };
-    return typeof body.message === 'string' ? body.message : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 /** The organization's current allowance — the number the builder's meter paints. */
