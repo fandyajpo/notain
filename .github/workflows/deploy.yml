@@ -121,7 +121,17 @@ jobs:
       #
       # Skipped rather than failed when the SMTP values are absent, so a fresh
       # clone or a fork still deploys the site.
+      # Prints the token's permission groups, so a 403 names the missing scope
+      # instead of just failing. Never fails the job.
+      - name: Cloudflare token scopes
+        continue-on-error: true
+        run: npx wrangler whoami
+
       - name: Deploy mailer (Worker + Container)
+        # Email is additive: a Worker/Container deploy that the token cannot do
+        # must not mark the site deploy failed. The step still shows as failed
+        # in the run summary, so the problem stays visible.
+        continue-on-error: true
         working-directory: mailer
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
