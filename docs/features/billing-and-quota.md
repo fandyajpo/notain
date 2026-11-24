@@ -7,8 +7,12 @@ rest.
 
 Current status: the DOKU integration is **sandbox only**. The endpoint is
 hardcoded to `api-sandbox.doku.com`, and nothing in this build can reach a
-production payment. Every statement below is from source; none was exercised
-against DOKU.
+production payment.
+
+One sandbox round trip has been run end to end (2026-11-24): an owner started a
+Pro checkout, paid on DOKU's hosted page, and the signed notification settled
+the row to `paid` and the organization to `pro` until 2026-12-24. Everything
+else below is still read from source rather than from practice.
 
 ## Plans
 
@@ -157,12 +161,21 @@ with a live checkout URL carries `resumeUrl`. The payment rows are unreadable
 from the browser (empty permissions), so this endpoint is the only window onto
 them, and it re-filters by `orgId` in case the query is ignored.
 
-## Cancellation and expiry
+## Cancellation, refunds and expiry
 
-Nothing cancels a subscription. A paid term simply ends at `planExpiresAt`, and
-the organization falls back to free behaviour without any write. Expired pending
-checkouts are retired lazily, when the next checkout is requested or when
-reconciliation reads them.
+Nothing cancels a subscription, and nothing refunds one. A paid term simply ends
+at `planExpiresAt`, and the organization falls back to free behaviour without any
+write. Expired pending checkouts are retired lazily, when the next checkout is
+requested or when reconciliation reads them.
+
+Refunds are not a feature: Notain never moves money back, and no screen offers
+it. The billing page's only mid-term action is "Perpanjang 30 hari", and the
+plan catalog can only move up (a lower tier unlocks once the term lapses). DOKU
+can still emit a `REFUNDED` notification — it is in `KNOWN_STATUSES` — so the
+parser accepts it, and `decideTransition` answers `ignore` with
+`status_refunded`, which the handler acknowledges with 2xx and applies nothing
+to. A refunded order therefore leaves the plan running to its expiry; whoever
+needs to correct that uses the admin plan control below, which is audited.
 
 ## Deleting an organization during payment
 

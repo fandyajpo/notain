@@ -189,6 +189,13 @@ none of it has automated coverage.
 - **DOKU sandbox.** A Pro purchase produced a payment row that settled to
   `status: paid` with the organization moving to `plan: pro`, after which the
   invoice link page opened instead of answering 402.
+- **`/billing`.** All three cards matched the data they read: `Notain Pro` with
+  **Aktif** and "Berlaku sampai 24 Desember 2026"; the two Rp 49.000 orders as
+  **Lunas** and **Kedaluwarsa** (neither carries a resume link — only a pending,
+  unexpired order would); and the catalog tiles reading Free → "Berlaku setelah
+  masa aktif berakhir", Pro → "Paket saat ini", Business → "Segera hadir". No
+  cancel and no refund control appears, by design — see
+  `features/billing-and-quota.md`.
 - **Mail lands in Spam.** The greeting and the reset both went to the
   recipient's Spam folder: the sender has no domain reputation, and the reset
   copy links `notain.pages.dev`. No code change fixes that — it needs an owned
@@ -199,9 +206,8 @@ reached at `https://notain.sgp.appwrite.run` on `POST /send` and `GET /healthz`
 behind a bearer token, because a free Render instance cannot open an SMTP
 session.
 
-Still without runtime evidence: the `/billing` portal, the admin panels, the
-concurrency and rate-fence items above, and every `npm run smoke` /
-`npm run test:e2e` suite.
+Still without runtime evidence: the admin panels, the concurrency and rate-fence
+items above, and every `npm run smoke` / `npm run test:e2e` suite.
 
 ## Re-running this verification
 
