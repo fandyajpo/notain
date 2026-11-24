@@ -22,6 +22,12 @@ export type BearerRequest = {
   method?: string;
   /** Serialised as JSON when present. */
   body?: unknown;
+  /**
+   * Let the request outlive the page. Set on the calls nobody waits for that sit
+   * immediately before a redirect — without it the browser may abort the request
+   * as the document is torn down, and the work silently never happens.
+   */
+  keepalive?: boolean;
 };
 
 export async function bearerFetch(path: string, init: BearerRequest = {}): Promise<Response> {
@@ -38,6 +44,7 @@ export async function bearerFetch(path: string, init: BearerRequest = {}): Promi
   const request: RequestInit = {
     method: init.method ?? (init.body === undefined ? 'GET' : 'POST'),
     headers,
+    ...(init.keepalive ? { keepalive: true } : {}),
   };
   if (init.body !== undefined) {
     headers['content-type'] = 'application/json';

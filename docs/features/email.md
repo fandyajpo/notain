@@ -77,10 +77,22 @@ All four live under `functions/api/mail/`. Request/response detail is in
 
 - Gate: **session**. The address comes from the verified session, never the
   body, so this cannot be aimed at a third party.
-- Limit: `mail-welcome`, 3/hour per user.
-- Called once by the register form after a session exists, fire-and-forget: a
-  mail failure must never look like a failed sign-up.
-- 202 on success, 503 when the mailer is unset or refused.
+- Limit: `mail-welcome`, 3/hour per user — a backstop behind the marker, not the
+  rule.
+- Called **once per account**, and the client asks on every way in: after sign-up,
+  after sign-in, and at the end of an OAuth round trip. Fire-and-forget with
+  `keepalive`, because each call site navigates immediately: a mail failure must
+  never look like a failed sign-up or sign-in.
+- The first call sends; every later one answers `200 { sent: false }`. The marker
+  is the account's own `welcomeSentAt` pref (`functions/_lib/welcome.ts`), so an
+  OAuth sign-up — which never touches the register form — and an account that
+  predates this feature are greeted on its next sign-in. No table is involved.
+- Stamped only after the relay accepted it, so a refused greeting is retried by
+  the next sign-in instead of being remembered as done. When the marker cannot be
+  read (no `APPWRITE_API_KEY`, or Appwrite refusing it) the call sends: a second
+  greeting is a small annoyance, a missing one is what this endpoint exists for.
+- 202 `{ sent: true }` when it sends, 200 `{ sent: false }` when the account was
+  already greeted, 503 when the mailer is unset or refused.
 
 ### `POST /api/mail/password-reset` — step 1
 
@@ -208,6 +220,8 @@ space stripping and the warnings.
   `src/service.mjs`, `src/messages.mjs`, `src/render.mjs`, `src/transport.mjs`,
   `Dockerfile`).
 - `functions/_lib/mail.ts` — the contract and the one outbound call.
+- `functions/_lib/welcome.ts` — the once-per-account marker (`welcomeSentAt`
+  in the account's prefs) and the read/write for it.
 - `functions/_lib/reset-token.ts` — token minting, hashing, row id, TTL.
 - `functions/api/mail/{welcome,nota,password-reset}.ts` and
   `functions/api/mail/password-reset/confirm.ts`.

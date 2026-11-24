@@ -100,15 +100,24 @@ export async function sendInvoiceEmail(input: {
 }
 
 /**
- * The greeting sent once after sign-up.
+ * The greeting, sent once per account.
  *
  * Fire-and-forget by design: the account already exists and the session is
- * already live, so a mail failure must not be shown as a failed registration.
- * Every error is swallowed here rather than at each call site.
+ * already live, so a mail failure must not be shown as a failed sign-in. Every
+ * error is swallowed here rather than at each call site.
+ *
+ * Called after sign-up, after sign-in and at the end of an OAuth round trip. The
+ * endpoint remembers the send (`welcomeSentAt` on the account), so the repeat
+ * calls are what reach an OAuth sign-up — which never touches the register form —
+ * and an account that predates the greeting.
+ *
+ * `keepalive` is not incidental: every call site navigates immediately after it,
+ * and without `keepalive` the browser may abort the request as the document goes
+ * away, which would look exactly like "the greeting never arrives".
  */
 export async function sendWelcomeEmail(): Promise<void> {
   try {
-    await bearerFetch('/api/mail/welcome', { body: {} });
+    await bearerFetch('/api/mail/welcome', { body: {}, keepalive: true });
   } catch {
     // Best effort. The user is signed in either way.
   }

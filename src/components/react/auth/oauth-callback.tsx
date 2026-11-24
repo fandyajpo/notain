@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { completeGoogleOAuth } from '../../../app/auth';
+import { sendWelcomeEmail } from '../../../app/mail';
 import { Button } from '../ui/button';
 import { Notice } from '../ui/notice';
 import { LoadingState } from '../ui/state';
@@ -34,6 +35,9 @@ export function OAuthCallback() {
 
     completeGoogleOAuth({ userId, secret, state })
       .then((target) => {
+        // The same request as the credential forms: the server sends only once
+        // per account, and this is the only path an OAuth sign-up ever takes.
+        void sendWelcomeEmail();
         if (!cancelled) window.location.replace(target);
       })
       .catch((cause: unknown) => {

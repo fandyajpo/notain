@@ -141,6 +141,11 @@ function SignInForm({ redirectTo }: { redirectTo: string }) {
       if (!(await captcha.consume(setServerError))) return;
       try {
         await signIn.mutateAsync({ email: value.email.trim(), password: value.password });
+        // Once per account on the server, so asking on every sign-in is what
+        // reaches an OAuth sign-up and anyone who registered before the greeting
+        // existed. Fire-and-forget with `keepalive`, so the redirect cannot abort
+        // it.
+        void sendWelcomeEmail();
         goTo(redirectTo);
       } catch (error) {
         setServerError(toErrorMessage(error));

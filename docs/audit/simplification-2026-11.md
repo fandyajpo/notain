@@ -141,3 +141,33 @@ Nothing below ran on the authoring machine.
 If step 2 prints `+ buat` for `password_resets` in production, that table is
 missing — the reset flow answers 204 and sends nothing until it exists (this
 already happened once; see `features/email.md`).
+
+
+### First live run — 2026-11-24
+
+`npm run db:ensure` against the production project (dry run, no `--yes`) reported:
+
+- every table, column and index present **except** the seven `payments` columns
+  from the settlement work (`planAtCheckout`, `planExpiresAtSnapshot`,
+  `activationStatus`, `activationPlan`, `activationExpiresAt`,
+  `activationRetryAfter`, `activationError`);
+- `documentSecurity` **off** on `organizations`, `memberships`, `payments`,
+  `audit_logs`, `support` — S-5, live rather than hypothetical;
+- table permissions still `["create(\"users\")"]` on `invoices`, `templates`,
+  `customers`, `catalog`, `stats`, which means `ensure-org-columns` never ran
+  against this project — S-6 was not theoretical either.
+
+That is the concrete cost behind S-7: the documented order had ten steps and only
+part of it had ever been executed, so the schema was complete while two
+hardening steps were not.
+
+Verified in production afterwards, password path only: sign in, forgot-password
+email delivered, reset link accepted, password changed. That exercises
+`password_resets` (table, index, token round trip), the mailer Appwrite Function,
+`MAIL_SERVICE_TOKEN` on the Pages project and the Gmail relay, end to end.
+
+**Not verified:** checkout. Until the seven `payments` columns exist, a payment
+row cannot carry the frozen baseline that settlement computes from, so CONC-002's
+mitigation is inactive in production and the checkout create may be refused
+outright. Applying `db:ensure -- --yes` and paying one sandbox order is what
+closes it.

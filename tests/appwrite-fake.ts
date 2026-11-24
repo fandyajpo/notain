@@ -26,6 +26,12 @@ export type AppwriteFake = {
   teamMemberships: number;
   /** Accounts that exist for `GET /users/<id>`; anything else answers 404. */
   users: Map<string, { $id: string; email: string }>;
+  /**
+   * User prefs, keyed by account id. Appwrite REPLACES the object wholesale on
+   * `PATCH /users/<id>/prefs`, and this fake does the same — so the merge that
+   * keeps `welcomeSentAt` next to any other pref is exercised, not hidden.
+   */
+  prefs: Map<string, Record<string, unknown>>;
   fetch: ReturnType<typeof vi.fn>;
 };
 
@@ -62,6 +68,7 @@ export function appwriteFake(
     users: new Map(
       Object.entries(options.users ?? { 'user-1': { $id: 'user-1', email: 'budi@example.com' } }),
     ),
+    prefs: new Map(),
     fetch: vi.fn(),
   };
 
@@ -305,12 +312,30 @@ function route(fake: AppwriteFake, method: string, url: string): Response {
     return json(200, { users, total: users.length });
   }
 
+  // User prefs — the once-per-account marker the welcome mail writes
+  // (`functions/_lib/welcome.ts`). Answering here is what lets a test prove the
+  // greeting is sent once: before this, every stamp silently 404'd and a test
+  // could only show the first greeting, never the absence of a second.
+  const prefsMatch = /\/users\/([^/]+)\/prefs$/.exec(parsed.pathname);
+  if (prefsMatch) {
+    const userId = prefsMatch[1] ?? '';
+    if (!fake.users.has(userId) && !fake.prefs.has(userId)) {
+      return json(404, { message: 'User not found', type: 'user_not_found' });
+    }
+    if (method === 'PATCH') {
+      // Wholesale, like Appwrite: the caller is the one that has to merge.
+      const payload = fake.calls.at(-1)?.body as { prefs?: Record<string, unknown> };
+      fake.prefs.set(userId, payload.prefs ?? {});
+    }
+    return json(200, { prefs: fake.prefs.get(userId) ?? {}, ...fake.users.get(userId) });
+  }
+
   // The admin content API checks the *target* user exists before writing.
   const userMatch = /\/users\/([^/]+)$/.exec(parsed.pathname);
   if (userMatch) {
     const user = fake.users.get(userMatch[1] ?? '');
     return user
-      ? json(200, user)
+      ? json(200, { prefs: fake.prefs.get(userMatch[1] ?? '') ?? {}, ...user })
       : json(404, { message: 'User not found', type: 'user_not_found' });
   }
 

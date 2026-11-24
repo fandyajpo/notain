@@ -2,20 +2,26 @@ import { verifySession } from '../../_lib/appwrite';
 import { apiError, json } from '../../_lib/http';
 import { mailConfigured, sendMail } from '../../_lib/mail';
 import { enforceLimit } from '../../_lib/quota';
+import { markWelcomeSent, welcomeAlreadySent, welcomeAuth } from '../../_lib/welcome';
 import type { Env, PagesFunction } from '../../_lib/types';
 
 /**
- * `POST /api/mail/welcome` — the greeting sent once, right after sign-up.
+ * `POST /api/mail/welcome` — the greeting, sent once per account.
  *
  * Anonymous sign-up happens in the browser (the Appwrite client SDK creates the
  * account), so there is no server-side hook that could send this at creation
- * time. The register form calls it immediately after the session exists, which
- * also means the caller is authenticated and the address is the account's own —
- * this endpoint cannot be used to mail an arbitrary victim.
+ * time. The client therefore asks for it after a session exists — and it asks on
+ * three occasions: after sign-up, after every sign-in, and at the end of an OAuth
+ * round trip. Only the first call sends; the rest answer `200 { sent: false }`.
+ *
+ * That is what makes the greeting reach accounts the register form never sees: an
+ * OAuth sign-up, and anyone who registered before this feature existed. The
+ * marker is the account's own `welcomeSentAt` pref (`_lib/welcome.ts`), so no
+ * table is involved.
  *
  * Deliberate limits: the address is taken from the verified session, never from
- * the body; three sends per account per hour is far above the one a person
- * needs and far below anything useful to an abuser.
+ * the body; the rate fence stays as a backstop for the one case that can repeat,
+ * a probe that could not tell whether the greeting already went out.
  */
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method !== 'POST') {
@@ -35,6 +41,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     return apiError(503, 'unavailable', 'Pengiriman email belum aktif di server ini.');
   }
 
+  const auth = welcomeAuth(env);
+  if (auth !== null && (await welcomeAlreadySent(auth, session.userId)) === true) {
+    // Already greeted. `200`, not an error and not a rate-limit hit: every
+    // sign-in lands here, so this is the normal answer for an existing account.
+    return json(200, { ok: true, sent: false });
+  }
+
   const limited = enforceLimit('mail-welcome', session.userId, env);
   if (limited) return limited;
 
@@ -51,5 +64,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (result !== 'sent') {
     return apiError(503, 'unavailable', 'Email selamat datang belum terkirim.');
   }
-  return json(202, { ok: true });
+
+  // Stamped only after the relay accepted it, so a failed send is retried by the
+  // account's next sign-in instead of being remembered as done.
+  if (auth !== null) await markWelcomeSent(auth, session.userId);
+  return json(202, { ok: true, sent: true });
 };

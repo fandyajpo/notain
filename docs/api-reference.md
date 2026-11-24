@@ -132,12 +132,17 @@ Two conventions differ from the rest of this reference:
 - **Gate:** session.
 - **Input:** none. The address is taken from the verified session, so this cannot
   be pointed at a third party.
-- **Limit:** `mail-welcome`, 3/hour per user id.
-- **Side effects:** one mail. No row is written.
-- **Output:** `202 { ok: true }`.
+- **Limit:** `mail-welcome`, 3/hour per user id — a backstop behind the marker.
+- **Side effects:** at most one mail per account, plus one `welcomeSentAt` stamp in
+  the account's own prefs (`PATCH /users/<id>/prefs`). Stamped only after the
+  relay accepted it, so a refused greeting is retried by the next sign-in.
+- **Output:** `202 { ok: true, sent: true }` when it sends, `200 { ok: true,
+  sent: false }` when the account was already greeted.
 - **Errors:** `401 unauthenticated`, `400 validation` (account without an email),
   `429 rate_limited`, `503 unavailable` (mailer unset or refused).
-- **Client:** `sendWelcomeEmail()` after a successful sign-up, fire-and-forget.
+- **Client:** `sendWelcomeEmail()` after sign-up, after sign-in, and at the end of
+  an OAuth round trip — fire-and-forget with `keepalive`, since each call site
+  navigates immediately.
 
 ### `POST /api/mail/password-reset`
 
