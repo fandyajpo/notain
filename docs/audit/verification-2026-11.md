@@ -170,6 +170,39 @@ the original audit.
 
 These map to `TEST_SCENARIOS.md`. None was run as part of this pass.
 
+## Runtime evidence, 2026-11-24
+
+A later pass ran the live paths by hand against the production project and
+recorded what came back. This is evidence that the paths work, not a test run:
+none of it has automated coverage.
+
+- **Schema applied.** `npm run db:ensure -- --yes` reconciled 12 tables; the
+  `payments` table gained its 7 missing columns, and `invoices`/`payments` ended
+  at `$permissions: []` with row security on.
+- **Greeting mail.** `POST /api/mail/welcome` answered 202 once per account, and
+  `{sent:false}` afterwards — the `welcomeSentAt` marker holds.
+- **Reset mail.** `POST /send` → 200 in 6.35 s; the token row carried a
+  30-minute expiry and the link was redeemed.
+- **Nota mail.** `POST /send` → 200 in 4.36 s, and the invoice row's
+  `$updatedAt` landed 53 ms later with `status: 'sent'` — the forward-only
+  transition applied after the relay accepted.
+- **DOKU sandbox.** A Pro purchase produced a payment row that settled to
+  `status: paid` with the organization moving to `plan: pro`, after which the
+  invoice link page opened instead of answering 402.
+- **Mail lands in Spam.** The greeting and the reset both went to the
+  recipient's Spam folder: the sender has no domain reputation, and the reset
+  copy links `notain.pages.dev`. No code change fixes that — it needs an owned
+  domain and DKIM, which `@sendust/ts` supports.
+
+For the record, the relay is an Appwrite Function (`mailer/src/appwrite.mjs`),
+reached at `https://notain.sgp.appwrite.run` on `POST /send` and `GET /healthz`
+behind a bearer token, because a free Render instance cannot open an SMTP
+session.
+
+Still without runtime evidence: the `/billing` portal, the admin panels, the
+concurrency and rate-fence items above, and every `npm run smoke` /
+`npm run test:e2e` suite.
+
 ## Re-running this verification
 
 Search each cited file for the pattern in the finding, read the surrounding

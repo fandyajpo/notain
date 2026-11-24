@@ -316,6 +316,22 @@ valid 30 minutes, single use), and send a nota from a Pro organization's invoice
 Until steps 1 and 2 are done, every `/api/mail/*` route answers 503 and the
 welcome mail is skipped silently — sign-in, invoices and payments are unaffected.
 
+All three were exercised against this deployment on 2026-11-24:
+
+- `GET /healthz` answered `{"ok":true,"configured":true}`.
+- The greeting arrived once for a new account; a password sign-in asked for none.
+- A reset link was mailed and redeemed (`POST /send` → 200, 6.35 s).
+- A nota from a Pro organization's invoice was mailed: `POST /send` → 200 in
+  4.36 s, and the invoice row moved to `sent` 53 ms later (`$updatedAt`) — the
+  transition only a delivered message triggers.
+
+Both the greeting and the reset landed in **Spam**. That is what Gmail does with
+a sender it has never seen: the messages come from the mailbox's own address
+through a shared SMTP identity, with no owned domain and no DKIM record tying it
+to one. The fix is a domain (`dkim: { domain, selector, privateKey }` is the hook
+`@sendust/ts` gives) and Notain deliberately has none, so the nota is worth
+checking in Spam too before concluding it never arrived.
+
 ### Other hosts
 
 The HTTP contract is the whole interface (`POST /send`, `GET /healthz`), so any
