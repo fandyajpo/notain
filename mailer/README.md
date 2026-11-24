@@ -115,47 +115,56 @@ alone no longer implies it.
 
 ## Deploying it
 
-### Cloudflare Containers (what this repo ships)
+### Appwrite Function (what this repo ships)
 
-Notain's site is already on Cloudflare, so the sender lives there too — a Worker
-plus a Container, in this folder:
+`src/appwrite.mjs` is a second entry point: the same service, run as an Appwrite
+Function. Appwrite Functions are real Node 22 containers, not isolates, so the
+Node-API addon inside `@sendust/ts` loads normally — and the Appwrite
+organization this app already uses runs it free, with no card and no second
+provider.
 
-- `worker.mjs` — a Durable Object that starts the container, waits for
-  `/healthz`, and forwards requests to it. It also checks the bearer token, so a
-  wrong one never boots a container.
-- `wrangler.toml` — the container, the Durable Object binding and the image
-  built from `./Dockerfile`.
+1. Appwrite Console → **Functions** → **Create function** → name `notain-mailer`,
+   runtime **Node.js 22** (`node-22`), connected to the `notain` repository on
+   `main`.
+2. Root directory `mailer`, build `npm install --omit=dev`, entrypoint
+   `src/appwrite.mjs` — or, when the console has no root-directory field, build
+   `cd mailer && npm install --omit=dev` and entrypoint
+   `mailer/src/appwrite.mjs`.
+3. **Settings → Variables**: `SMTP_USER`, `SMTP_PASS` (Gmail App Password),
+   `MAIL_FROM`, `MAIL_APP_NAME=Notain`, and `MAIL_SERVICE_TOKEN` — 32+ random
+   characters. Unlike the Docker image, this one is **required**: see below.
+4. **Execute access: Any.** The generated domain is public, so the bearer token
+   is the gate; without it the function would be an open relay.
+5. **Domains** tab → copy `https://<hash>.<region>.appwrite.run`.
+6. Put the domain in the app repository's `wrangler.toml` under `[vars]` as
+   `MAIL_SERVICE_URL`, and the same token in the GitHub repository secret
+   `MAIL_SERVICE_TOKEN`. The workflow copies that token to the Pages project,
+   which is what turns `/api/mail/*` from 503 into 202.
 
-```bash
-cd mailer
-npx wrangler deploy         # builds the image with Docker, then ships the Worker
-```
-
-The URL is `https://notain-mailer.<your-subdomain>.workers.dev`, and that is what
-`MAIL_SERVICE_URL` points at. `npx wrangler deploy` needs Docker running wherever
-you run it; `.github/workflows/deploy.yml` does it on the GitHub runner instead,
-so no local Docker is required.
-
-**Requires the Workers Paid plan** — Containers are not offered on Free. Set the
-four secrets once (`wrangler secret bulk`, or the repository secrets the workflow
-reads): `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`, `MAIL_SERVICE_TOKEN`.
+`GET <domain>/healthz` answering `{"ok":true,"configured":true}` is the proof it
+is up; it opens no SMTP session, so it is safe to poll. Domain executions are
+synchronous with a 60 s ceiling, so give the function a timeout of at least 30 s
+and a cold start is not cut short.
 
 ### Anywhere else with Docker
 
 `Dockerfile` in this folder is a single-stage `node:22-bookworm-slim` image that
 installs production dependencies, copies `src/`, runs as `node`, and listens on
 `0.0.0.0:$PORT` (default 8080). Debian rather than Alpine because the published
-Linux binary is the glibc target. `render.yaml` at the repository root describes a
-free Render service built from it, if you would rather not use Containers.
+Linux binary is the glibc target. Anything that runs a container and injects
+`PORT` works: Fly, Railway, Cloud Run, a VPS with `docker run -p 8080:8080`.
 
 The first `npm install` also writes `mailer/package-lock.json` — commit it and
 switch the Dockerfile to `npm ci` if you want reproducible installs.
 
-**As an Appwrite Function** (`src/appwrite.mjs`): runtime `node-22`, build
-command `npm install && node src/appwrite.mjs`, SMTP credentials as function
-variables. No shared token is needed in that mode — Appwrite decides who may
-execute the function. Point `MAIL_SERVICE_URL` at the function's execution URL.
+### Why not Render or Cloudflare Containers
 
+Render's **free** web services block outbound traffic on ports 25, 465 and 587 —
+SMTP — so this Dockerfile cannot send mail there without a paid instance
+($7/month, and a card). Cloudflare Containers need the Workers Paid plan, and
+this account's token could not reach the Containers API at all. The Worker +
+Durable Object front door that used to live here was removed; `git log` has both
+attempts.
 
 **Never** put `SMTP_PASS` or `MAIL_SERVICE_TOKEN` in `wrangler.toml`, `.env`
 (for Vite) or any committed file. The token pairs with the encrypted Pages

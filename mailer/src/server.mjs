@@ -9,8 +9,8 @@
  *   POST /send     → { ok, status } | { error, message }
  */
 
-import { createHash, timingSafeEqual } from 'node:crypto';
 import { createServer } from 'node:http';
+import { authorized } from './auth.mjs';
 import { ConfigError, loadConfig } from './config.mjs';
 import { handleSend } from './service.mjs';
 import { closeTransport, deliverMessage } from './transport.mjs';
@@ -24,25 +24,6 @@ function json(status, body) {
     headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
     body: JSON.stringify(body),
   };
-}
-
-/**
- * Constant-time token comparison.
- *
- * Both sides are hashed first so the buffers are always the same length —
- * `timingSafeEqual` throws on a length mismatch, and comparing lengths first
- * would leak the token's length. Hashing also means a truncated guess costs the
- * same as any other wrong guess.
- */
-function authorized(header, expected) {
-  const raw =
-    typeof header === 'string' && header.toLowerCase().startsWith('bearer ')
-      ? header.slice(7).trim()
-      : '';
-  if (raw === '' || expected === '') return false;
-  const provided = createHash('sha256').update(raw).digest();
-  const required = createHash('sha256').update(expected).digest();
-  return timingSafeEqual(provided, required);
 }
 
 function readBody(request) {

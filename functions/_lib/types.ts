@@ -17,16 +17,6 @@ export interface AssetsBinding {
   fetch(request: Request): Promise<Response>;
 }
 
-/**
- * A service binding: a Function calling another Worker in this account without
- * a public hostname, an internet round trip or a shared secret crossing the
- * wire. Declared here for the same reason as the rest of this file — the shape
- * is one method, not a package.
- */
-export interface ServiceBinding {
-  fetch(request: Request): Promise<Response>;
-}
-
 export interface Env {
   /** R2 bucket binding declared in `wrangler.toml`. */
   LOGOS: R2Bucket;
@@ -53,32 +43,24 @@ export interface Env {
    * Where the `mailer/` service listens (its `/send` route). Everything the app
    * mails — the welcome message, password-reset links, a nota to a customer —
    * goes through that one service, because the email library is a native Node
-   * addon and a Worker cannot load one.
+   * addon and a Worker cannot load one. It runs as an Appwrite Function on the
+   * same Appwrite organization, so a URL — the function's generated domain — is
+   * the only way to reach it.
    *
-   * A plain Pages variable, not a secret: it is a URL. Set it in
-   * `wrangler.toml`'s `[vars]` (or the dashboard) with no trailing slash.
-   * Missing it disables every mail endpoint (they answer 503) without touching
-   * anything else the app does.
+   * A plain Pages variable in `wrangler.toml` `[vars]` (currently
+   * `https://notain.sgp.appwrite.run`), not a secret: it ships with every
+   * deploy, with no trailing slash. Missing it disables every mail endpoint
+   * (they answer 503) without touching anything else the app does.
    */
   MAIL_SERVICE_URL?: string;
   /**
-   * Bearer token the mailer requires on `/send`. Set as an *encrypted* Pages
-   * variable (`wrangler pages secret put MAIL_SERVICE_TOKEN`), and give the
-   * mailer the same value as its own `MAIL_SERVICE_TOKEN`. Never in
+   * Bearer token the mailer requires on `/send`. The mailer's own
+   * `MAIL_SERVICE_TOKEN` and this value must match exactly, or every send is a
+   * 401. Set as an *encrypted* Pages variable (`wrangler pages secret put
+   * MAIL_SERVICE_TOKEN`, or the repository secret the workflow reads). Never in
    * `wrangler.toml`, `.env`, or a commit.
    */
   MAIL_SERVICE_TOKEN?: string;
-  /**
-   * Service binding to the `notain-mailer` Worker (Workers + Container).
-   *
-   * When it exists, `sendMail` calls that Worker directly instead of going out
-   * to `MAIL_SERVICE_URL`: no public hostname to know, no `workers.dev` address
-   * to remember, and nothing on the internet can reach the mailer at all.
-   * Configure it once in the Pages project (Settings → Bindings → Add →
-   * Service binding, name `MAILER`, service `notain-mailer`), or with a
-   * `[[services]]` block in `wrangler.toml`.
-   */
-  MAILER?: ServiceBinding;
   /**
    * DOKU sandbox checkout credentials (never the production ones — this
    * integration is sandbox-only). `DOKU_CLIENT_ID` goes in the `Client-Id`

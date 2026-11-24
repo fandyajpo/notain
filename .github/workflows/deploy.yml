@@ -16,6 +16,13 @@
 #                            The build fails without it rather than shipping
 #                            a site whose bot gate silently went missing.
 #
+# Optional repository secret — email only, and only after the mailer function
+# exists (an Appwrite Function; see docs/features/email.md). The function's
+# domain already lives in `wrangler.toml` [vars], so only the token travels:
+#   MAIL_SERVICE_TOKEN       The shared token set on the function as a variable.
+# Unset means every /api/mail/* route answers 503 and the rest of the site is
+# untouched.
+#
 # Cloudflare auto-build must be OFF for this project, otherwise Cloudflare
 # builds on every push as well and the two deploys overwrite each other:
 #   Workers & Pages → notain → Builds → Branch control →
@@ -105,54 +112,30 @@ jobs:
       - name: Build
         run: npm run build
 
+      # --- Email -------------------------------------------------------------
+      # The mailer runs as an Appwrite Function (`mailer/src/appwrite.mjs`), not
+      # on Cloudflare: its `@sendust/ts` dependency is a native Node-API addon
+      # and no Worker can load one. Appwrite deploys that function from this
+      # repository by itself, and its domain is already in `wrangler.toml`
+      # [vars] as `MAIL_SERVICE_URL`, so only the token needs carrying. It must
+      # match the function's own `MAIL_SERVICE_TOKEN` variable exactly.
+      #
+      # Written BEFORE the deploy, because a Pages deployment binds the
+      # variables that exist when it is built. Optional: unset means every
+      # /api/mail/* route answers 503 and the rest of the site is untouched.
+      - name: Connect Pages to the mailer
+        continue-on-error: true
+        env:
+          MAIL_SERVICE_TOKEN: ${{ secrets.MAIL_SERVICE_TOKEN }}
+        run: |
+          if [ -z "$MAIL_SERVICE_TOKEN" ]; then
+            echo "::notice::MAIL_SERVICE_TOKEN is not set — email stays off."
+            exit 0
+          fi
+          printf '%s' "$MAIL_SERVICE_TOKEN" |
+            npx wrangler pages secret put MAIL_SERVICE_TOKEN --project-name notain
+
       - name: Deploy
         # `dist/` = static assets, `functions/` = Pages Functions. Both are
         # read from the repo root; `wrangler.toml` supplies [vars] + R2 binding.
         run: npm run deploy -- --branch main
-
-      # --- Mailer (Worker + Container) --------------------------------------
-      # A second Cloudflare project: `mailer/wrangler.toml` builds
-      # `mailer/Dockerfile` into a container image, because `@sendust/ts` is a
-      # native addon and no Worker can load it. Docker is available on this
-      # runner, which is why nobody needs it on a laptop.
-      #
-      # Needs the Workers PAID plan, and a CLOUDFLARE_API_TOKEN that also has
-      # Workers Scripts: Edit and Cloudflare Containers: Edit.
-      #
-      # Skipped rather than failed when the SMTP values are absent, so a fresh
-      # clone or a fork still deploys the site.
-      # Prints the token's permission groups, so a 403 names the missing scope
-      # instead of just failing. Never fails the job.
-      - name: Cloudflare token scopes
-        continue-on-error: true
-        run: npx wrangler whoami
-
-      - name: Deploy mailer (Worker + Container)
-        # Email is additive: a Worker/Container deploy that the token cannot do
-        # must not mark the site deploy failed. The step still shows as failed
-        # in the run summary, so the problem stays visible.
-        continue-on-error: true
-        working-directory: mailer
-        env:
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          MAIL_FROM: ${{ secrets.MAIL_FROM }}
-          MAIL_SERVICE_TOKEN: ${{ secrets.MAIL_SERVICE_TOKEN }}
-        run: |
-          if [ -z "$SMTP_PASS" ] || [ -z "$MAIL_SERVICE_TOKEN" ]; then
-            echo "::notice::Mailer secrets are not set — skipping the container deploy. Email stays off."
-            exit 0
-          fi
-          npx wrangler deploy
-          # `jq` builds the JSON so a value containing a quote cannot break it.
-          jq -n \
-            --arg user "$SMTP_USER" --arg pass "$SMTP_PASS" \
-            --arg from "$MAIL_FROM" --arg token "$MAIL_SERVICE_TOKEN" \
-            '{SMTP_USER:$user,SMTP_PASS:$pass,MAIL_FROM:$from,MAIL_SERVICE_TOKEN:$token}' \
-            > secrets.json
-          npx wrangler secret bulk secrets.json
-          rm -f secrets.json
-          # The Pages side checks the same token, so push it there too — the
-          # service binding in the dashboard supplies the address.
-          printf '%s' "$MAIL_SERVICE_TOKEN" |
-            npx wrangler pages secret put MAIL_SERVICE_TOKEN --project-name notain

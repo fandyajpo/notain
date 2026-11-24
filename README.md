@@ -19,7 +19,8 @@ Pembayaran langganan (DOKU Checkout sandbox): [`docs/payments.md`](./docs/paymen
 - Appwrite 28 TablesDB (database `notain_db`)
 - Cloudflare Pages (host statis + Pages Functions) + R2 (bucket `notain`)
 - `mailer/` — layanan Node 22 terpisah untuk email, memakai `@sendust/ts`
-  (native addon, tidak bisa jalan di Worker). Lihat
+  (native addon, tidak bisa jalan di Worker) dan dijalankan sebagai
+  **Appwrite Function** (`mailer/src/appwrite.mjs`). Lihat
   [`docs/features/email.md`](./docs/features/email.md).
 - Vitest + Playwright + ESLint + Prettier
 
@@ -121,5 +122,9 @@ npx wrangler pages deploy dist --project-name=notain --branch main
 - `astro dev` tidak menjalankan Pages Function. `astro.config.mjs` meneruskan
   `/api` ke deployment produksi supaya alur logo tetap bisa dicoba lokal; untuk
   menguji perubahan pada `functions/`, jalankan `npx wrangler pages dev dist`.
-
-# notain
+- Email dikirim oleh **Appwrite Function** terpisah (`mailer/src/appwrite.mjs`),
+  karena `@sendust/ts` native addon tidak bisa dimuat Worker. Domainnya ada di
+  `wrangler.toml` `[vars]` (`MAIL_SERVICE_URL`), dan hanya
+  `MAIL_SERVICE_TOKEN` yang disimpan sebagai repository secret — workflow
+  menuliskannya ke Pages sebelum deploy. Tanpa token itu semua `/api/mail/*`
+  menjawab 503 dan sisa aplikasi tidak terpengaruh.

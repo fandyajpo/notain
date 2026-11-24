@@ -50,11 +50,13 @@ Functions (encrypted Pages variables or `.dev.vars`):
 - `DOKU_CLIENT_ID`, `DOKU_SECRET_KEY`, `DOKU_API_KEY` — sandbox credentials.
   Without the first two, checkout and the webhook answer 500.
 - `MAIL_SERVICE_TOKEN` — the bearer the `mailer/` service requires on `/send`.
-  Generate one with `openssl rand -hex 32` and give the mailer the same value.
-  Without it (or without `MAIL_SERVICE_URL`) every `/api/mail/*` endpoint answers
-  503 and no email is sent; nothing else changes.
-- `MAIL_SERVICE_URL` — where the mailer listens, no trailing slash. A plain URL,
-  so it may live in `wrangler.toml` `[vars]` instead of here;
+  One value, set twice: as a variable on the mailer function and as this Pages
+  variable. Without it (or without `MAIL_SERVICE_URL`) every `/api/mail/*`
+  endpoint answers 503 and no email is sent; nothing else changes.
+- `MAIL_SERVICE_URL` — where the mailer listens, no trailing slash. The mailer is
+  an Appwrite Function (`mailer/src/appwrite.mjs`), so this is the function's
+  generated domain. A plain URL, so it lives in `wrangler.toml` `[vars]`
+  (currently `https://notain.sgp.appwrite.run`) and ships with every deploy;
   `http://localhost:8080` is accepted for `wrangler pages dev`. SMTP
   credentials (`SMTP_USER`, `SMTP_PASS`, and optionally `SMTP_HOST`,
   `SMTP_PORT`, `SMTP_SECURITY`, `MAIL_FROM`) belong to the mailer process and
@@ -66,7 +68,10 @@ Functions (encrypted Pages variables or `.dev.vars`):
   `functions/_lib/quota.ts`; the full list is in `functions/_lib/types.ts`.
 
 CI secrets (GitHub repository): `CLOUDFLARE_API_TOKEN` (Pages Edit and R2
-Storage Edit), `CLOUDFLARE_ACCOUNT_ID`, `PUBLIC_TURNSTILE_SITE_KEY`.
+Storage Edit), `CLOUDFLARE_ACCOUNT_ID`, `PUBLIC_TURNSTILE_SITE_KEY`, plus
+`MAIL_SERVICE_TOKEN` once the mailer function exists — the domain is in
+`wrangler.toml`, and the workflow copies that one token into the Pages project,
+so email needs no dashboard step at all.
 
 ## Local development
 
@@ -230,17 +235,22 @@ team `admins` in Appwrite.
 ### Email does not arrive
 
 1. `GET {MAIL_SERVICE_URL}/healthz` — 200 means the service is up and its
-   configuration parsed. A connection error means the host, port or TLS is wrong.
+   configuration parsed. A connection error means the domain is wrong, the
+   function is not deployed, or its first cold start is still running.
 2. Check `/api/mail/*` in the browser's network log. `503 unavailable` with
    "belum aktif" means `MAIL_SERVICE_URL` or `MAIL_SERVICE_TOKEN` is unset on the
-   Pages project; a 401 from the mailer means the two tokens differ.
-3. `npx wrangler pages secret list` shows whether `MAIL_SERVICE_TOKEN` is
-   registered; rotate with `wrangler pages secret put MAIL_SERVICE_TOKEN` and
-   restart the mailer with the same value.
-4. `mailer` logs one line per failed send (`send.failed`) and one per execution
-   in the Appwrite-Function mode. A `502` there is the relay's answer, not
-   Notain's: check the SMTP credentials, the sender domain's SPF/DKIM, and whether
-   the relay has started rate-limiting the account.
+   Pages project — set both as repository secrets and re-run the deploy workflow,
+   which writes them to Pages; a 401 from the mailer means the two tokens differ.
+3. `npx wrangler pages secret list` shows what the Pages project holds. To rotate,
+   change `MAIL_SERVICE_TOKEN` on the function and in the repository secrets, then
+   redeploy: the function restarts with the new value and the workflow pushes it
+   to Pages.
+4. The function's execution log in the Appwrite console shows one line per failed
+   send (`send.failed`). A `502` there is the relay's answer, not Notain's: check
+   the SMTP credentials, the sender domain's SPF/DKIM, and whether the relay has
+   started rate-limiting the account. A connection error to `smtp.gmail.com` on
+   port 465 means the host blocks SMTP egress — a Render free web service does
+   exactly that.
 5. For a reset link that "does nothing": confirm the row exists in
    `password_resets` (`byTokenHash`), that `expiresAt` is in the future, and that
    the link's host is the one the request came from — an https origin is required

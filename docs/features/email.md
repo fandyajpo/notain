@@ -32,10 +32,13 @@ The Functions never hold SMTP credentials, and the mailer never sees an Appwrite
 session. Each side knows only what it needs: the Function knows _who_ may send
 _what_, the mailer knows _how_ to deliver it.
 
-`mailer/README.md` covers running and deploying it (Docker, or an Appwrite
-Function). If `MAIL_SERVICE_URL`/`MAIL_SERVICE_TOKEN` are unset the mail
-endpoints answer 503 and every other feature is unaffected — email is additive,
-never a dependency of saving an invoice or signing in.
+`mailer/README.md` covers running and deploying it. In production it is an
+**Appwrite Function** (`mailer/src/appwrite.mjs`) on the same Appwrite
+organization as the app: a real Node 22 container, so the native addon loads, and
+no extra provider to pay for or put a card on. If
+`MAIL_SERVICE_URL`/`MAIL_SERVICE_TOKEN` are unset the mail endpoints answer 503
+and every other feature is unaffected — email is additive, never a dependency of
+saving an invoice or signing in.
 
 ## The contract
 
@@ -56,7 +59,7 @@ because a customer name is user input arriving in someone else's mailbox.
 
 - `skipped` — no mailer configured. The two endpoints a person explicitly asks
   for mail from surface that as 503; the welcome message stays silent.
-- `failed` — non-2xx, timeout (10 s, `fetchUpstream`), or unreachable.
+- `failed` — non-2xx, timeout (25 s, `MAIL_TIMEOUT_MS`), or unreachable.
 - No retry here. The mailer already applies `@sendust/ts`'s bounded retry policy
   for transient SMTP failures; retrying from the Function would resend on the
   next hop instead of the next user action, which is worse than a visible error.
@@ -201,8 +204,9 @@ space stripping and the warnings.
 
 ## Files
 
-- `mailer/` — the service (`src/server.mjs`, `src/service.mjs`,
-  `src/messages.mjs`, `src/render.mjs`, `src/transport.mjs`, `Dockerfile`).
+- `mailer/` — the service (`src/server.mjs`, `src/appwrite.mjs`, `src/auth.mjs`,
+  `src/service.mjs`, `src/messages.mjs`, `src/render.mjs`, `src/transport.mjs`,
+  `Dockerfile`).
 - `functions/_lib/mail.ts` — the contract and the one outbound call.
 - `functions/_lib/reset-token.ts` — token minting, hashing, row id, TTL.
 - `functions/api/mail/{welcome,nota,password-reset}.ts` and
@@ -214,76 +218,87 @@ space stripping and the warnings.
 
 ## Getting it running
 
-Three steps, in this order. Steps 1 and 3 take minutes; step 2 is the only one
-that needs a second service, and `render.yaml` makes it a handful of clicks.
+Three steps, in this order. Steps 1 and 3 take a minute; step 2 is the only one
+that needs a second service, and it lives on the Appwrite organization the app
+already uses.
 
 ### 1. The table (once)
 
 `npm run password-resets:ensure -- --yes`. Without it the reset endpoint still
 answers 204, but no link can be stored, so no reset email is ever sent.
 
-### 2. The mailer process
+### 2. The mailer as an Appwrite Function
 
-`@sendust/ts` is a native addon, so it needs a real Node process. The site is on
-Cloudflare, so the process is on Cloudflare too: **Workers + Containers**.
+`@sendust/ts` is a native addon, so it needs a real Node process — no Worker can
+load one, on any plan. An **Appwrite Function** is exactly that: a Node 22
+container, free, no card, on a platform this app already runs on.
+`mailer/src/appwrite.mjs` is its entry point, and the function's generated domain
+passes `POST /send` straight through, so the Pages Functions call it exactly as
+they would any other mailer host.
 
-**Cloudflare Containers (what this repository ships).**
+1. Appwrite Console → **Functions** → **Create function**.
+2. Name it `notain-mailer`, runtime **Node.js 22** (`node-22`), and connect it to
+   the `notain` repository on branch `main`. If the form has a **root directory**
+   field, set it to `mailer` with build command `npm install --omit=dev` and
+   entrypoint `src/appwrite.mjs`; without that field, build
+   `cd mailer && npm install --omit=dev` and entrypoint `mailer/src/appwrite.mjs`.
+3. Function → **Settings → Variables**: `SMTP_USER` (the Gmail address),
+   `SMTP_PASS` (its 16-character App Password — `myaccount.google.com/apppasswords`,
+   needs 2-Step Verification), `MAIL_FROM` (the same address),
+   `MAIL_APP_NAME` = `Notain`, and `MAIL_SERVICE_TOKEN`: a random string of
+   **32+ characters** you invent once and keep.
+4. **Settings → Execute access → Any.** The domain is public; the bearer token
+   from step 3 is what actually decides who may send.
+5. **Domains** tab → copy the generated domain
+   (`https://<hash>.<region>.appwrite.run`).
+6. Put the domain in `wrangler.toml` — it is a URL, not a secret, so it ships
+   with every deploy:
 
-1. `mailer/wrangler.toml` + `mailer/worker.mjs` describe it: a Durable Object
-   starts the image built from `mailer/Dockerfile`, waits for `/healthz`, then
-   forwards `/send` and `/healthz` to it. The token is checked before a container
-   is even booted.
-2. `npx wrangler deploy` from `mailer/` builds the image with Docker and ships the
-   Worker. `.github/workflows/deploy.yml` does this on every push to `main`, so no
-   local Docker is needed.
-3. Set the four secrets once — `SMTP_USER`, `SMTP_PASS` (the Gmail App Password),
-   `MAIL_FROM`, `MAIL_SERVICE_TOKEN` — with `wrangler secret bulk` or as repository
-   secrets for the workflow.
-4. The Worker gets a `https://notain-mailer.<account>.workers.dev` address
-   automatically — free, and nothing to configure. You do not need to know it:
-   step 3 connects the two with a service binding. Asking that address for
-   `/healthz` is still the quickest proof the container came up.
+   ```toml
+   [vars]
+   MAIL_SERVICE_URL = "https://<hash>.<region>.appwrite.run"
+   ```
 
-Two things this costs: the **Workers Paid plan** (Containers are not on Free), and
-a container boot of a few seconds on the first send after the container has gone
-cold — which is why a send is allowed 25 s (`MAIL_TIMEOUT_MS`) instead of the
-usual 10.
+   It is already set to this deployment's function
+   (`https://notain.sgp.appwrite.run`), so pointing at a new one is a one-line
+   commit.
 
-**Alternative: Render.** `render.yaml` at the repository root describes a free
-service built from the same Dockerfile: render.com → New → Blueprint → pick the
-repository → Apply, then paste the three SMTP values. Free instances sleep after
-~15 minutes; the first send afterwards can take ~30 s.
+7. Add **one** GitHub repository secret — Settings → Secrets and variables →
+   Actions → **New repository secret**: `MAIL_SERVICE_TOKEN`, the same random
+   string as step 3.
 
-**Alternative: Appwrite Function.** `mailer/src/appwrite.mjs` on the `node-22`
-runtime, with the same values as function variables. No shared token is needed in
-that mode — Appwrite decides who may execute it.
+8. Push anything, or run Actions → `Deploy to Cloudflare Pages` → **Run
+   workflow**. The workflow writes the token to the Pages project before it
+   deploys, so the next build's Functions can reach the mailer. No visit to the
+   Cloudflare dashboard is needed — unless that step failed, which it is allowed
+   to do so a mail problem never blocks the site; then set the same name on the
+   Pages project under Settings → Variables and Secrets.
 
+Deploy the function once before expecting mail: `GET
+https://<hash>.<region>.appwrite.run/healthz` answering
+`{"ok":true,"configured":true}` is the proof it is up, and it opens no SMTP
+session, so it costs nothing to check.
 
-### 3. Connect Pages to it — a binding, not a URL
+A domain execution is synchronous with a 60 s ceiling, while the function's own
+timeout starts lower — give it at least 30 s so a cold container is not cut
+short. A send is allowed 25 s (`MAIL_TIMEOUT_MS`, not the shared 10) for the same
+reason.
 
-Project `notain` → **Settings** → **Bindings** → **Add** → **Service binding**:
-
-- Variable name: `MAILER`
-- Service: `notain-mailer`
-
-Save, then redeploy (Actions → `Run workflow`, or push anything). That is the
-whole connection: `functions/_lib/mail.ts` calls `env.MAILER.fetch()`, the request
-never leaves Cloudflare, and there is no public hostname for the mailer at all.
-
-The shared token still needs to exist on the Pages side, because the Worker checks
-it. The deploy workflow pushes it for you (`wrangler pages secret put
-MAIL_SERVICE_TOKEN`, from the same repository secret); to do it by hand it is
-**Settings → Variables and Secrets → Add**, name `MAIL_SERVICE_TOKEN`, value, then
-**Encrypt**.
-
-`MAIL_SERVICE_URL` is only for the alternatives below — a Render service or an
-Appwrite Function — where a URL is the only way to reach the mailer.
-
-### 4. Prove it
+### 3. Prove it
 
 Register a throwaway account (welcome mail), use "Lupa password" on it (link
 valid 30 minutes, single use), and send a nota from a Pro organization's invoice.
-Until steps 1–3 are done, every `/api/mail/*` route answers 503 and the welcome
-mail is skipped silently — sign-in, invoices and payments are unaffected.
+Until steps 1 and 2 are done, every `/api/mail/*` route answers 503 and the
+welcome mail is skipped silently — sign-in, invoices and payments are unaffected.
 
-## Limits and what they do not promise
+### Other hosts
+
+The HTTP contract is the whole interface (`POST /send`, `GET /healthz`), so any
+container host that injects `PORT` works — Fly, Railway, Cloud Run, a VPS, with
+`mailer/Dockerfile` as-is — and the same two values move with it.
+
+Render is **not** one of them on the free plan: its free web services cannot send
+outbound traffic on ports 25, 465 or 587, which is exactly SMTP. A paid Render
+instance ($7/month, needs a card) does allow it. Cloudflare Containers were tried
+first and this account could not reach the Containers API at all, so that path
+was removed rather than left failing on every push.

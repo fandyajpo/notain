@@ -15,6 +15,9 @@ pages_build_output_dir = "dist"
 PUBLIC_APPWRITE_ENDPOINT = "https://sgp.cloud.appwrite.io/v1"
 PUBLIC_APPWRITE_PROJECT_ID = "6aca66fb003071c0ef43"
 PUBLIC_APPWRITE_DATABASE_ID = "notain_db"
+# The mailer's Appwrite Function domain (docs/features/email.md). A URL, not a
+# secret: the function's domain is public and the bearer token is the gate.
+MAIL_SERVICE_URL = "https://notain.sgp.appwrite.run"
 
 # Cloudflare Turnstile's secret (`TURNSTILE_SECRET_KEY`) is deliberately NOT
 # here: this file is committed. Set it as an encrypted Pages variable instead —
@@ -29,24 +32,19 @@ PUBLIC_APPWRITE_DATABASE_ID = "notain_db"
 
 # Mail delivery goes through `mailer/`, a Node service that runs
 # `@sendust/ts` — a native Node-API addon, which a Worker cannot load. It is
-# deployed as its own Worker + Container (`mailer/wrangler.toml`).
+# deployed as an Appwrite Function (`mailer/src/appwrite.mjs`) on the same
+# Appwrite organization, and `MAIL_SERVICE_URL` in [vars] above is its generated
+# domain.
 #
-# RECOMMENDED: bind it, don't URL it. In the dashboard — Workers & Pages →
-# notain → Settings → Bindings → Add → Service binding, name `MAILER`, service
-# `notain-mailer` — or uncomment this block once the Worker exists:
+# Only the token is a secret, so it is NOT here. Set it as an encrypted Pages
+# variable — `.github/workflows/deploy.yml` writes it from the repository secret
+# of the same name (`wrangler pages secret put`), before the deploy, because a
+# Pages deployment binds the variables that exist when it is built. Its value
+# must match the function's own `MAIL_SERVICE_TOKEN` variable exactly, or every
+# send is a 401.
 #
-#   [[services]]
-#   binding = "MAILER"
-#   service = "notain-mailer"
-#
-# A binding needs no hostname and no public address: `functions/_lib/mail.ts`
-# calls `env.MAILER.fetch()` and the request never leaves Cloudflare.
-#
-# `MAIL_SERVICE_URL` remains for the alternatives (a Render service, an Appwrite
-# Function), where a URL is the only way to reach it. The token is a credential
-# and must be an encrypted Pages variable (`wrangler pages secret put
-# MAIL_SERVICE_TOKEN`). Leaving both unset is safe: every mail endpoint answers
-# 503 and nothing else changes. See `docs/features/email.md`.
+# Leaving it unset is safe: every mail endpoint answers 503 and nothing else
+# changes. See `docs/features/email.md`.
 
 # The logo bucket stays private. Nothing outside this app can read it; every
 # read and write goes through the Pages Function, which authorises the caller
