@@ -329,8 +329,9 @@ Both the greeting and the reset landed in **Spam**. That is what Gmail does with
 a sender it has never seen: the messages come from the mailbox's own address
 through a shared SMTP identity, with no owned domain and no DKIM record tying it
 to one. The fix is a domain (`dkim: { domain, selector, privateKey }` is the hook
-`@sendust/ts` gives) and Notain deliberately has none, so the nota is worth
-checking in Spam too before concluding it never arrived.
+`@sendust/ts` gives) and Notain deliberately has none. The nota itself reached
+the **Inbox**, so the folder is not a verdict on the send — check both before
+concluding a message never arrived.
 
 ### Other hosts
 
