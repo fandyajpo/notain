@@ -63,7 +63,10 @@ applies.
   but the duplication remains.
 - **QUAL-003 — stale CSP docstring. Fixed.** `functions/api/csp-report.ts` now
   describes the enforcing policy.
-- **QUAL-004 — `resource0()` reverse lookup. Open.** Cosmetic.
+- **QUAL-004 — `resource0()` reverse lookup. Fixed.** The default-order attributes
+  now live in each `ResourceConfig`, and `RESOURCES` is a closed literal set
+  (`satisfies`), so the reverse scan is gone and a typo'd resource key is a
+  compile error instead of a silent `''`.
 - **CONC-003 — proof one-shot race. Mitigated.** The per-invoice R2 lock
   serializes uploads (`functions/_lib/proof-lock.ts`). The lock is lease-based
   with a 60-second lease and conditional writes; a stray object is removed when

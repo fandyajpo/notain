@@ -67,6 +67,8 @@ type ResourceConfig = {
   table: TableId;
   maxLimit: number;
   defaultOrder: Array<'orderAsc' | 'orderDesc'>;
+  /** Attributes paired with `defaultOrder`, in the same index order. */
+  defaultOrderAttributes: string[];
   /** `equal` filters the client may send as `eq_<field>=`. */
   equal: string[];
   /** Range-filterable attributes (`gte_<field>` / `lte_<field>`). */
@@ -83,11 +85,12 @@ type ResourceConfig = {
   conflictMessage: string;
 };
 
-const RESOURCES: Record<string, ResourceConfig> = {
+const RESOURCES = {
   invoices: {
     table: 'invoices',
     maxLimit: 100,
     defaultOrder: ['orderDesc', 'orderDesc'],
+    defaultOrderAttributes: ['date', '$createdAt'],
     equal: ['status', 'templateId'],
     range: ['date'],
     startsWith: ['invoiceNumber'],
@@ -99,6 +102,7 @@ const RESOURCES: Record<string, ResourceConfig> = {
     table: 'customers',
     maxLimit: 100,
     defaultOrder: ['orderAsc', 'orderAsc'],
+    defaultOrderAttributes: ['name', '$createdAt'],
     equal: ['name'],
     range: [],
     startsWith: [],
@@ -110,6 +114,7 @@ const RESOURCES: Record<string, ResourceConfig> = {
     table: 'catalog',
     maxLimit: 100,
     defaultOrder: ['orderAsc', 'orderAsc'],
+    defaultOrderAttributes: ['name', '$createdAt'],
     equal: ['name'],
     range: [],
     startsWith: [],
@@ -126,6 +131,7 @@ const RESOURCES: Record<string, ResourceConfig> = {
     // phantom attribute, which the handler maps to 503 — breaking every
     // template read including the dashboard stats recompute's count.
     defaultOrder: ['orderAsc'],
+    defaultOrderAttributes: ['name'],
     equal: [],
     range: [],
     startsWith: [],
@@ -137,6 +143,7 @@ const RESOURCES: Record<string, ResourceConfig> = {
     table: 'stats',
     maxLimit: 5,
     defaultOrder: ['orderDesc'],
+    defaultOrderAttributes: ['$createdAt'],
     equal: [],
     range: [],
     startsWith: [],
@@ -145,16 +152,14 @@ const RESOURCES: Record<string, ResourceConfig> = {
     fixedId: true,
     conflictMessage: 'Baris statistik sudah ada.',
   },
-};
+} satisfies Record<string, ResourceConfig>;
 
-/** Default sort attributes paired with `defaultOrder` (same index order). */
-const DEFAULT_ORDER_ATTRIBUTES: Record<string, string[]> = {
-  invoices: ['date', '$createdAt'],
-  customers: ['name', '$createdAt'],
-  catalog: ['name', '$createdAt'],
-  templates: ['name'],
-  stats: ['$createdAt'],
-};
+/** The resources this route serves — a closed set, so a typo is a compile error. */
+type ResourceId = keyof typeof RESOURCES;
+
+function isResourceId(value: string): value is ResourceId {
+  return Object.prototype.hasOwnProperty.call(RESOURCES, value);
+}
 
 /**
  * Columns a body may never set: tenancy, createdBy, billing and system
@@ -345,7 +350,7 @@ function invoiceDraftToRowData(draft: InvoiceDraft): Record<string, unknown> {
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, params }) => {
   const resource = typeof params.resource === 'string' ? params.resource : '';
-  const config = RESOURCES[resource];
+  const config = isResourceId(resource) ? RESOURCES[resource] : undefined;
   if (!config) {
     return apiError(404, 'not_found', 'Resource tidak dikenal.');
   }
@@ -620,7 +625,7 @@ function buildQueries(
     }
   }
   if (orderParams.length === 0) {
-    const attributes = DEFAULT_ORDER_ATTRIBUTES[resource0(config)] ?? [];
+    const attributes = config.defaultOrderAttributes;
     config.defaultOrder.forEach((method, index) => {
       const attribute = attributes[index];
       if (attribute) queries.push({ method, attribute, values: [] });
@@ -650,9 +655,4 @@ function buildQueries(
   if (select.length > 0) queries.push({ method: 'select', values: select });
 
   return { queries, limit };
-}
-
-/** The resource key for default-order lookup (kept out of `ResourceConfig` churn). */
-function resource0(config: ResourceConfig): string {
-  return Object.keys(RESOURCES).find((key) => RESOURCES[key] === config) ?? '';
 }
