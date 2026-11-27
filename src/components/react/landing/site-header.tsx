@@ -182,11 +182,22 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
               whileHover={{ y: -1, scale: 1.03 }}
               whileTap={{ y: 0, scale: 0.97 }}
               transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-              className="ml-1 inline-flex h-9 items-center rounded-control bg-accent px-3 text-sm font-medium text-accent-foreground shadow-accent focus-ring"
+              className="ml-1 inline-flex h-10 items-center rounded-control bg-accent px-3 text-sm font-medium text-accent-foreground shadow-accent focus-ring"
             >
               Buat nota gratis
             </motion.a>
           </nav>
+
+          {/* Mobile: the nav above — and its CTA — is hidden on phones, so
+              the header had no visible way to sign up once the hero scrolled
+              away. Same destination, 40px tall, beside the hamburger. */}
+          <a
+            href="/register"
+            onClick={() => setMenuOpen(false)}
+            className="ml-auto inline-flex h-10 items-center rounded-control bg-accent px-3 text-sm font-medium text-accent-foreground shadow-accent focus-ring sm:hidden"
+          >
+            Buat nota
+          </a>
 
           {/* Mobile: hamburger toggles an animated drawer with every nav item. */}
           <button

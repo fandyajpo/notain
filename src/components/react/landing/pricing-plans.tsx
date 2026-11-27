@@ -91,14 +91,12 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
 
       <div className="mt-6">
         {comingSoon ? (
-          // Not a link: a coming-soon tier must never look (or be) clickable
-          // into checkout. The badge above already announces it.
-          <span
-            aria-disabled="true"
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-control border border-dashed border-border bg-background px-5 text-base font-medium text-muted"
-          >
+          // Not a link, and not a control-shaped box either: a dashed button
+          // that looks disabled still invites a tap that does nothing. One line
+          // of copy, matching the height of the CTAs beside it.
+          <p className="flex h-12 items-center justify-center text-sm text-muted">
             {PLAN_COMING_SOON_LABEL}
-          </span>
+          </p>
         ) : primary ? (
           <MagneticButton
             href={plan.cta.href}

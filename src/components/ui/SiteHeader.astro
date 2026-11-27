@@ -74,6 +74,16 @@ const MOBILE_LINK =
       </a>
     </nav>
 
+    {/* The desktop CTA above is inside a nav that is hidden on phones, so the
+        header had no visible way to sign up once the hero scrolled away — the
+        drawer was the only one. Same destination, 40px tall, at phone widths. */}
+    <a
+      href="/register"
+      class="site-cta ml-auto inline-flex h-10 items-center rounded-control bg-accent px-3 text-sm font-medium text-accent-foreground shadow-accent focus-ring sm:hidden"
+    >
+      Buat nota
+    </a>
+
     <button
       type="button"
       data-nav-toggle

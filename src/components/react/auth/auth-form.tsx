@@ -553,7 +553,7 @@ function FormShell({
 }: FormShellProps) {
   return (
     <form
-      className="flex flex-col gap-6"
+      className="flex flex-col gap-5"
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
@@ -604,7 +604,7 @@ function OAuthSlot({
   discordLabel: string;
 }) {
   const buttonClass =
-    'inline-flex min-w-0 w-full items-center justify-center gap-2 rounded-control border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent-soft focus-ring';
+    'inline-flex h-11 min-w-0 w-full items-center justify-center gap-2 rounded-control border border-border bg-card px-3 text-sm font-medium text-foreground transition-colors hover:bg-accent-soft focus-ring';
   return (
     <>
       <div className="flex items-center gap-3 text-xs uppercase tracking-wider text-muted">
