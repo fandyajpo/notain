@@ -10,7 +10,7 @@ import { Notice } from '../ui/notice';
 import { LoadingState } from '../ui/state';
 
 /**
- * "Kelola Profil" — the SHARED account identity (`profiles/<userId>`):
+ * "Pengaturan" — the SHARED account identity (`profiles/<userId>`):
  * username and phone are editable and apply across every organization the
  * account owns or joins, including the no-org state (the endpoint is
  * session-gated rather than org-gated).
@@ -18,7 +18,7 @@ import { LoadingState } from '../ui/state';
  * The login email renders read-only from the session: it is owned by the
  * Appwrite account and no settings flow can modify it. What an invoice
  * PRINTS (business name, logo, contact block) belongs to the ORGANIZATION and
- * is edited in Kelola Organisasi, not here.
+ * is edited in Pengaturan usaha, not here.
  */
 const phonePattern = /^(?:\+?62|0)8\d{7,12}$/;
 

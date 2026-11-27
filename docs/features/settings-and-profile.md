@@ -11,7 +11,7 @@ Routes and components: `/settings` → `ProfileSettingsApp` and
 
 ## Two identities
 
-**Kelola Profil (`/settings`)** edits the shared account identity:
+**Pengaturan (`/settings`)** edits the shared account identity:
 
 - `username` (≤128) and `phone` (Indonesian mobile pattern, ≤32), through
   `UserProfileEditor`, which calls `GET|PUT /api/profile/user`.
@@ -21,7 +21,7 @@ Routes and components: `/settings` → `ProfileSettingsApp` and
 This page works with zero organizations. Its endpoint is gated by the session
 alone, which is why it stays reachable from the no-organization state.
 
-**Kelola Organisasi (`/settings/organization`)** edits the active organization:
+**Pengaturan usaha (`/settings/organization`)** edits the active organization:
 
 - `OrgSection`: the organization name, business type, the member list, and the
   owner-only delete cascade (`org-section.tsx`, 547 lines).

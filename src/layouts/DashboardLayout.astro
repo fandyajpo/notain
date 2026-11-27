@@ -37,7 +37,7 @@ const GROUP_LABEL =
         lives in an animated drawer underneath (grid-rows 0fr→1fr). */}
     <header
       transition:persist="mobile-header"
-      class="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 lg:hidden"
+      class="sticky top-0 z-40 border-b border-border bg-card lg:hidden"
     >
       <div class="flex h-14 items-center px-4">
         <a href="/dashboard" class="flex items-center gap-2 font-semibold tracking-tight">
@@ -57,7 +57,7 @@ const GROUP_LABEL =
             aria-expanded="false"
             aria-controls="app-sidebar"
             aria-label="Buka menu navigasi"
-            class="relative inline-flex h-9 w-9 items-center justify-center rounded-control text-foreground transition-colors hover:bg-accent-soft focus-ring"
+            class="relative inline-flex h-11 w-11 items-center justify-center rounded-control text-foreground transition-colors hover:bg-accent-soft focus-ring"
           >
             <Menu size={18} className="nav-icon-menu transition-opacity" aria-hidden="true" />
             <X
@@ -125,6 +125,18 @@ const GROUP_LABEL =
               />
               <span class="sidebar-label truncate">Notain</span>
             </a>
+            {/* The header's hamburger sits UNDER this panel (panel z-50, header
+                z-40), so on a phone the open drawer had no visible close
+                button at all — only the backdrop strip or Escape. This is the
+                panel's own close, below `lg` only. */}
+            <button
+              type="button"
+              id="sidebar-close"
+              aria-label="Tutup menu navigasi"
+              class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-control text-muted transition-colors hover:bg-background hover:text-foreground focus-ring lg:hidden"
+            >
+              <X size={18} aria-hidden="true" />
+            </button>
             <button
               type="button"
               id="sidebar-toggle"
@@ -154,7 +166,7 @@ const GROUP_LABEL =
                     aria-label={label}
                     title={label}
                     class:list={[
-                      'sidebar-link flex items-center gap-2 rounded-control px-3 py-2 text-sm transition-colors',
+                      'sidebar-link flex items-center gap-2 rounded-control px-3 py-3 text-sm transition-colors',
                       navLinkClass(is_active(href)),
                     ]}
                   >
@@ -282,6 +294,11 @@ const GROUP_LABEL =
 
   navToggle?.addEventListener('click', () => {
     setNavOpen(sidebar?.dataset.open !== 'true');
+  });
+
+  document.getElementById('sidebar-close')?.addEventListener('click', () => {
+    setNavOpen(false);
+    navToggle?.focus();
   });
 
   // Picking any link (nav, admin, utilities) closes the panel.

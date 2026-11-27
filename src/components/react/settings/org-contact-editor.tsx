@@ -20,7 +20,7 @@ import { LoadingState } from '../ui/state';
  *
  * Owner-only by design: the server answers 403 for members, so non-owners
  * get a disabled form with a hint instead of a submit that can never
- * succeed. The shared user identity (username/phone) lives in Kelola Profil
+ * succeed. The shared user identity (username/phone) lives in Pengaturan
  * and is deliberately not editable here — the two-entity model keeps the
  * person and the organization separate.
  */

@@ -66,7 +66,7 @@ function AdminGroup() {
           data-nav-link
           aria-label={label}
           title={label}
-          className={`sidebar-link flex items-center gap-2 rounded-control px-3 py-2 text-sm transition-colors ${navLinkClass(isActiveAdminLink(pathname, href))}`}
+          className={`sidebar-link flex items-center gap-2 rounded-control px-3 py-3 text-sm transition-colors ${navLinkClass(isActiveAdminLink(pathname, href))}`}
         >
           <Icon size={16} aria-hidden="true" />
           <span className="sidebar-label">{label}</span>

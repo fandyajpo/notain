@@ -18,11 +18,11 @@ import { usePageTour } from '../../../lib/tour/use-tour';
 /**
  * Settings is TWO pages, each with its own identity:
  *
- * - `/settings` — **Kelola Profil**: the SHARED account identity (username +
+ * - `/settings` — **Pengaturan**: the SHARED account identity (username +
  *   phone) plus the read-only login email. It applies across every
  *   organization the user belongs to and works even without one, because the
  *   endpoint is gated by the session, not by an organization.
- * - `/settings/organization` — **Kelola Organisasi**: the workspace (name,
+ * - `/settings/organization` — **Pengaturan usaha**: the workspace (name,
  *   business type), its contact block (what invoices and the public page
  *   print), members, the public page link, and the delete cascade — all
  *   scoped to the active organization.
@@ -43,7 +43,7 @@ function SettingsShell({ children }: { children: ReactNode }) {
   );
 }
 
-/** Kelola Profil — `/settings`. */
+/** Pengaturan — `/settings`. */
 export function ProfileSettingsApp() {
   return (
     <SettingsShell>
@@ -52,7 +52,7 @@ export function ProfileSettingsApp() {
   );
 }
 
-/** Kelola Organisasi — `/settings/organization`. */
+/** Pengaturan usaha — `/settings/organization`. */
 export function OrgSettingsApp() {
   return (
     <SettingsShell>
@@ -69,8 +69,8 @@ function ProfileSettingsContent() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Kelola Profil"
-        description="Nama dan nomor telepon akunmu. Kontak usaha yang tercetak di nota diatur di Pengaturan usaha."
+        title="Pengaturan"
+        description="Nama dan nomor WhatsApp akunmu, dipakai di semua usaha. Kontak yang tercetak di nota ada di Pengaturan usaha."
         actions={
           orgs?.orgs.length ? (
             <Button variant="secondary" size="sm" href="/settings/organization">
@@ -130,7 +130,7 @@ function OrgSettingsContent() {
     return (
       <ErrorState
         title="Organisasi gagal dimuat"
-        message="Profil pribadi tetap tersedia di halaman Kelola Profil."
+        message="Profil pribadi tetap tersedia di halaman Pengaturan."
         action={
           <Button variant="secondary" size="sm" onClick={() => void refetch()}>
             Coba lagi
