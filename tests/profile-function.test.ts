@@ -507,7 +507,7 @@ describe('PUT /api/profile — validation', () => {
   it('rejects a missing name', async () => {
     const response = await handle(put(bodyWithPlan({ name: undefined })));
     expect(response.status).toBe(400);
-    expect(((await response.json()) as { error: string }).error).toBe('unavailable');
+    expect(((await response.json()) as { error: string }).error).toBe('validation');
     expect(writes()).toEqual([]);
   });
 
