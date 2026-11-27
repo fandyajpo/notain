@@ -27,13 +27,22 @@ holds the measured chunks.
 PDF with them, lazily, for one button. The export now opens the browser's print
 dialog with a plain HTML table (`src/lib/sheet-print.ts`, 92 lines, plus
 `sheet-print.test.ts`), which is the path ADR 0007 already chose for an invoice
-and the only path this project keeps. Two packages and a ~390 kB chunk leave the
-build; the reader's experience is the same, "PDF" then *Save as PDF* in the dialog.
+and the only path this project keeps. Two packages, a ~390 kB chunk and their
+`node_modules` entries leave the build and the install; the reader's experience is
+the same, "PDF" then *Save as PDF* in the dialog.
 
-The declarations in `package.json` and `package-lock.json` still list both, because
-keeping a lockfile in sync needs npm and there is no terminal here — nothing
-imports them, so the build no longer contains them. On a machine with npm:
-`npm uninstall jspdf jspdf-autotable`.
+`globals` (a devDependency) — nothing imports it: `vite.config.ts` names the lint
+environments (`builtin`, `browser`, `node`) instead of importing a `globals`
+object. Its declaration is gone from both manifests, while its
+`node_modules/globals` entry stays: `eslint-plugin-astro` requires it, so the
+package is still installed once, for its real user.
+
+Two lockfile entries are left orphaned by the removal — `fast-png` (only jsPDF
+required it) and jsPDF's own optional dependencies. Nothing imports either, so
+neither reaches the bundle; an `npm install` prunes their entries, and no npm
+command has to run for the removal itself, because `npm ci` validates the lockfile
+in the direction that matters here: every dependency in `package.json` is present
+in the lock.
 
 ## Every runtime dependency
 
@@ -60,8 +69,8 @@ imports them, so the build no longer contains them. On a machine with npm:
 | `heic2any` | `lib/payment-proof.ts` | yes (1.3 MB) | candidate — see below |
 | `xlsx` | `lib/excel.ts` | yes (~480 kB) | keep; DEP-001 (CDN tarball, no integrity) still open |
 
-Dev dependencies that nothing imports: `globals` (the lint config declares its
-languages explicitly). Remove it with the next `npm install` that runs.
+No `package.json` dependency is unused: every remaining declaration is imported
+somewhere, and `globals` — the one that was not — has left both manifests.
 
 `mailer/` has one dependency, `@sendust/ts`, and it is the only place a native
 addon can run; nothing to save there.
@@ -75,11 +84,11 @@ addon can run; nothing to save there.
 2. **`driver.js` + `motion`** — two UI-only packages, ~60 kB together. Both
    rewrites are visual, and no test covers how they look, so they need a browser
    check rather than a CI pass.
-3. **`@lucide/astro` + `@lucide/svelte`** — two packages for seven icons in two
-   template files. Small weight, small effort, small visual risk (the icons would
-   be copied from the set's own geometry).
+3. **`@lucide/astro` + `@lucide/svelte` — kept on purpose.** Two packages for
+   seven icons in two template files. Replacing them means this repository owns
+   seven SVG paths the icon set would no longer maintain, for a build that is a
+   few KB lighter at most (the imports are tree-shaken to the icons used). Fewer
+   names in `package.json` is the only real gain, so it is not worth the upkeep.
 4. **`@tanstack/react-hotkeys`, `react-pacer`, `react-store`** — three packages,
    each replaceable in 10–30 lines, all used where an interaction bug is
    expensive (autosave debounce, keyboard shortcuts, builder state).
-5. The `globals` devDependency, with whichever of the above lands next, since a
-   dependency change needs `npm install` to keep the lockfile honest.
