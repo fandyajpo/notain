@@ -173,9 +173,10 @@ export default defineConfig({
       // The biggest chunk (1.3 MB) is heic2any — its package ships the whole
       // libheic decoder as one file — and it is ALREADY lazy: `import('heic2any')`
       // in lib/payment-proof.ts, fetched only when an iPhone photo (HEIC) is
-      // uploaded. SheetJS (~480 kB), jsPDF (~390 kB) and TipTap (~390 kB) are
-      // lazy the same way. The warning counts on-demand chunks too, and none of
-      // these are in any page's initial payload, so the limit documents the
+      // uploaded. SheetJS (~480 kB) and TipTap (~390 kB) are lazy the same way,
+      // and the PDF button prints instead of generating (`lib/sheet-print.ts`), so
+      // no PDF library is left. The warning counts on-demand chunks too, and none
+      // of these are in any page's initial payload, so the limit documents the
       // reality instead of nagging (PERF-002 in docs/CODEBASE_AUDIT.md).
       chunkSizeWarningLimit: 1400,
     },

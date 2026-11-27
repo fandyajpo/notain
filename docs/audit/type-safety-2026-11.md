@@ -47,7 +47,7 @@ typecheck, the build and `lint` on every push to `main`.
 - No unused **export** is machine-checked: the repository has no `knip` or
   `ts-prune`, and adding one is a dependency decision rather than a fix. The
   modules that looked like candidates were checked by searching for importers, and
-  each is imported: `src/lib/pdf.ts` (`excel/export-buttons.tsx`),
+  each is imported: `src/lib/sheet-print.ts` (`excel/export-buttons.tsx`),
   `src/core/excel/index.ts` (`src/lib/excel.ts`, the import screens),
   `src/app/data-api.ts` (all five Appwrite repositories),
   `src/app/finance.ts` (`use-dashboard-finance.ts`),
@@ -63,15 +63,13 @@ typecheck, the build and `lint` on every push to `main`.
 
 ## Casts kept, on purpose
 
-Three `as unknown as` casts remain in production code, each with its reason next
+Two `as unknown as` casts remain in production code, each with its reason next
 to it:
 
 - `src/components/shared/use-ce-element.ts:20` — assigning a property onto a
   custom element whose type has no index signature; the alternative is `any`.
 - `src/lib/use-unsaved-changes-guard.ts:42` — `beforeunload`'s deprecated
   `returnValue`, which the `lib.dom` type for the handler no longer carries.
-- `src/lib/pdf.ts:30` — the `jspdf-autotable` default/namespace interop in a
-  dynamic import.
 
 `tests/`, `e2e/` and `smoke/` use `as unknown as` to call a `PagesFunction` with
 a hand-built context. That is scaffolding for the test, not shipped code, and it is

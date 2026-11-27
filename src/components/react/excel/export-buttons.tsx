@@ -2,7 +2,7 @@ import { FileDown, FileImage, FileSpreadsheet } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '../ui/button';
 import { downloadCsv, downloadXlsx } from '../../../lib/excel';
-import { downloadPdf } from '../../../lib/pdf';
+import { printSheet } from '../../../lib/sheet-print';
 import { toAppError } from '../../../app/errors';
 import { toast } from '../../../lib/ui/toast';
 import type { SheetRow } from '../../../core/excel';
@@ -28,10 +28,10 @@ type Props = {
 };
 
 /**
- * The CSV / XLSX / PDF download buttons. SheetJS is pulled in only when XLSX
- * is chosen and jsPDF only when PDF is chosen (see `lib/excel` / `lib/pdf`),
- * so the CSV path stays dependency-free and neither library lands in the
- * initial bundle.
+ * The CSV / XLSX / PDF buttons. SheetJS is pulled in only when XLSX is chosen
+ * (see `lib/excel`), so the CSV path stays dependency-free and the generator
+ * never lands in the initial bundle. PDF is the browser's own print dialog
+ * (`lib/sheet-print`), the same path an invoice PDF takes — no PDF library.
  *
  * One `busy` flag across all three doubles as the duplicate-request guard:
  * the active button spins while the others stay disabled.
@@ -42,9 +42,14 @@ export function ExportButtons({ filename, sheetName, getRows, disabled = false, 
   async function handleExport(format: 'csv' | 'xlsx' | 'pdf') {
     if (busy) return;
     setBusy(format);
+    // A print window has to be opened inside the click itself: a browser treats
+    // `window.open` after an `await` as a popup and blocks it. The PDF path
+    // therefore opens it first and writes into it once the rows are in.
+    const printTarget = format === 'pdf' ? window.open('', '_blank') : null;
     try {
       const rows = await getRows();
       if (rows.length === 0) {
+        printTarget?.close();
         toast('Belum ada data untuk diekspor.', { variant: 'info' });
         return;
       }
@@ -53,9 +58,10 @@ export function ExportButtons({ filename, sheetName, getRows, disabled = false, 
       } else if (format === 'xlsx') {
         await downloadXlsx(filename, sheetName, rows);
       } else {
-        await downloadPdf(filename, pdfTitle ?? sheetName, rows);
+        printSheet(printTarget, pdfTitle ?? sheetName, rows);
       }
     } catch (error) {
+      printTarget?.close();
       toast(toAppError(error).message, { variant: 'error' });
     } finally {
       setBusy(null);

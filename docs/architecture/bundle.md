@@ -68,6 +68,13 @@ memanggil `window.print()`; lihat [ADR 0007](adr/0007-print-based-pdf.md).
 Konsekuensi bundle: chunk `pdf-render.*.js` (424 129 B / 176 497 gzip) hilang dari
 `dist/`, dan `pdf-lib` (4 paket) hilang dari `package.json`.
 
+Ekspor PDF untuk tabel (tombol PDF di toolbar pilihan) menyusul di 2026-11: `jsPDF`
+dan `jspdf-autotable` keluar dari `src/lib/pdf.ts` ke dialog cetak yang sama
+(`src/lib/sheet-print.ts`), jadi satu jalur menghasilkan setiap PDF di aplikasi.
+Keduanya tidak lagi diimpor, dan `npm uninstall jspdf jspdf-autotable` tinggal
+dijalankan di mesin yang punya npm; lihat
+[`dependency-audit-2026-11.md`](../engineering/dependency-audit-2026-11.md).
+
 ### 2. TipTap — code-split, bukan defer
 
 `RichEditor` dibungkus `React.lazy` + `Suspense` di `lazy-rich-editor.tsx`.
