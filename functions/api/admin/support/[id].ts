@@ -1,6 +1,6 @@
 import { writeAudit } from '../../../_lib/audit';
 import { requireAdmin } from '../../../_lib/admin';
-import { apiError, fetchUpstream as fetch, json } from '../../../_lib/http';
+import { apiError, fetchUpstream as fetch, json, readJson } from '../../../_lib/http';
 import type { Env, PagesFunction } from '../../../_lib/types';
 
 const DATABASE_ID = 'notain_db';
@@ -26,7 +26,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
   if (!gate.ok) return gate.response;
   const { endpoint, headers, session } = gate.admin;
 
-  const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+  const body = await readJson(request);
   if (typeof body?.solved !== 'boolean') {
     return apiError(400, 'validation', 'solved harus true atau false.');
   }
@@ -48,8 +48,12 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     return apiError(404, 'not_found', 'Pesan tidak ditemukan.');
   }
   if (!response.ok) {
-    const detail = (await response.text().catch(() => '')).slice(0, 200);
-    return apiError(500, 'validation', `Gagal mengubah status pesan: ${detail}`);
+    // The upstream body carries collection names and provider internals — it
+    // goes to the logs, never to the client, exactly as the other admin
+    // writes do. A failed upstream write is an outage (503), not bad input.
+    const detail = (await response.text().catch(() => '')).slice(0, 200).replace(/\s+/g, ' ');
+    console.error('admin.support: status change failed:', detail);
+    return apiError(503, 'unavailable', 'Status pesan tidak tersimpan. Coba lagi.');
   }
 
   await writeAudit(env, {

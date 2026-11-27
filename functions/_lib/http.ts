@@ -1,6 +1,10 @@
 export function json(status: number, body: unknown, headers: HeadersInit = {}): Response {
   const responseHeaders = new Headers({
     'content-type': 'application/json; charset=utf-8',
+    // A Function's response never passes through `public/_headers` — that file
+    // decorates static assets, not Functions — so the header that stops a
+    // browser sniffing a JSON body as another type has to come from here.
+    'x-content-type-options': 'nosniff',
     // Every JSON route in this app answers with private user, admin or
     // payment data (or an error about it), so none of it may land in a
     // browser or shared cache — making that the helper's default means a
@@ -29,7 +33,10 @@ export function json(status: number, body: unknown, headers: HeadersInit = {}): 
  * the password-reset pair.
  */
 export function noContent(status = 204, headers: HeadersInit = {}): Response {
-  const responseHeaders = new Headers({ 'cache-control': 'no-store' });
+  const responseHeaders = new Headers({
+    'x-content-type-options': 'nosniff',
+    'cache-control': 'no-store',
+  });
   new Headers(headers).forEach((value, key) => {
     responseHeaders.set(key, value);
   });

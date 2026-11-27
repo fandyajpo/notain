@@ -57,9 +57,11 @@ Everything offline, in one place:
 - `npm run smoke` — live smoke against Appwrite and the deployed logo Function;
   needs a real `.env`.
 
-`npm run check` is the local equivalent of what CI runs, minus the build and the
-deploy: format, tests, typecheck. CI does not run `lint` today, so a clean
-`check` is stricter than a green pipeline, not looser.
+`npm run check` is the local equivalent of what CI's `deploy` job runs, minus the
+build and the deploy: format, tests, typecheck. `lint` runs in CI as a separate
+job, in parallel — it is not a `needs:` dependency of `deploy` yet, so a lint
+finding is visible on the run without stopping a deploy, and a clean `check` still
+proves more than a green deploy.
 
 Neither offline suite touches the network, so both are safe to run with no
 `.env`, no Appwrite session and no mailer process.

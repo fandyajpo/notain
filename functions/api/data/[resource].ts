@@ -604,11 +604,10 @@ function buildQueries(
       attribute,
       values: [search],
     }));
-    queries.push(
-      branches.length === 1
-        ? branches[0]!
-        : { method: 'or', values: branches as unknown as unknown[] },
-    );
+    // `values` is already `unknown[]`, so the branches need no assertion; the
+    // single-field case reuses its only branch instead of asserting it exists.
+    const only = branches.length === 1 ? branches[0] : undefined;
+    queries.push(only ?? { method: 'or', values: branches });
   }
 
   const orderParams: Array<{ method: 'orderAsc' | 'orderDesc'; attribute: string }> = [];

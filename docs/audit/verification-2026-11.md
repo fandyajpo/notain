@@ -70,13 +70,13 @@ applies.
   the row write fails.
 - **CONC-004 — org-create compensation ignored `deleteRow`'s result. Fixed.**
   The result is checked, and a failed cleanup writes an audit row.
-- **SEC-002 — upstream error bodies echoed to clients. Partly fixed.**
-  `functions/api/support.ts`, `functions/api/payments/checkout.ts` and
-  `functions/api/admin/users/[id].ts` now log the provider body and return
-  generic copy. One echo remains: `functions/api/admin/support/[id].ts` still
-  appends the first 200 characters of the upstream body to the response message
-  (`Gagal mengubah status pesan: …`). `functions/api/admin/users.ts` was not
-  re-read on its error paths in this pass. Treat as partly fixed.
+- **SEC-002 — upstream error bodies echoed to clients. Fixed.**
+  Every remaining echo reported here was removed in a later pass:
+  `functions/api/admin/support/[id].ts` now logs the upstream body and answers
+  `503 unavailable` with generic copy, like `functions/api/support.ts`,
+  `functions/api/payments/checkout.ts` and `functions/api/admin/users/[id].ts`.
+  The `5xx` carrying the `validation` code is still open as a separate finding —
+  see item 13 below.
 - **SEC-003 — upload type trusts the extension. Open, accepted.** Serving
   headers limit the consequence.
 - **SEC-004 — proxy CSRF relies on SameSite. Open.** Needs a live cookie check.
@@ -88,8 +88,12 @@ applies.
 - **MEM-001 — layout listener retention. Open.**
 - **MEM-002 — unbounded growth in rate-limit and cache maps. Open.** `quota.ts`
   still has no hard cap; only sweeps on size thresholds.
-- **ASTRO-005 — `json()` does not set `X-Content-Type-Options` or CSP. Open.**
-  Checked: `functions/_lib/http.ts` sets `content-type` and `cache-control` only.
+- **ASTRO-005 — `json()` set no `X-Content-Type-Options`. Fixed.**
+  `public/_headers` decorates static assets only, so every `/api/*` JSON answer
+  shipped without it. `functions/_lib/http.ts` now sets
+  `x-content-type-options: nosniff` on `json()` and `noContent()`, and
+  `tests/http-headers.test.ts` pins it. The CSP half of the finding stays with
+  `public/_headers`, which is enforcing.
 - **DB-005 — admin drill-down counts by `ownerId`. Open, confirmed.** See
   `features/admin.md`.
 - **DEP-002 — Vite overridden to a repackaging. Open, accepted.**
@@ -154,7 +158,9 @@ the original audit.
     (`Gagal menyimpan profil.`), `functions/api/profile/user.ts`, the admin list
     endpoints and others return HTTP 500 with `error: 'validation'` for write
     failures. A client that branches on the error code cannot distinguish input
-    rejection from an outage; only the status differs.
+    rejection from an outage; only the status differs. 35 call sites in 16 files;
+    the one in `functions/api/admin/support/[id].ts` is fixed, 34 remain. See
+    `type-safety-2026-11.md`.
 
 ## Items that need runtime evidence
 

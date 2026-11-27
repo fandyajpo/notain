@@ -139,3 +139,37 @@ jobs:
         # `dist/` = static assets, `functions/` = Pages Functions. Both are
         # read from the repo root; `wrangler.toml` supplies [vars] + R2 binding.
         run: npm run deploy -- --branch main
+
+  # `npm run lint` used to run only on a developer machine, so a lint error —
+  # the config makes `any`, `@ts-ignore`, unsafe optional chaining and unused
+  # variables errors — could reach `main` unseen while tests and typechecking
+  # stayed green. It runs as its own job, in parallel with the deploy: a finding
+  # shows on the run without being able to stop a deploy by itself until it has
+  # proven green here (then it becomes a `needs:` of `deploy`).
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    env:
+      # `astro sync` below loads `astro.config.mjs`, which needs the sitekey for
+      # the same reason the build does.
+      PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.PUBLIC_TURNSTILE_SITE_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Type-aware rules read the project through `tsconfig.json`, which includes
+      # `.astro/types.d.ts` — generated, not committed.
+      - name: Generate Astro types
+        run: npx astro sync
+
+      - name: Lint
+        run: npm run lint

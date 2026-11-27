@@ -12,6 +12,7 @@ describe('json()', () => {
 
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(response.headers.get('content-type')).toBe('application/json; charset=utf-8');
+    expect(response.headers.get('x-content-type-options')).toBe('nosniff');
   });
 
   it('lets a route override the default', () => {

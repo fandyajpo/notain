@@ -127,7 +127,7 @@ the Function, or as a refused create logged server-side by `createRow`.
 ## Continuous integration and deployment
 
 `.github/workflows/deploy.yml` runs on every push to `main` and on manual
-dispatch. Steps, in order:
+dispatch. The `deploy` job, in order:
 
 1. Check that the three secrets are present; fail with a readable message if not.
 2. `npm ci` on Node 22.
@@ -141,15 +141,20 @@ dispatch. Steps, in order:
 7. `npm run deploy -- --branch main` (`wrangler pages deploy dist`), which
    uploads static assets and the compiled Functions together.
 
+A second job, `lint`, runs in parallel: `npm ci`, `npx astro sync` (the
+type-aware rules read the generated `.astro/types.d.ts`) and `npm run lint`. It is
+deliberately **not** a `needs:` dependency of `deploy` yet, so a lint finding
+shows on the run without stopping a deploy; once the job has been green on `main`
+it should become one.
+
 Concurrency is serialized (`deploy-cloudflare-pages`, no cancel). Cloudflare's
 own automatic build is switched off, so the dashboard shows
 "Automatic deployments paused" with a queued `github:push` row on every push.
 That is expected, not a failure.
 
-Not gated in CI: `npm run lint`, `npm run test:e2e`, `npm run smoke`. Lint
-results must be checked locally. The browser suite needs a running dev server
-and talks to Appwrite. The smoke suite talks to live Appwrite and the deployed
-logo function.
+Not gated in CI: `npm run test:e2e` and `npm run smoke`. The browser suite needs
+a running dev server and talks to Appwrite. The smoke suite talks to live Appwrite
+and the deployed logo function.
 
 ### Knowing a deploy finished
 
