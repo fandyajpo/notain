@@ -54,15 +54,6 @@ function PreviewStage() {
 
   return (
     <div className="relative mx-auto w-full max-w-lg">
-      {/* Glow pulse behind the preview, the brand identity. The 2.5rem radius
-          echoes the invoice card silhouette under the 3xl blur. */}
-      <motion.div
-        aria-hidden="true"
-        className="absolute -inset-6 -z-10 rounded-[2.5rem] bg-accent/12 blur-3xl will-change-transform"
-        animate={{ opacity: [0.55, 0.95, 0.55], scale: [1, 1.06, 1] }}
-        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-      />
-
       <motion.div
         role="tablist"
         aria-label="Pilih tampilan nota"
@@ -102,20 +93,27 @@ function PreviewStage() {
         animate={{ opacity: 1, y: 0, rotate: 0 }}
         transition={{ duration: 0.9, delay: 0.35, ease: EASE }}
       >
-        <motion.div
-          className="will-change-transform"
-          animate={{ y: [0, -10, 0] }}
-          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <TiltCard max={6}>
+        <TiltCard max={6}>
+          {/* The one loud surface on the page: a sheet of nota, cut at the tear
+              line top and bottom, with the shop's own stamp over its corner.
+              Everything around it stays quiet so this is where the eye lands —
+              the stamp carries the product's job, not a decoration. No float
+              loop: a receipt rests on the desk, it does not hover. */}
+          <div className="receipt-sheet relative rounded-[1.25rem] p-2 shadow-popover">
             <InvoicePreview
               business={sample.business}
               invoice={sample.draft}
               template={resolveTemplate(templateId)}
-              className="shadow-popover"
+              className="shadow-none"
             />
-          </TiltCard>
-        </motion.div>
+            <span
+              aria-hidden="true"
+              className="receipt-stamp absolute -top-3 right-7 bg-paper text-accent"
+            >
+              {sample.business.name}
+            </span>
+          </div>
+        </TiltCard>
       </motion.div>
 
       <motion.div

@@ -32,6 +32,7 @@ tercantum di ADR 0002.
 | [0005](adr/0005-data-props-via-layout-effect.md)     | Prop data wajib lewat layout effect                | Accepted |
 | [0006](adr/0006-single-query-layer.md)               | Satu lapisan query, tanpa adapter per widget       | Accepted |
 | [0007](adr/0007-print-based-pdf.md)                  | Cetak lewat browser, bukan `pdf-lib`               | Accepted |
+| [0008](adr/0008-receipt-brand.md)                    | Nota kertas + cap toko jadi bahan visual           | Accepted |
 
 ## Catatan teknis
 
