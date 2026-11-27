@@ -115,7 +115,7 @@ try {
     const expected = ownerRead(row.$id);
     if (samePermissions(row.$permissions, expected)) continue;
     if (!confirmed) {
-      console.log(`  + ${row.$id}: ${JSON.stringify(row.$permissions ?? [])} → ${expected}`);
+      console.log(`  + ${row.$id}: ${JSON.stringify(row.$permissions ?? [])} → ${expected.join(', ')}`);
       flipped += 1;
       continue;
     }
