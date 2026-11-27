@@ -350,7 +350,12 @@ function invoiceDraftToRowData(draft: InvoiceDraft): Record<string, unknown> {
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, params }) => {
   const resource = typeof params.resource === 'string' ? params.resource : '';
-  const config = isResourceId(resource) ? RESOURCES[resource] : undefined;
+  // Annotated so the shared shape is what the handler uses: `satisfies` keeps
+  // each member's own literal type, and `fixedId` (only `stats` sets it) would
+  // otherwise not exist on the union.
+  const config: ResourceConfig | undefined = isResourceId(resource)
+    ? RESOURCES[resource]
+    : undefined;
   if (!config) {
     return apiError(404, 'not_found', 'Resource tidak dikenal.');
   }
