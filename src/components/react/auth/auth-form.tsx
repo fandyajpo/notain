@@ -189,16 +189,18 @@ function SignInForm({ redirectTo }: { redirectTo: string }) {
                 field={field}
                 label="Kata sandi"
                 type="password"
-                placeholder="Kamu tahu jawabannya"
+                placeholder="Minimal 8 karakter"
                 autoComplete="current-password"
               />
             )}
           </form.Field>
 
-          <p className="-mt-2 text-right text-sm">
+          {/* A 20px text link is a 20px target; the row keeps its right
+              alignment and the link carries a full-height hit area. */}
+          <p className="-mt-2 flex justify-end text-sm">
             <a
               href="/forgot-password"
-              className="font-medium text-accent underline-offset-2 hover:underline focus-ring rounded-control"
+              className="inline-flex h-11 items-center rounded-control px-1 font-medium text-accent underline-offset-2 hover:underline focus-ring"
             >
               Lupa kata sandi?
             </a>

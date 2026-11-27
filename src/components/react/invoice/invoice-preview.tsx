@@ -284,7 +284,10 @@ export function InvoicePreview({
                       Satuan
                     </th>
                   )}
-                  <th scope="col" className="pb-2 pl-2 text-right font-medium">
+                  <th
+                    scope="col"
+                    className="hidden pb-2 pl-2 text-right font-medium sm:table-cell print:table-cell"
+                  >
                     Harga
                   </th>
                   <th scope="col" className="pb-2 pl-2 text-right font-medium">
@@ -317,7 +320,13 @@ export function InvoicePreview({
                         {item.unit ?? <span style={muted}>-</span>}
                       </td>
                     )}
-                    <td className="py-2 pl-2 text-right tabular-nums">
+                    {/* The unit price is the one column a phone preview can
+                        lose: at 320-359px the four columns did not fit and
+                        the right-hand money was clipped mid-digit. Quantity
+                        and subtotal still read, the column returns at `sm`,
+                        and `print:` brings it back on paper — a phone PDF must
+                        not lose a column. */}
+                    <td className="hidden py-2 pl-2 text-right tabular-nums sm:table-cell print:table-cell">
                       {formatRupiah(item.unitPrice)}
                     </td>
                     <td className="py-2 pl-2 text-right font-medium tabular-nums">

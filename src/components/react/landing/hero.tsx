@@ -60,7 +60,7 @@ function PreviewStage() {
         initial={false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.85, ease: EASE }}
-        className="mb-4 flex w-fit items-center gap-1 rounded-pill border border-border bg-card p-1 shadow-card"
+        className="mx-auto mb-4 flex w-fit items-center gap-1 rounded-pill border border-border bg-card p-1 shadow-card"
       >
         {TEMPLATES.map((item) => {
           const active = item.id === templateId;
@@ -71,7 +71,7 @@ function PreviewStage() {
               role="tab"
               aria-selected={active}
               onClick={() => setTemplateId(item.id)}
-              className={`relative rounded-pill px-4 py-1.5 text-sm font-medium transition-colors focus-ring ${
+              className={`relative rounded-pill px-4 py-3 text-sm font-medium transition-colors focus-ring ${
                 active ? 'text-accent-foreground' : 'text-muted hover:text-foreground'
               }`}
             >
