@@ -50,7 +50,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     return json(200, { rows: [], total: 0, nextCursor: null });
   }
   if (!response.ok) {
-    return apiError(500, 'validation', 'Gagal mengambil pesan support.');
+    return apiError(500, 'unavailable', 'Gagal mengambil pesan support.');
   }
 
   const data = (await response.json()) as {

@@ -18,6 +18,30 @@ import type { DokuNotification } from './doku';
 
 export type PaymentStatus = 'pending' | 'paid' | 'expired';
 
+/**
+ * What a stored `payments.status` column can read as.
+ *
+ * `failed` is DOKU's own state and the billing portal shows it, but nothing in
+ * this codebase ever writes it and settlement does not act on it. It is part of
+ * the union so the one reader below can return what the column actually holds,
+ * and each caller decides what it means for it.
+ */
+export type StoredPaymentStatus = PaymentStatus | 'failed';
+
+/**
+ * Reads a stored `status` column.
+ *
+ * Anything that is not one of these four — `null`, `''`, a value a later DOKU
+ * version adds — reads as `pending`: a row that never reached a terminal state
+ * is the only honest guess, and it is the state every caller already handles.
+ * This was copied in `payment-settle.ts` and `payments/portal.ts`; one of the
+ * two knew `failed` and the other did not, so the copies could disagree about
+ * the same row.
+ */
+export function normalizePaymentStatus(value: unknown): StoredPaymentStatus {
+  return value === 'paid' || value === 'expired' || value === 'failed' ? value : 'pending';
+}
+
 export type PaymentTransition =
   /** Verified success: activate the subscription. */
   | { action: 'activate'; paidAt: string | null }

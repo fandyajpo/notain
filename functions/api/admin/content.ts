@@ -340,7 +340,7 @@ async function listContent(
     { headers: auth.headers },
   );
   if (!response.ok) {
-    return apiError(500, 'validation', `Gagal mengambil ${resource}.`);
+    return apiError(500, 'unavailable', `Gagal mengambil ${resource}.`);
   }
   const data = (await response.json()) as {
     documents: Array<Record<string, unknown> & { $id: string }>;
@@ -455,7 +455,7 @@ async function mutate(
     headers: auth.headers,
   });
   if (target.status === 404) return apiError(404, 'not_found', 'User tidak ditemukan.');
-  if (!target.ok) return apiError(500, 'validation', 'Gagal memverifikasi user.');
+  if (!target.ok) return apiError(500, 'unavailable', 'Gagal memverifikasi user.');
 
   const rowId = typeof body.rowId === 'string' ? body.rowId : '';
 
@@ -481,7 +481,7 @@ async function mutate(
       { method: 'DELETE', headers: auth.headers },
     );
     if (response.status === 404) return apiError(404, 'not_found', 'Data tidak ditemukan.');
-    if (!response.ok) return apiError(500, 'validation', 'Gagal menghapus data.');
+    if (!response.ok) return apiError(500, 'unavailable', 'Gagal menghapus data.');
     await writeAudit(env, {
       actorId,
       actorEmail,
@@ -519,7 +519,7 @@ async function mutate(
       );
     }
     const ok = await patchRow(auth, 'templates', rowId, templateToRowData(parsed.data));
-    if (!ok) return apiError(500, 'validation', 'Gagal memperbarui template.');
+    if (!ok) return apiError(500, 'unavailable', 'Gagal memperbarui template.');
     await writeAudit(env, {
       actorId,
       actorEmail,
@@ -586,7 +586,7 @@ async function mutate(
   }
 
   const ok = await patchRow(auth, 'invoices', rowId, data);
-  if (!ok) return apiError(500, 'validation', 'Gagal memperbarui invoice.');
+  if (!ok) return apiError(500, 'unavailable', 'Gagal memperbarui invoice.');
   await writeAudit(env, {
     actorId,
     actorEmail,
@@ -753,15 +753,14 @@ async function createDocument(
     };
   }
   if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    return {
-      ok: false,
-      response: apiError(500, 'validation', `Gagal menyimpan data: ${body.slice(0, 200)}`),
-    };
+    // The upstream body carries collection names — log it, never echo it.
+    const body = (await response.text().catch(() => '')).slice(0, 200).replace(/\s+/g, ' ');
+    console.error('admin.content: create failed:', response.status, body);
+    return { ok: false, response: apiError(500, 'unavailable', 'Gagal menyimpan data.') };
   }
   const row = (await response.json()) as { $id?: string };
   if (!row.$id) {
-    return { ok: false, response: apiError(500, 'validation', 'Gagal menyimpan data.') };
+    return { ok: false, response: apiError(500, 'unavailable', 'Gagal menyimpan data.') };
   }
   return { ok: true, rowId: row.$id };
 }

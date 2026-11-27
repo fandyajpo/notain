@@ -38,13 +38,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   const outcome = await checkTurnstile(request, env, token);
   if (outcome.state === 'unconfigured') {
-    return apiError(500, 'validation', 'Verifikasi keamanan belum dikonfigurasi.');
+    return apiError(500, 'unavailable', 'Verifikasi keamanan belum dikonfigurasi.');
   }
   if (outcome.state === 'missing_token') {
     return apiError(400, 'validation', 'Token verifikasi belum tersedia.');
   }
   if (outcome.state === 'unreachable') {
-    return apiError(502, 'validation', 'Verifikasi keamanan gagal dihubungi.');
+    return apiError(502, 'unavailable', 'Verifikasi keamanan gagal dihubungi.');
   }
 
   // Cloudflare explains a rejection via `error-codes` (e.g.

@@ -55,7 +55,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     return json(200, { rows: [], total: 0, nextCursor: null });
   }
   if (!response.ok) {
-    return apiError(500, 'validation', 'Gagal mengambil log aktivitas.');
+    return apiError(500, 'unavailable', 'Gagal mengambil log aktivitas.');
   }
 
   const data = (await response.json()) as {

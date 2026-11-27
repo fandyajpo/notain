@@ -152,7 +152,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     // the admin API (both on the API key) ever move an ORGANIZATION between
     // plans, and that plan is what this endpoint projects.
     if (!(await patchRow(auth, 'profiles', gate.access.orgId, data))) {
-      return apiError(500, 'validation', 'Gagal menyimpan profil.');
+      return apiError(500, 'unavailable', 'Gagal menyimpan profil.');
     }
     // `existing` is every column the row holds and `data` is exactly the set
     // the patch just wrote, so their merge *is* the saved row — a third
@@ -178,7 +178,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     [],
   );
   if (!created) {
-    return apiError(500, 'validation', 'Gagal menyimpan profil.');
+    return apiError(500, 'unavailable', 'Gagal menyimpan profil.');
   }
   return json(201, profileView(created, plan));
 };

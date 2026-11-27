@@ -190,7 +190,7 @@ async function listUsers(
 
   const usersResponse = await fetch(`${endpoint}/users?${querySearchAll(queries)}`, { headers });
   if (!usersResponse.ok) {
-    return apiError(500, 'validation', 'Gagal mengambil daftar user.');
+    return apiError(500, 'unavailable', 'Gagal mengambil daftar user.');
   }
   const usersData = (await usersResponse.json()) as { users: AppwriteUser[]; total: number };
 

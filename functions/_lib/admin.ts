@@ -63,7 +63,7 @@ export async function requireAdmin(
   if (!endpoint || !projectId || !apiKey) {
     return {
       ok: false,
-      response: apiError(500, 'validation', 'Konfigurasi server tidak lengkap.'),
+      response: apiError(500, 'unavailable', 'Konfigurasi server tidak lengkap.'),
     };
   }
 

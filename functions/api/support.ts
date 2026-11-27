@@ -74,13 +74,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   const gate = await checkTurnstile(request, env, turnstileToken);
   if (gate.state === 'unconfigured') {
-    return apiError(500, 'validation', 'Verifikasi keamanan belum dikonfigurasi.');
+    return apiError(500, 'unavailable', 'Verifikasi keamanan belum dikonfigurasi.');
   }
   if (gate.state === 'missing_token') {
     return apiError(400, 'validation', 'Token verifikasi belum tersedia.');
   }
   if (gate.state === 'unreachable') {
-    return apiError(502, 'validation', 'Verifikasi keamanan gagal dihubungi.');
+    return apiError(502, 'unavailable', 'Verifikasi keamanan gagal dihubungi.');
   }
   if (gate.state === 'rejected') {
     return apiError(
@@ -92,7 +92,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   const auth = tableAuth(env);
   if (!auth) {
-    return apiError(500, 'validation', 'Pengiriman pesan belum terkonfigurasi di server.');
+    return apiError(500, 'unavailable', 'Pengiriman pesan belum terkonfigurasi di server.');
   }
 
   const source = body.source === 'contact' ? 'contact' : 'landing';
@@ -129,7 +129,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     // log it, never echo it to the client.
     const detail = await response.text().catch(() => '');
     console.error('support: write failed:', detail.slice(0, 200));
-    return apiError(500, 'validation', 'Gagal mengirim pesan. Coba lagi sebentar lagi.');
+    return apiError(500, 'unavailable', 'Gagal mengirim pesan. Coba lagi sebentar lagi.');
   }
 
   return json(200, { success: true });

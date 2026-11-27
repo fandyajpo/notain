@@ -158,8 +158,9 @@ the original audit.
     (`Gagal menyimpan profil.`), `functions/api/profile/user.ts`, the admin list
     endpoints and others return HTTP 500 with `error: 'validation'` for write
     failures. A client that branches on the error code cannot distinguish input
-    rejection from an outage; only the status differs. 35 call sites in 16 files;
-    the one in `functions/api/admin/support/[id].ts` is fixed, 34 remain. See
+    rejection from an outage; only the status differs. Fixed after this pass:
+    every 5xx answer in `functions/` now carries `unavailable` (the numeric
+    statuses stay as they were, so no client status check changes). See
     `type-safety-2026-11.md`.
 
 ## Items that need runtime evidence

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { decideTransition } from './payment-state';
+import { decideTransition, normalizePaymentStatus } from './payment-state';
 
 describe('decideTransition', () => {
   const now = new Date('2026-10-20T10:05:00.000Z');
@@ -87,6 +87,21 @@ describe('decideTransition', () => {
           now,
         }).action,
       ).toBe('ignore');
+    }
+  });
+});
+
+
+describe('normalizePaymentStatus', () => {
+  it('reads a stored terminal state as itself, including DOKU’s failed', () => {
+    expect(normalizePaymentStatus('paid')).toBe('paid');
+    expect(normalizePaymentStatus('expired')).toBe('expired');
+    expect(normalizePaymentStatus('failed')).toBe('failed');
+  });
+
+  it('reads anything else — including the unset column — as pending', () => {
+    for (const value of [null, undefined, '', 'banana', 3]) {
+      expect(normalizePaymentStatus(value)).toBe('pending');
     }
   });
 });

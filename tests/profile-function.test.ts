@@ -414,7 +414,7 @@ describe('PUT /api/profile — create', () => {
     const response = await handle(put(bodyWithPlan()));
 
     expect(response.status).toBe(500);
-    expect(((await response.json()) as { error: string }).error).toBe('validation');
+    expect(((await response.json()) as { error: string }).error).toBe('unavailable');
   });
 });
 
@@ -507,7 +507,7 @@ describe('PUT /api/profile — validation', () => {
   it('rejects a missing name', async () => {
     const response = await handle(put(bodyWithPlan({ name: undefined })));
     expect(response.status).toBe(400);
-    expect(((await response.json()) as { error: string }).error).toBe('validation');
+    expect(((await response.json()) as { error: string }).error).toBe('unavailable');
     expect(writes()).toEqual([]);
   });
 

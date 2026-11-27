@@ -66,7 +66,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
 
   const auth = tableAuth(env);
   if (!auth) {
-    return apiError(500, 'validation', 'Konfigurasi server tidak lengkap.');
+    return apiError(500, 'unavailable', 'Konfigurasi server tidak lengkap.');
   }
 
   const declaredLength = request.headers.get('content-length');
@@ -190,7 +190,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
     });
     if (!saved) {
       await env.LOGOS.delete(key).catch(() => undefined);
-      return apiError(500, 'validation', 'Gagal menyimpan bukti pembayaran. Coba lagi.');
+      return apiError(500, 'unavailable', 'Gagal menyimpan bukti pembayaran. Coba lagi.');
     }
 
     // Owner replace: only once the row points at the new proof does the
@@ -212,12 +212,12 @@ function proofUrl(key: string): string {
 function turnstileError(state: 'unconfigured' | 'missing_token' | 'unreachable' | 'rejected') {
   switch (state) {
     case 'unconfigured':
-      return apiError(500, 'validation', 'Verifikasi keamanan belum dikonfigurasi.');
+      return apiError(500, 'unavailable', 'Verifikasi keamanan belum dikonfigurasi.');
     case 'missing_token':
     case 'rejected':
       return apiError(400, 'validation', 'Verifikasi keamanan gagal. Muat ulang lalu coba lagi.');
     case 'unreachable':
-      return apiError(502, 'validation', 'Verifikasi keamanan gagal dihubungi.');
+      return apiError(502, 'unavailable', 'Verifikasi keamanan gagal dihubungi.');
   }
 }
 

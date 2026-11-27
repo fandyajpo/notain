@@ -58,7 +58,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, params, env }) =>
 
   const auth = tableAuth(env);
   if (!auth) {
-    return apiError(500, 'validation', 'Konfigurasi server tidak lengkap.');
+    return apiError(500, 'unavailable', 'Konfigurasi server tidak lengkap.');
   }
 
   const [orgRow, profileRow] = await Promise.all([

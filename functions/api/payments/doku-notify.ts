@@ -41,7 +41,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const clientId = env.DOKU_CLIENT_ID?.trim() ?? '';
   const secretKey = env.DOKU_SECRET_KEY?.trim() ?? '';
   if (!clientId || !secretKey) {
-    return apiError(500, 'validation', 'Notifikasi pembayaran belum terkonfigurasi di server.');
+    return apiError(500, 'unavailable', 'Notifikasi pembayaran belum terkonfigurasi di server.');
   }
 
   // The exact bytes: the Digest in the signature covers them, so reading the
@@ -80,7 +80,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   const auth = tableAuth(env);
   if (!auth) {
-    return apiError(500, 'validation', 'Server belum terkonfigurasi.');
+    return apiError(500, 'unavailable', 'Server belum terkonfigurasi.');
   }
 
   // $id IS the invoice_number (written before the checkout was created),
@@ -120,6 +120,6 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
         activationStatus: 'pending',
       });
     case 'error':
-      return apiError(500, 'validation', outcome.message);
+      return apiError(500, 'unavailable', outcome.message);
   }
 };

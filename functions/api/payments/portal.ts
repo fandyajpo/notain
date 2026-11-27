@@ -2,6 +2,7 @@ import { getRow } from '../../_lib/rows';
 import { requireOrg } from '../../_lib/orgs';
 import { apiError, fetchUpstream as fetch, json } from '../../_lib/http';
 import { isSubscriptionActive } from '../../../src/core/billing/plans';
+import { normalizePaymentStatus } from '../../../src/core/billing/payment-state';
 import type { Env, PagesFunction } from '../../_lib/types';
 
 const DATABASE_ID = 'notain_db';
@@ -29,11 +30,6 @@ type PaymentRow = {
   dokuExpiredAt?: string | null;
   createdAt?: string | null;
 };
-
-/** The payment states the portal surfaces; anything else reads as pending. */
-function normalizeStatus(value: unknown): 'pending' | 'paid' | 'expired' | 'failed' {
-  return value === 'paid' || value === 'expired' || value === 'failed' ? value : 'pending';
-}
 
 /**
  * `GET /api/payments/portal?orgId=…` — the billing portal's one read: what
@@ -95,7 +91,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     // was dropped by the transport or ignored by the backend.
     .filter((row) => row.orgId === gate.access.orgId)
     .map((row) => {
-      const status = normalizeStatus(row.status);
+      const status = normalizePaymentStatus(row.status);
       const activationStatus =
         row.activationStatus === 'active' ? 'active' : status === 'paid' ? 'pending' : 'unknown';
       // A pending order still worth paying: it has a hosted page and DOKU has

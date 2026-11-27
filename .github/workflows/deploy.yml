@@ -45,6 +45,10 @@ permissions:
 jobs:
   deploy:
     name: Build and deploy
+    # The `lint` job has been green on `main`, so the tree it checks is the
+    # tree this job ships: a lint error now stops a deploy instead of only
+    # showing on the run.
+    needs: lint
     runs-on: ubuntu-latest
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

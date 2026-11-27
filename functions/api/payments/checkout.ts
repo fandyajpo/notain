@@ -126,7 +126,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const clientId = env.DOKU_CLIENT_ID?.trim() ?? '';
   const secretKey = env.DOKU_SECRET_KEY?.trim() ?? '';
   if (!clientId || !secretKey) {
-    return apiError(500, 'validation', 'Pembayaran belum terkonfigurasi di server.');
+    return apiError(500, 'unavailable', 'Pembayaran belum terkonfigurasi di server.');
   }
 
   const amount = planAmount(plan);
@@ -324,7 +324,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     // it goes to the logs, never to the client.
     const detail = (await created.text().catch(() => '')).slice(0, 200).replace(/\s+/g, ' ');
     console.error('payments: payment row write failed:', detail);
-    return apiError(500, 'validation', 'Gagal menyimpan pesanan pembayaran. Coba lagi.');
+    return apiError(500, 'unavailable', 'Gagal menyimpan pesanan pembayaran. Coba lagi.');
   }
 
   const invoiceNumber = rowId;

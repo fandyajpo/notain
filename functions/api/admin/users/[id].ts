@@ -104,7 +104,7 @@ async function setUserStatus(
     const text = await response.text().catch(() => '');
     // Upstream bodies carry provider internals — log, never echo.
     console.error('admin.users: status change failed:', text.slice(0, 200));
-    return apiError(500, 'validation', 'Gagal mengubah status user.');
+    return apiError(500, 'unavailable', 'Gagal mengubah status user.');
   }
 
   await writeAudit(env, {
@@ -183,7 +183,7 @@ async function overview(
     return apiError(404, 'not_found', 'User tidak ditemukan.');
   }
   if (!userResponse.ok) {
-    return apiError(500, 'validation', 'Gagal mengambil data user.');
+    return apiError(500, 'unavailable', 'Gagal mengambil data user.');
   }
   const user = (await userResponse.json()) as {
     $id: string;
@@ -286,7 +286,7 @@ async function listResource(
     { headers },
   );
   if (!response.ok) {
-    return apiError(500, 'validation', `Gagal mengambil ${resource}.`);
+    return apiError(500, 'unavailable', `Gagal mengambil ${resource}.`);
   }
   const data = (await response.json()) as {
     documents: Array<Record<string, unknown> & { $id: string }>;

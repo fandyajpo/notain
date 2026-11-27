@@ -95,7 +95,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   const auth = tableAuth(env);
-  if (!auth) return apiError(500, 'validation', 'Server belum terkonfigurasi.');
+  if (!auth) return apiError(500, 'unavailable', 'Server belum terkonfigurasi.');
 
   let payment = (await getRow(auth, 'payments', invoice)) as StatusRow | null;
   if (!payment || payment.ownerId !== session.userId) {

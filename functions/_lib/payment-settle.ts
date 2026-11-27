@@ -1,7 +1,7 @@
 import { getRow, patchRow, type TableAuth } from './rows';
 import { writeAudit } from './audit';
 import { computePlanExpiry, isSubscriptionActive, planRank } from '../../src/core/billing/plans';
-import { decideTransition } from '../../src/core/billing/payment-state';
+import { decideTransition, normalizePaymentStatus } from '../../src/core/billing/payment-state';
 import type { DokuNotification } from '../../src/core/billing/doku';
 import type { Env } from './types';
 
@@ -49,11 +49,6 @@ export type SettleOutcome =
   | { kind: 'activation_pending'; paidAt: string }
   | { kind: 'error'; message: string };
 
-/** Payment states this module knows how to act on. */
-function normalizeStatus(value: unknown): 'pending' | 'paid' | 'expired' {
-  return value === 'paid' || value === 'expired' ? value : 'pending';
-}
-
 function paidPlan(value: unknown): 'pro' | 'business' {
   return value === 'business' ? 'business' : 'pro';
 }
@@ -70,8 +65,11 @@ export async function settlePayment(
 
   const amountMatches =
     notification.amount !== null && Number(payment.amount) === notification.amount;
+  // `failed` is a state this machine does not act on: read it as a row that
+  // never left pending and let the notification decide from there.
+  const stored = normalizePaymentStatus(payment.status);
   const transition = decideTransition({
-    currentStatus: normalizeStatus(payment.status),
+    currentStatus: stored === 'failed' ? 'pending' : stored,
     notification: { status: notification.status },
     amountMatches,
   });
