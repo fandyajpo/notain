@@ -209,64 +209,84 @@ export function LiveCalculator() {
               Nota contoh
               <Sparkles size={14} aria-hidden="true" className="text-accent" />
             </p>
+            {/* The same nota the hero shows, named: without this line the card
+                read as a cropped receipt instead of a second view of one. */}
+            <p className="till-figure mt-1 text-xs text-muted">INV-2026-001 · Budi Santoso</p>
 
-            <ul className="mt-4 divide-y divide-rule">
+            <ul className="mt-3 divide-y divide-rule">
               {lines.map((line, index) => (
-                <li key={line.name} className="flex items-center gap-3 py-3">
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">{line.name}</span>
-                    <span className="till-figure block text-xs text-muted">
+                <li key={line.name} className="py-3">
+                  {/* Two lines per row: the name and what it costs, then the
+                      price and the stepper. The line amount sits in the same
+                      right column as the totals, so Rp84.000 can be read off
+                      the rows instead of taken on trust. */}
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="min-w-0 truncate text-sm font-medium">{line.name}</span>
+                    <span className="till-figure shrink-0 text-sm">
+                      {formatRupiah(line.subtotal)}
+                    </span>
+                  </div>
+
+                  <div className="mt-1.5 flex items-center justify-between gap-3">
+                    <span className="till-figure text-xs text-muted">
                       {formatRupiah(line.price)} / item
                     </span>
-                  </span>
 
-                  <span className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => bump(index, -1)}
-                      aria-label={`Kurangi ${line.name}`}
-                      className="inline-flex h-11 w-11 items-center justify-center rounded-control border border-border text-sm transition-colors hover:border-border-strong hover:bg-background focus-ring"
-                    >
-                      −
-                    </button>
-                    <motion.span
-                      key={line.count}
-                      initial={{ scale: 0.85, opacity: 0.4 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: 'spring', stiffness: 420, damping: 26 }}
-                      className="till-figure w-7 text-center text-sm font-medium"
-                    >
-                      {line.count}
-                    </motion.span>
-                    <button
-                      type="button"
-                      onClick={() => bump(index, 1)}
-                      aria-label={`Tambah ${line.name}`}
-                      className="inline-flex h-11 w-11 items-center justify-center rounded-control border border-border text-sm transition-colors hover:border-border-strong hover:bg-background focus-ring"
-                    >
-                      +
-                    </button>
-                  </span>
+                    {/* `shrink-0`: the name column is the one allowed to give
+                        way, never the two 44px targets beside it. */}
+                    <span className="flex shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => bump(index, -1)}
+                        aria-label={`Kurangi ${line.name}`}
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-control border border-border text-sm transition-colors hover:border-border-strong hover:bg-background focus-ring"
+                      >
+                        −
+                      </button>
+                      <motion.span
+                        key={line.count}
+                        // Scale only, never opacity: before hydration the
+                        // server's inline style is all a reader sees, and a
+                        // faded digit looks like a disabled one.
+                        initial={{ scale: 0.9 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: 'spring', stiffness: 420, damping: 26 }}
+                        className="till-figure w-7 text-center text-sm font-medium"
+                      >
+                        {line.count}
+                      </motion.span>
+                      <button
+                        type="button"
+                        onClick={() => bump(index, 1)}
+                        aria-label={`Tambah ${line.name}`}
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-control border border-border text-sm transition-colors hover:border-border-strong hover:bg-background focus-ring"
+                      >
+                        +
+                      </button>
+                    </span>
+                  </div>
                 </li>
               ))}
             </ul>
 
-            <dl className="mt-4 space-y-1.5 text-sm">
+            <dl className="mt-2 space-y-1.5 border-t border-rule pt-3 text-sm">
               <div className="flex justify-between">
                 <dt className="text-muted">Subtotal</dt>
                 <dd className="till-figure">{formatRupiah(shown.subtotal)}</dd>
               </div>
+              {/* The same words and inks the nota in the hero prints: a
+                  discount is red, a tax is ink, and neither is greyed out. */}
               <div className="flex justify-between">
-                <dt className="text-muted">Diskon 5%</dt>
-                <dd className="till-figure text-muted">−{formatRupiah(shown.discount)}</dd>
+                <dt className="text-muted">Diskon (5%)</dt>
+                <dd className="till-figure text-danger">−{formatRupiah(shown.discount)}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-muted">Pajak 11%</dt>
-                <dd className="till-figure text-muted">+{formatRupiah(shown.tax)}</dd>
+                <dt className="text-muted">Pajak (11%)</dt>
+                <dd className="till-figure">+{formatRupiah(shown.tax)}</dd>
               </div>
               <div className="flex items-baseline justify-between border-t border-rule pt-2">
                 <dt className="font-medium">Total</dt>
-                <dd className="till-figure text-2xl font-semibold text-accent">
+                <dd className="till-figure text-lg font-semibold text-accent">
                   {formatRupiah(shown.total)}
                 </dd>
               </div>
