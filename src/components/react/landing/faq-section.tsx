@@ -73,10 +73,7 @@ export function FaqSection() {
     <section id="faq" className="scroll-mt-4 border-t border-border bg-card">
       <div className="mx-auto w-full max-w-3xl px-5 py-20 sm:px-8 sm:py-24">
         <Reveal scale y={18}>
-          <p className="text-center text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-            Pertanyaan umum
-          </p>
-          <h2 className="mt-3 text-center text-title">Masih ragu? Ini jawabannya.</h2>
+          <h2 className="text-center text-title">Masih ragu? Ini jawabannya.</h2>
         </Reveal>
 
         <div className="mt-10 divide-y divide-border border-y border-border">

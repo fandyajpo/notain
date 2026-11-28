@@ -69,6 +69,9 @@ export function Turnstile({ siteKey, onToken }: Props) {
         if (cancelled || !containerRef.current || !window.turnstile) return;
         widgetId = window.turnstile.render(containerRef.current, {
           sitekey: siteKey,
+          // The app has no dark surface: left to `auto` the widget follows the
+          // phone's dark mode and paints a black box on a light card.
+          theme: 'light',
           callback: (token: string) => onTokenRef.current(token),
           'expired-callback': () => onTokenRef.current(null),
           'error-callback': () => {

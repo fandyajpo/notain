@@ -1,7 +1,6 @@
 import { motion, MotionConfig, useInView } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import {
-  ArrowRight,
   Calculator,
   CheckCheck,
   FileText,
@@ -69,7 +68,7 @@ export function HowItWorks() {
 
           <motion.span
             aria-hidden="true"
-            className="mt-12 block h-px origin-left bg-accent/40"
+            className="mt-12 block h-px origin-left bg-accent"
             initial={{ scaleX: 0 }}
             whileInView={{ scaleX: 1 }}
             viewport={{ once: true, amount: 0.4 }}
@@ -104,30 +103,67 @@ export function HowItWorks() {
 const ROWS = [
   { name: 'Nasi Goreng Spesial', price: 25_000 },
   { name: 'Es Teh Manis', price: 8_000 },
+  { name: 'Kerupuk Udang', price: 10_000 },
 ] as const;
 
-/** Counts a Rupiah value toward its new total instead of snapping. */
-function AnimatedRupiah({ value, className }: { value: number; className?: string }) {
-  const shownRef = useRef(value);
-  const [shown, setShown] = useState(value);
+type Totals = { subtotal: number; discount: number; tax: number; total: number };
+
+/** Honours the OS "reduce motion" setting for the two rAF loops on this page. */
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduced(query.matches);
+    const onChange = (event: MediaQueryListEvent) => setReduced(event.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
+
+  return reduced;
+}
+
+/**
+ * Counts every figure from one eased progress, so subtotal, discount, tax and
+ * total never disagree while they move — an animating subtotal next to a total
+ * that already snapped is a wrong number on screen, not a slow one. Reduced
+ * motion gets the new numbers immediately.
+ */
+function useAnimatedTotals(target: Totals): Totals {
+  const [shown, setShown] = useState(target);
+  const shownRef = useRef(target);
+  const reduced = usePrefersReducedMotion();
+  const { subtotal, discount, tax, total } = target;
 
   useEffect(() => {
     const from = shownRef.current;
-    if (from === value) return;
+    const to = { subtotal, discount, tax, total };
+    if (reduced || (from.subtotal === subtotal && from.total === total)) {
+      shownRef.current = to;
+      setShown(to);
+      return undefined;
+    }
+
     const start = performance.now();
     let frame = 0;
     const step = (now: number) => {
       const t = Math.min(1, (now - start) / 420);
-      const next = Math.round(from + (value - from) * (1 - Math.pow(1 - t, 3)));
+      const eased = 1 - Math.pow(1 - t, 3);
+      const next = {
+        subtotal: Math.round(from.subtotal + (subtotal - from.subtotal) * eased),
+        discount: Math.round(from.discount + (discount - from.discount) * eased),
+        tax: Math.round(from.tax + (tax - from.tax) * eased),
+        total: Math.round(from.total + (total - from.total) * eased),
+      };
       shownRef.current = next;
       setShown(next);
       if (t < 1) frame = requestAnimationFrame(step);
     };
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
-  }, [value]);
+  }, [subtotal, discount, tax, total, reduced]);
 
-  return <span className={className}>{formatRupiah(shown)}</span>;
+  return shown;
 }
 
 /**
@@ -136,7 +172,9 @@ function AnimatedRupiah({ value, className }: { value: number; className?: strin
  * section that shows the product is software.
  */
 export function LiveCalculator() {
-  const [counts, setCounts] = useState([2, 3]);
+  // Starts at the same total the rest of the page quotes (Rp88.578), so no two
+  // sections price the same sample nota differently.
+  const [counts, setCounts] = useState([2, 3, 1]);
 
   const lines = ROWS.map((row, index) => ({
     ...row,
@@ -147,6 +185,7 @@ export function LiveCalculator() {
   const discount = Math.round(subtotal * 0.05);
   const tax = Math.round((subtotal - discount) * 0.11);
   const total = subtotal - discount + tax;
+  const shown = useAnimatedTotals({ subtotal, discount, tax, total });
 
   function bump(index: number, delta: number) {
     setCounts((current) =>
@@ -186,7 +225,7 @@ export function LiveCalculator() {
                       type="button"
                       onClick={() => bump(index, -1)}
                       aria-label={`Kurangi ${line.name}`}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-control border border-border text-sm transition-colors hover:border-border-strong hover:bg-background focus-ring"
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-control border border-border text-sm transition-colors hover:border-border-strong hover:bg-background focus-ring"
                     >
                       −
                     </button>
@@ -203,7 +242,7 @@ export function LiveCalculator() {
                       type="button"
                       onClick={() => bump(index, 1)}
                       aria-label={`Tambah ${line.name}`}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-control border border-border text-sm transition-colors hover:border-border-strong hover:bg-background focus-ring"
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-control border border-border text-sm transition-colors hover:border-border-strong hover:bg-background focus-ring"
                     >
                       +
                     </button>
@@ -215,22 +254,20 @@ export function LiveCalculator() {
             <dl className="mt-4 space-y-1.5 text-sm">
               <div className="flex justify-between">
                 <dt className="text-muted">Subtotal</dt>
-                <dd className="till-figure">
-                  <AnimatedRupiah value={subtotal} />
-                </dd>
+                <dd className="till-figure">{formatRupiah(shown.subtotal)}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted">Diskon 5%</dt>
-                <dd className="till-figure text-muted">−{formatRupiah(discount)}</dd>
+                <dd className="till-figure text-muted">−{formatRupiah(shown.discount)}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted">Pajak 11%</dt>
-                <dd className="till-figure text-muted">+{formatRupiah(tax)}</dd>
+                <dd className="till-figure text-muted">+{formatRupiah(shown.tax)}</dd>
               </div>
               <div className="flex items-baseline justify-between border-t border-rule pt-2">
                 <dt className="font-medium">Total</dt>
                 <dd className="till-figure text-2xl font-semibold text-accent">
-                  <AnimatedRupiah value={total} />
+                  {formatRupiah(shown.total)}
                 </dd>
               </div>
             </dl>
@@ -248,9 +285,14 @@ const MESSAGE =
 /** Types the WhatsApp message once, when the card is on screen. */
 function useTypedMessage(active: boolean): { text: string; done: boolean } {
   const [index, setIndex] = useState(0);
+  const reduced = usePrefersReducedMotion();
 
   useEffect(() => {
-    if (!active) return;
+    // Reduced motion: the message is simply there, no typing.
+    if (!active || reduced) {
+      if (active) setIndex(MESSAGE.length);
+      return undefined;
+    }
     const timer = window.setInterval(() => {
       setIndex((current) => {
         if (current >= MESSAGE.length) {
@@ -261,7 +303,7 @@ function useTypedMessage(active: boolean): { text: string; done: boolean } {
       });
     }, 22);
     return () => window.clearInterval(timer);
-  }, [active]);
+  }, [active, reduced]);
 
   return { text: MESSAGE.slice(0, index), done: index >= MESSAGE.length };
 }
@@ -295,10 +337,14 @@ export function SendDemo() {
               {!done && <span aria-hidden="true" className="ml-0.5 inline-block w-1.5 bg-accent">&nbsp;</span>}
             </div>
 
+            {/* Always in the layout, only invisible until the message is
+                done: a chip that mounts at the end would shove the card 90px
+                taller mid-sentence. */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={done ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+              initial={false}
+              animate={done ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
               transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+              aria-hidden={!done}
               className="mt-3 flex items-center gap-2 rounded-control border border-rule bg-paper px-3 py-2 text-sm"
             >
               <FileText size={15} aria-hidden="true" className="text-accent" />
@@ -340,7 +386,9 @@ export function TrackDemo() {
             description="Satu ketukan mengubah status nota, dan status itu yang membuat daftar piutangmu bisa dipercaya."
           />
 
-          <div className="rounded-card border border-rule bg-paper p-5 shadow-raised">
+          {/* A torn sheet, not another card: this demo *is* the nota the
+              status belongs to, so it wears the same paper as the hero. */}
+          <div className="receipt-sheet rounded-card p-5 shadow-popover">
             <div
               role="tablist"
               aria-label="Status nota"
@@ -355,7 +403,7 @@ export function TrackDemo() {
                     role="tab"
                     aria-selected={active}
                     onClick={() => setStatus(value)}
-                    className={`relative rounded-pill px-3 py-1.5 text-sm font-medium transition-colors focus-ring ${
+                    className={`relative rounded-pill px-3 py-3 text-sm font-medium transition-colors focus-ring ${
                       active ? 'text-accent-foreground' : 'text-muted hover:text-foreground'
                     }`}
                   >
@@ -424,15 +472,10 @@ export function FeatureList() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.6 }}
                 transition={{ duration: 0.45, delay: index * 0.05, ease: EASE }}
-                className="group flex items-center gap-4 border-b border-border py-4"
+                className="flex items-center gap-4 border-b border-border py-4"
               >
                 <span className="till-figure w-6 text-xs text-muted">{index + 1}</span>
                 <span className="text-base">{feature}</span>
-                <ArrowRight
-                  size={15}
-                  aria-hidden="true"
-                  className="ml-auto -translate-x-1 text-muted opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100"
-                />
               </motion.li>
             ))}
           </ul>

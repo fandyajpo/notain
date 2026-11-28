@@ -244,13 +244,6 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
                     </a>
                   );
                 })}
-                <a
-                  href="/register"
-                  onClick={() => setMenuOpen(false)}
-                  className="mt-2 inline-flex h-11 items-center justify-center rounded-control bg-accent px-4 text-base font-medium text-accent-foreground focus-ring"
-                >
-                  Buat nota gratis
-                </a>
               </div>
             </motion.div>
           )}

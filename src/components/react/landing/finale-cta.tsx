@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { EASE, Reveal } from './reveal';
 import { MagneticButton } from './interactive';
 
-/** Closing CTA: rotating conic border with a calm, centered pitch inside. */
+/** Closing CTA: one card, one button, and the page's last word. */
 export function FinaleCta() {
   return (
     <MotionConfig reducedMotion="user">
@@ -13,19 +13,9 @@ export function FinaleCta() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.25 }}
           transition={{ duration: 0.7, ease: EASE }}
-          className="relative overflow-hidden rounded-card p-px"
+          className="rounded-card border border-border bg-card shadow-card"
         >
-          {/* The rotating ring: accent-tinted alpha stops (color-mix keeps the
-              gradient on-token) so the border sweeps from faint to full accent. */}
-          <motion.span
-            aria-hidden="true"
-            className="absolute left-1/2 top-1/2 block size-[170%] bg-[conic-gradient(from_0deg,color-mix(in_srgb,var(--color-accent)_6%,transparent),color-mix(in_srgb,var(--color-accent)_65%,transparent),color-mix(in_srgb,var(--color-accent)_15%,transparent),color-mix(in_srgb,var(--color-accent)_6%,transparent))] will-change-transform"
-            initial={{ x: '-50%', y: '-50%', rotate: 0 }}
-            animate={{ x: '-50%', y: '-50%', rotate: 360 }}
-            transition={{ duration: 11, repeat: Infinity, ease: 'linear' }}
-          />
-
-          <div className="relative rounded-card bg-card px-6 py-14 text-center sm:px-12 sm:py-16">
+          <div className="px-6 py-14 text-center sm:px-12 sm:py-16">
             <Reveal scale y={18}>
               <h2 className="text-title">Buat nota pertamamu</h2>
             </Reveal>

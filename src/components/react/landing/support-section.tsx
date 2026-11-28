@@ -14,11 +14,8 @@ export function SupportSection() {
     <section id="support" className="scroll-mt-4 border-t border-border bg-background">
       <div className="mx-auto w-full max-w-3xl px-5 py-20 sm:px-8 sm:py-24">
         <Reveal scale y={18}>
-          <p className="text-center text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-            Bantuan
-          </p>
-          <h2 className="mt-3 text-center text-title">Ada yang bisa kami bantu?</h2>
-          <p className="mx-auto mt-4 max-w-xl text-center text-lead text-muted">
+          <h2 className="text-center text-title">Ada yang bisa kami bantu?</h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-lead text-muted">
             Pertanyaan soal fitur, plan, atau kendala pemakaian: tulis di sini, kami balas lewat
             email.
           </p>

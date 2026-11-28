@@ -1,6 +1,6 @@
 import { motion, MotionConfig } from 'motion/react';
 import { useMemo, useState } from 'react';
-import { ArrowRight, Check, CheckCheck, ChevronDown, FileDown } from 'lucide-react';
+import { ArrowRight, Check, CheckCheck, FileDown } from 'lucide-react';
 import { InvoicePreview } from '../invoice/invoice-preview';
 import { createSampleInvoice } from '../../../core/invoice/sample';
 import { BUILTIN_TEMPLATES } from '../../../core/template/builtins';
@@ -73,20 +73,26 @@ function PreviewStage() {
       >
         <TiltCard max={6}>
           {/* The one authored moment: the sheet is printed onto the desk, top
-              down, so the first thing the eye follows is the document itself. */}
-          <motion.div
-            initial={{ clipPath: 'inset(0 0 100% 0)' }}
-            whileInView={{ clipPath: 'inset(0 0 0% 0)' }}
-            viewport={{ once: true, amount: 0.35 }}
-            transition={{ duration: 0.95, ease: EASE }}
-          >
-            <div className="receipt-sheet relative rounded-[1.25rem] p-2 shadow-popover">
-            <InvoicePreview
-              business={sample.business}
-              invoice={sample.draft}
-              template={resolveTemplate(templateId)}
-              className="shadow-none"
-            />
+              down, so the first thing the eye follows is the document itself.
+              The stamp sits outside the clip wrapper: a sheet printing down
+              would otherwise slice the stamp's ink in half mid-word. */}
+          <div className="relative">
+            <motion.div
+              initial={{ clipPath: 'inset(0 0 100% 0)' }}
+              whileInView={{ clipPath: 'inset(0 0 0% 0)' }}
+              viewport={{ once: true, amount: 0.35 }}
+              transition={{ duration: 0.95, ease: EASE }}
+            >
+              <div className="receipt-sheet rounded-[1.25rem] p-2 shadow-popover">
+                <InvoicePreview
+                  business={sample.business}
+                  invoice={sample.draft}
+                  template={resolveTemplate(templateId)}
+                  className="shadow-none"
+                />
+              </div>
+            </motion.div>
+
             <motion.span
               aria-hidden="true"
               initial={{ opacity: 0, scale: 1.4, rotate: -7 }}
@@ -97,8 +103,7 @@ function PreviewStage() {
             >
               {sample.business.name}
             </motion.span>
-            </div>
-          </motion.div>
+          </div>
         </TiltCard>
       </motion.div>
 
@@ -112,12 +117,6 @@ function PreviewStage() {
           <FileDown size={13} aria-hidden="true" />
         </span>
         PDF A4 siap diunduh
-        {/* <motion.span
-          aria-hidden="true"
-          className="absolute inset-0 rounded-control border border-accent/40"
-          animate={{ opacity: [0, 1, 0], scale: [1, 1.12, 1.18] }}
-          transition={{ duration: 2.6, repeat: Infinity, ease: 'easeOut', delay: 2 }}
-        /> */}
       </motion.div>
 
       <motion.div
@@ -160,7 +159,7 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
         </div>
 
         <div className="text-center">
-          <h1 className="mx-auto mt-6 max-w-3xl text-[clamp(2.5rem,6.5vw,4.25rem)] font-semibold leading-[1.03] tracking-[-0.035em]">
+          <h1 className="mx-auto mt-6 max-w-3xl text-balance text-[clamp(2.5rem,6.5vw,4.25rem)] font-semibold leading-[1.03] tracking-[-0.035em]">
             <SplitWords text="Buat nota lebih rapi." className="block" delay={0.16} immediate />
             <SplitWords
               text="Biar urusan usaha lebih mudah."
@@ -236,22 +235,6 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
           <PreviewStage />
         </motion.div>
 
-        <motion.div
-          initial={false}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 1.5 }}
-          className="mt-12 flex justify-center"
-        >
-          <motion.div
-            aria-hidden="true"
-            className="flex flex-col items-center gap-1 text-xs text-muted"
-            animate={{ y: [0, 6, 0] }}
-            transition={{ duration: 1.9, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <span>Gulir ke bawah</span>
-            <ChevronDown size={16} />
-          </motion.div>
-        </motion.div>
       </div>
     </MotionConfig>
   );

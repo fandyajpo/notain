@@ -29,17 +29,22 @@ export function AudienceMarquee() {
       aria-label="Cocok untuk berbagai bisnis"
       className="overflow-hidden border-y border-border bg-card py-5"
     >
-      <div className="flex w-max animate-[marquee_38s_linear_infinite] will-change-transform hover:[animation-play-state:paused]">
-        {loop.map(({ label, icon: Icon }, index) => (
-          <div
-            key={`${label}-${index}`}
-            aria-hidden={index >= AUDIENCES.length}
-            className="flex items-center gap-3 border-r border-border px-8"
-          >
-            <Icon size={17} aria-hidden="true" className="shrink-0 text-accent" />
-            <span className="whitespace-nowrap text-sm font-medium text-muted">{label}</span>
-          </div>
-        ))}
+      {/* The mask sits on a still parent, not on the moving track: a mask on
+          the track would travel with it. Chips fade out at both edges instead
+          of being sliced mid-word by the section's edge. */}
+      <div className="[mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+        <div className="flex w-max animate-[marquee_38s_linear_infinite] will-change-transform hover:[animation-play-state:paused]">
+          {loop.map(({ label, icon: Icon }, index) => (
+            <div
+              key={`${label}-${index}`}
+              aria-hidden={index >= AUDIENCES.length}
+              className="flex items-center gap-3 border-r border-border px-8"
+            >
+              <Icon size={17} aria-hidden="true" className="shrink-0 text-accent" />
+              <span className="whitespace-nowrap text-sm font-medium text-muted">{label}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
