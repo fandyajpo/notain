@@ -201,6 +201,27 @@
 }
 
 @layer base {
+  /**
+   * The landing's night scope. Everything inside keeps the same token names, so
+   * a section that says `bg-background` or `text-muted` flips without touching
+   * its component: the app stays light (Operate), the marketing surface goes
+   * night (Persuade), and one token block carries the difference.
+   */
+  .theme-night {
+    --color-background: #0a0c0f;
+    --color-card: #12161b;
+    --color-sunken: #0f1318;
+    --color-foreground: #f2f5f8;
+    --color-muted: #9aa4b0;
+    --color-border: #232a33;
+    --color-border-strong: #303945;
+    --color-rule: #232a33;
+    --color-accent: #5b8cff;
+    --color-accent-foreground: #ffffff;
+    --color-accent-soft: #172642;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
   /*
    * Keyboard focus is visible on every interactive element, once, here.
    * `:where()` keeps the specificity at zero so a component rule can still

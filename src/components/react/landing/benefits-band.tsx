@@ -30,7 +30,7 @@ const PAIRS = [
 export function BenefitsBand() {
   return (
     <MotionConfig reducedMotion="user">
-      <section id="kenapa" className="relative scroll-mt-4 overflow-hidden bg-foreground">
+      <section id="kenapa" className="relative scroll-mt-4 overflow-hidden bg-card">
         {/* White graph paper: the inverse band's texture. White has no token;
             this overlay is part of the dark-section identity, not app chrome. */}
         <div

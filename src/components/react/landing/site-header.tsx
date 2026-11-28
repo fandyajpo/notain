@@ -85,8 +85,8 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
   // --shadow-card tokens in global.css (motion can't interpolate var()).
   const scrolledRaw = useTransform(scrollY, (latest): number => (latest > 16 ? 1 : 0));
   const scrolled = useSpring(scrolledRaw, { stiffness: 220, damping: 30 });
-  const headerBg = useTransform(scrolled, [0, 1], ['rgb(0 0 0 / 0)', '#f8f8f6']);
-  const headerBorder = useTransform(scrolled, [0, 1], ['rgb(0 0 0 / 0)', '#e5e5e5']);
+  const headerBg = useTransform(scrolled, [0, 1], ['rgb(0 0 0 / 0)', 'var(--color-background)']);
+  const headerBorder = useTransform(scrolled, [0, 1], ['rgb(0 0 0 / 0)', 'var(--color-border)']);
   const headerShadow = useTransform(
     scrolled,
     [0, 1],

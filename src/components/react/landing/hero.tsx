@@ -72,25 +72,33 @@ function PreviewStage() {
         transition={{ duration: 0.9, delay: 0.35, ease: EASE }}
       >
         <TiltCard max={6}>
-          {/* The one loud surface on the page: a sheet of nota, cut at the tear
-              line top and bottom, with the shop's own stamp over its corner.
-              Everything around it stays quiet so this is where the eye lands —
-              the stamp carries the product's job, not a decoration. No float
-              loop: a receipt rests on the desk, it does not hover. */}
-          <div className="receipt-sheet relative rounded-[1.25rem] p-2 shadow-popover">
+          {/* The one authored moment: the sheet is printed onto the desk, top
+              down, so the first thing the eye follows is the document itself. */}
+          <motion.div
+            initial={{ clipPath: 'inset(0 0 100% 0)' }}
+            whileInView={{ clipPath: 'inset(0 0 0% 0)' }}
+            viewport={{ once: true, amount: 0.35 }}
+            transition={{ duration: 0.95, ease: EASE }}
+          >
+            <div className="receipt-sheet relative rounded-[1.25rem] p-2 shadow-popover">
             <InvoicePreview
               business={sample.business}
               invoice={sample.draft}
               template={resolveTemplate(templateId)}
               className="shadow-none"
             />
-            <span
+            <motion.span
               aria-hidden="true"
+              initial={{ opacity: 0, scale: 1.4, rotate: -7 }}
+              whileInView={{ opacity: 0.85, scale: 1, rotate: -7 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 18, delay: 0.55 }}
               className="receipt-stamp absolute -top-3 right-7 bg-paper text-accent"
             >
               {sample.business.name}
-            </span>
-          </div>
+            </motion.span>
+            </div>
+          </motion.div>
         </TiltCard>
       </motion.div>
 
@@ -137,13 +145,10 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
   return (
     <MotionConfig reducedMotion="user">
       <div className="relative pb-16 pt-12 sm:pb-24 sm:pt-16">
-
         {/* Everything in the first viewport uses `initial={false}` /
             `immediate`, so the server HTML already shows it at full size.
-            The staged entrance that used to run here delayed the page's
-            largest paint until the island hydrated, so the sections below the
-            fold keep theirs (they animate through `Reveal`). Ambient loops
-            (aurora, pulse, float) are untouched: they never start hidden. */}
+            The two authored moments are the sheet printing onto the desk
+            (clip-path) and the shop's stamp landing on it (spring). */}
         <div className="flex justify-center">
           <img
             src="/notain-remove-bg.png"
