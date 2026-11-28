@@ -20,19 +20,32 @@ const AUDIENCES = [
   { label: 'Developer', icon: Cpu },
 ];
 
-/** Infinite marquee of who Notain is for: the page's "this is you" moment. */
+/**
+ * `#untuk-siapa`: who the product is for, as a band that scrolls itself.
+ *
+ * The footer links here, so the section has to be a section: an id, a name and
+ * a heading. A jump target with no title looks like a link that does nothing.
+ */
 export function AudienceMarquee() {
   const loop = [...AUDIENCES, ...AUDIENCES];
 
   return (
     <section
-      aria-label="Cocok untuk berbagai bisnis"
-      className="overflow-hidden border-y border-border bg-card py-5"
+      id="untuk-siapa"
+      aria-labelledby="untuk-siapa-title"
+      className="scroll-mt-24 border-y border-border bg-card py-8"
     >
+      <h2
+        id="untuk-siapa-title"
+        className="mx-auto w-full max-w-6xl px-5 text-section text-muted sm:px-8"
+      >
+        Dipakai dari warung sampai developer.
+      </h2>
+
       {/* The mask sits on a still parent, not on the moving track: a mask on
           the track would travel with it. Chips fade out at both edges instead
           of being sliced mid-word by the section's edge. */}
-      <div className="[mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+      <div className="mt-5 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
         <div className="flex w-max animate-[marquee_38s_linear_infinite] will-change-transform hover:[animation-play-state:paused]">
           {loop.map(({ label, icon: Icon }, index) => (
             <div

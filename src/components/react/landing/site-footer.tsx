@@ -52,7 +52,7 @@ export function SiteFooter({ anchorPrefix = '' }: Props) {
                 </li>
                 <li>
                   <a
-                    href={`${anchorPrefix}#whatsapp`}
+                    href={`${anchorPrefix}#kirim`}
                     className="text-muted transition-colors hover:text-foreground"
                   >
                     Kirim ke WhatsApp
