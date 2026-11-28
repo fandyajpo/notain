@@ -1,6 +1,6 @@
 # ADR 0008 — Nota sebagai bahan visual, bukan kartu SaaS
 
-- Status: **Accepted**
+- Status: **Superseded oleh [ADR 0009](0009-one-sheet.md)** (bahannya tetap dipakai; cakupannya diperluas dari hero ke seluruh halaman)
 - Tanggal: 2026-11-25
 - Konsekuensi: `src/styles/global.css`, `src/components/react/landing/hero.tsx`
 

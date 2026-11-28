@@ -28,10 +28,13 @@
   --color-rule: #e6e1d6;
 
   /*
-   * The nota's own materials. The canvas and the chrome stay neutral, but a
-   * surface that *is* a nota — the hero sample, the sheet an export opens —
-   * paints paper and printing ink instead of `card`/`foreground`, so it reads as
-   * a document on a desk rather than another web card.
+   * The nota's own materials, and the public site's ground.
+   *
+   * Marketing pages are painted paper (`bg-paper`) and print in `ink`; a
+   * surface that *is* a nota — the hero sample, a demo sheet — is the brighter
+   * `card` white sitting on it. The app keeps the neutral canvas: its chrome is
+   * software, not stationery. Blue stays the only saturated hue, and only where
+   * money, the primary action, or the shop's stamp appears.
    */
   --color-paper: #fdfcf9;
   --color-ink: #1a1a17;
@@ -168,8 +171,10 @@
  * rules, not a border around every side, so the sheet reads as cut paper.
  */
 @utility receipt-sheet {
-  background-color: var(--color-paper);
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.85), rgb(255 255 255 / 0) 45%);
+  /* One step brighter than the paper page it lies on, with a warm falloff from
+     the top edge — the sheet is the lit thing, the page is the desk. */
+  background-color: var(--color-card);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.95), rgb(246 243 236 / 0.6));
   border-block: 1.5px dashed color-mix(in srgb, var(--color-ink) 22%, transparent);
   color: var(--color-ink);
 }
@@ -781,18 +786,6 @@
 
 ::view-transition-new(root) {
   animation: view-fade-in 200ms ease-out;
-}
-
-/* Landing audience marquee: the track holds two identical halves, so shifting
-   it by exactly 50% loops seamlessly. */
-@keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(-50%);
-  }
 }
 
 /* ---- Driver.js onboarding (lib/tour). Restyles the library's popover from its

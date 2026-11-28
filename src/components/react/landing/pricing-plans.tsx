@@ -1,8 +1,7 @@
 import { motion, MotionConfig } from 'motion/react';
-import { ArrowRight, Check, Sparkles } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 import { EASE } from './reveal';
 import { MagneticButton } from './interactive';
-import { Aurora } from './aurora';
 import {
   PLAN_BADGES,
   PLAN_BENEFITS,
@@ -65,17 +64,12 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
       initial={false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay, ease: EASE }}
-      className={`relative flex flex-col rounded-card border p-6 sm:p-8 ${
-        primary
-          ? 'border-accent bg-gradient-to-b from-accent/8 via-card to-card shadow-accent'
-          : 'border-border bg-card shadow-card'
+      className={`relative flex flex-col rounded-card border bg-card p-5 sm:p-6 ${
+        primary ? 'border-accent' : 'border-rule'
       }`}
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted">
-          {primary && <Sparkles size={15} aria-hidden="true" className="text-accent" />}
-          {plan.name}
-        </span>
+        <span className="text-sm font-semibold">{plan.name}</span>
         {plan.badge && (
           <span className="rounded-pill border border-accent/25 bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent">
             {plan.badge}
@@ -122,10 +116,8 @@ function PlanCard({ plan, delay }: { plan: Plan; delay: number }) {
         )}
       </div>
 
-      <p className="mt-8 border-t border-border pt-6 text-eyebrow uppercase text-muted">
-        Yang kamu dapat
-      </p>
-      <ul className="mt-4 space-y-3">
+      <p className="mt-6 border-t border-rule pt-4 text-sm font-medium">Yang kamu dapat</p>
+      <ul className="mt-3 space-y-2.5">
         {benefits.map((benefit) => (
           <li key={benefit} className="flex items-start gap-3 text-sm leading-relaxed">
             <Check
@@ -148,40 +140,27 @@ export function PricingPlans() {
     <MotionConfig reducedMotion="user">
       <section
         id="harga"
-        className="relative mx-auto w-full max-w-5xl scroll-mt-4 px-5 pb-20 pt-14 sm:px-8 sm:pb-24 sm:pt-20"
+        className="relative mx-auto w-full max-w-4xl scroll-mt-20 px-5 pb-12 pt-10 sm:px-8 sm:pb-16 sm:pt-12"
       >
-        {/* Same drifting gradient identity as the homepage hero, so the two
-            pages read as one brand. */}
-        <Aurora />
-
         {/* First-viewport content uses `initial={false}` so the server HTML
             already paints it at full size, like the hero. */}
-        <div className="text-center">
-          <motion.span
-            initial={false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: EASE }}
-            className="inline-flex items-center gap-2 rounded-pill border border-accent/25 bg-accent-soft px-3 py-1 text-xs font-medium text-accent"
-          >
-            Harga
-          </motion.span>
-
-          <h1 className="mx-auto mt-6 max-w-2xl text-[clamp(2.25rem,5.5vw,3.25rem)] font-semibold leading-[1.06] tracking-[-0.03em]">
-            Mulai gratis. <span className="text-accent">Pilih Pro</span> kalau butuh fitur lebih.
+        <div>
+          <h1 className="max-w-2xl text-balance text-[clamp(1.9rem,4.4vw,2.75rem)] font-semibold leading-[1.08] tracking-[-0.03em]">
+            Mulai gratis. Pilih Pro kalau butuh fitur lebih.
           </h1>
 
           <motion.p
             initial={false}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
-            className="mx-auto mt-5 max-w-xl text-lead text-muted"
+            className="mt-3 max-w-xl text-sm leading-relaxed text-muted"
           >
             Fitur dasar gratis selamanya, termasuk template bawaan dan template buatan sendiri. Pro
             menambah nota tanpa batas dan laporan. Business sedang disiapkan dan belum bisa dibeli.
           </motion.p>
         </div>
 
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {PLANS.map((plan, index) => (
             <PlanCard key={plan.name} plan={plan} delay={0.25 + index * 0.12} />
           ))}
@@ -189,16 +168,16 @@ export function PricingPlans() {
 
         <motion.p
           initial={false}
-          animate={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.55, ease: EASE }}
-          className="mx-auto mt-8 max-w-xl text-center text-sm leading-relaxed text-muted"
+          className="mt-6 max-w-xl text-xs leading-relaxed text-muted"
         >
           Pembayaran paket Pro diproses lewat DOKU, dan paket aktif otomatis setelah pembayaran
           terkonfirmasi. Tidak ada biaya di luar harga yang tertera, dan kamu bisa berhenti kapan
           saja.
         </motion.p>
 
-        <p className="mx-auto mt-4 max-w-xl text-center text-sm leading-relaxed text-muted">
+        <p className="mt-2 max-w-xl text-xs leading-relaxed text-muted">
           Butuh akses API untuk integrasi? Intip rencana fiturnya di{' '}
           <a
             href="/developers"

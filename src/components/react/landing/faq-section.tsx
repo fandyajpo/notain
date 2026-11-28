@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ChevronDown } from 'lucide-react';
-import { EASE, Reveal } from './reveal';
+import { EASE } from './reveal';
 import { PLAN_PRICES } from '../../../core/billing/plan-benefits';
 import { FREE_PLAN_LIMITS } from '../../../core/billing/plans';
+import { MARKETING_H2, MARKETING_SECTION } from '../../../lib/ui/classes';
 
 /**
  * Every answer here is verified against the implementation: the print-based
@@ -70,13 +71,11 @@ export function FaqSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <section id="faq" className="scroll-mt-4 border-t border-border bg-card">
-      <div className="mx-auto w-full max-w-3xl px-5 py-20 sm:px-8 sm:py-24">
-        <Reveal scale y={18}>
-          <h2 className="text-center text-title">Masih ragu? Ini jawabannya.</h2>
-        </Reveal>
+    <section id="faq" className={MARKETING_SECTION}>
+      <div className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-8 sm:py-14">
+        <h2 className={MARKETING_H2}>Masih ragu? Ini jawabannya.</h2>
 
-        <div className="mt-10 divide-y divide-border border-y border-border">
+        <div className="mt-4 divide-y divide-rule border-y border-rule">
           {FAQS.map(({ question, answer }, index) => {
             const open = openIndex === index;
             return (
@@ -85,11 +84,11 @@ export function FaqSection() {
                   type="button"
                   aria-expanded={open}
                   onClick={() => setOpenIndex(open ? null : index)}
-                  className="flex w-full cursor-pointer items-center justify-between gap-4 py-5 text-left font-medium focus-ring"
+                  className="flex w-full cursor-pointer items-center justify-between gap-4 py-3.5 text-left text-sm font-medium focus-ring"
                 >
                   {question}
                   <ChevronDown
-                    size={17}
+                    size={16}
                     aria-hidden="true"
                     className={`shrink-0 text-muted transition-transform duration-300 ${
                       open ? 'rotate-180' : ''
@@ -102,10 +101,10 @@ export function FaqSection() {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: EASE }}
+                      transition={{ duration: 0.28, ease: EASE }}
                       className="overflow-hidden"
                     >
-                      <p className="pb-5 pr-8 text-sm leading-relaxed text-muted">{answer}</p>
+                      <p className="pb-4 pr-8 text-sm leading-relaxed text-muted">{answer}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>

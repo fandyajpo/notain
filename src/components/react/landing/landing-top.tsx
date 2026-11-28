@@ -38,7 +38,7 @@ export function LandingTop({ children }: Props) {
         <SiteHeader />
 
         <main id="konten" tabIndex={-1}>
-          <section className="mx-auto w-full max-w-6xl px-5 sm:px-8">
+          <section className="mx-auto w-full max-w-5xl px-5 sm:px-8">
             <Hero
               ctaHref="/register"
               ctaLabel="Buat nota gratis"

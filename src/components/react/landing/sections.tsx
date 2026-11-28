@@ -1,38 +1,23 @@
-import { motion, MotionConfig, useInView } from 'motion/react';
+import { motion, useInView } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
-import {
-  Calculator,
-  CheckCheck,
-  FileText,
-  MessageCircle,
-  Receipt,
-  Send,
-  Sparkles,
-} from 'lucide-react';
+import { CheckCheck, FileText, MessageCircle } from 'lucide-react';
 import { formatRupiah } from '../../../core/shared/money';
-import { EASE, Reveal } from './reveal';
+import { MARKETING_BOX, MARKETING_H2, MARKETING_SECTION } from '../../../lib/ui/classes';
 
 /**
  * The landing sections below the hero.
  *
- * Each one is the product doing its job, not a card describing it: the
- * calculator answers a drag, the WhatsApp message types itself, the status
- * stamp switches under a tap. One motion idea per section, so the page has a
- * rhythm instead of the same fade on every block.
+ * The three demos are one section here, not three: they are the same nota at
+ * three moments (count it, send it, stamp it), so one frame tells the story and
+ * the page stays short. Nothing fades in on scroll — the hero owns the page's
+ * one authored moment, and every other movement answers a tap.
  */
 
-/** Heading pair used by every section: a rule first, then the words. */
 function Head({ title, description }: { title: string; description: string }) {
   return (
-    <div className="max-w-2xl">
-      <Reveal y={16}>
-        <h2 className="text-[clamp(1.75rem,4vw,2.5rem)] font-semibold leading-[1.1] tracking-[-0.03em]">
-          {title}
-        </h2>
-      </Reveal>
-      <Reveal y={12} delay={0.08}>
-        <p className="mt-4 text-muted">{description}</p>
-      </Reveal>
+    <div className="max-w-lg">
+      <h2 className={MARKETING_H2}>{title}</h2>
+      <p className="mt-2 text-sm leading-relaxed text-muted">{description}</p>
     </div>
   );
 }
@@ -41,70 +26,40 @@ const STEPS = [
   {
     title: 'Pilih pelanggan dan barang',
     body: 'Dari daftar yang sudah tersimpan, atau ketik sekali lalu simpan.',
-    icon: Receipt,
   },
   {
     title: 'Total dihitung sendiri',
-    body: 'Diskon, pajak, dan pembulatan langsung ikut berubah saat angkanya berubah.',
-    icon: Calculator,
+    body: 'Diskon, pajak, dan pembulatan ikut berubah saat angkanya berubah.',
   },
   {
     title: 'Simpan PDF, kirim WhatsApp',
     body: 'Pesan sudah terisi nomor dan totalnya. Lampirkan PDF, lalu kirim.',
-    icon: Send,
   },
 ] as const;
 
-/** `#cara-kerja`: three steps, with a rule that draws as the section arrives. */
+/** `#cara-kerja`: three steps on three rules. */
 export function HowItWorks() {
   return (
-    <MotionConfig reducedMotion="user">
-      <section id="cara-kerja" className="scroll-mt-24 border-t border-border">
-        <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
-          <Head
-            title="Tiga langkah, satu nota."
-            description="Tidak ada pengaturan awal yang rumit. Buat nota, simpan PDF, lalu catat pembayarannya."
-          />
+    <section id="cara-kerja" className={MARKETING_SECTION}>
+      <div className={MARKETING_BOX}>
+        <Head
+          title="Tiga langkah, satu nota."
+          description="Tidak ada pengaturan awal yang rumit: buat nota, simpan PDF, lalu catat pembayarannya."
+        />
 
-          <motion.span
-            aria-hidden="true"
-            className="mt-12 block h-px origin-left bg-accent"
-            initial={{ scaleX: 0 }}
-            whileInView={{ scaleX: 1 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.9, ease: EASE }}
-          />
-
-          <ol className="mt-0 grid gap-10 sm:grid-cols-3 sm:gap-8">
-            {STEPS.map(({ title, body, icon: Icon }, index) => (
-              <motion.li
-                key={title}
-                className="border-t border-border pt-6 sm:border-t-0 sm:pt-0"
-                initial={{ opacity: 0, y: 18 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.6, delay: index * 0.1, ease: EASE }}
-              >
-                <span className="till-figure inline-flex items-center gap-2 text-xs text-muted">
-                  <Icon size={14} aria-hidden="true" />
-                  Langkah {index + 1}
-                </span>
-                <h3 className="mt-3 text-lg font-semibold">{title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted">{body}</p>
-              </motion.li>
-            ))}
-          </ol>
-        </div>
-      </section>
-    </MotionConfig>
+        <ol className="mt-6 grid gap-x-8 gap-y-5 sm:grid-cols-3">
+          {STEPS.map((step, index) => (
+            <li key={step.title} className="border-t border-ink/70 pt-3">
+              <p className="text-xs font-medium text-muted">Langkah {index + 1}</p>
+              <h3 className="mt-1.5 text-base font-semibold">{step.title}</h3>
+              <p className="mt-1 text-sm leading-relaxed text-muted">{step.body}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
   );
 }
-
-const ROWS = [
-  { name: 'Nasi Goreng Spesial', price: 25_000 },
-  { name: 'Es Teh Manis', price: 8_000 },
-  { name: 'Kerupuk Udang', price: 10_000 },
-] as const;
 
 type Totals = { subtotal: number; discount: number; tax: number; total: number };
 
@@ -166,12 +121,17 @@ function useAnimatedTotals(target: Totals): Totals {
   return shown;
 }
 
-/**
- * A working calculator, not a screenshot of one: the steppers change quantity,
- * the totals answer, and the number counts to its new value. This is the
- * section that shows the product is software.
- */
-export function LiveCalculator() {
+const ROWS = [
+  { name: 'Nasi Goreng Spesial', price: 25_000 },
+  { name: 'Es Teh Manis', price: 8_000 },
+  { name: 'Kerupuk Udang', price: 10_000 },
+] as const;
+
+const STEPPER =
+  'inline-flex h-11 w-11 items-center justify-center rounded-item border border-rule text-sm transition-colors hover:border-ink/30 hover:bg-background focus-ring';
+
+/** The calculator, not a screenshot of one: the steppers change the total. */
+function CalculatorPanel() {
   // Starts at the same total the rest of the page quotes (Rp88.578), so no two
   // sections price the same sample nota differently.
   const [counts, setCounts] = useState([2, 3, 1]);
@@ -196,105 +156,86 @@ export function LiveCalculator() {
   }
 
   return (
-    <MotionConfig reducedMotion="user">
-      <section id="hitung" className="scroll-mt-24 border-t border-border bg-card">
-        <div className="mx-auto grid w-full max-w-6xl gap-12 px-5 py-20 sm:px-8 sm:py-28 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-center">
-          <Head
-            title="Ubah jumlah, total ikut bergerak."
-            description="Setiap baris dihitung ulang saat kamu menekan − atau +. Diskon dan pajak ikut menyesuaikan, tanpa perlu kalkulator sendiri."
-          />
+    <div>
+      <p className="flex items-baseline justify-between gap-3 border-b border-rule pb-2">
+        <span className="text-sm font-medium">Nota contoh</span>
+        <span className="till-figure text-xs text-muted">INV-2026-001</span>
+      </p>
 
-          <div className="rounded-card border border-rule bg-paper p-5 shadow-raised">
-            <p className="flex items-center justify-between text-xs font-medium uppercase tracking-[0.14em] text-muted">
-              Nota contoh
-              <Sparkles size={14} aria-hidden="true" className="text-accent" />
-            </p>
-            {/* The same nota the hero shows, named: without this line the card
-                read as a cropped receipt instead of a second view of one. */}
-            <p className="till-figure mt-1 text-xs text-muted">INV-2026-001 · Budi Santoso</p>
+      <ul className="divide-y divide-rule">
+        {lines.map((line, index) => (
+          <li key={line.name} className="py-2.5">
+            {/* Two lines per row: the name and its amount first, then the unit
+                price and the stepper. The amount sits in the same right column
+                as the totals, so Rp84.000 can be read off the rows. */}
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="min-w-0 truncate text-sm font-medium">{line.name}</span>
+              <span className="till-figure shrink-0 text-sm">{formatRupiah(line.subtotal)}</span>
+            </div>
 
-            <ul className="mt-3 divide-y divide-rule">
-              {lines.map((line, index) => (
-                <li key={line.name} className="py-3">
-                  {/* Two lines per row: the name and what it costs, then the
-                      price and the stepper. The line amount sits in the same
-                      right column as the totals, so Rp84.000 can be read off
-                      the rows instead of taken on trust. */}
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span className="min-w-0 truncate text-sm font-medium">{line.name}</span>
-                    <span className="till-figure shrink-0 text-sm">
-                      {formatRupiah(line.subtotal)}
-                    </span>
-                  </div>
+            <div className="mt-1 flex items-center justify-between gap-3">
+              <span className="till-figure text-xs text-muted">
+                {formatRupiah(line.price)} / item
+              </span>
 
-                  <div className="mt-1.5 flex items-center justify-between gap-3">
-                    <span className="till-figure text-xs text-muted">
-                      {formatRupiah(line.price)} / item
-                    </span>
+              {/* `shrink-0`: the name column gives way, never the 44px targets. */}
+              <span className="flex shrink-0 items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => bump(index, -1)}
+                  aria-label={`Kurangi ${line.name}`}
+                  className={STEPPER}
+                >
+                  −
+                </button>
+                <motion.span
+                  key={line.count}
+                  // Scale only, never opacity: before hydration the server's
+                  // inline style is all a reader sees, and a faded digit looks
+                  // like a disabled one.
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 420, damping: 26 }}
+                  className="till-figure w-6 text-center text-sm font-medium"
+                >
+                  {line.count}
+                </motion.span>
+                <button
+                  type="button"
+                  onClick={() => bump(index, 1)}
+                  aria-label={`Tambah ${line.name}`}
+                  className={STEPPER}
+                >
+                  +
+                </button>
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
 
-                    {/* `shrink-0`: the name column is the one allowed to give
-                        way, never the two 44px targets beside it. */}
-                    <span className="flex shrink-0 items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => bump(index, -1)}
-                        aria-label={`Kurangi ${line.name}`}
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-control border border-border text-sm transition-colors hover:border-border-strong hover:bg-background focus-ring"
-                      >
-                        −
-                      </button>
-                      <motion.span
-                        key={line.count}
-                        // Scale only, never opacity: before hydration the
-                        // server's inline style is all a reader sees, and a
-                        // faded digit looks like a disabled one.
-                        initial={{ scale: 0.9 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: 'spring', stiffness: 420, damping: 26 }}
-                        className="till-figure w-7 text-center text-sm font-medium"
-                      >
-                        {line.count}
-                      </motion.span>
-                      <button
-                        type="button"
-                        onClick={() => bump(index, 1)}
-                        aria-label={`Tambah ${line.name}`}
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-control border border-border text-sm transition-colors hover:border-border-strong hover:bg-background focus-ring"
-                      >
-                        +
-                      </button>
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-
-            <dl className="mt-2 space-y-1.5 border-t border-rule pt-3 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-muted">Subtotal</dt>
-                <dd className="till-figure">{formatRupiah(shown.subtotal)}</dd>
-              </div>
-              {/* The same words and inks the nota in the hero prints: a
-                  discount is red, a tax is ink, and neither is greyed out. */}
-              <div className="flex justify-between">
-                <dt className="text-muted">Diskon (5%)</dt>
-                <dd className="till-figure text-danger">−{formatRupiah(shown.discount)}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted">Pajak (11%)</dt>
-                <dd className="till-figure">+{formatRupiah(shown.tax)}</dd>
-              </div>
-              <div className="flex items-baseline justify-between border-t border-rule pt-2">
-                <dt className="font-medium">Total</dt>
-                <dd className="till-figure text-lg font-semibold text-accent">
-                  {formatRupiah(shown.total)}
-                </dd>
-              </div>
-            </dl>
-          </div>
+      <dl className="mt-1 space-y-1 border-t border-rule pt-2.5 text-sm">
+        <div className="flex justify-between">
+          <dt className="text-muted">Subtotal</dt>
+          <dd className="till-figure">{formatRupiah(shown.subtotal)}</dd>
         </div>
-      </section>
-    </MotionConfig>
+        {/* The words and inks the nota itself prints: discount red, tax ink. */}
+        <div className="flex justify-between">
+          <dt className="text-muted">Diskon (5%)</dt>
+          <dd className="till-figure text-danger">−{formatRupiah(shown.discount)}</dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-muted">Pajak (11%)</dt>
+          <dd className="till-figure">+{formatRupiah(shown.tax)}</dd>
+        </div>
+        <div className="flex items-baseline justify-between border-t border-rule pt-2">
+          <dt className="font-medium">Total</dt>
+          <dd className="till-figure text-base font-semibold text-accent">
+            {formatRupiah(shown.total)}
+          </dd>
+        </div>
+      </dl>
+    </div>
   );
 }
 
@@ -302,7 +243,7 @@ const MESSAGE_TO = 'Budi Santoso';
 const MESSAGE =
   'Halo Budi Santoso, berikut nota INV-2026-001 dari Warung Maju Jaya sebesar Rp88.578. Terima kasih.';
 
-/** Types the WhatsApp message once, when the card is on screen. */
+/** Types the WhatsApp message once, when the panel is open and on screen. */
 function useTypedMessage(active: boolean): { text: string; done: boolean } {
   const [index, setIndex] = useState(0);
   const reduced = usePrefersReducedMotion();
@@ -328,58 +269,48 @@ function useTypedMessage(active: boolean): { text: string; done: boolean } {
   return { text: MESSAGE.slice(0, index), done: index >= MESSAGE.length };
 }
 
-/** `#kirim`: the WhatsApp message that writes itself and the PDF that follows. */
-export function SendDemo() {
+/** `#kirim`: the WhatsApp message that writes itself, and the PDF that follows. */
+function SendPanel() {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.4 });
+  // `once`: the message types itself the first time this panel is on screen,
+  // and stays whole while the reader is looking at it.
+  const inView = useInView(ref, { once: true, amount: 0.3 });
   const { text, done } = useTypedMessage(inView);
 
   return (
-    <MotionConfig reducedMotion="user">
-      <section id="kirim" className="scroll-mt-24 border-t border-border">
-        <div className="mx-auto grid w-full max-w-6xl gap-12 px-5 py-20 sm:px-8 sm:py-28 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-center">
-          <Head
-            title="Pesannya sudah siap, tinggal lampirkan."
-            description="Nomor nota, nama pelanggan, dan totalnya sudah terisi. Simpan PDF dari halaman cetak, lampirkan di chat, kirim."
-          />
+    <div ref={ref}>
+      <p className="flex items-center gap-2 border-b border-rule pb-2.5 text-sm font-medium">
+        <span className="flex size-7 items-center justify-center rounded-full bg-accent-soft text-accent">
+          <MessageCircle size={14} aria-hidden="true" />
+        </span>
+        {MESSAGE_TO}
+        <span className="ml-auto text-xs font-normal text-muted">online</span>
+      </p>
 
-          <div ref={ref} className="rounded-card border border-rule bg-card p-4 shadow-raised">
-            <p className="flex items-center gap-2 pb-3 text-sm font-medium">
-              <span className="flex size-8 items-center justify-center rounded-full bg-accent-soft text-accent">
-                <MessageCircle size={15} aria-hidden="true" />
-              </span>
-              {MESSAGE_TO}
-              <span className="ml-auto text-xs font-normal text-muted">online</span>
-            </p>
+      <p className="mt-3 rounded-item bg-background p-3 text-sm leading-relaxed">
+        {text}
+        {!done && <span aria-hidden="true" className="ml-0.5 inline-block w-1.5 bg-accent" />}
+      </p>
 
-            <div className="rounded-control bg-paper p-3 text-sm leading-relaxed text-ink">
-              {text}
-              {!done && <span aria-hidden="true" className="ml-0.5 inline-block w-1.5 bg-accent">&nbsp;</span>}
-            </div>
+      {/* Always in the layout, only invisible until the message is done: a chip
+          that mounted at the end would shove the panel taller mid-sentence. */}
+      <motion.div
+        initial={false}
+        animate={done ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+        aria-hidden={!done}
+        className="mt-3 flex items-center gap-2 rounded-item border border-rule px-3 py-2 text-sm"
+      >
+        <FileText size={15} aria-hidden="true" className="text-accent" />
+        INV-2026-001.pdf
+        <span className="till-figure ml-auto text-xs text-muted">A4, 1 halaman</span>
+      </motion.div>
 
-            {/* Always in the layout, only invisible until the message is
-                done: a chip that mounts at the end would shove the card 90px
-                taller mid-sentence. */}
-            <motion.div
-              initial={false}
-              animate={done ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
-              transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-              aria-hidden={!done}
-              className="mt-3 flex items-center gap-2 rounded-control border border-rule bg-paper px-3 py-2 text-sm"
-            >
-              <FileText size={15} aria-hidden="true" className="text-accent" />
-              INV-2026-001.pdf
-              <span className="till-figure ml-auto text-xs text-muted">A4 · 1 halaman</span>
-            </motion.div>
-
-            <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
-              <CheckCheck size={13} aria-hidden="true" className="text-accent" />
-              Tidak memakai API WhatsApp — pesan dibuka di aplikasi WhatsApp kamu.
-            </p>
-          </div>
-        </div>
-      </section>
-    </MotionConfig>
+      <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
+        <CheckCheck size={13} aria-hidden="true" className="text-accent" />
+        Tanpa API WhatsApp: pesan dibuka di aplikasi WhatsApp kamu.
+      </p>
+    </div>
   );
 }
 
@@ -393,74 +324,174 @@ const STATUS_COPY: Record<StatusFlow, { label: string; hint: string; stamp: stri
 };
 
 /** `#kenapa`: the status stamp you set on a nota, switched by a tap. */
-export function TrackDemo() {
+function StatusPanel() {
   const [status, setStatus] = useState<StatusFlow>('sent');
   const copy = STATUS_COPY[status];
 
   return (
-    <MotionConfig reducedMotion="user">
-      <section id="kenapa" className="scroll-mt-24 border-t border-border bg-card">
-        <div className="mx-auto grid w-full max-w-6xl gap-12 px-5 py-20 sm:px-8 sm:py-28 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-center">
+    <div>
+      {/* `aria-pressed` buttons, not a second tablist: these pick a value inside
+          the bench, they do not switch the bench itself. */}
+      <div
+        role="group"
+        aria-label="Status nota"
+        className="flex items-center gap-1 border-b border-rule pb-2.5"
+      >
+        {STATUS_FLOW.map((value) => {
+          const active = value === status;
+          return (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setStatus(value)}
+              className={`rounded-item px-2.5 py-2 text-sm font-medium transition-colors focus-ring ${
+                active ? 'bg-ink text-paper' : 'text-muted hover:bg-background hover:text-ink'
+              }`}
+            >
+              {STATUS_COPY[value].label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="relative mt-4 overflow-hidden rounded-item border border-rule p-3.5">
+        <p className="text-sm font-medium">Nota INV-2026-001</p>
+        <p className="till-figure mt-0.5 text-xs text-muted">Budi Santoso, Rp88.578</p>
+
+        <motion.span
+          key={status}
+          aria-hidden="true"
+          initial={{ scale: 1.3, opacity: 0, rotate: -7 }}
+          animate={{ scale: 1, opacity: 0.9, rotate: -7 }}
+          transition={{ type: 'spring', stiffness: 340, damping: 20 }}
+          className="receipt-stamp absolute right-3 top-2.5 text-accent"
+        >
+          {copy.stamp}
+        </motion.span>
+
+        <p className="mt-6 border-t border-rule pt-2.5 text-xs text-muted">{copy.hint}</p>
+      </div>
+    </div>
+  );
+}
+
+const BENCH_IDS = ['hitung', 'kirim', 'kenapa'] as const;
+
+type BenchTab = (typeof BENCH_IDS)[number];
+
+function isBenchTab(value: string): value is BenchTab {
+  return (BENCH_IDS as readonly string[]).includes(value);
+}
+
+/**
+ * One tab of the bench.
+ *
+ * The ids are written out at the call site — `<BenchTabButton id="kirim" />` —
+ * rather than mapped from a list, because the footers link to `#kirim` and
+ * `#kenapa` and `tests/landing-anchors.test.ts` reads this source for those
+ * ids. `scroll-mt-24` keeps the tab clear of the sticky header when a footer
+ * link lands on it.
+ */
+function BenchTabButton({
+  id,
+  label,
+  active,
+  onSelect,
+}: {
+  id: BenchTab;
+  label: string;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      id={id}
+      type="button"
+      role="tab"
+      aria-selected={active}
+      aria-controls={`panel-${id}`}
+      onClick={onSelect}
+      className={`relative scroll-mt-24 px-3 py-2.5 text-sm font-medium transition-colors focus-ring ${
+        active ? 'text-ink' : 'text-muted hover:text-ink'
+      }`}
+    >
+      {label}
+      {active && (
+        <motion.span
+          layoutId="bench-tab"
+          className="absolute inset-x-2 -bottom-px h-0.5 bg-accent"
+          transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+        />
+      )}
+    </button>
+  );
+}
+
+/**
+ * The bench: one nota, three moments. The tabs carry the ids the footer links
+ * to (`#kirim`, `#kenapa`), so a jump from the footer scrolls here *and* opens
+ * the panel that link names.
+ */
+export function Bench() {
+  const [tab, setTab] = useState<BenchTab>('hitung');
+
+  useEffect(() => {
+    const applyHash = () => {
+      const id = window.location.hash.slice(1);
+      if (isBenchTab(id)) setTab(id);
+    };
+    applyHash();
+    window.addEventListener('hashchange', applyHash);
+    return () => window.removeEventListener('hashchange', applyHash);
+  }, []);
+
+  return (
+    <section className={MARKETING_SECTION}>
+      <div className={MARKETING_BOX}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <Head
-            title="Tahu mana yang sudah dibayar."
-            description="Satu ketukan mengubah status nota, dan status itu yang membuat daftar piutangmu bisa dipercaya."
+            title="Satu nota, dari hitung sampai status."
+            description="Bukan rekaman layar: ketiga bagian ini bekerja saat kamu menekannya."
           />
 
-          {/* A torn sheet, not another card: this demo *is* the nota the
-              status belongs to, so it wears the same paper as the hero. */}
-          <div className="receipt-sheet rounded-card p-5 shadow-popover">
-            <div
-              role="tablist"
-              aria-label="Status nota"
-              className="inline-flex rounded-pill border border-border bg-background p-1"
-            >
-              {STATUS_FLOW.map((value) => {
-                const active = value === status;
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => setStatus(value)}
-                    className={`relative rounded-pill px-3 py-3 text-sm font-medium transition-colors focus-ring ${
-                      active ? 'text-accent-foreground' : 'text-muted hover:text-foreground'
-                    }`}
-                  >
-                    {active && (
-                      <motion.span
-                        layoutId="track-demo-tab"
-                        className="absolute inset-0 rounded-pill bg-accent"
-                        transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-                      />
-                    )}
-                    <span className="relative">{STATUS_COPY[value].label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="relative mt-5 overflow-hidden rounded-control border border-rule p-4">
-              <p className="text-sm font-medium">Nota INV-2026-001</p>
-              <p className="till-figure mt-1 text-xs text-muted">Budi Santoso · Rp88.578</p>
-
-              <motion.span
-                key={status}
-                aria-hidden="true"
-                initial={{ scale: 1.3, opacity: 0, rotate: -7 }}
-                animate={{ scale: 1, opacity: 0.9, rotate: -7 }}
-                transition={{ type: 'spring', stiffness: 340, damping: 20 }}
-                className="receipt-stamp absolute right-4 top-3 text-accent"
-              >
-                {copy.stamp}
-              </motion.span>
-
-              <p className="mt-6 border-t border-rule pt-3 text-xs text-muted">{copy.hint}</p>
-            </div>
+          <div role="tablist" aria-label="Bagian nota" className="flex items-center gap-1">
+            <BenchTabButton
+              id="hitung"
+              label="Hitung"
+              active={tab === 'hitung'}
+              onSelect={() => setTab('hitung')}
+            />
+            <BenchTabButton
+              id="kirim"
+              label="Kirim"
+              active={tab === 'kirim'}
+              onSelect={() => setTab('kirim')}
+            />
+            <BenchTabButton
+              id="kenapa"
+              label="Status"
+              active={tab === 'kenapa'}
+              onSelect={() => setTab('kenapa')}
+            />
           </div>
         </div>
-      </section>
-    </MotionConfig>
+
+        {/* One panel at a time, each at its own height: the card shrinks to the
+            nota it is showing, instead of reserving room for the tallest one and
+            leaving half of it blank under the short ones. */}
+        <div
+          role="tabpanel"
+          id={`panel-${tab}`}
+          aria-labelledby={tab}
+          className="mt-4 rounded-card border border-rule bg-card p-4 sm:p-5"
+        >
+          {tab === 'hitung' && <CalculatorPanel />}
+          {tab === 'kirim' && <SendPanel />}
+          {tab === 'kenapa' && <StatusPanel />}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -476,31 +507,21 @@ const FEATURES = [
 /** `#fitur`: the list, as rows on a rule — no cards, no icons-in-boxes grid. */
 export function FeatureList() {
   return (
-    <MotionConfig reducedMotion="user">
-      <section id="fitur" className="scroll-mt-24 border-t border-border">
-        <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
-          <Head
-            title="Yang benar-benar sudah jalan."
-            description="Bukan rencana rilis: setiap baris di bawah ini ada di aplikasi hari ini."
-          />
+    <section id="fitur" className={MARKETING_SECTION}>
+      <div className={MARKETING_BOX}>
+        <Head
+          title="Yang benar-benar sudah jalan."
+          description="Bukan rencana rilis: setiap baris di bawah ini ada di aplikasi hari ini."
+        />
 
-          <ul className="mt-10 border-t border-border">
-            {FEATURES.map((feature, index) => (
-              <motion.li
-                key={feature}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.6 }}
-                transition={{ duration: 0.45, delay: index * 0.05, ease: EASE }}
-                className="flex items-center gap-4 border-b border-border py-4"
-              >
-                <span className="till-figure w-6 text-xs text-muted">{index + 1}</span>
-                <span className="text-base">{feature}</span>
-              </motion.li>
-            ))}
-          </ul>
-        </div>
-      </section>
-    </MotionConfig>
+        <ul className="mt-5 grid border-t border-rule sm:grid-cols-2 sm:gap-x-10">
+          {FEATURES.map((feature) => (
+            <li key={feature} className="border-b border-rule py-2.5 text-sm">
+              {feature}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
   );
 }

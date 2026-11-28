@@ -145,6 +145,21 @@ export function noticeClass(variant: 'danger' | 'accent' | 'success' | 'warning'
 export const PAGE_GAP = 'flex flex-col gap-6';
 
 /**
+ * The public marketing pages' rhythm.
+ *
+ * The landing is one sheet of paper: a hairline separates two sections and one
+ * inner box holds all of them, so their padding and their rules cannot drift
+ * apart. Before this, every section retyped `mx-auto max-w-6xl px-5 py-20
+ * sm:py-28` and the page grew to eleven screens of nearly identical bands.
+ */
+export const MARKETING_SECTION = 'scroll-mt-20 border-t border-rule';
+export const MARKETING_BOX = 'mx-auto w-full max-w-5xl px-5 py-10 sm:px-8 sm:py-14';
+
+/** Section heading of the public site: one size for the whole page. */
+export const MARKETING_H2 =
+  'text-[clamp(1.375rem,2.6vw,1.75rem)] font-semibold leading-[1.15] tracking-[-0.02em]';
+
+/**
  * Color treatments for sidebar/mobile nav links. SSR class lists and the
  * client-side `syncNav` script both toggle these exact tokens, so the shell
  * has one source of truth for "active" vs "idle".

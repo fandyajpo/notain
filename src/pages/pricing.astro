@@ -10,15 +10,10 @@ import { SiteFooter } from '../components/react/landing/site-footer';
   title="Harga Notain | Paket Free, Pro & Business"
   description="Pakai fitur dasar Notain gratis selamanya, termasuk template bawaan dan template buatan sendiri. Lihat harga Pro untuk membuat nota lebih banyak. Business sedang disiapkan."
 >
-  <!-- Three islands, not one — the same split the landing page uses. The wrapper
-       and the dot texture are plain HTML so they paint before any JS runs. -->
-  <div class="min-h-screen overflow-x-clip">
-    <!-- Page-wide dot texture; fixed so content slides over it. -->
-    <div
-      aria-hidden="true"
-      class="pointer-events-none fixed inset-0 -z-10 texture-dots [mask-image:linear-gradient(to_bottom,transparent,black_8%,black_92%,transparent)]"
-    ></div>
-
+  <!-- Three islands, not one — the same split the landing page uses. The price
+       page is the same sheet of paper as the landing (`bg-paper`): the two are
+       one document, not two templates. -->
+  <div class="min-h-screen overflow-x-clip bg-paper text-ink">
     <PricingTop client:load>
       <PricingPlans client:visible />
       <FinaleCta client:visible />

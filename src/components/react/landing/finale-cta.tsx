@@ -1,50 +1,37 @@
-import { motion, MotionConfig } from 'motion/react';
+import { MotionConfig } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
-import { EASE, Reveal } from './reveal';
 import { MagneticButton } from './interactive';
+import { MARKETING_H2, MARKETING_SECTION } from '../../../lib/ui/classes';
 
-/** Closing CTA: one card, one button, and the page's last word. */
+/**
+ * The page's last word: one line, one button, on the same rule as everything
+ * above it. It used to be a card with a centered stack, which cost a full
+ * screen to say two sentences.
+ */
 export function FinaleCta() {
   return (
     <MotionConfig reducedMotion="user">
-      <section className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
-        <motion.div
-          initial={{ opacity: 0, y: 32 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.25 }}
-          transition={{ duration: 0.7, ease: EASE }}
-          className="rounded-card border border-border bg-card shadow-card"
-        >
-          <div className="px-6 py-14 text-center sm:px-12 sm:py-16">
-            <Reveal scale y={18}>
-              <h2 className="text-title">Buat nota pertamamu</h2>
-            </Reveal>
-            <Reveal y={14} delay={0.1}>
-              <p className="mx-auto mt-3 max-w-md text-muted">
-                Gratis, tanpa kartu kredit, dan langsung jadi dalam hitungan detik.
-              </p>
-            </Reveal>
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.5 }}
-              transition={{ duration: 0.5, delay: 0.2, ease: EASE }}
-              className="mt-8 flex justify-center"
-            >
-              <MagneticButton
-                href="/register"
-                className="group inline-flex h-12 items-center gap-2 rounded-control bg-accent px-5 text-base font-medium text-accent-foreground shadow-accent transition-colors hover:bg-accent/90 focus-ring"
-              >
-                Buat nota gratis
-                <ArrowRight
-                  size={17}
-                  aria-hidden="true"
-                  className="transition-transform duration-300 group-hover:translate-x-1"
-                />
-              </MagneticButton>
-            </motion.div>
+      <section className={MARKETING_SECTION}>
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-5 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-14">
+          <div>
+            <h2 className={MARKETING_H2}>Buat nota pertamamu</h2>
+            <p className="mt-1.5 text-sm text-muted">
+              Gratis, tanpa kartu kredit, dan langsung jadi.
+            </p>
           </div>
-        </motion.div>
+
+          <MagneticButton
+            href="/register"
+            className="group inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-control bg-accent px-5 text-sm font-medium text-accent-foreground shadow-accent transition-colors hover:bg-accent/90 focus-ring"
+          >
+            Buat nota gratis
+            <ArrowRight
+              size={16}
+              aria-hidden="true"
+              className="transition-transform duration-300 group-hover:translate-x-1"
+            />
+          </MagneticButton>
+        </div>
       </section>
     </MotionConfig>
   );

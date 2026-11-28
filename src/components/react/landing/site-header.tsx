@@ -4,7 +4,7 @@ import { Menu, X } from 'lucide-react';
 import { EASE } from './reveal';
 import { isActiveSiteLink, SITE_NAV_VISIBILITY, siteNavLinks } from '../../../lib/site-nav';
 
-const NAV_LINK_BASE = 'relative px-3 py-2 text-sm transition-colors focus-ring';
+const NAV_LINK_BASE = 'relative px-2.5 py-2 text-sm transition-colors focus-ring';
 
 const MOBILE_LINK_BASE = 'block rounded-control px-3 py-2.5 text-base transition-colors focus-ring';
 
@@ -26,7 +26,7 @@ function NavLink({
       href={href}
       className={[
         NAV_LINK_BASE,
-        active ? 'font-medium text-foreground' : 'text-muted hover:text-foreground',
+        active ? 'font-medium text-ink' : 'text-muted hover:text-ink',
         className,
       ].join(' ')}
       aria-current={active ? 'page' : undefined}
@@ -38,7 +38,7 @@ function NavLink({
       {children}
       <motion.span
         aria-hidden="true"
-        className="absolute inset-x-3 -bottom-0.5 h-px bg-foreground"
+        className="absolute inset-x-2.5 -bottom-0.5 h-px bg-ink"
         style={{ originX: 0 }}
         variants={{ rest: { scaleX: active ? 1 : 0 }, hover: { scaleX: 1 } }}
         transition={{ duration: 0.3, ease: EASE }}
@@ -63,8 +63,13 @@ type Props = {
 };
 
 /**
- * Sticky marketing header: transparent over the hero, then flips to the page
- * background once scrolled past 16px.
+ * Sticky marketing header: transparent over the hero, then the page's own paper
+ * once scrolled past 16px.
+ *
+ * The scrolled state is a motion value, not React state: no re-render per scroll
+ * frame and no backdrop-blur, which would force the compositor to re-blur
+ * everything under a sticky element while scrolling. The literal colours below
+ * mirror `--color-paper` and `--color-rule`; motion cannot interpolate a `var()`.
  */
 export function SiteHeader({ anchorPrefix = '' }: Props) {
   const { scrollY } = useScroll();
@@ -77,21 +82,10 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
     () => '',
   );
 
-  // Drives the header's scrolled state as pure motion values: no React
-  // re-render per scroll frame, and no backdrop-blur (which forces the
-  // compositor to re-blur everything under the sticky header while scrolling).
-  // A spring smooths the flip past 16px the way the old CSS transition did.
-  // Color literals mirror the --color-background / --color-border /
-  // --shadow-card tokens in global.css (motion can't interpolate var()).
   const scrolledRaw = useTransform(scrollY, (latest): number => (latest > 16 ? 1 : 0));
   const scrolled = useSpring(scrolledRaw, { stiffness: 220, damping: 30 });
-  const headerBg = useTransform(scrolled, [0, 1], ['rgb(0 0 0 / 0)', 'var(--color-background)']);
-  const headerBorder = useTransform(scrolled, [0, 1], ['rgb(0 0 0 / 0)', 'var(--color-border)']);
-  const headerShadow = useTransform(
-    scrolled,
-    [0, 1],
-    ['0 0 0 0 rgb(0 0 0 / 0)', '0 1px 2px 0 rgb(23 23 23 / 0.04)'],
-  );
+  const headerBg = useTransform(scrolled, [0, 1], ['rgb(253 252 249 / 0)', 'rgb(253 252 249 / 1)']);
+  const headerRule = useTransform(scrolled, [0, 1], ['rgb(230 225 214 / 0)', 'rgb(230 225 214 / 1)']);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -113,8 +107,8 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
   }, [menuOpen]);
 
   // The open drawer is the focused surface: land on its first link, and hand
-  // focus back to the hamburger when it closes. (`wasOpen` never steals
-  // focus on the initial page mount.)
+  // focus back to the hamburger when it closes. (`wasOpen` never steals focus
+  // on the initial page mount.)
   const wasOpen = useRef(false);
   useEffect(() => {
     if (menuOpen) {
@@ -133,31 +127,27 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
 
   return (
     <>
-      {/* `initial={false}`: the sticky header is part of the first paint, so
-          it must not wait for hydration to slide in. */}
+      {/* `initial={false}`: the sticky header is part of the first paint, so it
+          must not wait for hydration to slide in. */}
       <motion.header
         initial={false}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: EASE }}
-        style={{
-          backgroundColor: headerBg,
-          borderColor: headerBorder,
-          boxShadow: headerShadow,
-        }}
+        style={{ backgroundColor: headerBg, borderColor: headerRule }}
         className="sticky top-0 z-40 border-b"
       >
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 sm:px-8">
+        <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-5 sm:px-8">
           <motion.a
             href="/"
             whileHover={{ y: -1 }}
             whileTap={{ y: 0, scale: 0.96 }}
-            className="flex items-center gap-2 font-semibold tracking-tight focus-ring rounded-control"
+            className="flex items-center gap-2 rounded-control font-semibold tracking-tight text-ink focus-ring"
           >
             <motion.img
               src="/notain-remove-bg.png"
               alt=""
-              width={28}
-              height={28}
+              width={26}
+              height={26}
               className="size-7 rounded-control"
               whileHover={{ rotate: -10, scale: 1.1 }}
               transition={{ type: 'spring', stiffness: 380, damping: 16 }}
@@ -165,7 +155,7 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
             Notain
           </motion.a>
 
-          <nav className="hidden items-center gap-1 sm:flex sm:gap-2">
+          <nav className="hidden items-center gap-1 sm:flex sm:gap-1.5">
             {links.map((link) => (
               <NavLink
                 key={link.href}
@@ -182,15 +172,15 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
               whileHover={{ y: -1, scale: 1.03 }}
               whileTap={{ y: 0, scale: 0.97 }}
               transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-              className="ml-1 inline-flex h-10 items-center rounded-control bg-accent px-3 text-sm font-medium text-accent-foreground shadow-accent focus-ring"
+              className="ml-1.5 inline-flex h-9 items-center rounded-control bg-accent px-3 text-sm font-medium text-accent-foreground shadow-accent focus-ring"
             >
               Buat nota gratis
             </motion.a>
           </nav>
 
-          {/* Mobile: the nav above — and its CTA — is hidden on phones, so
-              the header had no visible way to sign up once the hero scrolled
-              away. Same destination, 40px tall, beside the hamburger. */}
+          {/* Mobile: the nav above — and its CTA — is hidden on phones, so the
+              header had no visible way to sign up once the hero scrolled away.
+              Same destination, 40px tall, beside the hamburger. */}
           <a
             href="/register"
             onClick={() => setMenuOpen(false)}
@@ -199,7 +189,7 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
             Buat nota
           </a>
 
-          {/* Mobile: hamburger toggles an animated drawer with every nav item. */}
+          {/* 44px: the one control a phone reaches for on every scroll. */}
           <button
             ref={menuButtonRef}
             type="button"
@@ -207,7 +197,7 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
             aria-expanded={menuOpen}
             aria-controls="mobile-nav"
             aria-label={menuOpen ? 'Tutup menu' : 'Buka menu'}
-            className="inline-flex items-center justify-center rounded-control p-2 text-foreground transition-colors hover:bg-accent-soft focus-ring sm:hidden"
+            className="-mr-2 ml-1 inline-flex size-11 items-center justify-center rounded-control transition-colors hover:bg-accent-soft focus-ring sm:hidden"
           >
             {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
           </button>
@@ -221,7 +211,7 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.28, ease: EASE }}
-              className="overflow-hidden border-t border-border bg-card sm:hidden"
+              className="overflow-hidden border-t border-rule bg-paper sm:hidden"
             >
               <div className="flex flex-col gap-0.5 px-4 py-3">
                 {links.map((link, index) => {
@@ -237,7 +227,7 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
                         MOBILE_LINK_BASE,
                         active
                           ? 'bg-accent-soft font-medium text-accent'
-                          : 'text-foreground hover:bg-accent-soft',
+                          : 'text-ink hover:bg-accent-soft',
                       ].join(' ')}
                     >
                       {link.label}
@@ -250,9 +240,10 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
         </AnimatePresence>
       </motion.header>
 
-      {/* Blur veil behind the drawer: keeps the navbar as the clear focal
-          surface and doubles as the "click outside" target. Sits below the
-          header (z-40) so only the page gets blurred, never the menu. */}
+      {/* Veil behind the drawer: it marks the header as the clear surface and
+          doubles as the click-outside target. An ink wash, not a blur — glass
+          over a page of paper is decoration, and blurring what is under a sticky
+          element is the most expensive frame in the scroll. */}
       <AnimatePresence initial={false}>
         {menuOpen && (
           <motion.div
@@ -262,7 +253,7 @@ export function SiteHeader({ anchorPrefix = '' }: Props) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25, ease: EASE }}
             aria-hidden="true"
-            className="fixed inset-0 z-30 bg-background/50 backdrop-blur-sm sm:hidden"
+            className="fixed inset-0 z-30 bg-ink/25 sm:hidden"
             onClick={() => setMenuOpen(false)}
           />
         )}
