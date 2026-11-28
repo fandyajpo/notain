@@ -20,6 +20,12 @@
   --color-muted: #6d6d6d;
   --color-border: #e5e5e5;
   --color-border-strong: #d4d4d4;
+  /*
+   * The rule a sheet is drawn with. Warm grey, one step below `border`, for
+   * surfaces that read as paper: the nota, the dashboard's ledger sheet. A card
+   * inside the app chrome keeps `border`; a sheet of paper is drawn with this.
+   */
+  --color-rule: #e6e1d6;
 
   /*
    * The nota's own materials. The canvas and the chrome stay neutral, but a

@@ -1,11 +1,8 @@
-import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
 import { ArrowRight, FileText, Plus } from 'lucide-react';
 import { AuthGate } from '../auth/auth-gate';
 import { AppProviders } from '../providers';
 import { IslandBoundary } from '../ui/island-boundary';
 import { Button } from '../ui/button';
-import { cardClass } from '../ui/card';
 import { PageHeader } from '../ui/page-header';
 import { StatusBadge } from '../ui/status-badge';
 import { EmptyState, ErrorState, LoadingState } from '../ui/state';
@@ -96,7 +93,6 @@ function DashboardContent() {
     <div className="flex flex-col gap-6">
       <div data-tour="dash-hero">
         <PageHeader
-          kicker={<RotatingGreeting />}
           title={businessName}
           description={session?.email}
           actions={
@@ -134,47 +130,6 @@ function DashboardContent() {
         onRetryInvoices={() => void invoices.refetch()}
       />{' '}
     </div>
-  );
-}
-
-const DASHBOARD_GREETINGS = [
-  'Hai!',
-  'Halo!',
-  'Semangat!',
-  'Selamat datang!',
-  'Yuk, mulai!',
-] as const;
-
-function RotatingGreeting() {
-  const [greeting, setGreeting] = useState<string>(DASHBOARD_GREETINGS[0]);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setGreeting((current) => {
-        const choices = DASHBOARD_GREETINGS.filter((item) => item !== current);
-        return choices[Math.floor(Math.random() * choices.length)] ?? DASHBOARD_GREETINGS[0];
-      });
-    }, 2000);
-
-    return () => window.clearInterval(timer);
-  }, []);
-
-  return (
-    <span className="inline-flex min-h-5 items-center overflow-hidden">
-      <span className="sr-only">Hai, selamat datang di dasbor Notain.</span>
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.span
-          key={greeting}
-          aria-hidden="true"
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
-        >
-          {greeting}
-        </motion.span>
-      </AnimatePresence>
-    </span>
   );
 }
 
@@ -224,7 +179,9 @@ function SummarySection({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    // One sheet for the whole screen: the ledger and the recent list share it,
+    // separated by the rule between sections rather than by two stacked cards.
+    <div className="flex flex-col gap-6 rounded-card border border-rule bg-paper p-4 sm:p-5">
       {/* Counts, not money: this table is the single home for every invoice
           count (the customer and template tallies ride in its header), while
           Rupiah amounts live in the finance section above. One counts block
@@ -280,7 +237,7 @@ function SummarySection({
                     <td className={tdClass()}>
                       <StatusBadge status={status} />
                     </td>
-                    <td className={tdClass('text-right font-medium tabular-nums')}>
+                    <td className={tdClass('till-figure text-right font-medium')}>
                       {pick(stats as DashboardStats).toLocaleString('id-ID')}
                     </td>
                     <td className={tdClass('text-right')}>
@@ -298,10 +255,10 @@ function SummarySection({
               <tfoot>
                 <tr className="border-t border-border-strong">
                   <td className={tdClass()}>Total</td>
-                  <td className={tdClass('text-right font-medium tabular-nums')}>
+                  <td className={tdClass('till-figure text-right font-medium')}>
                     {(stats as DashboardStats).totalInvoices.toLocaleString('id-ID')}
                   </td>
-                  <td className={tdClass('text-right tabular-nums text-muted')}>
+                  <td className={tdClass('till-figure text-right text-muted')}>
                     {(stats as DashboardStats).totalInvoices > 0 ? '100%' : '—'}
                   </td>
                 </tr>
@@ -343,7 +300,7 @@ function SummarySection({
             description="Buat nota pertamamu untuk mulai mencatat transaksi."
           />
         ) : (
-          <ul className={cardClass('none', 'flex flex-col divide-y divide-border')}>
+          <ul className="flex flex-col divide-y divide-rule">
             {recent.map((invoice) => {
               const { grandTotal } = calculateTotals({
                 items: invoice.items,
@@ -362,7 +319,7 @@ function SummarySection({
                         {invoice.invoiceNumber} · {formatTanggalRelatif(invoice.date)}
                       </p>
                     </div>
-                    <span className="shrink-0 tabular-nums font-medium">
+                    <span className="till-figure shrink-0 font-medium">
                       {formatRupiah(grandTotal)}
                     </span>
                   </a>
@@ -407,7 +364,7 @@ function Porsi({ value, total, bar }: { value: number; total: number; bar: strin
       <span className="hidden h-1.5 w-24 overflow-hidden rounded-pill bg-border/70 sm:inline-block">
         <span className={cx('block h-full rounded-pill', bar)} style={{ width: `${pct}%` }} />
       </span>
-      <span className="w-9 text-right tabular-nums text-muted">{pct}%</span>
+      <span className="till-figure w-9 text-right text-muted">{pct}%</span>
     </span>
   );
 }

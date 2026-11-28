@@ -7,7 +7,6 @@ import { BUILTIN_TEMPLATES } from '../../../core/template/builtins';
 import { resolveTemplate } from '../../../core/template/resolve';
 import { EASE, SplitWords } from './reveal';
 import { MagneticButton, TiltCard } from './interactive';
-import { Aurora } from './aurora';
 
 const TRUST_POINTS = [
   'Gratis selamanya',
@@ -21,27 +20,6 @@ const TEMPLATES = BUILTIN_TEMPLATES.map((template) => ({
   id: template.id,
   label: template.name,
 }));
-
-function Eyebrow({ delay }: { delay: number }) {
-  return (
-    <motion.span
-      initial={false}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.5, delay, ease: EASE }}
-      className="inline-flex items-center gap-2 rounded-pill border border-accent/25 bg-accent-soft px-3 py-1 text-xs font-medium text-accent"
-    >
-      <span className="relative flex size-1.5">
-        <motion.span
-          className="absolute inset-0 rounded-full bg-accent"
-          animate={{ scale: [1, 2.4], opacity: [0.7, 0] }}
-          transition={{ duration: 1.9, repeat: Infinity, ease: 'easeOut' }}
-        />
-        <span className="relative size-1.5 rounded-full bg-accent" />
-      </span>
-      Untuk UMKM & freelancer Indonesia
-    </motion.span>
-  );
-}
 
 /**
  * The invoice sample lives here so the card and its floating chips agree on
@@ -159,7 +137,6 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
   return (
     <MotionConfig reducedMotion="user">
       <div className="relative pb-16 pt-12 sm:pb-24 sm:pt-16">
-        <Aurora />
 
         {/* Everything in the first viewport uses `initial={false}` /
             `immediate`, so the server HTML already shows it at full size.
@@ -168,20 +145,16 @@ export function Hero({ ctaHref, ctaLabel, secondaryHref, secondaryLabel }: Props
             fold keep theirs (they animate through `Reveal`). Ambient loops
             (aurora, pulse, float) are untouched: they never start hidden. */}
         <div className="flex justify-center">
-          <motion.img
+          <img
             src="/notain-remove-bg.png"
             alt=""
             width={140}
             height={140}
-            className="size-28 rounded-full drop-shadow-[0_8px_24px_color-mix(in_srgb,var(--color-accent)_25%,transparent)] sm:size-36"
-            animate={{ y: [0, -10, 0] }}
-            transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+            className="size-28 rounded-full sm:size-36"
           />
         </div>
 
         <div className="text-center">
-          <Eyebrow delay={0.05} />
-
           <h1 className="mx-auto mt-6 max-w-3xl text-[clamp(2.5rem,6.5vw,4.25rem)] font-semibold leading-[1.03] tracking-[-0.035em]">
             <SplitWords text="Buat nota lebih rapi." className="block" delay={0.16} immediate />
             <SplitWords

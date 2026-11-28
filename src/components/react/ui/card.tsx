@@ -9,9 +9,15 @@ const PADDING: Record<Padding, string> = {
   lg: 'p-6 sm:p-8',
 };
 
-/** Shared card surface: rounded, bordered, themed fill, hairline shadow. */
+/**
+ * Shared card surface: rounded, bordered, paper fill.
+ *
+ * No shadow: a 1px border under a wide soft shadow is the ghost card, and the
+ * app already lifts only what genuinely floats (menus, modals, the nota sheet).
+ * One elevation language instead of two.
+ */
 export function cardClass(padding: Padding = 'md', className = ''): string {
-  return ['rounded-card border border-border bg-card shadow-card', PADDING[padding], className]
+  return ['rounded-card border border-rule bg-paper', PADDING[padding], className]
     .filter(Boolean)
     .join(' ');
 }
@@ -22,7 +28,7 @@ export function cardClass(padding: Padding = 'md', className = ''): string {
  * step instead of each retyping the surface (the same idea as `TableFrame`).
  */
 export const CARD_ROW =
-  'flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-card px-4 py-3 shadow-card';
+  'flex flex-wrap items-center justify-between gap-3 rounded-card border border-rule bg-paper px-4 py-3';
 
 type Props = HTMLAttributes<HTMLDivElement> & {
   padding?: Padding;
